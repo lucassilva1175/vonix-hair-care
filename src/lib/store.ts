@@ -30,7 +30,7 @@ export const brl = (v: number) =>
 const cents = (v: number) => Math.round(v * 100);
 
 /** Pix price derived from the (new) sale price. */
-export const pixPrice = (v: number) => cents(v * (1 - PIX_DISCOUNT)) / 100;
+export const pixPrice = (v: number) => Math.round((cents(v) * 95) / 100) / 100;
 
 /** Splits a total into up to 6 interest-free parcels; the first absorbs leftover cents. */
 export function installments(total: number, n = MAX_INSTALLMENTS) {
@@ -146,3 +146,12 @@ export const TYPES: Record<string, (p: Product) => boolean> = {
   Finalizadores: (p) => p.category === "finalizadores",
 };
 export const BEST_SELLERS = ["kit-cafe-verde", "kit-banana-e-mel", "kit-cronograma-capilar", "kit-whey-protein"];
+
+export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compareBase, p.variants[0].price)));
+
+/** Checkout totals in cents; free shipping uses the subtotal after the chosen payment discount. */
+export function checkoutTotals(subtotal: number, method: "pix" | "card") {
+  const gross = cents(subtotal);
+  const net = method === "pix" ? Math.round((gross * 95) / 100) : gross;
+  return { gross: gross / 100, discount: (gross - net) / 100, net: net / 100, freeShipping: net > FREE_SHIPPING_ABOVE * 100 };
+}

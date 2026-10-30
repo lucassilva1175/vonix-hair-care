@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Heart, Menu, MessageCircle, Search, ShoppingBag, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import {
+  MAX_DISCOUNT,
   brl,
   discountPct,
   installments,
@@ -16,7 +17,7 @@ export const SRC = "https://vonixhaircosmeticos.com.br";
 export const LOGO = `${SRC}/assets/vonix-logo-optimized-BP5ZgeGC.webp`;
 
 const MARQUEE = [
-  "ATÉ 33% OFF EM TODO O SITE",
+  `ATÉ ${MAX_DISCOUNT}% OFF EM PRODUTOS SELECIONADOS`,
   "FRETE GRÁTIS EM COMPRAS ACIMA DE R$ 150,00",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
   "5% DE DESCONTO NO PIX",

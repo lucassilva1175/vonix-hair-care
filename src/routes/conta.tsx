@@ -18,7 +18,7 @@ function Conta() {
     <Shell>
       <Page>
         <h1 className="font-display text-5xl">Meus pedidos</h1>
-        <p className="mt-4 text-muted-foreground">
+        <p role="note" className="mt-4 rounded-lg border border-foreground bg-muted p-4 text-sm"><b>Prévia da loja.</b> 
           Login de clientes e histórico de pedidos ainda não estão conectados nesta cópia. Nenhum pedido para exibir.
         </p>
         <Link to="/loja" className="mt-6 inline-block rounded-full bg-action px-6 py-3 text-action-foreground">Ver produtos</Link>
