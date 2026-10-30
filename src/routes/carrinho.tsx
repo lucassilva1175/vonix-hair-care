@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/site";
-import { BEST_SELLERS, brl, getProduct, useCart } from "@/lib/store";
+import { OFFER_LABEL, brl, complementsFor, pixPrice, useCart } from "@/lib/store";
 import { ShippingBar, Summary } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/carrinho")({
@@ -16,31 +16,46 @@ export const Route = createFileRoute("/carrinho")({
   component: Cart,
 });
 
-/** Uma única recomendação complementar, compacta e recolhível; nunca pré-selecionada. */
-function Suggestion() {
+/** Até 3 complementos contextuais, sempre visíveis, com 5% OFF no próprio item. */
+function Suggestions() {
   const c = useCart();
-  const slug = BEST_SELLERS.map(getProduct).find((p) => p && !c.lines.some((l) => l.slug === p.slug));
-  if (!slug) return null;
-  const v = slug.variants[0];
+  const items = complementsFor(c.lines.map((l) => l.slug));
+  if (!items.length) return null;
   return (
-    <details className="rounded-xl border border-border bg-card p-4 text-sm">
-      <summary className="cursor-pointer font-medium">Complete seu tratamento (opcional)</summary>
-      <div className="mt-3 flex items-center gap-3">
-        <img src={slug.images[0]} alt="" className="h-16 w-16 rounded-lg bg-card-image object-contain" />
-        <div className="flex-1">
-          <Link to="/produto/$slug" params={{ slug: slug.slug }} className="font-medium hover:underline">
-            {slug.name}
-          </Link>
-          <div className="text-xs text-muted-foreground">{v.label} · {brl(v.price)}</div>
-        </div>
-        <button
-          onClick={() => c.add(slug.slug, v.label)}
-          className="rounded-full border border-action px-4 py-2 text-xs font-medium text-action"
-        >
-          Adicionar
-        </button>
+    <section className="mt-8" aria-label="Complete seu tratamento">
+      <h2 className="font-display text-3xl">Complete seu tratamento</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Escolha o cuidado que falta na sua rotina e aproveite a condição deste item.
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        {items.map((p) => {
+          const v = p.variants[0];
+          const offer = pixPrice(v.price);
+          return (
+            <div key={p.slug} className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-3 text-sm">
+              <Link to="/produto/$slug" params={{ slug: p.slug }} className="block">
+                <img src={p.images[0]} alt="" className="h-24 w-full rounded-lg bg-card-image object-contain" />
+              </Link>
+              <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-2 font-medium hover:underline">
+                {p.name}
+              </Link>
+              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{p.short}</p>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-xs text-muted-foreground line-through">{brl(v.price)}</span>
+                <b>{brl(offer)}</b>
+              </div>
+              <div className="text-xs text-muted-foreground">Economia de {brl(v.price - offer)} neste item</div>
+              <button
+                onClick={() => c.add(p.slug, v.label, 1, "comp5")}
+                className="mt-3 rounded-full border border-action px-4 py-2 text-xs font-medium text-action"
+              >
+                Adicionar
+              </button>
+            </div>
+          );
+        })}
       </div>
-    </details>
+    </section>
   );
 }
 
@@ -57,28 +72,38 @@ function Cart() {
           </div>
         ) : (
           <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
-            <ul className="divide-y divide-border">
-              {c.lines.map((l) => (
-                <li key={l.slug + l.variant} className="flex gap-4 py-4">
-                  <img src={l.product.images[0]} alt="" className="h-24 w-24 rounded-lg bg-card-image object-contain" />
-                  <div className="flex-1">
-                    <Link to="/produto/$slug" params={{ slug: l.slug }} className="font-medium">{l.product.name}</Link>
-                    <div className="text-xs text-muted-foreground">{l.variant} · {brl(l.price)}</div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <button aria-label="Diminuir" onClick={() => c.setQty(l.slug, l.variant, l.qty - 1)} className="rounded-full border border-border p-1.5"><Minus className="h-3 w-3" /></button>
-                      <span className="w-6 text-center">{l.qty}</span>
-                      <button aria-label="Aumentar" onClick={() => c.setQty(l.slug, l.variant, l.qty + 1)} className="rounded-full border border-border p-1.5"><Plus className="h-3 w-3" /></button>
-                      <button aria-label="Remover" onClick={() => c.remove(l.slug, l.variant)} className="ml-3 text-muted-foreground"><Trash2 className="h-4 w-4" /></button>
+            <div className="min-w-0">
+              <ul className="divide-y divide-border">
+                {c.lines.map((l) => (
+                  <li key={l.slug + l.variant + (l.offer ?? "")} className="flex gap-4 py-4">
+                    <img src={l.product.images[0]} alt="" className="h-24 w-24 shrink-0 rounded-lg bg-card-image object-contain" />
+                    <div className="min-w-0 flex-1">
+                      <Link to="/produto/$slug" params={{ slug: l.slug }} className="font-medium">{l.product.name}</Link>
+                      <div className="text-xs text-muted-foreground">{l.variant} · {brl(l.price)}</div>
+                      {l.offer && (
+                        <div className="mt-1 inline-block rounded-full bg-foreground px-2.5 py-0.5 text-[11px] font-medium text-background">
+                          {OFFER_LABEL[l.offer]}{(l.offer === "kit2" || l.offer === "kit3") ? ` · ${l.units} un. no total` : ""}
+                        </div>
+                      )}
+                      <div className="mt-2 flex items-center gap-2">
+                        <button aria-label="Diminuir" onClick={() => c.setQty(l.slug, l.variant, l.qty - 1, l.offer)} className="rounded-full border border-border p-1.5"><Minus className="h-3 w-3" /></button>
+                        <span className="w-6 text-center">{l.qty}</span>
+                        <button aria-label="Aumentar" onClick={() => c.setQty(l.slug, l.variant, l.qty + 1, l.offer)} className="rounded-full border border-border p-1.5"><Plus className="h-3 w-3" /></button>
+                        <button aria-label="Remover" onClick={() => c.remove(l.slug, l.variant, l.offer)} className="ml-3 text-muted-foreground"><Trash2 className="h-4 w-4" /></button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="font-semibold">{brl(l.total)}</div>
-                </li>
-              ))}
-            </ul>
+                    <div className="shrink-0 text-right">
+                      {l.offer && <div className="text-xs text-muted-foreground line-through">{brl(l.gross)}</div>}
+                      <div className="font-semibold">{brl(l.net)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Suggestions />
+            </div>
             <aside className="space-y-4">
               <ShippingBar subtotal={c.subtotal} />
-              <Summary subtotal={c.subtotal} />
-              <Suggestion />
+              <Summary lines={c.lines} />
               <Link to="/checkout" className="hidden rounded-full bg-action py-3.5 text-center font-medium text-action-foreground lg:block">Finalizar minha compra</Link>
               <Link to="/loja" className="block text-center text-sm underline">Continuar comprando</Link>
             </aside>

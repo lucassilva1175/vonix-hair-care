@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getProduct, hasFreeShipping, installments, pixPrice, products } from "@/lib/store";
+import { checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineTotals, pixPrice, products } from "@/lib/store";
 
 describe("regras comerciais", () => {
   it("catálogo tem 43 produtos", () => expect(products.length).toBe(43));
@@ -19,19 +19,78 @@ describe("regras comerciais", () => {
   it("Pix 5% sobre o novo preço", () => expect(pixPrice(174.9)).toBe(166.16));
 });
 
-import { checkoutTotals } from "@/lib/store";
+describe("ofertas por linha (não cumulativas)", () => {
+  it("Fio de Luz profissional: 1un 166,16 / kit2 307,82 / kit3 419,76", () => {
+    expect(lineTotals(174.9, 1, "comp5").net).toBe(166.16);
+    expect(lineTotals(174.9, 1, "kit2")).toMatchObject({ net: 307.82, gross: 349.8, units: 2 });
+    expect(lineTotals(174.9, 1, "kit3")).toMatchObject({ net: 419.76, gross: 524.7, units: 3 });
+  });
+  it("complemento consumidor: Sérum Argan 84,90 → 80,66 (economia 4,24)", () => {
+    const t = lineTotals(84.9, 1, "comp5");
+    expect(t.net).toBe(80.66);
+    expect(Math.round((t.gross - t.net) * 100) / 100).toBe(4.24);
+  });
+  it("linha normal não tem desconto", () => {
+    expect(lineTotals(154.9, 2)).toMatchObject({ net: 309.8, gross: 309.8, units: 2 });
+  });
+});
+
 describe("checkout", () => {
+  const line = (gross: number, net = gross, offer?: "comp5" | "kit2" | "kit3") => ({ gross, net, offer });
   it("Banana e Mel no Pix: 147,16 COM frete grátis (base antes do desconto)", () => {
-    expect(checkoutTotals(154.9, "pix")).toMatchObject({ net: 147.16, discount: 7.74, freeShipping: true });
+    expect(checkoutTotals([line(154.9)], "pix")).toMatchObject({ net: 147.16, pixDiscount: 7.74, freeShipping: true });
   });
   it("Banana e Mel no cartão: 154,90 com frete grátis", () => {
-    expect(checkoutTotals(154.9, "card")).toMatchObject({ net: 154.9, freeShipping: true });
+    expect(checkoutTotals([line(154.9)], "card")).toMatchObject({ net: 154.9, freeShipping: true });
   });
-  it("exemplo de cupom de 10%: 139,41 e mantém o frete grátis", () => {
-    expect(checkoutTotals(154.9, "card", 0.1)).toMatchObject({ net: 139.41, couponDiscount: 15.49, freeShipping: true });
+  it("cupom de 10%: 139,41 e mantém o frete grátis", () => {
+    expect(checkoutTotals([line(154.9)], "card", 0.1)).toMatchObject({ net: 139.41, couponDiscount: 15.49, freeShipping: true });
   });
   it("frete grátis some se a base cair para 150 ou menos", () => {
-    expect(checkoutTotals(150, "pix").freeShipping).toBe(false);
-    expect(checkoutTotals(150.01, "pix").freeShipping).toBe(true);
+    expect(checkoutTotals([line(150)], "pix").freeShipping).toBe(false);
+    expect(checkoutTotals([line(150.01)], "pix").freeShipping).toBe(true);
+  });
+  it("pedido misto: 2 Banana e Mel + 1 Café Verde = 424,70 no cartão; Sérum com 5% soma 80,66 → 505,36", () => {
+    const lines = [line(309.8), line(114.9), line(84.9, 80.66, "comp5")];
+    expect(checkoutTotals(lines, "card")).toMatchObject({ gross: 509.6, net: 505.36, offerDiscount: 4.24 });
+  });
+  it("Pix NUNCA incide sobre linha com oferta: só nos itens normais", () => {
+    const lines = [line(309.8), line(114.9), line(84.9, 80.66, "comp5")];
+    const t = checkoutTotals(lines, "pix");
+    // 5% apenas sobre 424,70 = 21,24 (403,47) + 80,66 = 484,13
+    expect(t.pixDiscount).toBe(21.23);
+    expect(t.net).toBe(484.13);
+  });
+  it("kit profissional não recebe Pix nem cupom por cima", () => {
+    const lines = [line(349.8, 307.82, "kit2")];
+    expect(checkoutTotals(lines, "pix", 0.1)).toMatchObject({ net: 307.82, pixDiscount: 0, couponDiscount: 0 });
+  });
+  it("cupom não duplica redução de linha promocional, mas vale nos demais itens", () => {
+    const lines = [line(100), line(349.8, 307.82, "kit2")];
+    const t = checkoutTotals(lines, "card", 0.1);
+    expect(t.couponDiscount).toBe(10);
+    expect(t.net).toBe(397.82);
+  });
+});
+
+describe("classificação e complementos", () => {
+  it("progressivas e linha Fio de Luz são somente de salão", () => {
+    expect(isProOnly("progressiva-fio-de-luz")).toBe(true);
+    expect(isProOnly("shampoo-fio-de-luz-anti-residuo")).toBe(true);
+    expect(isProOnly("kit-banana-e-mel")).toBe(false);
+  });
+  it("progressiva Fio de Luz sugere o shampoo anti-resíduo de preparo", () => {
+    const s = complementsFor(["progressiva-fio-de-luz"]);
+    expect(s[0]?.slug).toBe("shampoo-fio-de-luz-anti-residuo");
+  });
+  it("kits de casa sugerem Sérum Argan / Defrizante / Perfume Capilar", () => {
+    const s = complementsFor(["kit-banana-e-mel", "kit-cafe-verde"]).map((p) => p.slug);
+    expect(s).toEqual(["serum-argan", "defrizante", "perfume-capilar-vonix"]);
+  });
+  it("nunca sugere o que já está no carrinho nem kits", () => {
+    const s = complementsFor(["kit-banana-e-mel", "serum-argan"]).map((p) => p.slug);
+    expect(s).not.toContain("serum-argan");
+    expect(s).not.toContain("kit-banana-e-mel");
+    expect(s.every((slug) => getProduct(slug)!.category !== "kits")).toBe(true);
   });
 });
