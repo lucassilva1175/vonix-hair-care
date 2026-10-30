@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Heart, Menu, MessageCircle, Search, ShoppingBag, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import {
@@ -7,9 +7,11 @@ import {
   discountPct,
   installments,
   pixPrice,
+  useAudience,
   useCart,
   useFavorites,
   WHATSAPP,
+  type Audience,
   type Product,
 } from "@/lib/store";
 
@@ -18,7 +20,7 @@ export const LOGO = `${SRC}/assets/vonix-logo-optimized-BP5ZgeGC.webp`;
 
 const MARQUEE = [
   `ATÉ ${MAX_DISCOUNT}% OFF EM PRODUTOS SELECIONADOS`,
-  "FRETE GRÁTIS EM COMPRAS ACIMA DE R$ 150,00",
+  "FRETE GRÁTIS ACIMA DE R$ 150 EM PRODUTOS, ANTES DOS DESCONTOS",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
   "5% DE DESCONTO NO PIX",
   "ESQUENTA BLACK FRIDAY",
@@ -58,9 +60,39 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
   );
 }
 
+function AudienceSwitch() {
+  const { audience, set } = useAudience();
+  const nav = useNavigate();
+  const go = (a: Audience) => {
+    set(a);
+    nav({ to: "/loja", search: a ? { uso: a } : {} });
+  };
+  const pill = (active: boolean) =>
+    `rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+      active ? "border-action bg-action text-action-foreground" : "border-border bg-background hover:border-foreground"
+    }`;
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Para quem é a compra">
+      <button className={pill(audience === "casa")} onClick={() => go("casa")}>
+        Para cuidar em casa
+      </button>
+      <button className={pill(audience === "salao")} onClick={() => go("salao")}>
+        Para meu salão
+      </button>
+      {audience && (
+        <button className="text-xs underline" onClick={() => go(null)}>
+          Ver todos os produtos
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const { count } = useCart();
   const [open, setOpen] = useState(false);
+  const path = useLocation().pathname;
+  const hideWhatsApp = path === "/carrinho" || path === "/checkout";
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       <div className="overflow-hidden bg-marquee py-2.5 text-xs font-medium tracking-wide text-marquee-foreground">
