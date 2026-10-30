@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Shell } from "@/components/site";
-import { brl, checkoutTotals, installments, useCart } from "@/lib/store";
+import { brl, checkoutTotals, getSavedCep, installments, saveCep, useCart } from "@/lib/store";
 import { ShippingBar } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/checkout")({
@@ -30,6 +30,11 @@ function Checkout() {
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((old) => ({ ...old, [k]: e.target.value }));
 
+  useEffect(() => {
+    const saved = getSavedCep();
+    if (saved) setF((old) => (old.cep ? old : { ...old, cep: saved }));
+  }, []);
+
   const t = checkoutTotals(c.subtotal, pay);
   const tPix = checkoutTotals(c.subtotal, "pix");
   const tCard = checkoutTotals(c.subtotal, "card");
@@ -44,6 +49,7 @@ function Checkout() {
         setCepMsg("CEP não encontrado. Preencha o endereço manualmente.");
       } else {
         setF((old) => ({ ...old, rua: r.logradouro ?? "", bairro: r.bairro ?? "", cidade: r.localidade ?? "", uf: r.uf ?? "" }));
+        saveCep(v);
         setCepMsg("Endereço preenchido — confira e complete o número.");
       }
     } catch {

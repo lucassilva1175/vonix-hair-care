@@ -42,6 +42,16 @@ export function installments(total: number, n = MAX_INSTALLMENTS) {
 
 /** Free shipping strictly ABOVE R$ 150,00 of product subtotal (after discounts). */
 export const hasFreeShipping = (subtotal: number) => subtotal > FREE_SHIPPING_ABOVE;
+
+const CEP_KEY = "vonix-cep";
+export const getSavedCep = () => (typeof window === "undefined" ? "" : (localStorage.getItem(CEP_KEY) ?? ""));
+export const saveCep = (cep: string) => {
+  if (typeof window !== "undefined") localStorage.setItem(CEP_KEY, cep);
+};
+export const maskCep = (v: string) => {
+  const d = v.replace(/\D/g, "").slice(0, 8);
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+};
 export const missingForFreeShipping = (subtotal: number) =>
   hasFreeShipping(subtotal) ? 0 : Math.max(0, cents(FREE_SHIPPING_ABOVE + 0.01 - subtotal) / 100);
 
