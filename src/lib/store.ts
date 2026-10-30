@@ -58,8 +58,51 @@ export const missingForFreeShipping = (subtotal: number) =>
 export const discountPct = (compare: number | null, price: number) =>
   compare && compare > price ? Math.round((1 - price / compare) * 100) : 0;
 
+/* ---------- professional classification (explicit metadata) ---------- */
+/**
+ * Salon-only products: progressivas and the Fio de Luz line (user-confirmed),
+ * plus items whose own description/short text confirms salon use.
+ * Everything else is "both" (home + professional).
+ */
+export const PRO_ONLY = new Set([
+  "progressiva-fio-de-luz",
+  "progressiva-diamond",
+  "progressiva-lift-em-gel",
+  "progressiva-vonix-special-matizadora",
+  "shampoo-fio-de-luz-anti-residuo",
+  "botox-vonix",
+  "kit-cauterizacao",
+]);
+export const isProOnly = (slug: string) => PRO_ONLY.has(slug);
+
+/* ---------- line offers: 5% complement, pro kits 2un/12% and 3un/20% ---------- */
+export type Offer = "comp5" | "kit2" | "kit3";
+export const OFFER_LABEL: Record<Offer, string> = {
+  comp5: "5% OFF neste item",
+  kit2: "Kit 2 unidades · 12% OFF",
+  kit3: "Kit 3 unidades · 20% OFF",
+};
+
+/** Line totals in cents-safe math. qty = units for comp5/normal, kits for kit2/kit3. */
+export function lineTotals(price: number, qty: number, offer?: Offer) {
+  const u = cents(price);
+  if (offer === "kit2") {
+    const kit = Math.round((u * 2 * 88) / 100);
+    return { gross: (u * 2 * qty) / 100, net: (kit * qty) / 100, units: 2 * qty };
+  }
+  if (offer === "kit3") {
+    const kit = Math.round((u * 3 * 80) / 100);
+    return { gross: (u * 3 * qty) / 100, net: (kit * qty) / 100, units: 3 * qty };
+  }
+  if (offer === "comp5") {
+    const unit = Math.round((u * 95) / 100);
+    return { gross: (u * qty) / 100, net: (unit * qty) / 100, units: qty };
+  }
+  return { gross: (u * qty) / 100, net: (u * qty) / 100, units: qty };
+}
+
 /* ---------- persistent cart & favorites ---------- */
-export type CartItem = { slug: string; variant: string; qty: number };
+export type CartItem = { slug: string; variant: string; qty: number; offer?: Offer };
 
 function createStore<T>(key: string, initial: T) {
   let state = initial;
