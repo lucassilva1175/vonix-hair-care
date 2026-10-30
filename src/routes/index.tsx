@@ -2,7 +2,23 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Grid, Shell, SRC } from "@/components/site";
-import { BEST_SELLERS, getProduct, products } from "@/lib/store";
+import { BEST_SELLERS, MAX_DISCOUNT, brl, discountPct, getProduct, products } from "@/lib/store";
+import masks from "@/data/banner-masks.json";
+
+type Mask = { box: number[]; bg: string };
+function OfferMask({ m, slug, cls }: { m: Mask; slug: string; cls: string }) {
+  const p = getProduct(slug)!;
+  const v = p.variants[0];
+  const off = discountPct(p.compareBase, v.price);
+  const [x, y, w, h] = m.box as [number, number, number, number];
+  return (
+    <div aria-hidden className={`banner-mask absolute flex-col items-center justify-center ${cls}`} style={{ left: `${x}%`, top: `${y}%`, width: `${w}%`, height: `${h}%`, background: m.bg }}>
+      {off > 0 && <span className="bg-foreground px-[0.8em] py-[0.15em] text-[0.9em] tracking-[0.25em] text-background">{off}% OFF</span>}
+      {p.compareBase && <span className="mt-[0.3em] text-[0.8em] line-through opacity-70">De {brl(p.compareBase)}</span>}
+      <span className="font-display text-[2.2em] font-semibold leading-none">Por {brl(v.price)}</span>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,11 +78,13 @@ function Home() {
     <Shell>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
-          <Link to="/produto/$slug" params={{ slug: BANNERS[i]! }}>
+          <Link to="/produto/$slug" params={{ slug: BANNERS[i]! }} className="banner-wrap relative block">
             <picture>
               <source media="(min-width: 768px)" srcSet={`${SRC}/images/home/black-friday-2026/desktop/${i + 1}.webp`} />
               <img src={`${SRC}/images/home/black-friday-2026/mobile/${i + 1}.webp`} alt={`Banner ${i + 1} de 7: ${getProduct(BANNERS[i]!)?.name}`} className="w-full" />
             </picture>
+            <OfferMask m={masks[i]!.desktop} slug={BANNERS[i]!} cls="hidden md:flex" />
+            <OfferMask m={masks[i]!.mobile} slug={BANNERS[i]!} cls="flex md:hidden" />
           </Link>
           <button aria-label="Anterior" onClick={() => setI((i + 6) % 7)} className="absolute left-4 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background">
             <ChevronLeft className="h-4 w-4" />
@@ -123,7 +141,7 @@ function Home() {
         <div className="relative overflow-hidden rounded-2xl">
           <img src={`${SRC}/assets/banner-cupom-bg-Bs3RLSaf.jpg`} alt="" className="h-72 w-full object-cover" />
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-foreground/40 text-center text-background">
-            <span className="text-sm tracking-[0.3em]">ATÉ 33% OFF</span>
+            <span className="text-sm tracking-[0.3em]">ATÉ {MAX_DISCOUNT}% OFF</span>
             <h3 className="font-display text-5xl">Esquenta Black Friday</h3>
             <p className="mt-2 text-sm">Aproveite os preços de Black Friday nos seus favoritos da Vonix Hair.</p>
             <Link to="/loja" className="mt-5 rounded-full bg-background px-6 py-2.5 text-sm text-foreground">Ver ofertas</Link>

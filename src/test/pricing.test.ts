@@ -18,3 +18,13 @@ describe("regras comerciais", () => {
   });
   it("Pix 5% sobre o novo preço", () => expect(pixPrice(174.9)).toBe(166.16));
 });
+
+import { checkoutTotals } from "@/lib/store";
+describe("checkout", () => {
+  it("Banana e Mel no Pix: 147,16 sem frete grátis", () => {
+    expect(checkoutTotals(154.9, "pix")).toMatchObject({ net: 147.16, discount: 7.74, freeShipping: false });
+  });
+  it("Banana e Mel no cartão: 154,90 com frete grátis", () => {
+    expect(checkoutTotals(154.9, "card")).toMatchObject({ net: 154.9, freeShipping: true });
+  });
+});

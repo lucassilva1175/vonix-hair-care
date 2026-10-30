@@ -192,3 +192,16 @@
     font-style: italic;
   }
 }
+
+.banner-wrap {
+  container-type: inline-size;
+}
+.banner-mask {
+  font-size: 1.15cqw;
+  color: oklch(0.2 0 0);
+}
+@media (max-width: 767px) {
+  .banner-mask {
+    font-size: 2.6cqw;
+  }
+}
