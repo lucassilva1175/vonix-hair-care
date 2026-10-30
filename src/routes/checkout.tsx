@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Shell } from "@/components/site";
 import { useCart } from "@/lib/store";
-import { ShippingBar, Summary } from "./carrinho";
+import { ShippingBar, Summary } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
