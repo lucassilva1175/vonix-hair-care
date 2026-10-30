@@ -1,9 +1,9 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { Heart, Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
-import { FREE_SHIPPING_ABOVE, brl, discountPct, getProduct, products, useCart, useFavorites } from "@/lib/store";
+import { FREE_SHIPPING_ABOVE, brl, discountPct, getProduct, getSavedCep, hasFreeShipping, maskCep, products, saveCep, useCart, useFavorites } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
   loader: ({ params }) => {
@@ -25,6 +25,73 @@ export const Route = createFileRoute("/produto/$slug")({
   }),
   component: ProductPage,
 });
+
+function ShippingCalc({ subtotal }: { subtotal: number }) {
+  const [cep, setCep] = useState("");
+  const [dest, setDest] = useState<{ city: string; uf: string } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const saved = getSavedCep();
+    if (saved) setCep(saved);
+  }, []);
+  const calc = async () => {
+    const d = cep.replace(/\D/g, "");
+    if (d.length !== 8) {
+      setErr("Digite um CEP válido no formato 00000-000.");
+      setDest(null);
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${d}/json/`).then((x) => x.json());
+      if (r.erro) {
+        setErr("CEP não encontrado.");
+        setDest(null);
+        return;
+      }
+      saveCep(cep);
+      setDest({ city: r.localidade, uf: r.uf });
+    } catch {
+      setErr("Não foi possível consultar o CEP. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <div className="mt-6 rounded-xl border border-border p-4">
+      <div className="text-sm font-medium">Calcular frete</div>
+      <div className="mt-2 flex gap-2">
+        <input
+          inputMode="numeric"
+          placeholder="00000-000"
+          value={cep}
+          onChange={(e) => setCep(maskCep(e.target.value))}
+          onKeyDown={(e) => e.key === "Enter" && calc()}
+          aria-label="CEP de entrega"
+          className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+        />
+        <button onClick={calc} disabled={loading} className="shrink-0 rounded-full bg-action px-5 text-sm font-medium text-action-foreground disabled:opacity-60">
+          {loading ? "..." : "Calcular"}
+        </button>
+      </div>
+      {err && <p className="mt-2 text-sm text-destructive">{err}</p>}
+      {dest && (
+        <div className="mt-3 text-sm">
+          <p className="text-muted-foreground">Entrega para {dest.city}/{dest.uf}</p>
+          {hasFreeShipping(subtotal) ? (
+            <p className="mt-1 font-medium">Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após o desconto do Pix).</p>
+          ) : (
+            <p className="mt-1 text-muted-foreground">
+              Cotação com transportadoras (Melhor Envio) ainda não conectada nesta prévia — valor e prazo serão exibidos quando a integração for ativada.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ProductPage() {
   const p = Route.useLoaderData();
@@ -94,7 +161,8 @@ function ProductPage() {
                 Adicionar ao carrinho
               </button>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)}.</p>
+            <ShippingCalc subtotal={v.price * qty} />
+            <p className="mt-4 text-sm text-muted-foreground">Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos.</p>
           </div>
         </div>
         {p.description && (

@@ -60,31 +60,28 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
   );
 }
 
-function AudienceSwitch() {
+function AudienceLinks({ onDone }: { onDone?: () => void }) {
   const { audience, set } = useAudience();
   const nav = useNavigate();
   const go = (a: Audience) => {
     set(a);
+    onDone?.();
     nav({ to: "/loja", search: a ? { uso: a } : {} });
   };
-  const pill = (active: boolean) =>
-    `rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
-      active ? "border-action bg-action text-action-foreground" : "border-border bg-background hover:border-foreground"
-    }`;
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Para quem é a compra">
-      <button className={pill(audience === "casa")} onClick={() => go("casa")}>
+    <>
+      <button className={audience === "casa" ? "underline" : "hover:underline"} onClick={() => go("casa")}>
         Para cuidar em casa
       </button>
-      <button className={pill(audience === "salao")} onClick={() => go("salao")}>
+      <button className={audience === "salao" ? "underline" : "hover:underline"} onClick={() => go("salao")}>
         Para meu salão
       </button>
       {audience && (
-        <button className="text-xs underline" onClick={() => go(null)}>
-          Ver todos os produtos
+        <button className="underline" onClick={() => go(null)}>
+          Ver todos
         </button>
       )}
-    </div>
+    </>
   );
 }
 
@@ -112,13 +109,13 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
           <div className="mx-auto hidden w-full max-w-xl flex-col items-center gap-2 lg:flex">
             <SearchBox />
-            <AudienceSwitch />
             <nav className="flex gap-5 text-xs uppercase">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="hover:underline">
                   {n.label}
                 </Link>
               ))}
+              <AudienceLinks />
             </nav>
           </div>
           <div className="ml-auto flex items-center gap-5 text-sm">
@@ -140,7 +137,6 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
         <div className="container-site space-y-2 pb-3 lg:hidden">
           <SearchBox />
-          <AudienceSwitch />
         </div>
       </header>
       {open && (
@@ -158,6 +154,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   {n.label}
                 </Link>
               ))}
+              <AudienceLinks onDone={() => setOpen(false)} />
               <Link to="/favoritos" onClick={() => setOpen(false)}>Favoritos</Link>
               <Link to="/conta" onClick={() => setOpen(false)}>Entrar / Meus pedidos</Link>
               <Link to="/carrinho" onClick={() => setOpen(false)}>Carrinho</Link>
