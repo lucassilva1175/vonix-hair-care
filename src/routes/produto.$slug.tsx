@@ -34,7 +34,7 @@ function ProductPage() {
   const [img, setImg] = useState(0);
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
-  const v = p.variants[vi];
+  const v = p.variants[vi] ?? p.variants[0]!;
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
   const related = products.filter((x) => x.category === p.category && x.slug !== p.slug).slice(0, 4);

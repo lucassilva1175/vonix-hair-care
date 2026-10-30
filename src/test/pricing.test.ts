@@ -4,7 +4,7 @@ import { getProduct, hasFreeShipping, installments, pixPrice, products } from "@
 describe("regras comerciais", () => {
   it("catálogo tem 43 produtos", () => expect(products.length).toBe(43));
   it("preço já inclui +15 uma vez", () => {
-    expect(getProduct("progressiva-fio-de-luz")!.variants[0].price).toBe(174.9);
+    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(174.9);
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([74.9, 194.9]);
   });
   it("frete grátis somente acima de 150", () => {
