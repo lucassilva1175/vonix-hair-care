@@ -10,12 +10,12 @@ export type Product = {
   short: string;
   description: string;
   images: string[];
-  variants: Variant[];
+  variants: [Variant, ...Variant[]];
   compareBase: number | null;
   reviews: number;
 };
 
-export const products = raw as Product[];
+export const products = raw as unknown as Product[];
 export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
 
 export const FREE_SHIPPING_ABOVE = 150;

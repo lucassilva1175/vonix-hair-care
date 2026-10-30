@@ -170,10 +170,10 @@ function Footer() {
         </div>
         <div className="flex flex-col gap-2">
           <h4 className="mb-2 font-semibold">Ajuda</h4>
-          <Link to="/sobre">Sobre a Vonix Hair</Link>
+          <Link to="/$page" params={{ page: "sobre" }}>Sobre a Vonix Hair</Link>
           <Link to="/conta">Meus pedidos</Link>
           <Link to="/favoritos">Favoritos</Link>
-          <Link to="/contato">Contato</Link>
+          <Link to="/$page" params={{ page: "contato" }}>Contato</Link>
         </div>
         <div className="flex flex-col gap-2 opacity-90">
           <h4 className="mb-2 font-semibold">Atendimento</h4>
@@ -188,10 +188,10 @@ function Footer() {
       <div className="container-site flex flex-wrap justify-between gap-3 border-t border-marquee-foreground/15 py-5 text-xs opacity-80">
         <span>© 2026 Vonix Hair. Todos os direitos reservados.</span>
         <div className="flex flex-wrap gap-4">
-          <Link to="/politica-de-privacidade">Política de Privacidade</Link>
-          <Link to="/termos-de-uso">Termos de Uso</Link>
-          <Link to="/politica-de-trocas-e-devolucoes">Política de Troca e Devoluções</Link>
-          <Link to="/politica-de-frete">Política de Frete</Link>
+          <Link to="/$page" params={{ page: "politica-de-privacidade" }}>Política de Privacidade</Link>
+          <Link to="/$page" params={{ page: "termos-de-uso" }}>Termos de Uso</Link>
+          <Link to="/$page" params={{ page: "politica-de-trocas-e-devolucoes" }}>Política de Troca e Devoluções</Link>
+          <Link to="/$page" params={{ page: "politica-de-frete" }}>Política de Frete</Link>
         </div>
       </div>
     </footer>

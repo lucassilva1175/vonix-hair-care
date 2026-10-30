@@ -18,11 +18,11 @@ export const Route = createFileRoute("/$page")({
     return { slug: params.page, text: P[params.page] };
   },
   head: ({ loaderData }) => {
-    const t = loaderData ? `${TITLES[loaderData.slug]} — Vonix Hair` : "Página não encontrada — Vonix Hair";
+    const t = loaderData ? `${TITLES[loaderData.slug] ?? "Vonix Hair"} — Vonix Hair` : "Página não encontrada — Vonix Hair";
     return {
       meta: [
         { title: t },
-        { name: "description", content: `${TITLES[loaderData?.slug ?? ""] ?? "Vonix Hair"} da loja Vonix Hair.` },
+        { name: "description", content: `${TITLES[loaderData?.slug ?? ""] ?? "Página"} da loja Vonix Hair.` },
         { property: "og:title", content: t },
         { property: "og:description", content: "Vonix Hair — cosméticos capilares profissionais." },
       ],
