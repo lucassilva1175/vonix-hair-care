@@ -1,4 +1,4 @@
-import { FREE_SHIPPING_ABOVE, brl, hasFreeShipping, installments, missingForFreeShipping, pixPrice } from "@/lib/store";
+import { FREE_SHIPPING_ABOVE, brl, checkoutTotals, hasFreeShipping, installments, missingForFreeShipping, type Offer } from "@/lib/store";
 
 export function ShippingBar({ subtotal }: { subtotal: number }) {
   const free = hasFreeShipping(subtotal);
@@ -16,16 +16,21 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
   );
 }
 
-export function Summary({ subtotal }: { subtotal: number }) {
-  const free = hasFreeShipping(subtotal);
-  const i = installments(subtotal);
+export function Summary({ lines }: { lines: { gross: number; net: number; offer?: Offer }[] }) {
+  const t = checkoutTotals(lines, "card");
+  const tPix = checkoutTotals(lines, "pix");
+  const i = installments(t.net);
   return (
     <div className="space-y-2 text-sm">
-      <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(subtotal)}</span></div>
-      <div className="flex justify-between"><span>Frete</span><span>{free ? "Grátis" : "Calculado pelo CEP no checkout"}</span></div>
-      <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><span>Total no Pix (5% off)</span><span>{brl(pixPrice(subtotal))}</span></div>
-      <div className="flex justify-between"><span>Total no cartão{free ? "" : " (sem frete)"}</span><span>{brl(subtotal)}</span></div>
+      <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(t.gross)}</span></div>
+      {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas (5/12/20%)</span><span>− {brl(t.offerDiscount)}</span></div>}
+      <div className="flex justify-between"><span>Frete</span><span>{t.freeShipping ? "Grátis" : "Calculado pelo CEP no checkout"}</span></div>
+      <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><span>Total no Pix (5% off*)</span><span>{brl(tPix.net)}</span></div>
+      <div className="flex justify-between"><span>Total no cartão{t.freeShipping ? "" : " (sem frete)"}</span><span>{brl(t.net)}</span></div>
       <div className="text-muted-foreground">ou até 6x de {brl(i.value)} sem juros{i.first !== i.value ? ` (1ª de ${brl(i.first)})` : ""}</div>
+      {t.hasOffers && (
+        <p className="text-xs text-muted-foreground">*Ofertas não cumulativas no mesmo item: o desconto do Pix vale apenas para itens sem outra oferta.</p>
+      )}
     </div>
   );
 }

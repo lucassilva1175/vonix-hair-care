@@ -3,7 +3,7 @@ import { Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
-import { FREE_SHIPPING_ABOVE, brl, discountPct, getProduct, getSavedCep, hasFreeShipping, maskCep, products, saveCep, useCart, useFavorites } from "@/lib/store";
+import { FREE_SHIPPING_ABOVE, brl, discountPct, getProduct, getSavedCep, hasFreeShipping, isProOnly, lineTotals, maskCep, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
   loader: ({ params }) => {
@@ -96,18 +96,31 @@ function ShippingCalc({ subtotal }: { subtotal: number }) {
   );
 }
 
+const PRO_OFFERS: { offer: Offer; label: string; pct: number }[] = [
+  { offer: "comp5", label: "1 unidade", pct: 5 },
+  { offer: "kit2", label: "Kit 2 unidades", pct: 12 },
+  { offer: "kit3", label: "Kit 3 unidades", pct: 20 },
+];
+
 function ProductPage() {
   const p = Route.useLoaderData();
   const cart = useCart();
   const fav = useFavorites();
+  const { audience } = useAudience();
   const nav = useNavigate();
   const [img, setImg] = useState(0);
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
+  const [offer, setOffer] = useState<Offer>("comp5");
   const v = p.variants[vi] ?? p.variants[0]!;
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
   const related = products.filter((x) => x.category === p.category && x.slug !== p.slug).slice(0, 4);
+  const proMode = isProOnly(p.slug) && audience === "salao";
+  const sel = proMode ? lineTotals(v.price, qty, offer) : null;
+  const add = () => {
+    cart.add(p.slug, v.label, qty, proMode ? offer : undefined);
+  };
   return (
     <Shell>
       <div className="container-site py-8">
@@ -132,7 +145,36 @@ function ProductPage() {
             <h1 className="mt-3 font-display text-4xl md:text-5xl">{p.name}</h1>
             <Stars count={p.reviews} />
             {p.short && <p className="mt-3 text-muted-foreground">{p.short}</p>}
-            <div className="mt-6"><PriceBlock price={v.price} compare={compare} big /></div>
+            {proMode ? (
+              <div className="mt-6">
+                <div className="mb-2 text-sm font-medium">Condição profissional — mesmo produto, mesmo tamanho</div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {PRO_OFFERS.map((o) => {
+                    const t = lineTotals(v.price, 1, o.offer);
+                    return (
+                      <button
+                        key={o.offer}
+                        onClick={() => setOffer(o.offer)}
+                        className={`rounded-xl border p-3 text-left text-sm ${offer === o.offer ? "border-foreground bg-foreground text-background" : "border-border"}`}
+                      >
+                        <div className="font-medium">{o.label}</div>
+                        <div className="text-xs opacity-80">{o.pct}% OFF</div>
+                        <div className="mt-1 font-semibold">{brl(t.net)}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Ofertas não cumulativas no mesmo item: não somam com o desconto do Pix nem com cupom.
+                </p>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-muted-foreground line-through">{brl(sel!.gross)}</span>
+                  <span className="text-3xl font-semibold">{brl(sel!.net)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6"><PriceBlock price={v.price} compare={compare} big /></div>
+            )}
             {p.variants.length > 1 && (
               <div className="mt-6">
                 <div className="mb-2 text-sm font-medium">Tamanho</div>
@@ -152,19 +194,20 @@ function ProductPage() {
                 <span className="w-8 text-center" data-testid="qty">{qty}</span>
                 <button aria-label="Aumentar" className="p-3" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4" /></button>
               </div>
+              <span className="text-xs text-muted-foreground">{proMode && offer !== "comp5" ? (offer === "kit2" ? "kits de 2 un." : "kits de 3 un.") : "unidade(s)"}</span>
               <button aria-label="Favoritar" onClick={() => fav.toggle(p.slug)} className="rounded-full border border-border p-3">
                 <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
               </button>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button className="rounded-full bg-action py-3.5 font-medium text-action-foreground" onClick={() => { cart.add(p.slug, v.label, qty); nav({ to: "/carrinho" }); }}>
+              <button className="rounded-full bg-action py-3.5 font-medium text-action-foreground" onClick={() => { add(); nav({ to: "/carrinho" }); }}>
                 Comprar agora
               </button>
-              <button className="rounded-full border border-foreground py-3.5 font-medium" onClick={() => { cart.add(p.slug, v.label, qty); toast.success("Adicionado ao carrinho"); }}>
+              <button className="rounded-full border border-foreground py-3.5 font-medium" onClick={() => { add(); toast.success("Adicionado ao carrinho"); }}>
                 Adicionar ao carrinho
               </button>
             </div>
-            <ShippingCalc subtotal={v.price * qty} />
+            <ShippingCalc subtotal={sel ? sel.net : v.price * qty} />
             <p className="mt-4 text-sm text-muted-foreground">Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos.</p>
           </div>
         </div>

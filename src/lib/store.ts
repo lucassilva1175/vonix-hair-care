@@ -58,8 +58,51 @@ export const missingForFreeShipping = (subtotal: number) =>
 export const discountPct = (compare: number | null, price: number) =>
   compare && compare > price ? Math.round((1 - price / compare) * 100) : 0;
 
+/* ---------- professional classification (explicit metadata) ---------- */
+/**
+ * Salon-only products: progressivas and the Fio de Luz line (user-confirmed),
+ * plus items whose own description/short text confirms salon use.
+ * Everything else is "both" (home + professional).
+ */
+export const PRO_ONLY = new Set([
+  "progressiva-fio-de-luz",
+  "progressiva-diamond",
+  "progressiva-lift-em-gel",
+  "progressiva-vonix-special-matizadora",
+  "shampoo-fio-de-luz-anti-residuo",
+  "botox-vonix",
+  "kit-cauterizacao",
+]);
+export const isProOnly = (slug: string) => PRO_ONLY.has(slug);
+
+/* ---------- line offers: 5% complement, pro kits 2un/12% and 3un/20% ---------- */
+export type Offer = "comp5" | "kit2" | "kit3";
+export const OFFER_LABEL: Record<Offer, string> = {
+  comp5: "5% OFF neste item",
+  kit2: "Kit 2 unidades · 12% OFF",
+  kit3: "Kit 3 unidades · 20% OFF",
+};
+
+/** Line totals in cents-safe math. qty = units for comp5/normal, kits for kit2/kit3. */
+export function lineTotals(price: number, qty: number, offer?: Offer) {
+  const u = cents(price);
+  if (offer === "kit2") {
+    const kit = Math.round((u * 2 * 88) / 100);
+    return { gross: (u * 2 * qty) / 100, net: (kit * qty) / 100, units: 2 * qty };
+  }
+  if (offer === "kit3") {
+    const kit = Math.round((u * 3 * 80) / 100);
+    return { gross: (u * 3 * qty) / 100, net: (kit * qty) / 100, units: 3 * qty };
+  }
+  if (offer === "comp5") {
+    const unit = Math.round((u * 95) / 100);
+    return { gross: (u * qty) / 100, net: (unit * qty) / 100, units: qty };
+  }
+  return { gross: (u * qty) / 100, net: (u * qty) / 100, units: qty };
+}
+
 /* ---------- persistent cart & favorites ---------- */
-export type CartItem = { slug: string; variant: string; qty: number };
+export type CartItem = { slug: string; variant: string; qty: number; offer?: Offer };
 
 function createStore<T>(key: string, initial: T) {
   let state = initial;
@@ -103,30 +146,40 @@ export function useCart() {
     .map((i) => {
       const p = getProduct(i.slug);
       const v = p?.variants.find((x) => x.label === i.variant) ?? p?.variants[0];
-      return p && v ? { ...i, product: p, price: v.price, total: v.price * i.qty } : null;
+      if (!p || !v) return null;
+      const t = lineTotals(v.price, i.qty, i.offer);
+      return { ...i, product: p, price: v.price, gross: t.gross, net: t.net, units: t.units, total: t.net };
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
-  const subtotal = cents(lines.reduce((s, l) => s + l.total, 0)) / 100;
-  const count = lines.reduce((s, l) => s + l.qty, 0);
+  const subtotal = cents(lines.reduce((s, l) => s + l.gross, 0)) / 100;
+  const netSubtotal = cents(lines.reduce((s, l) => s + l.net, 0)) / 100;
+  const count = lines.reduce((s, l) => s + l.units, 0);
+  const key = (i: { slug: string; variant: string; offer?: Offer }) => `${i.slug}|${i.variant}|${i.offer ?? ""}`;
   return {
     lines,
     subtotal,
+    netSubtotal,
     count,
-    add: (slug: string, variant: string, qty = 1) =>
+    add: (slug: string, variant: string, qty = 1, offer?: Offer) =>
       cartStore.set((s) => {
-        const ex = s.find((i) => i.slug === slug && i.variant === variant);
+        const k = key({ slug, variant, offer });
+        const ex = s.find((i) => key(i) === k);
         return ex
-          ? s.map((i) => (i === ex ? { ...i, qty: i.qty + qty } : i))
-          : [...s, { slug, variant, qty }];
+          ? s.map((i) => (key(i) === k ? { ...i, qty: i.qty + qty } : i))
+          : [...s, { slug, variant, qty, ...(offer ? { offer } : {}) }];
       }),
-    setQty: (slug: string, variant: string, qty: number) =>
-      cartStore.set((s) =>
-        qty <= 0
-          ? s.filter((i) => !(i.slug === slug && i.variant === variant))
-          : s.map((i) => (i.slug === slug && i.variant === variant ? { ...i, qty } : i)),
-      ),
-    remove: (slug: string, variant: string) =>
-      cartStore.set((s) => s.filter((i) => !(i.slug === slug && i.variant === variant))),
+    setQty: (slug: string, variant: string, qty: number, offer?: Offer) =>
+      cartStore.set((s) => {
+        const k = key({ slug, variant, offer });
+        return qty <= 0
+          ? s.filter((i) => key(i) !== k)
+          : s.map((i) => (key(i) === k ? { ...i, qty } : i));
+      }),
+    remove: (slug: string, variant: string, offer?: Offer) =>
+      cartStore.set((s) => {
+        const k = key({ slug, variant, offer });
+        return s.filter((i) => key(i) !== k);
+      }),
     clear: () => cartStore.set(() => []),
   };
 }
@@ -160,21 +213,31 @@ export const BEST_SELLERS = ["kit-cafe-verde", "kit-banana-e-mel", "kit-cronogra
 export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compareBase, p.variants[0].price)));
 
 /**
- * Checkout totals in cents. Free-shipping eligibility uses the product subtotal
- * BEFORE coupon and payment discounts: a Pix discount or valid coupon never
- * removes free shipping once the base is above R$ 150.
+ * Order totals in cents, line-aware.
+ * - Free shipping: product subtotal BEFORE any discount strictly above R$ 150.
+ * - Line offers (comp5/kit2/kit3) are already baked into each line's net and
+ *   are NEVER cumulative: Pix 5% and coupons apply only to lines without an offer.
  */
-export function checkoutTotals(subtotal: number, method: "pix" | "card", couponPct = 0) {
-  const gross = cents(subtotal);
-  const afterCoupon = gross - Math.round(gross * couponPct);
-  const net = method === "pix" ? Math.round((afterCoupon * 95) / 100) : afterCoupon;
+export function checkoutTotals(
+  lines: { gross: number; net: number; offer?: Offer }[],
+  method: "pix" | "card",
+  couponPct = 0,
+) {
+  const gross = cents(lines.reduce((s, l) => s + l.gross, 0));
+  const net = cents(lines.reduce((s, l) => s + l.net, 0));
+  const eligible = cents(lines.reduce((s, l) => s + (l.offer ? 0 : l.net), 0));
+  const couponDisc = Math.round(eligible * couponPct);
+  const pixDisc = method === "pix" ? Math.round(((eligible - couponDisc) * 95) / 100) - (eligible - couponDisc) : 0;
+  const total = net - couponDisc + pixDisc;
   return {
     gross: gross / 100,
-    couponDiscount: (gross - afterCoupon) / 100,
-    pixDiscount: (afterCoupon - net) / 100,
-    discount: (gross - net) / 100,
-    net: net / 100,
+    offerDiscount: (gross - net) / 100,
+    couponDiscount: couponDisc / 100,
+    pixDiscount: -pixDisc / 100,
+    discount: (gross - total) / 100,
+    net: total / 100,
     freeShipping: gross > FREE_SHIPPING_ABOVE * 100,
+    hasOffers: lines.some((l) => l.offer),
   };
 }
 
@@ -189,8 +252,42 @@ export function useAudience() {
 /** Usage filters based only on indications confirmed in the catalog descriptions. */
 export const USAGE: Record<string, (p: Product) => boolean> = {
   casa: (p) =>
-    p.category === "kits" ||
-    p.category === "finalizadores" ||
-    /casa|doméstic|dia a dia|diário/i.test(p.name + " " + p.description),
-  salao: (p) => /profissional|salão/i.test(p.name + " " + p.description),
+    !isProOnly(p.slug) &&
+    (p.category === "kits" ||
+      p.category === "finalizadores" ||
+      /casa|doméstic|dia a dia|diário/i.test(p.name + " " + p.description)),
+  salao: (p) =>
+    isProOnly(p.slug) || p.category === "kits" || /profissional|salão/i.test(p.name + " " + p.description),
 };
+
+/**
+ * Contextual complement matrix: ordered rules keyed by what is already in the
+ * cart, using only compatibilities confirmed in the catalog descriptions.
+ * Never suggests a product already in the cart (any variant) nor kits
+ * (kits don't get the 5% complement offer).
+ */
+const COMPLEMENT_RULES: [RegExp, string[]][] = [
+  [/progressiva-fio-de-luz/, ["shampoo-fio-de-luz-anti-residuo", "serum-argan", "reparador-de-pontas"]],
+  [/progressiva|botox|selagem|cauterizacao/, ["shampoo-diamond-anti-residuo", "defrizante", "mascara-efeito-teia-tomba-cabelo"]],
+  [/kit-banana-e-mel|kit-cafe-verde|kit-coco-nutri|kit-cachos|kit-cronograma|kit-whey|kit-desmaia/, ["serum-argan", "defrizante", "perfume-capilar-vonix"]],
+  [/cacho/, ["mascara-efeito-teia-coco-nutri", "defrizante", "serum-argan"]],
+  [/mascara|hidrat|nutri|reconstru|queratina|whey/, ["reparador-de-pontas", "serum-argan", "ampola-de-hidratacao-mousse-flash"]],
+  [/matiz/, ["kit-matizador-shampoo-e-mascara", "serum-argan"]],
+];
+
+export function complementsFor(cartSlugs: string[], max = 3): Product[] {
+  const inCart = new Set(cartSlugs);
+  const ordered: string[] = [];
+  for (const [re, slugs] of COMPLEMENT_RULES) if (cartSlugs.some((s) => re.test(s))) ordered.push(...slugs);
+  ordered.push(...BEST_SELLERS);
+  const seen = new Set<string>();
+  const out: Product[] = [];
+  for (const s of ordered) {
+    if (seen.has(s) || inCart.has(s)) continue;
+    seen.add(s);
+    const p = getProduct(s);
+    if (p && p.category !== "kits") out.push(p);
+    if (out.length >= max) break;
+  }
+  return out;
+}

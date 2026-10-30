@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/site";
-import { brl, checkoutTotals, getSavedCep, installments, saveCep, useCart } from "@/lib/store";
+import { OFFER_LABEL, brl, checkoutTotals, getSavedCep, installments, saveCep, useCart } from "@/lib/store";
 import { ShippingBar } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/checkout")({
@@ -35,9 +35,9 @@ function Checkout() {
     if (saved) setF((old) => (old.cep ? old : { ...old, cep: saved }));
   }, []);
 
-  const t = checkoutTotals(c.subtotal, pay);
-  const tPix = checkoutTotals(c.subtotal, "pix");
-  const tCard = checkoutTotals(c.subtotal, "card");
+  const t = checkoutTotals(c.lines, pay);
+  const tPix = checkoutTotals(c.lines, "pix");
+  const tCard = checkoutTotals(c.lines, "card");
   const inst = installments(t.net);
 
   const lookup = async (v: string) => {
@@ -109,7 +109,7 @@ function Checkout() {
           <fieldset className="space-y-3">
             <legend className="mb-1 text-lg font-semibold">3. Pagamento</legend>
             <label className={`flex items-center justify-between rounded-lg border p-3 text-sm ${pay === "pix" ? "border-action bg-card font-medium" : "border-border"}`}>
-              <span className="flex gap-2"><input type="radio" name="pay" checked={pay === "pix"} onChange={() => setPay("pix")} /> Pix (5% de desconto)</span>
+              <span className="flex gap-2"><input type="radio" name="pay" checked={pay === "pix"} onChange={() => setPay("pix")} /> Pix (5% de desconto nos itens sem outra oferta)</span>
               <b>{brl(tPix.net)}</b>
             </label>
             <label className={`flex items-center justify-between rounded-lg border p-3 text-sm ${pay === "card" ? "border-action bg-card font-medium" : "border-border"}`}>
@@ -142,15 +142,20 @@ function Checkout() {
           <ShippingBar subtotal={c.subtotal} />
           <ul className="space-y-2 text-sm">
             {c.lines.map((l) => (
-              <li key={l.slug + l.variant} className="flex justify-between gap-2">
-                <span>{l.qty}× {l.product.name} <span className="text-muted-foreground">({l.variant})</span></span>
-                <span>{brl(l.total)}</span>
+              <li key={l.slug + l.variant + (l.offer ?? "")} className="flex justify-between gap-2">
+                <span>
+                  {l.units}× {l.product.name} <span className="text-muted-foreground">({l.variant})</span>
+                  {l.offer && <span className="block text-xs text-muted-foreground">{OFFER_LABEL[l.offer]}{l.offer !== "comp5" ? ` · ${l.qty} kit(s)` : ""}</span>}
+                </span>
+                <span>{brl(l.net)}</span>
               </li>
             ))}
           </ul>
           <div className="space-y-2 text-sm" data-testid="summary">
             <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(t.gross)}</span></div>
-            {t.discount > 0 && <div className="flex justify-between"><span>Desconto Pix (5%)</span><span>− {brl(t.discount)}</span></div>}
+            {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas</span><span>− {brl(t.offerDiscount)}</span></div>}
+            {t.pixDiscount > 0 && <div className="flex justify-between"><span>Desconto Pix (5% nos itens sem oferta)</span><span>− {brl(t.pixDiscount)}</span></div>}
+            {t.hasOffers && <p className="text-xs text-muted-foreground">Ofertas não cumulativas no mesmo item.</p>}
             <div className="flex justify-between"><span>Frete</span><span>{t.freeShipping ? "Grátis" : "Pendente — integração de frete não conectada"}</span></div>
             <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><span>Total {pay === "pix" ? "no Pix" : "no cartão"}{t.freeShipping ? "" : " (sem frete)"}</span><span>{brl(t.net)}</span></div>
             {pay === "card" && <div className="text-muted-foreground">até 6x de {brl(inst.value)} sem juros{inst.first !== inst.value ? ` (1ª de ${brl(inst.first)})` : ""}</div>}
