@@ -105,17 +105,16 @@ export function Shell({ children }: { children: ReactNode }) {
             <Menu className="h-6 w-6" />
           </button>
           <Link to="/" className="shrink-0">
-            <img src={LOGO} alt="Vonix Hair" className="h-12 w-auto" />
+            <img src={LOGO} alt="Vonix Hair" className="h-11 w-auto brightness-0" />
           </Link>
-          <div className="mx-auto hidden w-full max-w-xl flex-col items-center gap-2 lg:flex">
+          <div className="mx-auto hidden w-full max-w-xl flex-col items-center gap-1.5 lg:flex">
             <SearchBox />
-            <nav className="flex gap-5 text-xs uppercase">
+            <nav className="flex whitespace-nowrap gap-5 text-xs uppercase">
               {NAV.map((n) => (
-                <Link key={n.label} to="/loja" search={n.search} className="hover:underline">
+                <Link key={n.label} to="/loja" search={n.search} className="shrink-0 hover:underline">
                   {n.label}
                 </Link>
               ))}
-              <AudienceLinks />
             </nav>
           </div>
           <div className="ml-auto flex items-center gap-5 text-sm">
