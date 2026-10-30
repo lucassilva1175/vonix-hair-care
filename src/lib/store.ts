@@ -213,21 +213,31 @@ export const BEST_SELLERS = ["kit-cafe-verde", "kit-banana-e-mel", "kit-cronogra
 export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compareBase, p.variants[0].price)));
 
 /**
- * Checkout totals in cents. Free-shipping eligibility uses the product subtotal
- * BEFORE coupon and payment discounts: a Pix discount or valid coupon never
- * removes free shipping once the base is above R$ 150.
+ * Order totals in cents, line-aware.
+ * - Free shipping: product subtotal BEFORE any discount strictly above R$ 150.
+ * - Line offers (comp5/kit2/kit3) are already baked into each line's net and
+ *   are NEVER cumulative: Pix 5% and coupons apply only to lines without an offer.
  */
-export function checkoutTotals(subtotal: number, method: "pix" | "card", couponPct = 0) {
-  const gross = cents(subtotal);
-  const afterCoupon = gross - Math.round(gross * couponPct);
-  const net = method === "pix" ? Math.round((afterCoupon * 95) / 100) : afterCoupon;
+export function checkoutTotals(
+  lines: { gross: number; net: number; offer?: Offer }[],
+  method: "pix" | "card",
+  couponPct = 0,
+) {
+  const gross = cents(lines.reduce((s, l) => s + l.gross, 0));
+  const net = cents(lines.reduce((s, l) => s + l.net, 0));
+  const eligible = cents(lines.reduce((s, l) => s + (l.offer ? 0 : l.net), 0));
+  const couponDisc = Math.round(eligible * couponPct);
+  const pixDisc = method === "pix" ? Math.round(((eligible - couponDisc) * 95) / 100) - (eligible - couponDisc) : 0;
+  const total = net - couponDisc + pixDisc;
   return {
     gross: gross / 100,
-    couponDiscount: (gross - afterCoupon) / 100,
-    pixDiscount: (afterCoupon - net) / 100,
-    discount: (gross - net) / 100,
-    net: net / 100,
+    offerDiscount: (gross - net) / 100,
+    couponDiscount: couponDisc / 100,
+    pixDiscount: -pixDisc / 100,
+    discount: (gross - total) / 100,
+    net: total / 100,
     freeShipping: gross > FREE_SHIPPING_ABOVE * 100,
+    hasOffers: lines.some((l) => l.offer),
   };
 }
 
