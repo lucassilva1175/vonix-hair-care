@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
 const BANNERS = [
   "kit-banana-e-mel", "kit-cachos", "kit-coco-nutri", "kit-cronograma-capilar",
   "kit-desmaia", "kit-whey-protein", "kit-matizador-shampoo-e-mascara",
-];
+] as const;
 const NEEDS = [
   ["Hidratação", "Mais maciez e brilho", "cat-hidratacao-B3HDbjAo", "Hidratação"],
   ["Reconstrução", "Fios mais fortes", "cat-reconstrucao--AvyZZnd", "Reconstrução"],
@@ -27,7 +27,7 @@ const NEEDS = [
   ["Cachos", "Definição e movimento", "cat-cachos-BaMWSeI5", "Definição de Cachos"],
   ["Com Química", "Cuidado e hidratação", "cat-loiros-DMned0Ju", "Cabelos com Química"],
   ["Nutrição", "Fios nutridos e macios", "cat-nutricao-DPiiOsHs", "Nutrição"],
-];
+] as const;
 const REVIEWS = [
   ["Camila Ferreira", "Cliente · Botox Vonix", "Gostei de ser sem formol e derivados. Deixou meu cabelo macio, com brilho e mais alinhadinho. Achei confortável de usar ❤️"],
   ["Ricardo Almeida", "Profissional · Shampoo Fio de Luz", "Uso no salão e faz diferença, viu! Tira bem o silicone e a oleosidade sem judiar do cabelo. O tratamento pega bem melhor 👍"],
@@ -35,7 +35,7 @@ const REVIEWS = [
   ["Ana Paula Souza", "Profissional · Botox Vonix", "A textura é bem grossinha, não escorre e rende muito! Meus clientes amaram o cabelo sem frizz e com aquele brilho 😍"],
   ["Fernanda Costa", "Cliente · Máscara Nutri Repair", "Depois da coloração meu cabelo tava precisando. Na primeira aplicação já ficou mais maleável e nutrido."],
   ["Isabelle", "Profissional · Progressiva Fio de Luz", "Uso no salão e gostei demais 😍 Baixa o volume, deixa alinhadinho e não pesa. Já sai da secagem com brilho."],
-];
+] as const;
 
 function Title({ a, b, to }: { a: string; b: string; to?: Record<string, string> }) {
   return (
@@ -62,10 +62,10 @@ function Home() {
     <Shell>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
-          <Link to="/produto/$slug" params={{ slug: BANNERS[i] }}>
+          <Link to="/produto/$slug" params={{ slug: BANNERS[i]! }}>
             <picture>
               <source media="(min-width: 768px)" srcSet={`${SRC}/images/home/black-friday-2026/desktop/${i + 1}.webp`} />
-              <img src={`${SRC}/images/home/black-friday-2026/mobile/${i + 1}.webp`} alt={`Banner ${i + 1} de 7: ${getProduct(BANNERS[i])?.name}`} className="w-full" />
+              <img src={`${SRC}/images/home/black-friday-2026/mobile/${i + 1}.webp`} alt={`Banner ${i + 1} de 7: ${getProduct(BANNERS[i]!)?.name}`} className="w-full" />
             </picture>
           </Link>
           <button aria-label="Anterior" onClick={() => setI((i + 6) % 7)} className="absolute left-4 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background">

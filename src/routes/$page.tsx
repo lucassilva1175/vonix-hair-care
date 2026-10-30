@@ -15,7 +15,7 @@ const TITLES: Record<string, string> = {
 export const Route = createFileRoute("/$page")({
   loader: ({ params }) => {
     if (!P[params.page]) throw notFound();
-    return { slug: params.page, text: P[params.page] };
+    return { slug: params.page, text: P[params.page]! };
   },
   head: ({ loaderData }) => {
     const t = loaderData ? `${TITLES[loaderData.slug] ?? "Vonix Hair"} — Vonix Hair` : "Página não encontrada — Vonix Hair";

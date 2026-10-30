@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Grid, Shell } from "@/components/site";
 import { BEST_SELLERS, NEEDS, products, TYPES } from "@/lib/store";
 
-type S = { q?: string; secao?: string; tiposProduto?: string; necessidades?: string; uso?: string; categoria?: string; ordem?: string };
+type S = { q?: string | undefined; secao?: string | undefined; tiposProduto?: string | undefined; necessidades?: string | undefined; uso?: string | undefined; categoria?: string | undefined; ordem?: string | undefined };
 
 export const Route = createFileRoute("/loja")({
   validateSearch: (s: Record<string, unknown>): S => {
