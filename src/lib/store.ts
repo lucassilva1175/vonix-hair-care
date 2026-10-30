@@ -252,8 +252,42 @@ export function useAudience() {
 /** Usage filters based only on indications confirmed in the catalog descriptions. */
 export const USAGE: Record<string, (p: Product) => boolean> = {
   casa: (p) =>
-    p.category === "kits" ||
-    p.category === "finalizadores" ||
-    /casa|doméstic|dia a dia|diário/i.test(p.name + " " + p.description),
-  salao: (p) => /profissional|salão/i.test(p.name + " " + p.description),
+    !isProOnly(p.slug) &&
+    (p.category === "kits" ||
+      p.category === "finalizadores" ||
+      /casa|doméstic|dia a dia|diário/i.test(p.name + " " + p.description)),
+  salao: (p) =>
+    isProOnly(p.slug) || p.category === "kits" || /profissional|salão/i.test(p.name + " " + p.description),
 };
+
+/**
+ * Contextual complement matrix: ordered rules keyed by what is already in the
+ * cart, using only compatibilities confirmed in the catalog descriptions.
+ * Never suggests a product already in the cart (any variant) nor kits
+ * (kits don't get the 5% complement offer).
+ */
+const COMPLEMENT_RULES: [RegExp, string[]][] = [
+  [/progressiva-fio-de-luz/, ["shampoo-fio-de-luz-anti-residuo", "serum-argan", "reparador-de-pontas"]],
+  [/progressiva|botox|selagem|cauterizacao/, ["shampoo-diamond-anti-residuo", "defrizante", "mascara-efeito-teia-tomba-cabelo"]],
+  [/kit-banana-e-mel|kit-cafe-verde|kit-coco-nutri|kit-cachos|kit-cronograma|kit-whey|kit-desmaia/, ["serum-argan", "defrizante", "perfume-capilar-vonix"]],
+  [/cacho/, ["mascara-efeito-teia-coco-nutri", "defrizante", "serum-argan"]],
+  [/mascara|hidrat|nutri|reconstru|queratina|whey/, ["reparador-de-pontas", "serum-argan", "ampola-de-hidratacao-mousse-flash"]],
+  [/matiz/, ["kit-matizador-shampoo-e-mascara", "serum-argan"]],
+];
+
+export function complementsFor(cartSlugs: string[], max = 3): Product[] {
+  const inCart = new Set(cartSlugs);
+  const ordered: string[] = [];
+  for (const [re, slugs] of COMPLEMENT_RULES) if (cartSlugs.some((s) => re.test(s))) ordered.push(...slugs);
+  ordered.push(...BEST_SELLERS);
+  const seen = new Set<string>();
+  const out: Product[] = [];
+  for (const s of ordered) {
+    if (seen.has(s) || inCart.has(s)) continue;
+    seen.add(s);
+    const p = getProduct(s);
+    if (p && p.category !== "kits") out.push(p);
+    if (out.length >= max) break;
+  }
+  return out;
+}
