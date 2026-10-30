@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { Heart, Minus, Plus } from "lucide-react";
+import { Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
@@ -60,8 +60,11 @@ function ShippingCalc({ subtotal }: { subtotal: number }) {
     }
   };
   return (
-    <div className="mt-6 rounded-xl border border-border p-4">
-      <div className="text-sm font-medium">Calcular frete</div>
+    <div className="mt-6 rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Truck className="h-4 w-4" strokeWidth={1.5} />
+        Calcular frete
+      </div>
       <div className="mt-2 flex gap-2">
         <input
           inputMode="numeric"
@@ -70,15 +73,15 @@ function ShippingCalc({ subtotal }: { subtotal: number }) {
           onChange={(e) => setCep(maskCep(e.target.value))}
           onKeyDown={(e) => e.key === "Enter" && calc()}
           aria-label="CEP de entrega"
-          className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm"
+          className="h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-sm"
         />
-        <button onClick={calc} disabled={loading} className="shrink-0 rounded-full bg-action px-5 text-sm font-medium text-action-foreground disabled:opacity-60">
+        <button onClick={calc} disabled={loading} className="shrink-0 rounded-full border border-foreground bg-background px-5 text-sm font-medium text-foreground disabled:opacity-60">
           {loading ? "..." : "Calcular"}
         </button>
       </div>
       {err && <p className="mt-2 text-sm text-destructive">{err}</p>}
       {dest && (
-        <div className="mt-3 text-sm">
+        <div className="mt-3 rounded-lg bg-muted p-3 text-sm">
           <p className="text-muted-foreground">Entrega para {dest.city}/{dest.uf}</p>
           {hasFreeShipping(subtotal) ? (
             <p className="mt-1 font-medium">Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após o desconto do Pix).</p>
