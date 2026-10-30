@@ -70,7 +70,7 @@ function ShippingCalc({ subtotal }: { subtotal: number }) {
           onChange={(e) => setCep(maskCep(e.target.value))}
           onKeyDown={(e) => e.key === "Enter" && calc()}
           aria-label="CEP de entrega"
-          className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+          className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm"
         />
         <button onClick={calc} disabled={loading} className="shrink-0 rounded-full bg-action px-5 text-sm font-medium text-action-foreground disabled:opacity-60">
           {loading ? "..." : "Calcular"}
@@ -112,7 +112,7 @@ function ProductPage() {
           <Link to="/">Início</Link> / <Link to="/loja" search={{ categoria: p.category }}>{p.categoryLabel}</Link> / {p.name}
         </nav>
         <div className="grid gap-10 lg:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <div className="overflow-hidden rounded-2xl bg-card-image">
               <img src={p.images[img]} alt={p.name} className="aspect-square w-full object-contain" />
             </div>
@@ -124,7 +124,7 @@ function ProductPage() {
               ))}
             </div>
           </div>
-          <div>
+          <div className="min-w-0">
             {off > 0 && <span className="rounded-full bg-foreground px-3 py-1 text-xs text-background">{off}% OFF</span>}
             <h1 className="mt-3 font-display text-4xl md:text-5xl">{p.name}</h1>
             <Stars count={p.reviews} />
