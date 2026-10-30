@@ -112,6 +112,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
           <div className="mx-auto hidden w-full max-w-xl flex-col items-center gap-2 lg:flex">
             <SearchBox />
+            <AudienceSwitch />
             <nav className="flex gap-5 text-xs uppercase">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="hover:underline">
@@ -137,8 +138,9 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </div>
-        <div className="container-site pb-3 lg:hidden">
+        <div className="container-site space-y-2 pb-3 lg:hidden">
           <SearchBox />
+          <AudienceSwitch />
         </div>
       </header>
       {open && (
@@ -165,15 +167,17 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
       <main>{children}</main>
       <Footer />
-      <a
-        href={WHATSAPP}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Falar no WhatsApp"
-        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg"
-      >
-        <MessageCircle className="h-7 w-7" />
-      </a>
+      {!hideWhatsApp && (
+        <a
+          href={WHATSAPP}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Falar no WhatsApp"
+          className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg"
+        >
+          <MessageCircle className="h-7 w-7" />
+        </a>
+      )}
     </div>
   );
 }
@@ -185,7 +189,7 @@ function Footer() {
         <span>Entrega para todo o Brasil</span>
         <span>Compra 100% segura</span>
         <span>Até 6x sem juros no cartão</span>
-        <span>Frete grátis acima de R$ 150,00</span>
+        <span>Frete grátis acima de R$ 150 em produtos</span>
       </div>
       <div className="container-site grid gap-10 py-12 text-sm sm:grid-cols-4">
         <div>
