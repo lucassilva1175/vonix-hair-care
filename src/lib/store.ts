@@ -146,30 +146,40 @@ export function useCart() {
     .map((i) => {
       const p = getProduct(i.slug);
       const v = p?.variants.find((x) => x.label === i.variant) ?? p?.variants[0];
-      return p && v ? { ...i, product: p, price: v.price, total: v.price * i.qty } : null;
+      if (!p || !v) return null;
+      const t = lineTotals(v.price, i.qty, i.offer);
+      return { ...i, product: p, price: v.price, gross: t.gross, net: t.net, units: t.units, total: t.net };
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
-  const subtotal = cents(lines.reduce((s, l) => s + l.total, 0)) / 100;
-  const count = lines.reduce((s, l) => s + l.qty, 0);
+  const subtotal = cents(lines.reduce((s, l) => s + l.gross, 0)) / 100;
+  const netSubtotal = cents(lines.reduce((s, l) => s + l.net, 0)) / 100;
+  const count = lines.reduce((s, l) => s + l.units, 0);
+  const key = (i: { slug: string; variant: string; offer?: Offer }) => `${i.slug}|${i.variant}|${i.offer ?? ""}`;
   return {
     lines,
     subtotal,
+    netSubtotal,
     count,
-    add: (slug: string, variant: string, qty = 1) =>
+    add: (slug: string, variant: string, qty = 1, offer?: Offer) =>
       cartStore.set((s) => {
-        const ex = s.find((i) => i.slug === slug && i.variant === variant);
+        const k = key({ slug, variant, offer });
+        const ex = s.find((i) => key(i) === k);
         return ex
-          ? s.map((i) => (i === ex ? { ...i, qty: i.qty + qty } : i))
-          : [...s, { slug, variant, qty }];
+          ? s.map((i) => (key(i) === k ? { ...i, qty: i.qty + qty } : i))
+          : [...s, { slug, variant, qty, ...(offer ? { offer } : {}) }];
       }),
-    setQty: (slug: string, variant: string, qty: number) =>
-      cartStore.set((s) =>
-        qty <= 0
-          ? s.filter((i) => !(i.slug === slug && i.variant === variant))
-          : s.map((i) => (i.slug === slug && i.variant === variant ? { ...i, qty } : i)),
-      ),
-    remove: (slug: string, variant: string) =>
-      cartStore.set((s) => s.filter((i) => !(i.slug === slug && i.variant === variant))),
+    setQty: (slug: string, variant: string, qty: number, offer?: Offer) =>
+      cartStore.set((s) => {
+        const k = key({ slug, variant, offer });
+        return qty <= 0
+          ? s.filter((i) => key(i) !== k)
+          : s.map((i) => (key(i) === k ? { ...i, qty } : i));
+      }),
+    remove: (slug: string, variant: string, offer?: Offer) =>
+      cartStore.set((s) => {
+        const k = key({ slug, variant, offer });
+        return s.filter((i) => key(i) !== k);
+      }),
     clear: () => cartStore.set(() => []),
   };
 }
