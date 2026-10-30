@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Catalog lives in src/data/products.json (prices already final); all price/installment/shipping rules are derived in src/lib/store.ts so they stay consistent everywhere.

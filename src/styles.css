@@ -132,6 +132,52 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+@theme inline {
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --color-marquee: var(--marquee);
+  --color-marquee-foreground: var(--marquee-foreground);
+  --color-action: var(--action);
+  --color-action-foreground: var(--action-foreground);
+  --color-card-image: var(--card-image);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-foreground: var(--whatsapp-foreground);
+  --color-star: var(--star);
+  --animate-marquee: marquee 40s linear infinite;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0 0);
+  --muted: oklch(0.96 0.005 80);
+  --muted-foreground: oklch(0.5 0.01 80);
+  --border: oklch(0.9 0.005 80);
+  --marquee: oklch(0.2 0 0);
+  --marquee-foreground: oklch(0.98 0 0);
+  --action: oklch(0.2 0 0);
+  --action-foreground: oklch(0.98 0 0);
+  --card-image: oklch(0.955 0.008 75);
+  --whatsapp: oklch(0.72 0.19 150);
+  --whatsapp-foreground: oklch(1 0 0);
+  --star: oklch(0.78 0.14 80);
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-33.333%);
+  }
+}
+
+@utility container-site {
+  width: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @media (min-width: 1024px) {
+    padding-inline: 2rem;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -140,5 +186,9 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  .font-display em {
+    font-style: italic;
   }
 }
