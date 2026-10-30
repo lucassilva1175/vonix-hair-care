@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Grid, Shell } from "@/components/site";
-import { BEST_SELLERS, NEEDS, products, TYPES } from "@/lib/store";
+import { BEST_SELLERS, NEEDS, products, TYPES, USAGE } from "@/lib/store";
 
 type S = { q?: string | undefined; secao?: string | undefined; tiposProduto?: string | undefined; necessidades?: string | undefined; uso?: string | undefined; categoria?: string | undefined; ordem?: string | undefined };
 
@@ -30,6 +30,7 @@ function Loja() {
   const set = (patch: Partial<S>) => nav({ search: (old: S) => ({ ...old, ...patch }) });
   let list = products.filter((p) => {
     if (s.secao === "mais-vendidos" && !BEST_SELLERS.includes(p.slug)) return false;
+    if (s.uso && USAGE[s.uso] && !USAGE[s.uso]!(p)) return false;
     if (s.categoria && p.category !== s.categoria) return false;
     if (s.tiposProduto && TYPES[s.tiposProduto] && !TYPES[s.tiposProduto]!(p)) return false;
     if (s.necessidades && NEEDS[s.necessidades] && !NEEDS[s.necessidades]!.test(p.name + " " + p.description)) return false;
@@ -46,7 +47,7 @@ function Loja() {
   return (
     <Shell>
       <div className="container-site py-10">
-        <h1 className="font-display text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
+        <h1 className="font-display text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : s.uso === "casa" ? "Para Cuidar em Casa" : s.uso === "salao" ? "Para o Seu Salão" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
         <div className="my-6 flex flex-wrap items-center gap-3">
           <input defaultValue={s.q} key={s.q} placeholder="Buscar..." aria-label="Buscar na loja" className={sel} onKeyDown={(e) => e.key === "Enter" && set({ q: e.currentTarget.value || undefined })} />
           <select aria-label="Categoria" className={sel} value={s.categoria ?? ""} onChange={(e) => set({ categoria: e.target.value || undefined })}>

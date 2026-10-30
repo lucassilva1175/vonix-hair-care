@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Heart, Menu, MessageCircle, Search, ShoppingBag, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import {
@@ -7,9 +7,11 @@ import {
   discountPct,
   installments,
   pixPrice,
+  useAudience,
   useCart,
   useFavorites,
   WHATSAPP,
+  type Audience,
   type Product,
 } from "@/lib/store";
 
@@ -18,7 +20,7 @@ export const LOGO = `${SRC}/assets/vonix-logo-optimized-BP5ZgeGC.webp`;
 
 const MARQUEE = [
   `ATÉ ${MAX_DISCOUNT}% OFF EM PRODUTOS SELECIONADOS`,
-  "FRETE GRÁTIS EM COMPRAS ACIMA DE R$ 150,00",
+  "FRETE GRÁTIS ACIMA DE R$ 150 EM PRODUTOS, ANTES DOS DESCONTOS",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
   "5% DE DESCONTO NO PIX",
   "ESQUENTA BLACK FRIDAY",
@@ -58,9 +60,39 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
   );
 }
 
+function AudienceSwitch() {
+  const { audience, set } = useAudience();
+  const nav = useNavigate();
+  const go = (a: Audience) => {
+    set(a);
+    nav({ to: "/loja", search: a ? { uso: a } : {} });
+  };
+  const pill = (active: boolean) =>
+    `rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+      active ? "border-action bg-action text-action-foreground" : "border-border bg-background hover:border-foreground"
+    }`;
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Para quem é a compra">
+      <button className={pill(audience === "casa")} onClick={() => go("casa")}>
+        Para cuidar em casa
+      </button>
+      <button className={pill(audience === "salao")} onClick={() => go("salao")}>
+        Para meu salão
+      </button>
+      {audience && (
+        <button className="text-xs underline" onClick={() => go(null)}>
+          Ver todos os produtos
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const { count } = useCart();
   const [open, setOpen] = useState(false);
+  const path = useLocation().pathname;
+  const hideWhatsApp = path === "/carrinho" || path === "/checkout";
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       <div className="overflow-hidden bg-marquee py-2.5 text-xs font-medium tracking-wide text-marquee-foreground">
@@ -80,6 +112,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
           <div className="mx-auto hidden w-full max-w-xl flex-col items-center gap-2 lg:flex">
             <SearchBox />
+            <AudienceSwitch />
             <nav className="flex gap-5 text-xs uppercase">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="hover:underline">
@@ -105,8 +138,9 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </div>
-        <div className="container-site pb-3 lg:hidden">
+        <div className="container-site space-y-2 pb-3 lg:hidden">
           <SearchBox />
+          <AudienceSwitch />
         </div>
       </header>
       {open && (
@@ -133,15 +167,17 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
       <main>{children}</main>
       <Footer />
-      <a
-        href={WHATSAPP}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Falar no WhatsApp"
-        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg"
-      >
-        <MessageCircle className="h-7 w-7" />
-      </a>
+      {!hideWhatsApp && (
+        <a
+          href={WHATSAPP}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Falar no WhatsApp"
+          className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg"
+        >
+          <MessageCircle className="h-7 w-7" />
+        </a>
+      )}
     </div>
   );
 }
@@ -153,7 +189,7 @@ function Footer() {
         <span>Entrega para todo o Brasil</span>
         <span>Compra 100% segura</span>
         <span>Até 6x sem juros no cartão</span>
-        <span>Frete grátis acima de R$ 150,00</span>
+        <span>Frete grátis acima de R$ 150 em produtos</span>
       </div>
       <div className="container-site grid gap-10 py-12 text-sm sm:grid-cols-4">
         <div>

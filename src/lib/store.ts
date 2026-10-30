@@ -149,9 +149,38 @@ export const BEST_SELLERS = ["kit-cafe-verde", "kit-banana-e-mel", "kit-cronogra
 
 export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compareBase, p.variants[0].price)));
 
-/** Checkout totals in cents; free shipping uses the subtotal after the chosen payment discount. */
-export function checkoutTotals(subtotal: number, method: "pix" | "card") {
+/**
+ * Checkout totals in cents. Free-shipping eligibility uses the product subtotal
+ * BEFORE coupon and payment discounts: a Pix discount or valid coupon never
+ * removes free shipping once the base is above R$ 150.
+ */
+export function checkoutTotals(subtotal: number, method: "pix" | "card", couponPct = 0) {
   const gross = cents(subtotal);
-  const net = method === "pix" ? Math.round((gross * 95) / 100) : gross;
-  return { gross: gross / 100, discount: (gross - net) / 100, net: net / 100, freeShipping: net > FREE_SHIPPING_ABOVE * 100 };
+  const afterCoupon = gross - Math.round(gross * couponPct);
+  const net = method === "pix" ? Math.round((afterCoupon * 95) / 100) : afterCoupon;
+  return {
+    gross: gross / 100,
+    couponDiscount: (gross - afterCoupon) / 100,
+    pixDiscount: (afterCoupon - net) / 100,
+    discount: (gross - net) / 100,
+    net: net / 100,
+    freeShipping: gross > FREE_SHIPPING_ABOVE * 100,
+  };
 }
+
+/* ---------- audience shortcut (casa / salão), persisted per browser ---------- */
+export type Audience = "casa" | "salao" | null;
+const audienceStore = createStore<Audience>("vonix-audience", null);
+export function useAudience() {
+  const audience = useSyncExternalStore(audienceStore.sub, audienceStore.get, audienceStore.server);
+  return { audience, set: (a: Audience) => audienceStore.set(() => a) };
+}
+
+/** Usage filters based only on indications confirmed in the catalog descriptions. */
+export const USAGE: Record<string, (p: Product) => boolean> = {
+  casa: (p) =>
+    p.category === "kits" ||
+    p.category === "finalizadores" ||
+    /casa|doméstic|dia a dia|diário/i.test(p.name + " " + p.description),
+  salao: (p) => /profissional|salão/i.test(p.name + " " + p.description),
+};

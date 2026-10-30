@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/site";
-import { brl, useCart } from "@/lib/store";
+import { BEST_SELLERS, brl, getProduct, useCart } from "@/lib/store";
 import { ShippingBar, Summary } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/carrinho")({
@@ -16,11 +16,39 @@ export const Route = createFileRoute("/carrinho")({
   component: Cart,
 });
 
+/** Uma única recomendação complementar, compacta e recolhível; nunca pré-selecionada. */
+function Suggestion() {
+  const c = useCart();
+  const slug = BEST_SELLERS.map(getProduct).find((p) => p && !c.lines.some((l) => l.slug === p.slug));
+  if (!slug) return null;
+  const v = slug.variants[0];
+  return (
+    <details className="rounded-xl border border-border bg-card p-4 text-sm">
+      <summary className="cursor-pointer font-medium">Complete seu tratamento (opcional)</summary>
+      <div className="mt-3 flex items-center gap-3">
+        <img src={slug.images[0]} alt="" className="h-16 w-16 rounded-lg bg-card-image object-contain" />
+        <div className="flex-1">
+          <Link to="/produto/$slug" params={{ slug: slug.slug }} className="font-medium hover:underline">
+            {slug.name}
+          </Link>
+          <div className="text-xs text-muted-foreground">{v.label} · {brl(v.price)}</div>
+        </div>
+        <button
+          onClick={() => c.add(slug.slug, v.label)}
+          className="rounded-full border border-action px-4 py-2 text-xs font-medium text-action"
+        >
+          Adicionar
+        </button>
+      </div>
+    </details>
+  );
+}
+
 function Cart() {
   const c = useCart();
   return (
     <Shell>
-      <div className="container-site py-10">
+      <div className="container-site py-10 pb-28 lg:pb-10">
         <h1 className="mb-8 font-display text-5xl">Carrinho</h1>
         {c.lines.length === 0 ? (
           <div className="py-16 text-center">
@@ -50,12 +78,20 @@ function Cart() {
             <aside className="space-y-4">
               <ShippingBar subtotal={c.subtotal} />
               <Summary subtotal={c.subtotal} />
-              <Link to="/checkout" className="block rounded-full bg-action py-3.5 text-center font-medium text-action-foreground">Finalizar compra</Link>
+              <Suggestion />
+              <Link to="/checkout" className="hidden rounded-full bg-action py-3.5 text-center font-medium text-action-foreground lg:block">Finalizar minha compra</Link>
               <Link to="/loja" className="block text-center text-sm underline">Continuar comprando</Link>
             </aside>
           </div>
         )}
       </div>
+      {c.lines.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-3 lg:hidden">
+          <Link to="/checkout" className="block rounded-full bg-action py-3.5 text-center font-medium text-action-foreground">
+            Finalizar minha compra
+          </Link>
+        </div>
+      )}
     </Shell>
   );
 }

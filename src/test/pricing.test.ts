@@ -21,10 +21,17 @@ describe("regras comerciais", () => {
 
 import { checkoutTotals } from "@/lib/store";
 describe("checkout", () => {
-  it("Banana e Mel no Pix: 147,16 sem frete grátis", () => {
-    expect(checkoutTotals(154.9, "pix")).toMatchObject({ net: 147.16, discount: 7.74, freeShipping: false });
+  it("Banana e Mel no Pix: 147,16 COM frete grátis (base antes do desconto)", () => {
+    expect(checkoutTotals(154.9, "pix")).toMatchObject({ net: 147.16, discount: 7.74, freeShipping: true });
   });
   it("Banana e Mel no cartão: 154,90 com frete grátis", () => {
     expect(checkoutTotals(154.9, "card")).toMatchObject({ net: 154.9, freeShipping: true });
+  });
+  it("exemplo de cupom de 10%: 139,41 e mantém o frete grátis", () => {
+    expect(checkoutTotals(154.9, "card", 0.1)).toMatchObject({ net: 139.41, couponDiscount: 15.49, freeShipping: true });
+  });
+  it("frete grátis some se a base cair para 150 ou menos", () => {
+    expect(checkoutTotals(150, "pix").freeShipping).toBe(false);
+    expect(checkoutTotals(150.01, "pix").freeShipping).toBe(true);
   });
 });
