@@ -31,8 +31,8 @@ function Loja() {
   let list = products.filter((p) => {
     if (s.secao === "mais-vendidos" && !BEST_SELLERS.includes(p.slug)) return false;
     if (s.categoria && p.category !== s.categoria) return false;
-    if (s.tiposProduto && TYPES[s.tiposProduto] && !TYPES[s.tiposProduto](p)) return false;
-    if (s.necessidades && NEEDS[s.necessidades] && !NEEDS[s.necessidades].test(p.name + " " + p.description)) return false;
+    if (s.tiposProduto && TYPES[s.tiposProduto] && !TYPES[s.tiposProduto]!(p)) return false;
+    if (s.necessidades && NEEDS[s.necessidades] && !NEEDS[s.necessidades]!.test(p.name + " " + p.description)) return false;
     if (s.q) {
       const q = s.q.toLowerCase();
       if (!(p.name + " " + p.categoryLabel + " " + p.short).toLowerCase().includes(q)) return false;
