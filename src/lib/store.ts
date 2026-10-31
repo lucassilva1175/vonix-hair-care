@@ -59,7 +59,20 @@ export const maskCep = (v: string) => {
 export const missingForFreeShipping = (subtotal: number) =>
   hasFreeShipping(subtotal) ? 0 : Math.max(0, cents(FREE_SHIPPING_ABOVE + 0.01 - subtotal) / 100);
 
-export const discountPct = (compare: number | null, price: number) =>
+/** What the customer gets in the item: kit piece count (from "O QUE VEM NO KIT") and/or the size(s). */
+export function contentLabel(p: Product) {
+  const sizes = [...new Set(p.variants.map((v) => v.label.replace(/^[^\d]*/, "").replace(/\s+/g, "").trim()).filter(Boolean))];
+  const sizeText = sizes.join(" · ");
+  if (p.category === "kits") {
+    const block = p.description.match(/\*\*O QUE VEM NO (?:KIT|COMBO)\*\*\s*([\s\S]*?)\n---/)?.[1];
+    const n = block ? block.split("\n").filter((l) => l.trim().startsWith("**")).length : 0;
+    if (n) return `Combo com ${n} produtos${sizeText ? ` · ${sizeText}` : ""}`;
+    return sizeText ? `Combo · ${sizeText}` : "Combo";
+  }
+  return sizeText;
+}
+
+export const discountPct =(compare: number | null, price: number) =>
   compare && compare > price ? Math.round((1 - price / compare) * 100) : 0;
 
 /* ---------- professional classification (explicit metadata) ---------- */
@@ -83,8 +96,8 @@ export const isProOnly = (slug: string) => PRO_ONLY.has(slug);
 export type Offer = "comp5" | "kit2" | "kit3";
 export const OFFER_LABEL: Record<Offer, string> = {
   comp5: "5% OFF neste item",
-  kit2: "Kit 2 unidades · 12% OFF",
-  kit3: "Kit 3 unidades · 15% OFF",
+  kit2: "Combo 2 unidades · 12% OFF",
+  kit3: "Combo 3 unidades · 15% OFF",
 };
 
 /** Line totals in cents-safe math. qty = units for comp5/normal, kits for kit2/kit3. */
@@ -211,7 +224,7 @@ export const NEEDS: Record<string, RegExp> = {
 export const TYPES: Record<string, (p: Product) => boolean> = {
   Progressiva: (p) => /progressiva/i.test(p.name),
   "Máscara": (p) => /máscara/i.test(p.name),
-  Kits: (p) => p.category === "kits",
+  Combos: (p) => p.category === "kits",
   Finalizadores: (p) => p.category === "finalizadores",
 };
 export const BEST_SELLERS = ["kit-cafe-verde", "kit-banana-e-mel", "kit-cronograma-capilar", "kit-whey-protein"];

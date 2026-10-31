@@ -2,14 +2,19 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { CreditCard, Facebook, Heart, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, Truck, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { reviewsFor } from "@/components/reviews";
+import { toItem, track } from "@/lib/analytics";
 import {
   FREE_SHIPPING_ABOVE,
   MAX_DISCOUNT,
   brl,
   discountPct,
+  hasFreeShipping,
   installments,
   pixPrice,
   cardPricing,
+  contentLabel,
   useAudience,
   useCart,
   useFavorites,
@@ -36,7 +41,7 @@ const NAV = [
   { label: "Todos os produtos", search: {} },
   { label: "Progressiva", search: { tiposProduto: "Progressiva" } },
   { label: "Máscara", search: { tiposProduto: "Máscara" } },
-  { label: "Kits", search: { tiposProduto: "Kits" } },
+  { label: "Combos", search: { tiposProduto: "Combos" } },
 ];
 
 /** Simplified WhatsApp mark: speech bubble with a handset (lucide has no brand icons). */
@@ -104,7 +109,7 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Buscar produtos, kits, tratamentos..."
+        placeholder="Buscar produtos, combos, tratamentos..."
         aria-label="Buscar"
         className="h-11 w-full rounded-full border border-border bg-background px-4 pr-10 text-sm outline-none focus:border-foreground"
       />
@@ -268,7 +273,7 @@ function Footer() {
         <div className="flex flex-col gap-2">
           <h4 className="mb-2 font-semibold">Comprar</h4>
           <Link to="/loja">Todos os Produtos</Link>
-          <Link to="/loja" search={{ tiposProduto: "Kits" }}>Kits</Link>
+          <Link to="/loja" search={{ tiposProduto: "Combos" }}>Combos</Link>
           <Link to="/loja" search={{ tiposProduto: "Finalizadores" }}>Finalizadores</Link>
           <Link to="/loja" search={{ necessidades: "Hidratação" }}>Hidratação</Link>
         </div>
@@ -326,11 +331,23 @@ export function PriceBlock({ price, compare, big, offer = false }: { price: numb
   );
 }
 
-export function Stars({ count }: { count: number }) {
-  if (!count) return null;
+/**
+ * Real average rating (from src/data/reviews.json): gold stars filled in proportion to the score, plus the number.
+ * A product with no reviews yet shows the five empty stars, never an invented score.
+ */
+export function Stars({ slug, big = false }: { slug: string; big?: boolean }) {
+  const list = reviewsFor(slug);
+  const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
+  const label = avg.toFixed(1).replace(".", ",");
   return (
-    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-      <span className="text-star">★★★★★</span>({count})
+    <div className={`flex items-center gap-2 ${big ? "text-xl" : "text-xs"}`} role="img" aria-label={list.length ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
+      <span className="relative inline-block leading-none tracking-wide" aria-hidden="true">
+        <span className="text-[oklch(0.88_0.008_85)]">★★★★★</span>
+        {avg > 0 && (
+          <span className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap text-star" style={{ width: `${(avg / 5) * 100}%` }}>★★★★★</span>
+        )}
+      </span>
+      {list.length > 0 && <b className="text-sm">{label}</b>}
     </div>
   );
 }
@@ -340,9 +357,23 @@ export function ProductCard({ p }: { p: Product }) {
   const { audience } = useAudience();
   const pricing = cardPricing(p, audience);
   const off = discountPct(p.compareBase, pricing.price);
+  const cart = useCart();
+  const nav = useNavigate();
+  const par = installments(pricing.price);
+  // Products with a single size are added straight to the bag; the rest open the product page to choose.
+  const bag = () => {
+    if (p.variants.length > 1 || pricing.professional) {
+      nav({ to: "/produto/$slug", params: { slug: p.slug } });
+      return;
+    }
+    const v = p.variants[0];
+    cart.add(p.slug, v.label, 1);
+    track("add_to_cart", { value: v.price, items: [toItem(p, v.label, v.price)] });
+    toast.success(`${p.name} adicionado à sacola`);
+  };
   return (
-    <div className="group flex flex-col">
-      <div className="relative overflow-hidden rounded-xl bg-card-image">
+    <div className="group flex h-full flex-col rounded-2xl border border-border bg-white p-3 shadow-sm">
+      <div className="relative overflow-hidden rounded-xl bg-white">
         {off > 0 && (
           <span className="absolute left-2 top-2 z-10 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background">
             {off}% OFF
@@ -359,31 +390,49 @@ export function ProductCard({ p }: { p: Product }) {
           <img src={p.images[0]} alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full object-contain transition-transform duration-500 group-hover:scale-105" />
         </Link>
       </div>
-      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-3 font-medium hover:underline">
+      <div className="mt-3 text-[11px] font-bold tracking-[0.18em]">VONIX HAIR</div>
+      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-3 min-h-[3.6rem] font-semibold leading-snug hover:underline">
         {p.name}
       </Link>
-      <Stars count={p.reviews} />
-      <div className="mt-1 flex-1">
-        <PriceBlock price={pricing.price} compare={p.compareBase} />
-        {pricing.professional && <p className="mt-1 text-xs font-medium">Leve 2: 12% OFF · Leve 3: 15% OFF</p>}
+      {contentLabel(p) && (
+        <span className="mt-1.5 w-fit rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold">{contentLabel(p)}</span>
+      )}
+      <div className="mt-2.5"><Stars slug={p.slug} big /></div>
+      <div className="mt-2.5 flex items-end justify-between gap-2">
+        <div className="min-w-0 leading-tight">
+          {p.compareBase && p.compareBase > pricing.price && <div className="text-xs text-muted-foreground line-through">{brl(p.compareBase)}</div>}
+          <div className="text-xl font-bold">{brl(pricing.price)}</div>
+          <div className="mt-0.5 text-sm font-medium">{par.count}x {brl(par.value)} <span className="text-xs font-normal text-muted-foreground">sem juros</span></div>
+          {hasFreeShipping(pricing.price) && <div className="mt-0.5 text-sm font-bold text-[#0a5c34]">Frete Grátis</div>}
+        </div>
+        <button
+          type="button"
+          onClick={bag}
+          aria-label={p.variants.length > 1 || pricing.professional ? `Escolher opções de ${p.name}` : `Adicionar ${p.name} à sacola`}
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-action text-action-foreground shadow-sm transition-transform active:scale-95"
+        >
+          <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
+        </button>
       </div>
-      <Link
-        to="/produto/$slug"
-        params={{ slug: p.slug }}
-        className="mt-3 rounded-full bg-action py-2.5 text-center text-sm font-medium text-action-foreground"
-      >
-        Comprar agora
-      </Link>
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-2.5 py-1.5 text-[#0a5c34]">
+        <span className="rounded bg-[#0a5c34] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white">PIX</span>
+        <b className="text-base">{brl(pixPrice(pricing.price))}</b>
+        <span className="text-xs font-semibold">5% OFF à vista</span>
+      </div>
+      {pricing.professional && <p className="mt-1.5 text-xs font-medium">Leve 2: 12% OFF · Leve 3: 15% OFF</p>}
+      {p.short && <p className="mt-2 line-clamp-3 flex-1 text-xs leading-snug text-muted-foreground">{p.short}</p>}
     </div>
   );
 }
 
 export function Grid({ items }: { items: Product[] }) {
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
-      {items.map((p) => (
-        <ProductCard key={p.slug} p={p} />
-      ))}
+    <div className="rounded-2xl bg-[oklch(0.955_0.004_85)] p-2.5 md:p-4">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+        {items.map((p) => (
+          <ProductCard key={p.slug} p={p} />
+        ))}
+      </div>
     </div>
   );
 }

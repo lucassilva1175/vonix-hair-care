@@ -173,7 +173,7 @@ function ProductPage() {
           <div className="min-w-0">
             {off > 0 && <span className="rounded-full bg-foreground px-3 py-1 text-xs text-background">{off}% OFF</span>}
             <h1 className="mt-3 font-display text-4xl md:text-5xl">{p.name}</h1>
-            <Stars count={p.reviews} />
+            <Stars slug={p.slug} />
             {p.short && <p className="mt-3 text-muted-foreground">{p.short}</p>}
             {proMode ? (
               <div className="mt-6">
@@ -196,7 +196,7 @@ function ProductPage() {
                   })}
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  O desconto do kit não soma com o desconto de 5% do Pix nem com cupom. O frete grátis acima de {brl(FREE_SHIPPING_ABOVE)} vale pelo valor dos produtos antes dos descontos.
+                  O desconto do combo não soma com o desconto de 5% do Pix nem com cupom. O frete grátis acima de {brl(FREE_SHIPPING_ABOVE)} vale pelo valor dos produtos antes dos descontos.
                 </p>
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="text-muted-foreground line-through">{brl(sel!.gross)}</span>
@@ -230,7 +230,7 @@ function ProductPage() {
                 <span className="w-8 text-center" data-testid="qty">{qty}</span>
                 <button aria-label="Aumentar" className="p-3" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4" /></button>
               </div>
-              <span className="text-xs text-muted-foreground">{proMode && offer ? (offer === "kit2" ? "kits de 2 un." : "kits de 3 un.") : "unidade(s)"}</span>
+              <span className="text-xs text-muted-foreground">{proMode && offer ? (offer === "kit2" ? "combos de 2 un." : "combos de 3 un.") : "unidade(s)"}</span>
               <button aria-label="Favoritar" onClick={() => fav.toggle(p.slug)} className="rounded-full border border-border p-3">
                 <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
               </button>
@@ -261,7 +261,7 @@ function ProductPage() {
         <ProductReviews slug={p.slug} />
         {related.length > 0 && (
           <section className="mt-20">
-            <h2 className="mb-8 font-display text-4xl">Você também pode <em>gostar</em></h2>
+            <h2 className="mb-6 text-2xl font-bold tracking-tight md:text-3xl [&_em]:not-italic">Você também pode <em>gostar</em></h2>
             <Grid items={related} />
           </section>
         )}

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { name: "description", content: "Progressivas, botox, máscaras e kits Vonix Hair. Até 6x sem juros e frete grátis acima de R$ 150,00." },
+      { name: "description", content: "Progressivas, botox, máscaras e combos Vonix Hair. Até 6x sem juros e frete grátis acima de R$ 150,00." },
       { property: "og:title", content: "Vonix Hair — Cosméticos Capilares Profissionais" },
       { property: "og:description", content: "Até 6x sem juros e frete grátis acima de R$ 150,00." },
     ],
@@ -49,7 +49,7 @@ const NEEDS = [
 function Title({ a, b, to }: { a: string; b: string; to?: Record<string, string> }) {
   return (
     <div className="mb-8 flex items-end justify-between">
-      <h2 className="font-display text-4xl md:text-5xl">
+      <h2 className="text-2xl font-bold tracking-tight md:text-3xl [&_em]:not-italic">
         {a} <em>{b}</em>
       </h2>
       {to && (
@@ -102,7 +102,7 @@ function Home() {
       </section>
 
       <section className="container-site mt-20 text-center">
-        <h2 className="font-display text-4xl md:text-5xl">Encontre o Tratamento <em>Ideal</em></h2>
+        <h2 className="text-2xl font-bold tracking-tight md:text-3xl [&_em]:not-italic">Encontre o Tratamento <em>Ideal</em></h2>
         <p className="mt-2 text-muted-foreground">Escolha a necessidade do seu cabelo e veja os produtos indicados.</p>
         <div className="mt-6 grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-6">
           {NEEDS.map(([t, s, img, q]) => (

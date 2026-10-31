@@ -432,7 +432,7 @@ function Checkout() {
                 <img src={l.product.images[0]} alt={l.product.name} width={48} height={48} className="h-12 w-12 rounded border border-border bg-background object-contain" />
                 <span className="min-w-0 break-words">
                   {l.units}× {l.product.name} <span className="text-muted-foreground">({l.variant})</span>
-                  {l.offer && <span className="block text-xs text-muted-foreground">{OFFER_LABEL[l.offer]}{l.offer !== "comp5" ? ` · ${l.qty} kit(s)` : ""}</span>}
+                  {l.offer && <span className="block text-xs text-muted-foreground">{OFFER_LABEL[l.offer]}{l.offer !== "comp5" ? ` · ${l.qty} combo(s)` : ""}</span>}
                 </span>
                 <span className="whitespace-nowrap font-medium">{brl(l.net)}</span>
               </li>

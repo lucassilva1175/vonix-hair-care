@@ -14,7 +14,7 @@ export const Route = createFileRoute("/loja")({
   head: () => ({
     meta: [
       { title: "Loja — Vonix Hair" },
-      { name: "description", content: "Todos os produtos Vonix Hair: progressivas, botox, máscaras, shampoos e kits." },
+      { name: "description", content: "Todos os produtos Vonix Hair: progressivas, botox, máscaras, shampoos e combos." },
       { property: "og:title", content: "Loja — Vonix Hair" },
       { property: "og:description", content: "Todos os produtos Vonix Hair em até 6x sem juros." },
       { property: "og:type", content: "website" },
