@@ -50,9 +50,10 @@ function Row({ title, children, open = false }: { title: string; children: React
 
 export function ProductDetails({ p }: { p: Product }) {
   const { intro, sections } = parse(p.description);
+  // Intro = short line (already on the card) + lead paragraph; show only the lead here.
   const blocks = intro.split(/\n{2,}/);
-  const action = blocks.length > 3 ? blocks.slice(0, 3).join("\n\n") : "";
-  const details = blocks.length > 3 ? blocks.slice(3).join("\n\n") : intro;
+  const details = blocks.length > 1 ? blocks.slice(1).join("\n\n") : intro;
+  const action = sections["AÇÃO / RESULTADO"];
   const contains = sections["O QUE VEM NO COMBO"] ?? sections["O QUE VEM NO KIT"];
   const sizes = p.variants.map((v) => v.label.replace(/^[^\d]*/, "").replace(/\s+/g, "")).filter(Boolean).join(" · ");
   return (
@@ -72,8 +73,8 @@ export function ProductDetails({ p }: { p: Product }) {
         <Row title="Este item contém">
           {contains ? <Md text={contains} /> : <p>1 unidade de {p.name}{sizes ? ` (${sizes})` : ""}.</p>}
         </Row>
-        {sections["COMPOSIÇÃO E ATIVOS"] && <Row title="Composição e ativos"><Md text={sections["COMPOSIÇÃO E ATIVOS"]} /></Row>}
-        {sections["TAMANHO E RENDIMENTO"] && <Row title="Tamanho e rendimento"><Md text={sections["TAMANHO E RENDIMENTO"]} /></Row>}
+        {sections["ATIVOS E FUNÇÃO"] && <Row title="Ativos e função"><Md text={sections["ATIVOS E FUNÇÃO"]} /></Row>}
+        {sections["APRESENTAÇÃO"] && <Row title="Apresentação"><Md text={sections["APRESENTAÇÃO"]} /></Row>}
         {sections["ENTREGA E TROCA"] && <Row title="Entrega e troca"><Md text={sections["ENTREGA E TROCA"]} /></Row>}
       </div>
     </section>

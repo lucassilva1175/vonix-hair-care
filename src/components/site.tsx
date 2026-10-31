@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, CreditCard, Facebook, Heart, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, Truck, User, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, CreditCard, Facebook, Heart, Star, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, Truck, User, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import logoUrl from "@/assets/vonix-logo.webp";
+import { PrizeWheel } from "@/components/prize-wheel";
 import { reviewsFor } from "@/components/reviews";
 import { toItem, track } from "@/lib/analytics";
 import {
@@ -263,6 +264,7 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
       <main>{children}</main>
       <Footer />
+      <PrizeWheel />
       {!hideWhatsApp && (
         <a
           href={WHATSAPP}
@@ -363,12 +365,22 @@ export function Stars({ slug, big = false }: { slug: string; big?: boolean }) {
   const list = reviewsFor(slug);
   const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
   const label = avg.toFixed(1).replace(".", ",");
+  const size = big ? "h-4 w-4 md:h-5 md:w-5" : "h-3.5 w-3.5";
+  const five = (filled: boolean) => (
+    <span className="flex gap-0.5">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <Star key={i} className={`${size} shrink-0 ${filled ? "fill-current" : ""}`} strokeWidth={1.6} />
+      ))}
+    </span>
+  );
   return (
-    <div className={`flex items-center gap-2 ${big ? "text-base md:text-xl" : "text-xs"}`} role="img" aria-label={list.length ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
-      <span className="relative inline-block leading-none tracking-wide" aria-hidden="true">
-        <span className="text-[oklch(0.88_0.008_85)]">★★★★★</span>
+    <div className="flex items-center gap-2 text-xs" role="img" aria-label={list.length ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
+      <span className="relative inline-block text-[#d4a22f]" aria-hidden="true">
+        {five(false)}
         {avg > 0 && (
-          <span className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap text-star" style={{ width: `${(avg / 5) * 100}%` }}>★★★★★</span>
+          <span className="absolute inset-y-0 left-0 overflow-hidden text-[#e9b01f]" style={{ width: `${(avg / 5) * 100}%` }}>
+            {five(true)}
+          </span>
         )}
       </span>
       {list.length > 0 && <b className="text-sm">{label}</b>}
@@ -416,7 +428,7 @@ export function ProductCard({ p }: { p: Product }) {
       </div>
       <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-1">
         {hasFreeShipping(pricing.price) && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-[#0a5c34] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white">
+          <span className="inline-flex items-center gap-1 rounded-md bg-action px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-action-foreground">
             <Truck className="h-3 w-3" aria-hidden="true" /> FRETE GRÁTIS
           </span>
         )}

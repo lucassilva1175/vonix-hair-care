@@ -5,6 +5,7 @@ import { ShippingBar } from "@/components/cart-summary";
 import { toItem, track } from "@/lib/analytics";
 import { createPayment, getOrderStatus, getPaymentConfig, quoteShipping } from "@/lib/checkout.functions";
 import { OFFER_LABEL, WHATSAPP, brl, checkoutTotals, getSavedCep, installments, maskCep, saveCep, useCart } from "@/lib/store";
+import { couponCheck, couponPercent, findCoupon, getPrize, type Coupon } from "@/lib/coupons";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -89,6 +90,7 @@ function Checkout() {
   const [showCoupon, setShowCoupon] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [applied, setApplied] = useState<Coupon | null>(null);
   const [options, setOptions] = useState<ShipOption[]>([]);
   const [quoting, setQuoting] = useState(false);
   const [quoteErr, setQuoteErr] = useState<string | null>(null);
@@ -109,6 +111,14 @@ function Checkout() {
     const saved = getSavedCep();
     if (saved) setF((old) => (old.cep ? old : { ...old, cep: saved }));
     getPaymentConfig().then(setCfg).catch(() => setCfg({ externalId: "", sandbox: true }));
+    // A coupon won on the prize wheel is applied automatically.
+    const prize = getPrize();
+    if (prize) {
+      setApplied(prize);
+      setShowCoupon(true);
+      setCoupon(prize.code);
+      setCouponMsg(`Cupom ${prize.code} aplicado: ${prize.label}.`);
+    }
   }, []);
 
   const hasLines = c.lines.length > 0;
@@ -126,7 +136,7 @@ function Checkout() {
     let cancelled = false;
     setQuoting(true);
     setQuoteErr(null);
-    quoteShipping({ data: { cep: d, items } })
+    quoteShipping({ data: { cep: d, items, ...(applied ? { coupon: applied.code } : {}) } })
       .then((r) => {
         if (cancelled) return;
         if (r.ok) {
@@ -144,11 +154,14 @@ function Checkout() {
     return () => {
       cancelled = true;
     };
-  }, [f.cep, itemsKey]);
+  }, [f.cep, itemsKey, applied?.code]);
 
-  const t = checkoutTotals(c.lines, pay);
-  const tPix = checkoutTotals(c.lines, "pix");
-  const tCard = checkoutTotals(c.lines, "card");
+  const gross = checkoutTotals(c.lines, "card").gross;
+  const pct = couponPercent(applied ?? undefined, gross);
+  const t = checkoutTotals(c.lines, pay, pct);
+  const tPix = checkoutTotals(c.lines, "pix", pct);
+  const tCard = checkoutTotals(c.lines, "card", pct);
+  const couponProblem = applied ? couponCheck(applied, gross) : null;
   const chosen = options.find((o) => o.id === serviceId) ?? null;
   const shipping = chosen ? chosen.price : 0;
   const total = t.net + shipping;
@@ -181,7 +194,12 @@ function Checkout() {
   };
 
   const applyCoupon = () => {
-    setCouponMsg(coupon.trim() ? "Cupom não encontrado." : "Digite um código de cupom.");
+    if (!coupon.trim()) return setCouponMsg("Digite um código de cupom.");
+    const found = findCoupon(coupon);
+    if (!found) return setCouponMsg("Cupom não encontrado. Confira o código.");
+    const chk = couponCheck(found, gross);
+    setApplied(found);
+    setCouponMsg(chk.ok ? `Cupom ${found.code} aplicado: ${found.label}.` : chk.reason);
   };
 
   const finish = (orderId: number, value: number) => {
@@ -219,6 +237,7 @@ function Checkout() {
           items,
           serviceId: chosen.id,
           method: pay,
+          ...(applied ? { coupon: applied.code } : {}),
           ...(ip.current ? { ip: ip.current } : {}),
           ...(token ? { token, holderName: card.holder, installments: parcels } : {}),
         },
@@ -387,7 +406,7 @@ function Checkout() {
                 <div className="flex gap-2">
                   <input placeholder="Código do cupom" value={coupon} onChange={(e) => setCoupon(e.target.value)} className={inp} />
                   <button type="button" onClick={applyCoupon} className="shrink-0 rounded-lg border border-foreground px-4 text-sm">Aplicar</button>
-                  <button type="button" aria-label="Remover cupom" onClick={() => { setShowCoupon(false); setCoupon(""); setCouponMsg(null); }} className="shrink-0 text-sm underline">Remover</button>
+                  <button type="button" aria-label="Remover cupom" onClick={() => { setShowCoupon(false); setCoupon(""); setCouponMsg(null); setApplied(null); }} className="shrink-0 text-sm underline">Remover</button>
                 </div>
                 {couponMsg && <p role="alert" className="text-sm text-muted-foreground">{couponMsg}</p>}
               </div>
@@ -441,6 +460,7 @@ function Checkout() {
           <div className="space-y-2 text-sm" data-testid="summary">
             <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(t.gross)}</span></div>
             {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas</span><span>− {brl(t.offerDiscount)}</span></div>}
+            {t.couponDiscount > 0 && applied && <div className="flex justify-between"><span>Cupom {applied.code}</span><span>− {brl(t.couponDiscount)}</span></div>}
             {t.pixDiscount > 0 && <div className="flex justify-between"><span>Desconto Pix (5% nos itens sem oferta)</span><span>− {brl(t.pixDiscount)}</span></div>}
             {t.hasOffers && <p className="text-xs text-muted-foreground">Ofertas não cumulativas no mesmo item.</p>}
             <div className="flex justify-between"><span>Frete</span><span>{chosen ? (chosen.free ? "Grátis" : brl(chosen.price)) : "Informe o CEP"}</span></div>

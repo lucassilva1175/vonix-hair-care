@@ -5,6 +5,7 @@ import * as appmax from "./appmax.server";
 import { env } from "./env.server";
 import { calculateShipping } from "./melhorenvio.server";
 import { checkoutTotals, getProduct, lineTotals, type Offer } from "./store";
+import { couponCheck, couponFreeShipping, couponPercent, findCoupon } from "./coupons";
 
 const itemSchema = z.object({
   slug: z.string().min(1).max(120),
@@ -27,20 +28,23 @@ function buildLines(items: z.infer<typeof itemSchema>[]) {
 
 const cents = (v: number) => Math.round(v * 100);
 
-async function shippingOptions(cep: string, lines: ReturnType<typeof buildLines>) {
+const couponSchema = z.string().max(30).optional();
+
+async function shippingOptions(cep: string, lines: ReturnType<typeof buildLines>, couponCode?: string) {
   const quotes = await calculateShipping(
     cep,
     lines.map((l) => ({ id: l.product.slug, unitPrice: l.net / l.units, quantity: l.units })),
   );
-  const free = checkoutTotals(lines, "pix").freeShipping;
+  const t = checkoutTotals(lines, "pix");
+  const free = t.freeShipping || couponFreeShipping(findCoupon(couponCode), t.gross);
   return quotes.map((q, k) => ({ ...q, free: free && k === 0, price: free && k === 0 ? 0 : q.price }));
 }
 
 export const quoteShipping = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ cep: cepSchema, items: z.array(itemSchema).min(1).max(40) }))
+  .inputValidator(z.object({ cep: cepSchema, items: z.array(itemSchema).min(1).max(40), coupon: couponSchema }))
   .handler(async ({ data }) => {
     try {
-      return { ok: true as const, options: await shippingOptions(data.cep, buildLines(data.items)) };
+      return { ok: true as const, options: await shippingOptions(data.cep, buildLines(data.items), data.coupon) };
     } catch (e) {
       console.error("[frete]", e);
       return { ok: false as const, message: "Não foi possível calcular o frete agora. Tente novamente em instantes." };
@@ -74,6 +78,7 @@ const paySchema = z.object({
   address: addressSchema,
   items: z.array(itemSchema).min(1).max(40),
   serviceId: z.number().int(),
+  coupon: couponSchema,
   ip: z.string().max(64).optional(),
   method: z.enum(["pix", "card"]),
   token: z.string().max(200).optional(),
@@ -86,10 +91,17 @@ export const createPayment = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const lines = buildLines(data.items);
-      const option = (await shippingOptions(data.address.cep, lines)).find((o) => o.id === data.serviceId);
+      const option = (await shippingOptions(data.address.cep, lines, data.coupon)).find((o) => o.id === data.serviceId);
       if (!option) return { ok: false as const, message: "Escolha uma opção de entrega válida." };
 
-      const totals = checkoutTotals(lines, data.method === "pix" ? "pix" : "card");
+      const coupon = findCoupon(data.coupon);
+      const gross = checkoutTotals(lines, "card").gross;
+      if (data.coupon && !coupon) return { ok: false as const, message: "Cupom inválido. Remova o cupom ou confira o código." };
+      if (coupon) {
+        const chk = couponCheck(coupon, gross);
+        if (!chk.ok) return { ok: false as const, message: chk.reason };
+      }
+      const totals = checkoutTotals(lines, data.method === "pix" ? "pix" : "card", couponPercent(coupon, gross));
       const document = data.customer.cpf.replace(/\D/g, "");
       const [first = "", ...rest] = data.customer.nome.trim().split(/\s+/);
       const ip = data.ip || getRequestHeader("cf-connecting-ip") || getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";
@@ -122,7 +134,7 @@ export const createPayment = createServerFn({ method: "POST" })
       const orderId = await appmax.createOrder({
         customer_id: customerId,
         products_value: products.reduce((s, p) => s + p.unit_value, 0),
-        discount_value: cents(totals.pixDiscount),
+        discount_value: cents(totals.pixDiscount) + cents(totals.couponDiscount),
         shipping_value: cents(option.price),
         products,
       });
