@@ -147,7 +147,9 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link to="/" className="shrink-0">
             <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-11 w-auto brightness-0" />
           </Link>
+          <p className="mx-auto min-w-0 flex-1 text-center font-display text-sm italic leading-tight lg:hidden">“Até aqui nos ajudou o Senhor”</p>
           <div className="mx-auto hidden min-w-0 w-full max-w-xl flex-col items-center gap-1.5 lg:flex">
+            <p className="font-display text-base italic">“Até aqui nos ajudou o Senhor”</p>
             <SearchBox />
             <AudienceChoice />
             <nav className="flex whitespace-nowrap gap-5 text-xs uppercase">
