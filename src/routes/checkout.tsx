@@ -11,6 +11,8 @@ export const Route = createFileRoute("/checkout")({
       { name: "description", content: "Finalize sua compra Vonix Hair." },
       { property: "og:title", content: "Checkout — Vonix Hair" },
       { property: "og:description", content: "Finalize sua compra Vonix Hair." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -74,8 +76,8 @@ function Checkout() {
 
   return (
     <Shell>
-      <div className="container-site grid gap-10 py-10 lg:grid-cols-[1fr_380px]">
-        <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+      <div className="container-site grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <form className="min-w-0 space-y-8" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
           <div>
             <h1 className="font-display text-5xl">Finalizar compra</h1>
             <p className="mt-2 text-sm text-muted-foreground"><b>Compre sem criar uma conta.</b> Login é opcional e não é pedido em nenhuma etapa.</p>
@@ -138,16 +140,17 @@ function Checkout() {
           )}
         </form>
 
-        <aside className="space-y-4">
+        <aside className="min-w-0 space-y-4" aria-label="Resumo do pedido">
           <ShippingBar subtotal={c.subtotal} />
           <ul className="space-y-2 text-sm">
             {c.lines.map((l) => (
-              <li key={l.slug + l.variant + (l.offer ?? "")} className="flex justify-between gap-2">
-                <span>
+              <li key={l.slug + l.variant + (l.offer ?? "")} className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-start gap-2">
+                <img src={l.product.images[0]} alt={l.product.name} width={48} height={48} className="h-12 w-12 rounded border border-border bg-background object-contain" />
+                <span className="min-w-0 break-words">
                   {l.units}× {l.product.name} <span className="text-muted-foreground">({l.variant})</span>
                   {l.offer && <span className="block text-xs text-muted-foreground">{OFFER_LABEL[l.offer]}{l.offer !== "comp5" ? ` · ${l.qty} kit(s)` : ""}</span>}
                 </span>
-                <span>{brl(l.net)}</span>
+                <span className="whitespace-nowrap font-medium">{brl(l.net)}</span>
               </li>
             ))}
           </ul>

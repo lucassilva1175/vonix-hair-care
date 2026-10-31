@@ -1,0 +1,4 @@
+- [ ] Miniaturas reais no resumo do checkout, sem alterar o carrinho.
+- [ ] Relevância profissional por famílias, preservando ordenação manual.
+- [ ] Faixa de ambientes abaixo da busca, sem seletores duplicados.
+- [ ] Checagem focada no celular e desktop.
