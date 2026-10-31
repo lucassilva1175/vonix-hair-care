@@ -60,13 +60,13 @@ export const missingForFreeShipping = (subtotal: number) =>
   hasFreeShipping(subtotal) ? 0 : Math.max(0, cents(FREE_SHIPPING_ABOVE + 0.01 - subtotal) / 100);
 
 /** What the customer gets in the item: kit piece count (from "O QUE VEM NO KIT") and/or the size(s). */
-export function contentLabel(p: Product) {
+export function contentLabel(p: Product, short = false) {
   const sizes = [...new Set(p.variants.map((v) => v.label.replace(/^[^\d]*/, "").replace(/\s+/g, "").trim()).filter(Boolean))];
   const sizeText = sizes.join(" · ");
   if (p.category === "kits") {
     const block = p.description.match(/\*\*O QUE VEM NO (?:KIT|COMBO)\*\*\s*([\s\S]*?)\n---/)?.[1];
     const n = block ? block.split("\n").filter((l) => l.trim().startsWith("**")).length : 0;
-    if (n) return `Combo com ${n} produtos${sizeText ? ` · ${sizeText}` : ""}`;
+    if (n) return `${short ? "" : "Combo com "}${n} produtos${sizeText ? ` · ${sizeText}` : ""}`;
     return sizeText ? `Combo · ${sizeText}` : "Combo";
   }
   return sizeText;

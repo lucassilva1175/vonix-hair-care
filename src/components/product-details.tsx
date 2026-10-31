@@ -23,8 +23,10 @@ function specs(p: Product) {
   const salao = !!USAGE["salao"]?.(p);
   const uso = isProOnly(p.slug) ? "Profissional (salão)" : casa && salao ? "Casa e salão" : salao ? "Profissional (salão)" : "Cuidado em casa";
   const sizes = [...new Set(p.variants.map((v) => v.label.replace(/^[^\d]*/, "").replace(/\s+/g, "")).filter(Boolean))].join(" · ");
+  const items = (parse(p.description).sections["O QUE VEM NO COMBO"] ?? "").split("\n").filter((l) => l.trim().startsWith("**")).length;
   const rows: [string, string][] = [
     ["Categorias", `Cabelos › ${p.categoryLabel}`],
+    ["Este combo contém", items ? `${items} produtos` : ""],
     ["Indicado para", needs.join(", ")],
     ["Tipo de produto", types.join(", ")],
     ["Tamanho", sizes],

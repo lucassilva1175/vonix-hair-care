@@ -3,6 +3,7 @@ import { CreditCard, Facebook, Heart, House, Instagram, Menu, QrCode, Scissors, 
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import logoUrl from "@/assets/vonix-logo.webp";
 import { reviewsFor } from "@/components/reviews";
 import { toItem, track } from "@/lib/analytics";
 import {
@@ -14,7 +15,6 @@ import {
   installments,
   pixPrice,
   cardPricing,
-  contentLabel,
   useAudience,
   useCart,
   useFavorites,
@@ -26,7 +26,31 @@ import {
 } from "@/lib/store";
 
 export const SRC = "https://vonixhaircosmeticos.com.br";
-export const LOGO = `${SRC}/assets/vonix-logo-optimized-BP5ZgeGC.webp`;
+export const LOGO = logoUrl;
+
+/** Logo painted in the brand's metallic gold (uses the logo's shape as a mask); for dark backgrounds. */
+function GoldLogo({ className = "h-12" }: { className?: string }) {
+  const mask = `url(${LOGO})`;
+  return (
+    <span
+      role="img"
+      aria-label="Vonix Hair"
+      className={`block ${className}`}
+      style={{
+        aspectRatio: "420 / 163",
+        background: "linear-gradient(135deg, #b8862b 0%, #f3d98a 38%, #c9992f 62%, #f0cf7a 100%)",
+        WebkitMaskImage: mask,
+        maskImage: mask,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskPosition: "left center",
+        maskPosition: "left center",
+      }}
+    />
+  );
+}
 
 const MARQUEE = [
   `ATÉ ${MAX_DISCOUNT}% OFF EM PRODUTOS SELECIONADOS`,
@@ -178,7 +202,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Menu className="h-6 w-6" />
           </button>
           <Link to="/" className="shrink-0">
-            <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-11 w-auto brightness-0" />
+            <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-11 w-auto" />
           </Link>
           <p className="mx-auto min-w-0 flex-1 text-center font-display text-sm italic leading-tight lg:hidden">“Até aqui nos ajudou o Senhor”</p>
           <div className="mx-auto hidden min-w-0 w-full max-w-xl flex-col items-center gap-1.5 lg:flex">
@@ -265,7 +289,7 @@ function Footer() {
       </div>
       <div className="container-site grid gap-10 py-12 text-sm sm:grid-cols-4">
         <div>
-          <img src={LOGO} alt="Vonix Hair" width={420} height={163} loading="lazy" className="mb-4 h-12 w-auto invert" />
+          <div className="mb-4"><GoldLogo className="h-14" /></div>
           <p className="opacity-80">
             Cosméticos da maior indústria brasileira, com qualidade e entrega rápida.
           </p>
@@ -340,7 +364,7 @@ export function Stars({ slug, big = false }: { slug: string; big?: boolean }) {
   const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
   const label = avg.toFixed(1).replace(".", ",");
   return (
-    <div className={`flex items-center gap-2 ${big ? "text-xl" : "text-xs"}`} role="img" aria-label={list.length ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
+    <div className={`flex items-center gap-2 ${big ? "text-base md:text-xl" : "text-xs"}`} role="img" aria-label={list.length ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
       <span className="relative inline-block leading-none tracking-wide" aria-hidden="true">
         <span className="text-[oklch(0.88_0.008_85)]">★★★★★</span>
         {avg > 0 && (
@@ -372,7 +396,7 @@ export function ProductCard({ p }: { p: Product }) {
     toast.success(`${p.name} adicionado à sacola`);
   };
   return (
-    <div className="group flex h-full flex-col rounded-2xl border border-border bg-white p-3 shadow-sm">
+    <div className="group flex h-full flex-col rounded-2xl border border-border bg-white p-2.5 shadow-sm md:p-3">
       <div className="relative overflow-hidden rounded-xl bg-white">
         {off > 0 && (
           <span className="absolute left-2 top-2 z-10 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background">
@@ -387,40 +411,37 @@ export function ProductCard({ p }: { p: Product }) {
           <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
         </button>
         <Link to="/produto/$slug" params={{ slug: p.slug }}>
-          <img src={p.images[0]} alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full object-contain transition-transform duration-500 group-hover:scale-105" />
+          <img src={p.images[0]} alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-[6/5] w-full object-contain transition-transform duration-500 group-hover:scale-105 md:aspect-square" />
         </Link>
       </div>
-      <div className="mt-3 text-[11px] font-bold tracking-[0.18em]">VONIX HAIR</div>
-      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-3 min-h-[3.6rem] font-semibold leading-snug hover:underline">
+      <div className="mt-2 text-[10px] font-bold tracking-[0.16em]">VONIX HAIR</div>
+      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-2 min-h-[2.4rem] text-sm font-semibold leading-tight hover:underline md:text-base md:leading-snug">
         {p.name}
       </Link>
-      {contentLabel(p) && (
-        <span className="mt-1.5 w-fit rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold">{contentLabel(p)}</span>
-      )}
-      <div className="mt-2.5"><Stars slug={p.slug} big /></div>
-      <div className="mt-2.5 flex items-end justify-between gap-2">
+      <div className="mt-1.5"><Stars slug={p.slug} big /></div>
+      <div className="mt-1.5 flex items-end justify-between gap-1.5">
         <div className="min-w-0 leading-tight">
-          {p.compareBase && p.compareBase > pricing.price && <div className="text-xs text-muted-foreground line-through">{brl(p.compareBase)}</div>}
-          <div className="text-xl font-bold">{brl(pricing.price)}</div>
-          <div className="mt-0.5 text-sm font-medium">{par.count}x {brl(par.value)} <span className="text-xs font-normal text-muted-foreground">sem juros</span></div>
-          {hasFreeShipping(pricing.price) && <div className="mt-0.5 text-sm font-bold text-[#0a5c34]">Frete Grátis</div>}
+          {p.compareBase && p.compareBase > pricing.price && <div className="text-[11px] text-muted-foreground line-through">{brl(p.compareBase)}</div>}
+          <div className="text-lg font-bold md:text-xl">{brl(pricing.price)}</div>
+          <div className="text-xs font-medium">{par.count}x {brl(par.value)}<span className="hidden font-normal text-muted-foreground sm:inline"> sem juros</span></div>
         </div>
         <button
           type="button"
           onClick={bag}
           aria-label={p.variants.length > 1 || pricing.professional ? `Escolher opções de ${p.name}` : `Adicionar ${p.name} à sacola`}
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-action text-action-foreground shadow-sm transition-transform active:scale-95"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-action text-action-foreground shadow-sm transition-transform active:scale-95 md:h-11 md:w-11"
         >
           <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
         </button>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-2.5 py-1.5 text-[#0a5c34]">
-        <span className="rounded bg-[#0a5c34] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white">PIX</span>
-        <b className="text-base">{brl(pixPrice(pricing.price))}</b>
-        <span className="text-xs font-semibold">5% OFF à vista</span>
+      {hasFreeShipping(pricing.price) && <div className="mt-0.5 text-xs font-bold text-[#0a5c34]">Frete Grátis</div>}
+      <div className="mt-1.5 flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-1.5 py-1 text-[#0a5c34]">
+        <span className="rounded bg-[#0a5c34] px-1 py-0.5 text-[9px] font-bold tracking-wider text-white">PIX</span>
+        <b className="text-[13px] md:text-sm">{brl(pixPrice(pricing.price))}</b>
+        <span className="text-[9px] font-semibold md:text-[10px]">-5%</span>
       </div>
-      {pricing.professional && <p className="mt-1.5 text-xs font-medium">Leve 2: 12% OFF · Leve 3: 15% OFF</p>}
-      {p.short && <p className="mt-2 line-clamp-3 flex-1 text-xs leading-snug text-muted-foreground">{p.short}</p>}
+      {pricing.professional && <p className="mt-1 text-[10px] font-medium leading-tight md:text-xs">Leve 2: 12% OFF · Leve 3: 15% OFF</p>}
+      {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-[11px] leading-snug text-muted-foreground md:line-clamp-3 md:text-xs">{p.short}</p>}
     </div>
   );
 }
