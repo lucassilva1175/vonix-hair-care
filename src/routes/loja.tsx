@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Grid, Shell } from "@/components/site";
-import { BEST_SELLERS, NEEDS, products, TYPES, USAGE } from "@/lib/store";
+import { BEST_SELLERS, NEEDS, products, TYPES, USAGE, resolveAudience, useAudience } from "@/lib/store";
 
 type S = { q?: string | undefined; secao?: string | undefined; tiposProduto?: string | undefined; necessidades?: string | undefined; uso?: string | undefined; categoria?: string | undefined; ordem?: string | undefined };
 
@@ -17,6 +17,8 @@ export const Route = createFileRoute("/loja")({
       { name: "description", content: "Todos os produtos Vonix Hair: progressivas, botox, máscaras, shampoos e kits." },
       { property: "og:title", content: "Loja — Vonix Hair" },
       { property: "og:description", content: "Todos os produtos Vonix Hair em até 6x sem juros." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Loja,
@@ -26,11 +28,14 @@ const CATS = Array.from(new Map(products.map((p) => [p.category, p.categoryLabel
 
 function Loja() {
   const s = Route.useSearch();
+  const { audience } = useAudience();
+  const uso = resolveAudience(audience, s.uso);
   const nav = useNavigate({ from: "/loja" });
   const set = (patch: Partial<S>) => nav({ search: (old: S) => ({ ...old, ...patch }) });
   let list = products.filter((p) => {
     if (s.secao === "mais-vendidos" && !BEST_SELLERS.includes(p.slug)) return false;
-    if (s.uso && USAGE[s.uso] && !USAGE[s.uso]!(p)) return false;
+    const usageFilter = uso ? USAGE[uso] : undefined;
+    if (usageFilter && !usageFilter(p)) return false;
     if (s.categoria && p.category !== s.categoria) return false;
     if (s.tiposProduto && TYPES[s.tiposProduto] && !TYPES[s.tiposProduto]!(p)) return false;
     if (s.necessidades && NEEDS[s.necessidades] && !NEEDS[s.necessidades]!.test(p.name + " " + p.description)) return false;
@@ -47,7 +52,7 @@ function Loja() {
   return (
     <Shell>
       <div className="container-site py-10">
-        <h1 className="font-display text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : s.uso === "casa" ? "Para Você — Cuidados em Casa" : s.uso === "salao" ? "Para Profissionais — Salão e Kits" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
+        <h1 className="font-display text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : uso === "casa" ? "Para Você — Cuidados em Casa" : uso === "salao" ? "Para Profissionais — Salão e Kits" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
         <div className="my-6 flex flex-wrap items-center gap-3">
           <input defaultValue={s.q} key={s.q} placeholder="Buscar..." aria-label="Buscar na loja" className={sel} onKeyDown={(e) => e.key === "Enter" && set({ q: e.currentTarget.value || undefined })} />
           <select aria-label="Categoria" className={sel} value={s.categoria ?? ""} onChange={(e) => set({ categoria: e.target.value || undefined })}>

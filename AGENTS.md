@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Catalog lives in src/data/products.json (prices already final); all price/installment/shipping rules are derived in src/lib/store.ts so they stay consistent everywhere.
+- Store listings resolve the persisted audience independently of internal link search parameters; professional card presentation reuses lineTotals through cardPricing so catalog bases and cart offers remain unchanged.
