@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { quoteShipping } from "@/lib/checkout.functions";
-import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, forAudience, getSavedCep, hasFreeShipping, hasProPromo, lineTotals, maskCep, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
+import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, forAudience, getSavedCep, hasFreeShipping, hasProPromo, lineTotals, maskCep, pixPrice, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
   loader: ({ params }) => {
@@ -255,6 +255,7 @@ function ProductPage() {
         <div className="min-w-0 leading-tight">
           <div className="truncate text-xs text-muted-foreground">{p.name}</div>
           <div className="font-semibold">{brl(total)}</div>
+          {!(proMode && offer) && <div className="text-xs font-semibold text-[#0a5c34]">{brl(pixPrice(total))} no Pix</div>}
         </div>
         <button className="ml-auto shrink-0 rounded-full bg-action px-6 py-3 text-sm font-medium text-action-foreground" onClick={() => { add(); nav({ to: "/carrinho" }); }}>
           Comprar agora

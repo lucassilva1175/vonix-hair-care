@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Facebook, Heart, House, Instagram, Menu, Scissors, Search, ShoppingBag, User, X } from "lucide-react";
+import { CreditCard, Facebook, Heart, House, Instagram, Menu, Scissors, Search, ShoppingBag, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -276,18 +276,23 @@ function Footer() {
 export function PriceBlock({ price, compare, big, offer = false }: { price: number; compare?: number | null; big?: boolean; offer?: boolean }) {
   const i = installments(price);
   return (
-    <div className={big ? "space-y-1" : "space-y-0.5 text-sm"}>
+    <div className={big ? "space-y-2" : "space-y-1.5 text-sm"}>
       <div className="flex items-baseline gap-2">
         {compare && compare > price && (
           <span className="text-muted-foreground line-through">{brl(compare)}</span>
         )}
         <span className={big ? "text-3xl font-semibold" : "font-semibold"}>{brl(price)}</span>
       </div>
-      {!offer && <div>
-        <b>{brl(pixPrice(price))}</b> no Pix
-      </div>}
-      <div className="text-muted-foreground">
-        ou até {i.count}x de {brl(i.value)} sem juros
+      {!offer && (
+        <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] text-[#0a5c34] ${big ? "px-4 py-3" : "px-2.5 py-1.5"}`}>
+          <span className="rounded bg-[#0a5c34] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white">PIX</span>
+          <b className={big ? "text-2xl" : "text-base"}>{brl(pixPrice(price))}</b>
+          <span className={`font-semibold ${big ? "text-sm" : "text-xs"}`}>5% OFF à vista</span>
+        </div>
+      )}
+      <div className={`flex items-center gap-1.5 font-medium ${big ? "text-base" : "text-xs"}`}>
+        <CreditCard className={big ? "h-5 w-5" : "h-4 w-4"} strokeWidth={1.6} aria-hidden="true" />
+        <span>{i.count}x de <b>{brl(i.value)}</b> sem juros no cartão</span>
       </div>
     </div>
   );
