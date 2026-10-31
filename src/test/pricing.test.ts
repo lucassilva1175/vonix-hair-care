@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardPricing, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineTotals, pixPrice, products } from "@/lib/store";
+import { USAGE, cardPricing, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineTotals, pixPrice, products } from "@/lib/store";
 
 describe("ambiente e preços dos cards", () => {
   it("links sem uso ou com uso legado não limpam o ambiente escolhido", () => {
@@ -14,10 +14,16 @@ describe("ambiente e preços dos cards", () => {
     expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 174.9, pix: 166.16, parcels: { count: 6, value: 29.15, first: 29.15 } });
     expect(cardPricing(p, "casa").price).toBe(174.9);
   });
-  it("kits prontos não recebem a promoção de levar 2 ou 3", () => {
+  it("kits prontos também têm a promoção de levar 2 ou 3 no salão, sem 5% extra", () => {
     const p = getProduct("kit-banana-e-mel");
     if (!p) throw new Error("Produto obrigatório ausente");
-    expect(cardPricing(p, "salao")).toMatchObject({ professional: false, price: 154.9, pix: 147.16 });
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 154.9, pix: 147.16 });
+    expect(cardPricing(p, "casa").professional).toBe(false);
+  });
+  it("todo produto vendido na área de salão tem a promoção", () => {
+    const salon = products.filter((p) => USAGE["salao"]?.(p));
+    expect(salon.length).toBeGreaterThan(0);
+    for (const p of salon) expect(cardPricing(p, "salao").professional).toBe(true);
   });
 });
 

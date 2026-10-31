@@ -253,10 +253,10 @@ export const resolveAudience = (saved: Audience, uso?: string): Audience =>
   saved ?? (uso === "casa" || uso === "salao" ? uso : null);
 
 /**
- * Salon area promotions (buy 2 = 12% off, buy 3 = 15% off) apply to every product sold there
- * except kits, which already bundle their own discount. No extra 5% on single units.
+ * Salon area promotions (buy 2 = 12% off, buy 3 = 15% off) apply to every product sold there,
+ * ready-made kits included. No extra 5% on single units.
  */
-export const hasProPromo = (p: Product) => !!USAGE["salao"]?.(p) && p.category !== "kits";
+export const hasProPromo = (p: Product) => !!USAGE["salao"]?.(p);
 
 /** Display only: price is always the catalog price; salon promotions are chosen on the product page. */
 export function cardPricing(p: Product, audience: Audience) {
