@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { CreditCard, Facebook, Heart, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, Truck, User, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, CreditCard, Facebook, Heart, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, Truck, User, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import logoUrl from "@/assets/vonix-logo.webp";
@@ -399,8 +399,8 @@ export function ProductCard({ p }: { p: Product }) {
     <div className="group flex h-full flex-col rounded-2xl border border-border bg-white p-2.5 shadow-sm md:p-3">
       <div className="relative overflow-hidden rounded-xl bg-white">
         {off > 0 && (
-          <span className="absolute left-2 top-2 z-10 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background">
-            {off}% OFF
+          <span className="absolute left-2 top-2 z-10 rounded-md bg-[#7a5a2e] px-1.5 py-0.5 text-[11px] font-bold text-white">
+            -{off}%
           </span>
         )}
         <button
@@ -414,7 +414,17 @@ export function ProductCard({ p }: { p: Product }) {
           <img src={p.images[0]} alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-[6/5] w-full object-contain transition-transform duration-500 group-hover:scale-105 md:aspect-square" />
         </Link>
       </div>
-      <div className="mt-2 text-[10px] font-bold tracking-[0.16em]">VONIX HAIR</div>
+      <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-1">
+        {hasFreeShipping(pricing.price) && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-[#0a5c34] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white">
+            <Truck className="h-3 w-3" aria-hidden="true" /> FRETE GRÁTIS
+          </span>
+        )}
+        {pricing.professional && (
+          <span className="rounded-md bg-foreground px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-background">LEVE 2: 12% · LEVE 3: 15%</span>
+        )}
+      </div>
+      <div className="mt-1 text-[10px] font-bold tracking-[0.16em]">VONIX HAIR</div>
       <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-2 min-h-[2.4rem] text-sm font-semibold leading-tight hover:underline md:text-base md:leading-snug">
         {p.name}
       </Link>
@@ -434,26 +444,101 @@ export function ProductCard({ p }: { p: Product }) {
           <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
         </button>
       </div>
-      {hasFreeShipping(pricing.price) && <div className="mt-0.5 text-xs font-bold text-[#0a5c34]">Frete Grátis</div>}
       <div className="mt-1.5 flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-1.5 py-1 text-[#0a5c34]">
         <span className="rounded bg-[#0a5c34] px-1 py-0.5 text-[9px] font-bold tracking-wider text-white">PIX</span>
         <b className="text-[13px] md:text-sm">{brl(pixPrice(pricing.price))}</b>
         <span className="text-[9px] font-semibold md:text-[10px]">-5%</span>
       </div>
-      {pricing.professional && <p className="mt-1 text-[10px] font-medium leading-tight md:text-xs">Leve 2: 12% OFF · Leve 3: 15% OFF</p>}
       {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-[11px] leading-snug text-muted-foreground md:line-clamp-3 md:text-xs">{p.short}</p>}
     </div>
   );
 }
 
-export function Grid({ items }: { items: Product[] }) {
+/**
+ * Swipeable product row with arrows and page dots. Phones show about one and a half cards
+ * (the next one peeks in) and the page still scrolls up and down normally.
+ */
+function ProductCarousel({ items }: { items: Product[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(0);
+  const [pages, setPages] = useState(1);
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (!el || !el.clientWidth) return;
+    const total = Math.max(1, Math.ceil((el.scrollWidth - 4) / el.clientWidth));
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+    setPages(total);
+    setPage(atEnd ? total - 1 : Math.min(total - 1, Math.round(el.scrollLeft / el.clientWidth)));
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const el = ref.current;
+    el?.addEventListener("scroll", measure, { passive: true });
+    addEventListener("resize", measure);
+    return () => {
+      el?.removeEventListener("scroll", measure);
+      removeEventListener("resize", measure);
+    };
+  }, [measure, items.length]);
+
+  const go = (dir: number) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.9, behavior: "smooth" });
+  const goTo = (i: number) => ref.current?.scrollTo({ left: i * ref.current.clientWidth, behavior: "smooth" });
+  const btn = "grid h-9 w-9 place-items-center rounded-lg border border-[#7a5a2e] bg-white text-[#7a5a2e] transition-opacity disabled:opacity-30";
+
   return (
-    <div className="rounded-2xl bg-[oklch(0.955_0.004_85)] p-2.5 md:p-4">
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+    <div>
+      <div
+        ref={ref}
+        className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] md:gap-4 [&::-webkit-scrollbar]:hidden"
+      >
         {items.map((p) => (
-          <ProductCard key={p.slug} p={p} />
+          <div key={p.slug} className="w-[66%] shrink-0 snap-start sm:w-[45%] md:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3rem)/4)] xl:w-[calc((100%-4rem)/5)]">
+            <ProductCard p={p} />
+          </div>
         ))}
       </div>
+      {pages > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-3">
+          <button type="button" aria-label="Anterior" disabled={page === 0} onClick={() => go(-1)} className={btn}>
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-1.5" role="tablist" aria-label="Páginas">
+            {Array.from({ length: pages }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === page}
+                aria-label={`Página ${i + 1}`}
+                onClick={() => goTo(i)}
+                className={`h-2 rounded-full transition-all ${i === page ? "w-6 bg-[#7a5a2e]" : "w-2 bg-[oklch(0.8_0.01_85)]"}`}
+              />
+            ))}
+          </div>
+          <button type="button" aria-label="Próximo" disabled={page === pages - 1} onClick={() => go(1)} className={btn}>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Product list: a grid, or (with `carousel`) a swipeable row with arrows and dots. */
+export function Grid({ items, carousel = false }: { items: Product[]; carousel?: boolean }) {
+  return (
+    <div className="rounded-2xl bg-[oklch(0.955_0.004_85)] p-2.5 md:p-4">
+      {carousel ? (
+        <ProductCarousel items={items} />
+      ) : (
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+          {items.map((p) => (
+            <ProductCard key={p.slug} p={p} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

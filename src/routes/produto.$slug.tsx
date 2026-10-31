@@ -258,7 +258,7 @@ function ProductPage() {
         {related.length > 0 && (
           <section className="mt-20">
             <h2 className="mb-6 text-2xl font-bold tracking-tight md:text-3xl [&_em]:not-italic">Você também pode <em>gostar</em></h2>
-            <Grid items={related} />
+            <Grid carousel items={related} />
           </section>
         )}
       </div>

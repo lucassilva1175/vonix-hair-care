@@ -98,7 +98,7 @@ function Home() {
 
       <section className="container-site mt-12">
         <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
-        <Grid items={forAudience(BEST_SELLERS.map((s) => getProduct(s)!), audience)} />
+        <Grid carousel items={forAudience(BEST_SELLERS.map((s) => getProduct(s)!), audience)} />
       </section>
 
       <section className="container-site mt-20 text-center">
@@ -117,7 +117,7 @@ function Home() {
 
       <section className="container-site mt-20">
         <Title a="Todos os" b="Produtos" to={{}} />
-        <Grid items={forAudience(products, audience).slice(0, 8)} />
+        <Grid carousel items={forAudience(products, audience).slice(0, 8)} />
       </section>
 
       <section className="container-site mt-20">
