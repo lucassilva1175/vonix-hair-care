@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { quoteShipping } from "@/lib/checkout.functions";
-import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, forAudience, getSavedCep, hasFreeShipping, hasProPromo, lineTotals, maskCep, pixPrice, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
+import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, SITE_URL, forAudience, getSavedCep, hasFreeShipping, hasProPromo, lineTotals, maskCep, pixPrice, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
   loader: ({ params }) => {
@@ -21,9 +21,35 @@ export const Route = createFileRoute("/produto/$slug")({
           { property: "og:title", content: `${p.name} — Vonix Hair` },
           { property: "og:description", content: p.short || p.name },
           { property: "og:image", content: p.images[0] },
+          { property: "og:type", content: "product" },
           { name: "twitter:image", content: p.images[0] },
         ]
       : [{ title: "Produto indisponível — Vonix Hair" }, { name: "robots", content: "noindex" }],
+    links: p ? [{ rel: "canonical", href: `${SITE_URL}/produto/${p.slug}` }] : [],
+    scripts: p
+      ? [
+          {
+            type: "application/ld+json",
+            children: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Product",
+              name: p.name,
+              description: p.short || p.name,
+              image: p.images,
+              sku: p.slug,
+              brand: { "@type": "Brand", name: "Vonix Hair" },
+              offers: {
+                "@type": "Offer",
+                url: `${SITE_URL}/produto/${p.slug}`,
+                priceCurrency: "BRL",
+                price: p.variants[0].price.toFixed(2),
+                availability: "https://schema.org/InStock",
+                itemCondition: "https://schema.org/NewCondition",
+              },
+            }),
+          },
+        ]
+      : [],
   }),
   component: ProductPage,
 });
