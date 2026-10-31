@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ReviewCard, reviews } from "@/components/reviews";
 import { Benefits, Grid, Shell, SRC } from "@/components/site";
 import { BEST_SELLERS, MAX_DISCOUNT, brl, discountPct, forAudience, getProduct, products, useAudience } from "@/lib/store";
 import masks from "@/data/banner-masks.json";
@@ -43,14 +44,6 @@ const NEEDS = [
   ["Cachos", "Definição e movimento", "cat-cachos-BaMWSeI5", "Definição de Cachos"],
   ["Com Química", "Cuidado e hidratação", "cat-loiros-DMned0Ju", "Cabelos com Química"],
   ["Nutrição", "Fios nutridos e macios", "cat-nutricao-DPiiOsHs", "Nutrição"],
-] as const;
-const REVIEWS = [
-  ["Camila Ferreira", "Cliente · Botox Vonix", "Gostei de ser sem formol e derivados. Deixou meu cabelo macio, com brilho e mais alinhadinho. Achei confortável de usar ❤️"],
-  ["Ricardo Almeida", "Profissional · Shampoo Fio de Luz", "Uso no salão e faz diferença, viu! Tira bem o silicone e a oleosidade sem judiar do cabelo. O tratamento pega bem melhor 👍"],
-  ["Fernanda", "Cliente · Progressiva Fio de Luz", "Amei ❤️ Baixou o volume sem ficar aquele liso chapado. Ficou alinhado, com movimento e brilho já na secagem."],
-  ["Ana Paula Souza", "Profissional · Botox Vonix", "A textura é bem grossinha, não escorre e rende muito! Meus clientes amaram o cabelo sem frizz e com aquele brilho 😍"],
-  ["Fernanda Costa", "Cliente · Máscara Nutri Repair", "Depois da coloração meu cabelo tava precisando. Na primeira aplicação já ficou mais maleável e nutrido."],
-  ["Isabelle", "Profissional · Progressiva Fio de Luz", "Uso no salão e gostei demais 😍 Baixa o volume, deixa alinhadinho e não pesa. Já sai da secagem com brilho."],
 ] as const;
 
 function Title({ a, b, to }: { a: string; b: string; to?: Record<string, string> }) {
@@ -128,15 +121,10 @@ function Home() {
       </section>
 
       <section className="container-site mt-20">
-        <Title a="Resultados que" b="Falam por Si" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {REVIEWS.map(([n, r, t]) => (
-            <figure key={n + r} className="rounded-xl border border-border p-6">
-              <div className="text-star">★★★★★</div>
-              <blockquote className="mt-3 text-sm">{t}</blockquote>
-              <figcaption className="mt-4 text-sm"><b>{n}</b><div className="text-xs text-muted-foreground">{r}</div></figcaption>
-            </figure>
-          ))}
+        <Title a="Resultados que" b="Falam por Si" to={{ q: "botox vonix" }} />
+        <p className="-mt-4 mb-6 text-sm text-muted-foreground">Depoimentos reais de cabeleireiras que usam o Botox Vonix.</p>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {reviews.map((r) => <ReviewCard key={r.author + r.date} r={r} />)}
         </div>
       </section>
 

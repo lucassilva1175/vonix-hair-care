@@ -3,6 +3,7 @@ import { Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ProductGallery } from "@/components/product-gallery";
+import { ProductReviews } from "@/components/reviews";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { quoteShipping } from "@/lib/checkout.functions";
@@ -257,6 +258,7 @@ function ProductPage() {
             <Md text={p.description} />
           </section>
         )}
+        <ProductReviews slug={p.slug} />
         {related.length > 0 && (
           <section className="mt-20">
             <h2 className="mb-8 font-display text-4xl">Você também pode <em>gostar</em></h2>
