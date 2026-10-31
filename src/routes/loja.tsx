@@ -47,7 +47,7 @@ function Loja() {
   return (
     <Shell>
       <div className="container-site py-10">
-        <h1 className="font-display text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : s.uso === "casa" ? "Para Cuidar em Casa" : s.uso === "salao" ? "Para o Seu Salão" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
+        <h1 className="font-display text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : s.uso === "casa" ? "Para Você — Cuidados em Casa" : s.uso === "salao" ? "Para Profissionais — Salão e Kits" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
         <div className="my-6 flex flex-wrap items-center gap-3">
           <input defaultValue={s.q} key={s.q} placeholder="Buscar..." aria-label="Buscar na loja" className={sel} onKeyDown={(e) => e.key === "Enter" && set({ q: e.currentTarget.value || undefined })} />
           <select aria-label="Categoria" className={sel} value={s.categoria ?? ""} onChange={(e) => set({ categoria: e.target.value || undefined })}>

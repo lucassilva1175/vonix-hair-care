@@ -71,10 +71,10 @@ function AudienceLinks({ onDone }: { onDone?: () => void }) {
   return (
     <>
       <button className={audience === "casa" ? "underline" : "hover:underline"} onClick={() => go("casa")}>
-        Para cuidar em casa
+        Para você
       </button>
       <button className={audience === "salao" ? "underline" : "hover:underline"} onClick={() => go("salao")}>
-        Para meu salão
+        Para profissionais
       </button>
       {audience && (
         <button className="underline" onClick={() => go(null)}>
@@ -82,6 +82,28 @@ function AudienceLinks({ onDone }: { onDone?: () => void }) {
         </button>
       )}
     </>
+  );
+}
+
+/** Seletor compacto de ambiente junto à conta; escolha salva, nunca bloqueia a navegação. */
+function AudienceSelect() {
+  const { audience, set } = useAudience();
+  const nav = useNavigate();
+  return (
+    <select
+      aria-label="Ambiente de compra"
+      value={audience ?? ""}
+      onChange={(e) => {
+        const a = (e.target.value || null) as Audience;
+        set(a);
+        nav({ to: "/loja", search: a ? { uso: a } : {} });
+      }}
+      className="h-9 rounded-full border border-border bg-background px-2 text-xs"
+    >
+      <option value="">Todos</option>
+      <option value="casa">Para você</option>
+      <option value="salao">Para profissionais</option>
+    </select>
   );
 }
 
@@ -117,7 +139,8 @@ export function Shell({ children }: { children: ReactNode }) {
               ))}
             </nav>
           </div>
-          <div className="ml-auto flex items-center gap-5 text-sm">
+          <div className="ml-auto flex items-center gap-4 text-sm">
+            <div className="hidden sm:block"><AudienceSelect /></div>
             <Link to="/favoritos" aria-label="Favoritos">
               <Heart className="h-5 w-5" />
             </Link>
