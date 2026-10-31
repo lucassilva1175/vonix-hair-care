@@ -13,11 +13,11 @@ describe("cupons e roleta", () => {
     expect(findCoupon("")).toBeUndefined();
   });
   it("valor mínimo é medido antes dos descontos", () => {
-    const c = findCoupon("GIRA10")!;
+    const c = findCoupon("GIRA6")!;
     expect(couponCheck(c, 249.99).ok).toBe(false);
     expect(couponCheck(c, 250).ok).toBe(true);
     expect(couponPercent(c, 100)).toBe(0);
-    expect(couponPercent(c, 300)).toBe(0.1);
+    expect(couponPercent(c, 300)).toBe(0.06);
   });
   it("cupom sem mínimo vale em qualquer compra e todos os cupons da roleta são só desconto", () => {
     expect(couponPercent(findCoupon("GIRA3"), 20)).toBe(0.03);

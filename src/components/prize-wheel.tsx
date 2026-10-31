@@ -137,7 +137,7 @@ export function PrizeWheel() {
                   <svg
                     viewBox="-100 -100 200 200"
                     role="img"
-                    aria-label="Roleta com cupons de 3%, 5%, 7% e 10% de desconto"
+                    aria-label="Roleta com cupons de 3%, 4%, 5% e 6% de desconto"
                     className="w-full"
                     style={{ transform: `rotate(${deg}deg)`, transition: phase === "spinning" ? "transform 5s cubic-bezier(.17,.67,.12,.99)" : "none" }}
                     onTransitionEnd={onEnd}

@@ -15,17 +15,17 @@ export type Coupon = {
 
 export const COUPONS: Coupon[] = [
   { code: "GIRA3", label: "3% OFF em qualquer compra", percent: 3 },
-  { code: "GIRA5", label: "5% OFF em compras acima de R$ 99", percent: 5, minSubtotal: 99 },
-  { code: "GIRA7", label: "7% OFF em compras acima de R$ 150", percent: 7, minSubtotal: 150 },
-  { code: "GIRA10", label: "10% OFF em compras acima de R$ 250", percent: 10, minSubtotal: 250 },
+  { code: "GIRA4", label: "4% OFF em compras acima de R$ 99", percent: 4, minSubtotal: 99 },
+  { code: "GIRA5", label: "5% OFF em compras acima de R$ 150", percent: 5, minSubtotal: 150 },
+  { code: "GIRA6", label: "6% OFF em compras acima de R$ 250", percent: 6, minSubtotal: 250 },
 ];
 
 /** Prize wheel: every spin wins; arc size = chance, so what you see is what you get (weights sum to 100). */
 export const WHEEL: { code: string; weight: number }[] = [
-  { code: "GIRA3", weight: 40 },
-  { code: "GIRA5", weight: 30 },
-  { code: "GIRA7", weight: 20 },
-  { code: "GIRA10", weight: 10 },
+  { code: "GIRA3", weight: 25 },
+  { code: "GIRA4", weight: 25 },
+  { code: "GIRA5", weight: 25 },
+  { code: "GIRA6", weight: 25 },
 ];
 
 export const findCoupon = (code?: string | null) => {
