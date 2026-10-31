@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Shell } from "@/components/site";
-import { OFFER_LABEL, brl, checkoutTotals, getSavedCep, installments, saveCep, useCart } from "@/lib/store";
+import { toItem, track } from "@/lib/analytics";
+import { OFFER_LABEL, WHATSAPP, brl, checkoutTotals, getSavedCep, installments, maskCep, saveCep, useCart } from "@/lib/store";
 import { ShippingBar } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/checkout")({
@@ -21,10 +22,16 @@ export const Route = createFileRoute("/checkout")({
 
 const inp = "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm";
 
+const maskCpf = (v: string) =>
+  v.replace(/\D/g, "").slice(0, 11).replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1-$2");
+
 function Checkout() {
   const c = useCart();
   const [f, setF] = useState({ nome: "", email: "", cpf: "", whatsapp: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" });
   const [cepMsg, setCepMsg] = useState<string | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
+  const lastCep = useRef("");
+  const numeroRef = useRef<HTMLInputElement>(null);
   const [sent, setSent] = useState(false);
   const [pay, setPay] = useState<"pix" | "card">("pix");
   const [showCoupon, setShowCoupon] = useState(false);
@@ -37,6 +44,11 @@ function Checkout() {
     if (saved) setF((old) => (old.cep ? old : { ...old, cep: saved }));
   }, []);
 
+  const hasLines = c.lines.length > 0;
+  useEffect(() => {
+    if (hasLines) track("begin_checkout", { value: c.netSubtotal, items: c.lines.map((l) => toItem(l.product, l.variant, l.net / l.units, l.units)) });
+  }, [hasLines]);
+
   const t = checkoutTotals(c.lines, pay);
   const tPix = checkoutTotals(c.lines, "pix");
   const tCard = checkoutTotals(c.lines, "card");
@@ -44,18 +56,28 @@ function Checkout() {
 
   const lookup = async (v: string) => {
     const d = v.replace(/\D/g, "");
-    if (d.length !== 8) return;
+    if (d.length !== 8 || d === lastCep.current) return;
+    lastCep.current = d;
+    setCepLoading(true);
+    setCepMsg(null);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
     try {
-      const r = await fetch(`https://viacep.com.br/ws/${d}/json/`).then((x) => x.json());
+      const r = await fetch(`https://viacep.com.br/ws/${d}/json/`, { signal: ctrl.signal }).then((x) => x.json());
       if (r.erro) {
         setCepMsg("CEP não encontrado. Preencha o endereço manualmente.");
       } else {
         setF((old) => ({ ...old, rua: r.logradouro ?? "", bairro: r.bairro ?? "", cidade: r.localidade ?? "", uf: r.uf ?? "" }));
         saveCep(v);
         setCepMsg("Endereço preenchido — confira e complete o número.");
+        numeroRef.current?.focus();
       }
     } catch {
-      setCepMsg("Não foi possível consultar o CEP. Preencha o endereço manualmente.");
+      lastCep.current = "";
+      setCepMsg("A consulta do CEP demorou ou falhou. Preencha o endereço manualmente.");
+    } finally {
+      clearTimeout(timer);
+      setCepLoading(false);
     }
   };
 
@@ -77,7 +99,7 @@ function Checkout() {
   return (
     <Shell>
       <div className="container-site grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <form className="min-w-0 space-y-8" onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+        <form className="min-w-0 space-y-8" onSubmit={(e) => { e.preventDefault(); setSent(true); track("add_payment_info", { payment_type: pay, value: t.net }); }}>
           <div>
             <h1 className="font-display text-5xl">Finalizar compra</h1>
             <p className="mt-2 text-sm text-muted-foreground"><b>Compre sem criar uma conta.</b> Login é opcional e não é pedido em nenhuma etapa.</p>
@@ -89,16 +111,17 @@ function Checkout() {
             <input required placeholder="Nome completo" value={f.nome} onChange={set("nome")} autoComplete="name" className={inp} />
             <input required type="email" inputMode="email" placeholder="E-mail" value={f.email} onChange={set("email")} autoComplete="email" className={inp} />
             <input required inputMode="tel" placeholder="WhatsApp com DDD" value={f.whatsapp} onChange={set("whatsapp")} autoComplete="tel" className={inp} />
-            <input required inputMode="numeric" placeholder="CPF (necessário para emissão da nota fiscal)" value={f.cpf} onChange={set("cpf")} className={inp} />
+            <input required inputMode="numeric" placeholder="CPF (necessário para emissão da nota fiscal)" value={f.cpf} maxLength={14} onChange={(e) => setF((old) => ({ ...old, cpf: maskCpf(e.target.value) }))} className={inp} />
           </fieldset>
 
           <fieldset className="space-y-3">
             <legend className="mb-1 text-lg font-semibold">2. Entrega</legend>
-            <input required inputMode="numeric" placeholder="CEP" value={f.cep} onChange={(e) => { setF((old) => ({ ...old, cep: e.target.value })); lookup(e.target.value); }} autoComplete="postal-code" className={inp} />
-            {cepMsg && <p className="text-sm text-muted-foreground">{cepMsg}</p>}
+            <input required inputMode="numeric" placeholder="CEP (00000-000)" value={f.cep} maxLength={9} onChange={(e) => { const m = maskCep(e.target.value); setF((old) => ({ ...old, cep: m })); lookup(m); }} autoComplete="postal-code" className={inp} />
+            {cepLoading && <p role="status" className="text-sm text-muted-foreground">Buscando endereço…</p>}
+            {cepMsg && !cepLoading && <p role="status" className="text-sm text-muted-foreground">{cepMsg}</p>}
             <input required placeholder="Rua" value={f.rua} onChange={set("rua")} autoComplete="address-line1" className={inp} />
             <div className="grid grid-cols-2 gap-3">
-              <input required inputMode="numeric" placeholder="Número" value={f.numero} onChange={set("numero")} className={inp} />
+              <input ref={numeroRef} required inputMode="numeric" placeholder="Número" value={f.numero} onChange={set("numero")} autoComplete="address-line2" className={inp} />
               <input placeholder="Complemento (opcional)" value={f.complemento} onChange={set("complemento")} className={inp} />
             </div>
             <input required placeholder="Bairro" value={f.bairro} onChange={set("bairro")} autoComplete="address-level3" className={inp} />
@@ -133,6 +156,9 @@ function Checkout() {
           </fieldset>
 
           <button className="w-full rounded-full bg-action py-3.5 font-medium text-action-foreground">Revisar pedido (prévia, sem cobrança)</button>
+          <p className="text-center text-sm text-muted-foreground">
+            Precisa de ajuda para finalizar? <a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">Fale com a gente no WhatsApp</a>
+          </p>
           {sent && (
             <p role="alert" className="rounded-lg border border-border bg-muted p-4 text-sm">
               Pagamento e cálculo de frete ainda não estão conectados nesta cópia. Nenhum pedido foi criado e nenhuma cobrança foi feita. Seus dados continuam preenchidos.

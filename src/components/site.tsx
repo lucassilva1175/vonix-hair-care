@@ -109,7 +109,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Menu className="h-6 w-6" />
           </button>
           <Link to="/" className="shrink-0">
-            <img src={LOGO} alt="Vonix Hair" className="h-11 w-auto brightness-0" />
+            <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-11 w-auto brightness-0" />
           </Link>
           <div className="mx-auto hidden min-w-0 w-full max-w-xl flex-col items-center gap-1.5 lg:flex">
             <SearchBox />
@@ -174,7 +174,7 @@ export function Shell({ children }: { children: ReactNode }) {
           target="_blank"
           rel="noreferrer"
           aria-label="Falar no WhatsApp"
-          className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg"
+          className={`fixed right-5 z-40 grid ${path.startsWith("/produto/") ? "bottom-24 lg:bottom-5" : "bottom-5"} h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg`}
         >
           <MessageCircle className="h-7 w-7" />
         </a>
@@ -194,7 +194,7 @@ function Footer() {
       </div>
       <div className="container-site grid gap-10 py-12 text-sm sm:grid-cols-4">
         <div>
-          <img src={LOGO} alt="Vonix Hair" className="mb-4 h-12 invert" />
+          <img src={LOGO} alt="Vonix Hair" width={420} height={163} loading="lazy" className="mb-4 h-12 w-auto invert" />
           <p className="opacity-80">
             Cosméticos da maior indústria brasileira, com qualidade e entrega rápida.
           </p>

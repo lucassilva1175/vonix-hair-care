@@ -78,10 +78,10 @@ function Home() {
     <Shell>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
-          <Link to="/produto/$slug" params={{ slug: BANNERS[i]! }} className="banner-wrap relative block">
+          <Link to="/produto/$slug" params={{ slug: BANNERS[i]! }} className="banner-wrap relative block aspect-[1080/1350] md:aspect-[1850/700]">
             <picture>
               <source media="(min-width: 768px)" srcSet={`${SRC}/images/home/black-friday-2026/desktop/${i + 1}.webp`} />
-              <img src={`${SRC}/images/home/black-friday-2026/mobile/${i + 1}.webp`} alt={`Banner ${i + 1} de 7: ${getProduct(BANNERS[i]!)?.name}`} className="w-full" />
+              <img src={`${SRC}/images/home/black-friday-2026/mobile/${i + 1}.webp`} alt={`Banner ${i + 1} de 7: ${getProduct(BANNERS[i]!)?.name}`} width={1080} height={1350} fetchPriority={i === 0 ? "high" : "auto"} className="h-full w-full object-cover" />
             </picture>
             <OfferMask m={masks[i]!.desktop} slug={BANNERS[i]!} cls="hidden md:flex" />
             <OfferMask m={masks[i]!.mobile} slug={BANNERS[i]!} cls="flex md:hidden" />

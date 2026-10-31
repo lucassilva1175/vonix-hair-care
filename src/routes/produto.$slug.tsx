@@ -3,7 +3,8 @@ import { Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
-import { FREE_SHIPPING_ABOVE, brl, discountPct, getProduct, getSavedCep, hasFreeShipping, isProOnly, lineTotals, maskCep, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
+import { toItem, track } from "@/lib/analytics";
+import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, getSavedCep, hasFreeShipping, isProOnly, lineTotals, maskCep, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
   loader: ({ params }) => {
@@ -118,12 +119,18 @@ function ProductPage() {
   const related = products.filter((x) => x.category === p.category && x.slug !== p.slug).slice(0, 4);
   const proMode = isProOnly(p.slug) && audience === "salao";
   const sel = proMode ? lineTotals(v.price, qty, offer) : null;
+  const unitPrice = sel ? sel.net / sel.units : v.price;
+  useEffect(() => {
+    track("view_item", { value: v.price, items: [toItem(p, v.label, v.price)] });
+  }, [p.slug]);
   const add = () => {
     cart.add(p.slug, v.label, qty, proMode ? offer : undefined);
+    track("add_to_cart", { value: unitPrice * (sel ? sel.units : qty), items: [toItem(p, v.label, unitPrice, sel ? sel.units : qty)] });
   };
+  const total = sel ? sel.net : v.price * qty;
   return (
     <Shell>
-      <div className="container-site py-8">
+      <div className="container-site py-8 pb-28 lg:pb-8">
         <nav className="mb-6 text-xs text-muted-foreground">
           <Link to="/">Início</Link> / <Link to="/loja" search={{ categoria: p.category }}>{p.categoryLabel}</Link> / {p.name}
         </nav>
@@ -207,8 +214,13 @@ function ProductPage() {
                 Adicionar ao carrinho
               </button>
             </div>
-            <ShippingCalc subtotal={sel ? sel.net : v.price * qty} />
-            <p className="mt-4 text-sm text-muted-foreground">Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos.</p>
+            <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
+              <li>Compra 100% segura</li>
+              <li>5% de desconto no Pix e até 6x sem juros no cartão</li>
+              <li>Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos</li>
+              <li><a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">Dúvidas? Fale com a gente no WhatsApp</a></li>
+            </ul>
+            <ShippingCalc subtotal={total} />
           </div>
         </div>
         {p.description && (
@@ -223,6 +235,15 @@ function ProductPage() {
             <Grid items={related} />
           </section>
         )}
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:hidden">
+        <div className="min-w-0 leading-tight">
+          <div className="truncate text-xs text-muted-foreground">{p.name}</div>
+          <div className="font-semibold">{brl(total)}</div>
+        </div>
+        <button className="ml-auto shrink-0 rounded-full bg-action px-6 py-3 text-sm font-medium text-action-foreground" onClick={() => { add(); nav({ to: "/carrinho" }); }}>
+          Comprar agora
+        </button>
       </div>
     </Shell>
   );
