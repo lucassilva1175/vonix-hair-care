@@ -3,8 +3,9 @@ import { Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ProductGallery } from "@/components/product-gallery";
+import { ProductDetails } from "@/components/product-details";
 import { ProductReviews } from "@/components/reviews";
-import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
+import { Grid, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { quoteShipping } from "@/lib/checkout.functions";
 import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, SITE_URL, forAudience, getSavedCep, hasFreeShipping, hasProPromo, lineTotals, maskCep, pixPrice, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
@@ -252,12 +253,7 @@ function ProductPage() {
             <ShippingCalc subtotal={total} slug={p.slug} variant={v.label} qty={qty} />
           </div>
         </div>
-        {p.description && (
-          <section className="mx-auto mt-16 max-w-3xl">
-            <h2 className="mb-4 font-display text-3xl">Descrição</h2>
-            <Md text={p.description} />
-          </section>
-        )}
+        {p.description && <ProductDetails p={p} />}
         <ProductReviews slug={p.slug} />
         {related.length > 0 && (
           <section className="mt-20">
