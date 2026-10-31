@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Grid, Shell, SRC } from "@/components/site";
+import { Benefits, Grid, Shell, SRC } from "@/components/site";
 import { BEST_SELLERS, MAX_DISCOUNT, brl, discountPct, forAudience, getProduct, products, useAudience } from "@/lib/store";
 import masks from "@/data/banner-masks.json";
 
@@ -101,7 +101,9 @@ function Home() {
         </div>
       </section>
 
-      <section className="container-site mt-16">
+      <Benefits />
+
+      <section className="container-site mt-12">
         <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
         <Grid items={forAudience(BEST_SELLERS.map((s) => getProduct(s)!), audience)} />
       </section>

@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { CreditCard, Facebook, Heart, House, Instagram, Menu, Scissors, Search, ShoppingBag, User, X } from "lucide-react";
+import { CreditCard, Facebook, Heart, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, Truck, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  FREE_SHIPPING_ABOVE,
   MAX_DISCOUNT,
   brl,
   discountPct,
@@ -47,6 +48,33 @@ export function WhatsAppIcon({ className = "h-7 w-7" }: { className?: string }) 
         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
       </g>
     </svg>
+  );
+}
+
+/** Reassurance strip: only conditions the store already advertises. */
+export function Benefits() {
+  const items = [
+    { Icon: Truck, title: "Frete grátis", text: `acima de R$ ${FREE_SHIPPING_ABOVE} em produtos` },
+    { Icon: CreditCard, title: "Até 6x sem juros", text: "no cartão de crédito" },
+    { Icon: QrCode, title: "5% OFF no Pix", text: "pagamento à vista" },
+    { Icon: ShieldCheck, title: "Compra segura", text: "seus dados protegidos" },
+  ];
+  return (
+    <section aria-label="Vantagens" className="container-site mt-6">
+      <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {items.map(({ Icon, title, text }) => (
+          <li key={title} className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-action text-action-foreground">
+              <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 leading-tight">
+              <b className="block text-sm">{title}</b>
+              <span className="block text-xs text-muted-foreground">{text}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
