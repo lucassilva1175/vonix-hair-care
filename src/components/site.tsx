@@ -7,6 +7,7 @@ import {
   discountPct,
   installments,
   pixPrice,
+  cardPricing,
   useAudience,
   useCart,
   useFavorites,
@@ -22,7 +23,7 @@ const MARQUEE = [
   `ATÉ ${MAX_DISCOUNT}% OFF EM PRODUTOS SELECIONADOS`,
   "FRETE GRÁTIS ACIMA DE R$ 150 EM PRODUTOS, ANTES DOS DESCONTOS",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
-  "5% DE DESCONTO NO PIX",
+  "5% NO PIX EM ITENS SEM OUTRA OFERTA",
   "ESQUENTA BLACK FRIDAY",
 ];
 
@@ -76,11 +77,6 @@ function AudienceLinks({ onDone }: { onDone?: () => void }) {
       <button className={audience === "salao" ? "underline" : "hover:underline"} onClick={() => go("salao")}>
         Para profissionais
       </button>
-      {audience && (
-        <button className="underline" onClick={() => go(null)}>
-          Ver todos
-        </button>
-      )}
     </>
   );
 }
@@ -177,6 +173,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 </Link>
               ))}
               <AudienceLinks onDone={() => setOpen(false)} />
+              <AudienceSelect />
               <Link to="/favoritos" onClick={() => setOpen(false)}>Favoritos</Link>
               <Link to="/conta" onClick={() => setOpen(false)}>Entrar / Meus pedidos</Link>
               <Link to="/carrinho" onClick={() => setOpen(false)}>Carrinho</Link>
@@ -254,7 +251,7 @@ function Footer() {
   );
 }
 
-export function PriceBlock({ price, compare, big }: { price: number; compare?: number | null; big?: boolean }) {
+export function PriceBlock({ price, compare, big, offer = false }: { price: number; compare?: number | null; big?: boolean; offer?: boolean }) {
   const i = installments(price);
   return (
     <div className={big ? "space-y-1" : "space-y-0.5 text-sm"}>
@@ -264,9 +261,9 @@ export function PriceBlock({ price, compare, big }: { price: number; compare?: n
         )}
         <span className={big ? "text-3xl font-semibold" : "font-semibold"}>{brl(price)}</span>
       </div>
-      <div>
+      {!offer && <div>
         <b>{brl(pixPrice(price))}</b> no Pix
-      </div>
+      </div>}
       <div className="text-muted-foreground">
         ou até {i.count}x de {brl(i.value)} sem juros
       </div>
@@ -285,14 +282,15 @@ export function Stars({ count }: { count: number }) {
 
 export function ProductCard({ p }: { p: Product }) {
   const fav = useFavorites();
-  const v = p.variants[0];
-  const off = discountPct(p.compareBase, v.price);
+  const { audience } = useAudience();
+  const pricing = cardPricing(p, audience);
+  const off = discountPct(p.compareBase, pricing.price);
   return (
     <div className="group flex flex-col">
       <div className="relative overflow-hidden rounded-xl bg-card-image">
-        {off > 0 && (
+        {(pricing.professional || off > 0) && (
           <span className="absolute left-2 top-2 z-10 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background">
-            {off}% OFF
+            {pricing.professional ? "5% profissional" : `${off}% OFF`}
           </span>
         )}
         <button
@@ -311,7 +309,7 @@ export function ProductCard({ p }: { p: Product }) {
       </Link>
       <Stars count={p.reviews} />
       <div className="mt-1 flex-1">
-        <PriceBlock price={v.price} compare={p.compareBase} />
+        <PriceBlock price={pricing.price} compare={pricing.professional ? p.variants[0].price : p.compareBase} offer={pricing.professional} />
       </div>
       <Link
         to="/produto/$slug"

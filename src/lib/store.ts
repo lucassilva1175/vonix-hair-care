@@ -243,6 +243,15 @@ export function checkoutTotals(
 
 /* ---------- audience shortcut (casa / salão), persisted per browser ---------- */
 export type Audience = "casa" | "salao" | null;
+export const resolveAudience = (saved: Audience, uso?: string): Audience =>
+  saved ?? (uso === "casa" || uso === "salao" ? uso : null);
+
+/** Display only: reuse the single-unit line offer without modifying the catalog. */
+export function cardPricing(p: Product, audience: Audience) {
+  const professional = audience === "salao" && isProOnly(p.slug);
+  const price = lineTotals(p.variants[0].price, 1, professional ? "comp5" : undefined).net;
+  return { professional, price, pix: professional ? null : pixPrice(price), parcels: installments(price) };
+}
 const audienceStore = createStore<Audience>("vonix-audience", null);
 export function useAudience() {
   const audience = useSyncExternalStore(audienceStore.sub, audienceStore.get, audienceStore.server);

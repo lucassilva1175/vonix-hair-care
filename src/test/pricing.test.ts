@@ -1,5 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineTotals, pixPrice, products } from "@/lib/store";
+import { cardPricing, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineTotals, pixPrice, products } from "@/lib/store";
+
+describe("ambiente e preços dos cards", () => {
+  it("links sem uso ou com uso legado não limpam o ambiente escolhido", () => {
+    expect(resolveAudience("casa")).toBe("casa");
+    expect(resolveAudience("casa", "pessoal")).toBe("casa");
+    expect(resolveAudience("salao")).toBe("salao");
+    expect(resolveAudience(null)).toBe(null);
+  });
+  it("Fio de Luz profissional mostra 166,16 sem Pix adicional e parcelas coerentes", () => {
+    const p = getProduct("progressiva-fio-de-luz");
+    if (!p) throw new Error("Produto obrigatório ausente");
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 166.16, pix: null, parcels: { count: 6, value: 27.69, first: 27.71 } });
+    expect(p.variants[0].price).toBe(174.9);
+  });
+  it("produto normal mantém Pix 5% no ambiente profissional", () => {
+    const p = getProduct("kit-banana-e-mel");
+    if (!p) throw new Error("Produto obrigatório ausente");
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: false, price: 154.9, pix: 147.16 });
+  });
+});
 
 describe("regras comerciais", () => {
   it("catálogo tem 43 produtos", () => expect(products.length).toBe(43));
