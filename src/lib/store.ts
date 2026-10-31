@@ -154,7 +154,7 @@ export function useCart() {
   const subtotal = cents(lines.reduce((s, l) => s + l.gross, 0)) / 100;
   const netSubtotal = cents(lines.reduce((s, l) => s + l.net, 0)) / 100;
   const count = lines.reduce((s, l) => s + l.units, 0);
-  const key = (i: { slug: string; variant: string; offer?: Offer }) => `${i.slug}|${i.variant}|${i.offer ?? ""}`;
+  const key = (i: { slug: string; variant: string; offer?: Offer | undefined }) => `${i.slug}|${i.variant}|${i.offer ?? ""}`;
   return {
     lines,
     subtotal,
@@ -219,7 +219,7 @@ export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compar
  *   are NEVER cumulative: Pix 5% and coupons apply only to lines without an offer.
  */
 export function checkoutTotals(
-  lines: { gross: number; net: number; offer?: Offer }[],
+  lines: { gross: number; net: number; offer?: Offer | undefined }[],
   method: "pix" | "card",
   couponPct = 0,
 ) {
@@ -233,7 +233,7 @@ export function checkoutTotals(
     gross: gross / 100,
     offerDiscount: (gross - net) / 100,
     couponDiscount: couponDisc / 100,
-    pixDiscount: -pixDisc / 100,
+    pixDiscount: (-pixDisc + 0) / 100,
     discount: (gross - total) / 100,
     net: total / 100,
     freeShipping: gross > FREE_SHIPPING_ABOVE * 100,

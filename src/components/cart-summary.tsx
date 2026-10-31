@@ -16,7 +16,7 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
   );
 }
 
-export function Summary({ lines }: { lines: { gross: number; net: number; offer?: Offer }[] }) {
+export function Summary({ lines }: { lines: { gross: number; net: number; offer?: Offer | undefined }[] }) {
   const t = checkoutTotals(lines, "card");
   const tPix = checkoutTotals(lines, "pix");
   const i = installments(t.net);
