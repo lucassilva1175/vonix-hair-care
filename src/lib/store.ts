@@ -233,7 +233,7 @@ export function checkoutTotals(
     gross: gross / 100,
     offerDiscount: (gross - net) / 100,
     couponDiscount: couponDisc / 100,
-    pixDiscount: -pixDisc / 100,
+    pixDiscount: (-pixDisc + 0) / 100,
     discount: (gross - total) / 100,
     net: total / 100,
     freeShipping: gross > FREE_SHIPPING_ABOVE * 100,
