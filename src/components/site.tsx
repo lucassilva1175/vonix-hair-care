@@ -81,6 +81,21 @@ export function WhatsAppIcon({ className = "h-7 w-7" }: { className?: string }) 
   );
 }
 
+/** Payment methods the checkout really accepts (Appmax: Pix and credit card). Add boleto/wallets here only once they are built. */
+export function PaymentMethods({ dark = false }: { dark?: boolean }) {
+  const pill = `inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${dark ? "border-marquee-foreground/35 text-marquee-foreground" : "border-border bg-white text-foreground"}`;
+  return (
+    <ul aria-label="Formas de pagamento" className="flex flex-wrap items-center gap-2">
+      <li className={pill}>
+        <span className="rounded bg-[#0a5c34] px-1 py-0.5 text-[9px] font-bold tracking-wider text-white">PIX</span> Pix · 5% OFF
+      </li>
+      <li className={pill}>
+        <CreditCard className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" /> Cartão de crédito · até 6x sem juros
+      </li>
+    </ul>
+  );
+}
+
 /** Reassurance strip: only conditions the store already advertises. */
 export function Benefits() {
   const items = [
@@ -318,6 +333,10 @@ function Footer() {
           <span>CNPJ: 68.272.005/0001-07</span>
           <div className="mt-2"><SocialLinks /></div>
         </div>
+      </div>
+      <div className="container-site flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-marquee-foreground/15 py-5 text-sm">
+        <span className="font-semibold">Formas de pagamento</span>
+        <PaymentMethods dark />
       </div>
       <div className="container-site flex flex-wrap justify-between gap-3 border-t border-marquee-foreground/15 py-5 text-xs opacity-80">
         <span>© 2026 Vonix Hair. Todos os direitos reservados.</span>

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductDetails } from "@/components/product-details";
 import { ProductReviews } from "@/components/reviews";
-import { Grid, PriceBlock, Shell, Stars } from "@/components/site";
+import { Grid, PaymentMethods, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { quoteShipping } from "@/lib/checkout.functions";
 import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, SITE_URL, forAudience, getSavedCep, hasFreeShipping, hasProPromo, lineTotals, maskCep, pixPrice, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
@@ -244,6 +244,7 @@ function ProductPage() {
                 Adicionar ao carrinho
               </button>
             </div>
+            <div className="mt-4"><PaymentMethods /></div>
             <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
               <li>Compra 100% segura</li>
               <li>5% de desconto no Pix e até 6x sem juros no cartão</li>
