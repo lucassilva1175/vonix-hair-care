@@ -111,12 +111,12 @@ function Home() {
       <section className="container-site mt-20 text-center">
         <h2 className="font-display text-4xl md:text-5xl">Encontre o Tratamento <em>Ideal</em></h2>
         <p className="mt-2 text-muted-foreground">Escolha a necessidade do seu cabelo e veja os produtos indicados.</p>
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-6">
+        <div className="mt-6 grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-6">
           {NEEDS.map(([t, s, img, q]) => (
             <Link key={t} to="/loja" search={{ uso: "pessoal", necessidades: q }} className="group">
-              <img src={`${SRC}/assets/${img}.webp`} alt={t} className="aspect-square w-full rounded-full object-cover transition-transform group-hover:scale-105" />
-              <div className="mt-3 font-medium">{t}</div>
-              <div className="text-xs text-muted-foreground">{s}</div>
+              <img src={`${SRC}/assets/${img}.webp`} alt={t} width={130} height={130} loading="lazy" className="mx-auto aspect-square w-full max-w-[84px] rounded-full object-cover transition-transform group-hover:scale-105 md:max-w-[120px]" />
+              <div className="mt-2 text-sm font-medium">{t}</div>
+              <div className="text-[11px] leading-tight text-muted-foreground">{s}</div>
             </Link>
           ))}
         </div>
