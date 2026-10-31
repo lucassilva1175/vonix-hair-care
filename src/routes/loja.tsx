@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Grid, Shell } from "@/components/site";
-import { BEST_SELLERS, NEEDS, products, TYPES, USAGE, resolveAudience, useAudience, professionalRelevance } from "@/lib/store";
+import { BEST_SELLERS, NEEDS, products, TYPES, forAudience, resolveAudience, useAudience } from "@/lib/store";
 
 type S = { q?: string | undefined; secao?: string | undefined; tiposProduto?: string | undefined; necessidades?: string | undefined; uso?: string | undefined; categoria?: string | undefined; ordem?: string | undefined };
 
@@ -34,8 +34,6 @@ function Loja() {
   const set = (patch: Partial<S>) => nav({ search: (old: S) => ({ ...old, ...patch }) });
   let list = products.filter((p) => {
     if (s.secao === "mais-vendidos" && !BEST_SELLERS.includes(p.slug)) return false;
-    const usageFilter = uso ? USAGE[uso] : undefined;
-    if (usageFilter && !usageFilter(p)) return false;
     if (s.categoria && p.category !== s.categoria) return false;
     if (s.tiposProduto && TYPES[s.tiposProduto] && !TYPES[s.tiposProduto]!(p)) return false;
     if (s.necessidades && NEEDS[s.necessidades] && !NEEDS[s.necessidades]!.test(p.name + " " + p.description)) return false;
@@ -48,7 +46,7 @@ function Loja() {
   if (s.ordem === "menor") list = [...list].sort((a, b) => a.variants[0].price - b.variants[0].price);
   if (s.ordem === "maior") list = [...list].sort((a, b) => b.variants[0].price - a.variants[0].price);
   if (s.ordem === "az") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
-  if (uso === "salao" && !["menor", "maior", "az"].includes(s.ordem ?? "")) list = professionalRelevance(list);
+  if (!["menor", "maior", "az"].includes(s.ordem ?? "")) list = forAudience(list, uso);
   const sel = "h-10 rounded-full border border-border bg-background px-4 text-sm";
   return (
     <Shell>

@@ -256,7 +256,7 @@ export const resolveAudience = (saved: Audience, uso?: string): Audience =>
  * Salon area promotions (buy 2 = 12% off, buy 3 = 15% off) apply to every product sold there,
  * ready-made kits included. No extra 5% on single units.
  */
-export const hasProPromo = (p: Product) => !!USAGE["salao"]?.(p);
+export const hasProPromo = (_p: Product) => true;
 
 /** Display only: price is always the catalog price; salon promotions are chosen on the product page. */
 export function cardPricing(p: Product, audience: Audience) {
@@ -265,10 +265,24 @@ export function cardPricing(p: Product, audience: Audience) {
 }
 const audienceStore = createStore<Audience>("vonix-audience", null, "session");
 
-/** Keeps each area closed: salon visitors only see salon products, home visitors only home products. */
+/** Chemical-service products (progressivas, botox, selagem): they go last in the home area. */
+const isChemicalLine = (p: Product) => isProOnly(p.slug) || p.category === "quimica" || p.slug.startsWith("selagem");
+
+/**
+ * Both areas list every product; only the order changes (stable within each group):
+ * - casa: home products first, the rest next, progressivas/botox at the end;
+ * - salão: professional products first (by professional relevance), home products at the bottom.
+ */
 export const forAudience = (items: Product[], audience: Audience) => {
-  const f = audience ? USAGE[audience] : undefined;
-  return f ? items.filter(f) : items;
+  if (audience === "casa") {
+    const rank = (p: Product) => (USAGE["casa"]?.(p) ? 0 : isChemicalLine(p) ? 2 : 1);
+    return [...items].sort((a, b) => rank(a) - rank(b));
+  }
+  if (audience === "salao") {
+    const pro = professionalRelevance(items.filter((p) => USAGE["salao"]?.(p)));
+    return [...pro, ...items.filter((p) => !USAGE["salao"]?.(p))];
+  }
+  return items;
 };
 export function useAudience() {
   const audience = useSyncExternalStore(audienceStore.sub, audienceStore.get, audienceStore.server);

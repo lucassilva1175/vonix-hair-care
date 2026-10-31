@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { USAGE, cardPricing, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineTotals, pixPrice, products } from "@/lib/store";
+import { USAGE, cardPricing, forAudience, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineTotals, pixPrice, products } from "@/lib/store";
 
 describe("ambiente e preços dos cards", () => {
   it("links sem uso ou com uso legado não limpam o ambiente escolhido", () => {
@@ -21,9 +21,28 @@ describe("ambiente e preços dos cards", () => {
     expect(cardPricing(p, "casa").professional).toBe(false);
   });
   it("todo produto vendido na área de salão tem a promoção", () => {
-    const salon = products.filter((p) => USAGE["salao"]?.(p));
-    expect(salon.length).toBeGreaterThan(0);
-    for (const p of salon) expect(cardPricing(p, "salao").professional).toBe(true);
+    for (const p of products) expect(cardPricing(p, "salao").professional).toBe(true);
+  });
+  it("as duas áreas listam todos os produtos, só muda a ordem", () => {
+    for (const a of ["casa", "salao"] as const) {
+      const l = forAudience(products, a);
+      expect(l.length).toBe(products.length);
+      expect(new Set(l.map((p) => p.slug)).size).toBe(products.length);
+    }
+  });
+  it("cuidado em casa: produtos de casa primeiro e progressivas/botox no final", () => {
+    const l = forAudience(products, "casa");
+    const first = l.findIndex((p) => !USAGE["casa"]?.(p));
+    expect(l.slice(0, first).every((p) => USAGE["casa"]?.(p))).toBe(true);
+    const lastSlugs = l.slice(-6).map((p) => p.slug);
+    expect(lastSlugs.some((s) => s.startsWith("progressiva-") || s.startsWith("botox-"))).toBe(true);
+    expect(l.findIndex((p) => p.slug === "progressiva-fio-de-luz")).toBeGreaterThan(l.findIndex((p) => p.slug === "kit-cafe-verde"));
+  });
+  it("área de salão: profissionais primeiro e produtos de casa embaixo", () => {
+    const l = forAudience(products, "salao");
+    expect(l[0]?.slug).toBe("progressiva-fio-de-luz");
+    const firstHome = l.findIndex((p) => !USAGE["salao"]?.(p));
+    expect(l.slice(firstHome).every((p) => !USAGE["salao"]?.(p))).toBe(true);
   });
 });
 

@@ -8,7 +8,6 @@ import {
   brl,
   discountPct,
   installments,
-  lineTotals,
   pixPrice,
   cardPricing,
   useAudience,
@@ -366,12 +365,7 @@ export function ProductCard({ p }: { p: Product }) {
       <Stars count={p.reviews} />
       <div className="mt-1 flex-1">
         <PriceBlock price={pricing.price} compare={p.compareBase} />
-        {pricing.professional && (
-          <div className="mt-1 space-y-0.5 text-xs font-semibold text-[#0a5c34]">
-            <p>Leve 2 (12% OFF): economize {brl(lineTotals(pricing.price, 1, "kit2").gross - lineTotals(pricing.price, 1, "kit2").net)}</p>
-            <p>Leve 3 (15% OFF): economize {brl(lineTotals(pricing.price, 1, "kit3").gross - lineTotals(pricing.price, 1, "kit3").net)}</p>
-          </div>
-        )}
+        {pricing.professional && <p className="mt-1 text-xs font-medium">Leve 2: 12% OFF · Leve 3: 15% OFF</p>}
       </div>
       <Link
         to="/produto/$slug"
