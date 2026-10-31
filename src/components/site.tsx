@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Heart, Menu, MessageCircle, Search, ShoppingBag, User, X } from "lucide-react";
+import { Heart, House, Menu, MessageCircle, Scissors, Search, ShoppingBag, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import {
   MAX_DISCOUNT,
   brl,
@@ -61,45 +62,30 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
   );
 }
 
-function AudienceLinks({ onDone }: { onDone?: () => void }) {
+function AudienceChoice() {
   const { audience, set } = useAudience();
   const nav = useNavigate();
   const go = (a: Audience) => {
     set(a);
-    onDone?.();
     nav({ to: "/loja", search: a ? { uso: a } : {} });
   };
   return (
-    <>
-      <button className={audience === "casa" ? "underline" : "hover:underline"} onClick={() => go("casa")}>
-        Para você
-      </button>
-      <button className={audience === "salao" ? "underline" : "hover:underline"} onClick={() => go("salao")}>
-        Para profissionais
-      </button>
-    </>
-  );
-}
-
-/** Seletor compacto de ambiente junto à conta; escolha salva, nunca bloqueia a navegação. */
-function AudienceSelect() {
-  const { audience, set } = useAudience();
-  const nav = useNavigate();
-  return (
-    <select
-      aria-label="Ambiente de compra"
-      value={audience ?? ""}
-      onChange={(e) => {
-        const a = (e.target.value || null) as Audience;
-        set(a);
-        nav({ to: "/loja", search: a ? { uso: a } : {} });
-      }}
-      className="h-9 rounded-full border border-border bg-background px-2 text-xs"
-    >
-      <option value="">Todos</option>
-      <option value="casa">Para você</option>
-      <option value="salao">Para profissionais</option>
-    </select>
+    <section aria-label="Escolha seu ambiente" className="w-full min-w-0">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+        {([
+          { value: "casa", label: "PARA MIM", support: "Cuidados em casa", Icon: House },
+          { value: "salao", label: "PARA CABELEIREIRAS", support: "Produtos para salão", Icon: Scissors },
+        ] as const).map(({ value, label, support, Icon }) => (
+          <Button key={value} type="button" variant="outline" aria-pressed={audience === value}
+            onClick={() => go(value)}
+            className={`h-auto min-h-16 min-w-0 gap-2 whitespace-normal border-foreground px-2 py-2 shadow-none ${audience === value ? "bg-foreground text-background hover:bg-foreground hover:text-background" : "bg-background text-foreground hover:bg-muted"}`}>
+            <Icon aria-hidden="true" />
+            <span className="min-w-0 text-left"><span className="block text-[11px] font-semibold sm:text-xs">{label}</span><span className="block text-[11px] font-normal">{support}</span></span>
+          </Button>
+        ))}
+      </div>
+      <div className="flex justify-end"><Button type="button" variant="link" className="h-6 px-0 text-xs text-muted-foreground" onClick={() => go(null)}>Ver todos</Button></div>
+    </section>
   );
 }
 
@@ -125,8 +111,9 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link to="/" className="shrink-0">
             <img src={LOGO} alt="Vonix Hair" className="h-11 w-auto brightness-0" />
           </Link>
-          <div className="mx-auto hidden w-full max-w-xl flex-col items-center gap-1.5 lg:flex">
+          <div className="mx-auto hidden min-w-0 w-full max-w-xl flex-col items-center gap-1.5 lg:flex">
             <SearchBox />
+            <AudienceChoice />
             <nav className="flex whitespace-nowrap gap-5 text-xs uppercase">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="shrink-0 hover:underline">
@@ -136,7 +123,6 @@ export function Shell({ children }: { children: ReactNode }) {
             </nav>
           </div>
           <div className="ml-auto flex items-center gap-4 text-sm">
-            <div className="hidden sm:block"><AudienceSelect /></div>
             <Link to="/favoritos" aria-label="Favoritos">
               <Heart className="h-5 w-5" />
             </Link>
@@ -155,6 +141,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
         <div className="container-site space-y-2 pb-3 lg:hidden">
           <SearchBox />
+          <AudienceChoice />
         </div>
       </header>
       {open && (
@@ -172,8 +159,6 @@ export function Shell({ children }: { children: ReactNode }) {
                   {n.label}
                 </Link>
               ))}
-              <AudienceLinks onDone={() => setOpen(false)} />
-              <AudienceSelect />
               <Link to="/favoritos" onClick={() => setOpen(false)}>Favoritos</Link>
               <Link to="/conta" onClick={() => setOpen(false)}>Entrar / Meus pedidos</Link>
               <Link to="/carrinho" onClick={() => setOpen(false)}>Carrinho</Link>

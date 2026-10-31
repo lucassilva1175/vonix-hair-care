@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Grid, Shell } from "@/components/site";
-import { BEST_SELLERS, NEEDS, products, TYPES, USAGE, resolveAudience, useAudience } from "@/lib/store";
+import { BEST_SELLERS, NEEDS, products, TYPES, USAGE, resolveAudience, useAudience, professionalRelevance } from "@/lib/store";
 
 type S = { q?: string | undefined; secao?: string | undefined; tiposProduto?: string | undefined; necessidades?: string | undefined; uso?: string | undefined; categoria?: string | undefined; ordem?: string | undefined };
 
@@ -48,11 +48,12 @@ function Loja() {
   if (s.ordem === "menor") list = [...list].sort((a, b) => a.variants[0].price - b.variants[0].price);
   if (s.ordem === "maior") list = [...list].sort((a, b) => b.variants[0].price - a.variants[0].price);
   if (s.ordem === "az") list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+  if (uso === "salao" && !["menor", "maior", "az"].includes(s.ordem ?? "")) list = professionalRelevance(list);
   const sel = "h-10 rounded-full border border-border bg-background px-4 text-sm";
   return (
     <Shell>
       <div className="container-site py-10">
-        <h1 className="font-display text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : uso === "casa" ? "Para Você — Cuidados em Casa" : uso === "salao" ? "Para Profissionais — Salão e Kits" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
+        <h1 className="font-display text-4xl sm:text-5xl">{s.q ? `Busca: “${s.q}”` : s.secao ? "Mais Vendidos" : uso === "casa" ? "Para Mim — Cuidados em Casa" : uso === "salao" ? "Para Cabeleireiras — Produtos para Salão" : s.tiposProduto ?? s.necessidades ?? "Todos os Produtos"}</h1>
         <div className="my-6 flex flex-wrap items-center gap-3">
           <input defaultValue={s.q} key={s.q} placeholder="Buscar..." aria-label="Buscar na loja" className={sel} onKeyDown={(e) => e.key === "Enter" && set({ q: e.currentTarget.value || undefined })} />
           <select aria-label="Categoria" className={sel} value={s.categoria ?? ""} onChange={(e) => set({ categoria: e.target.value || undefined })}>

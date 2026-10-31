@@ -266,8 +266,20 @@ export const USAGE: Record<string, (p: Product) => boolean> = {
       p.category === "finalizadores" ||
       /casa|doméstic|dia a dia|diário/i.test(p.name + " " + p.description)),
   salao: (p) =>
-    isProOnly(p.slug) || p.category === "kits" || /profissional|salão/i.test(p.name + " " + p.description),
+    isProOnly(p.slug) || (p.category === "quimica" && p.slug.startsWith("botox-")) || p.category === "kits" || /profissional|salão/i.test(p.name + " " + p.description),
 };
+
+/** Professional relevance only; stable families based on catalog identifiers, never kit text. */
+export function professionalFamilyRank(p: Product) {
+  if (p.category === "quimica" && p.slug.startsWith("progressiva-")) return 0;
+  if (p.category === "quimica" && p.slug.startsWith("botox-")) return 1;
+  if (p.category === "lavatorio" && p.slug.startsWith("shampoo-")) return 2;
+  if (p.category === "finalizadores" && p.slug.startsWith("defrizante")) return 3;
+  return 4;
+}
+
+export const professionalRelevance = (items: Product[]) =>
+  [...items].sort((a, b) => professionalFamilyRank(a) - professionalFamilyRank(b));
 
 /**
  * Contextual complement matrix: ordered rules keyed by what is already in the
