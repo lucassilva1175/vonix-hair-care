@@ -154,7 +154,7 @@ export function useCart() {
   const subtotal = cents(lines.reduce((s, l) => s + l.gross, 0)) / 100;
   const netSubtotal = cents(lines.reduce((s, l) => s + l.net, 0)) / 100;
   const count = lines.reduce((s, l) => s + l.units, 0);
-  const key = (i: { slug: string; variant: string; offer?: Offer }) => `${i.slug}|${i.variant}|${i.offer ?? ""}`;
+  const key = (i: { slug: string; variant: string; offer?: Offer | undefined }) => `${i.slug}|${i.variant}|${i.offer ?? ""}`;
   return {
     lines,
     subtotal,
