@@ -219,7 +219,7 @@ export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compar
  *   are NEVER cumulative: Pix 5% and coupons apply only to lines without an offer.
  */
 export function checkoutTotals(
-  lines: { gross: number; net: number; offer?: Offer }[],
+  lines: { gross: number; net: number; offer?: Offer | undefined }[],
   method: "pix" | "card",
   couponPct = 0,
 ) {
