@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { Heart, Minus, Plus, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ProductGallery } from "@/components/product-gallery";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { quoteShipping } from "@/lib/checkout.functions";
@@ -142,7 +143,6 @@ function ProductPage() {
   const fav = useFavorites();
   const { audience } = useAudience();
   const nav = useNavigate();
-  const [img, setImg] = useState(0);
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
   const [offer, setOffer] = useState<Offer | undefined>(undefined);
@@ -168,26 +168,7 @@ function ProductPage() {
           <Link to="/">Início</Link> / <Link to="/loja" search={{ categoria: p.category }}>{p.categoryLabel}</Link> / {p.name}
         </nav>
         <div className="grid gap-10 lg:grid-cols-2">
-          <div className="min-w-0">
-            <button
-              type="button"
-              aria-label={`Ver próxima imagem (${img + 1} de ${p.images.length})`}
-              onClick={() => p.images.length > 1 && setImg((img + 1) % p.images.length)}
-              className="relative block w-full overflow-hidden rounded-2xl bg-card-image"
-            >
-              <img src={p.images[img]} alt={p.name} width={800} height={800} fetchPriority="high" className="aspect-square w-full object-contain" />
-              {p.images.length > 1 && (
-                <span className="absolute bottom-3 right-3 rounded-full bg-foreground/80 px-2.5 py-1 text-xs text-background">{img + 1}/{p.images.length}</span>
-              )}
-            </button>
-            <div className="mt-3 flex gap-2 overflow-x-auto">
-              {p.images.map((u, k) => (
-                <button key={u} onClick={() => setImg(k)} className={`h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${k === img ? "border-foreground" : "border-transparent"}`}>
-                  <img src={u} alt="" className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          </div>
+          <ProductGallery key={p.slug} images={p.images} name={p.name} />
           <div className="min-w-0">
             {off > 0 && <span className="rounded-full bg-foreground px-3 py-1 text-xs text-background">{off}% OFF</span>}
             <h1 className="mt-3 font-display text-4xl md:text-5xl">{p.name}</h1>
