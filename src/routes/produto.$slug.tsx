@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { quoteShipping } from "@/lib/checkout.functions";
-import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, getSavedCep, hasFreeShipping, isProOnly, lineTotals, maskCep, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
+import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, forAudience, getSavedCep, hasFreeShipping, hasProPromo, lineTotals, maskCep, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
   loader: ({ params }) => {
@@ -104,10 +104,10 @@ function ShippingCalc({ subtotal, slug, variant, qty }: { subtotal: number; slug
   );
 }
 
-const PRO_OFFERS: { offer: Offer; label: string; pct: number }[] = [
-  { offer: "comp5", label: "1 unidade", pct: 5 },
-  { offer: "kit2", label: "Kit 2 unidades", pct: 12 },
-  { offer: "kit3", label: "Kit 3 unidades", pct: 20 },
+const PRO_OFFERS: { offer: Offer | undefined; label: string; pct: number }[] = [
+  { offer: undefined, label: "1 unidade", pct: 0 },
+  { offer: "kit2", label: "Leve 2 unidades", pct: 12 },
+  { offer: "kit3", label: "Leve 3 unidades", pct: 15 },
 ];
 
 function ProductPage() {
@@ -119,12 +119,12 @@ function ProductPage() {
   const [img, setImg] = useState(0);
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
-  const [offer, setOffer] = useState<Offer>("comp5");
+  const [offer, setOffer] = useState<Offer | undefined>(undefined);
   const v = p.variants[vi] ?? p.variants[0]!;
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
-  const related = products.filter((x) => x.category === p.category && x.slug !== p.slug).slice(0, 4);
-  const proMode = isProOnly(p.slug) && audience === "salao";
+  const related = forAudience(products.filter((x) => x.category === p.category && x.slug !== p.slug), audience).slice(0, 4);
+  const proMode = hasProPromo(p) && audience === "salao";
   const sel = proMode ? lineTotals(v.price, qty, offer) : null;
   const unitPrice = sel ? sel.net / sel.units : v.price;
   useEffect(() => {
@@ -169,25 +169,25 @@ function ProductPage() {
             {p.short && <p className="mt-3 text-muted-foreground">{p.short}</p>}
             {proMode ? (
               <div className="mt-6">
-                <div className="mb-2 text-sm font-medium">Condição profissional — mesmo produto, mesmo tamanho</div>
+                <div className="mb-2 text-sm font-medium">Promoção para cabeleireiras — mesmo produto, mesmo tamanho</div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {PRO_OFFERS.map((o) => {
                     const t = lineTotals(v.price, 1, o.offer);
                     return (
                       <button
-                        key={o.offer}
+                        key={o.label}
                         onClick={() => setOffer(o.offer)}
                         className={`rounded-xl border p-3 text-left text-sm ${offer === o.offer ? "border-foreground bg-foreground text-background" : "border-border"}`}
                       >
                         <div className="font-medium">{o.label}</div>
-                        <div className="text-xs opacity-80">{o.pct}% OFF</div>
+                        <div className="text-xs opacity-80">{o.pct ? `${o.pct}% OFF` : "Preço normal"}</div>
                         <div className="mt-1 font-semibold">{brl(t.net)}</div>
                       </button>
                     );
                   })}
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Ofertas não cumulativas no mesmo item: não somam com o desconto do Pix nem com cupom.
+                  O desconto do kit não soma com o desconto de 5% do Pix nem com cupom. O frete grátis acima de {brl(FREE_SHIPPING_ABOVE)} vale pelo valor dos produtos antes dos descontos.
                 </p>
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="text-muted-foreground line-through">{brl(sel!.gross)}</span>
@@ -216,7 +216,7 @@ function ProductPage() {
                 <span className="w-8 text-center" data-testid="qty">{qty}</span>
                 <button aria-label="Aumentar" className="p-3" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4" /></button>
               </div>
-              <span className="text-xs text-muted-foreground">{proMode && offer !== "comp5" ? (offer === "kit2" ? "kits de 2 un." : "kits de 3 un.") : "unidade(s)"}</span>
+              <span className="text-xs text-muted-foreground">{proMode && offer ? (offer === "kit2" ? "kits de 2 un." : "kits de 3 un.") : "unidade(s)"}</span>
               <button aria-label="Favoritar" onClick={() => fav.toggle(p.slug)} className="rounded-full border border-border p-3">
                 <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
               </button>

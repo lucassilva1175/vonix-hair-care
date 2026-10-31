@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Grid, Shell, SRC } from "@/components/site";
-import { BEST_SELLERS, MAX_DISCOUNT, brl, discountPct, getProduct, products } from "@/lib/store";
+import { BEST_SELLERS, MAX_DISCOUNT, brl, discountPct, forAudience, getProduct, products, useAudience } from "@/lib/store";
 import masks from "@/data/banner-masks.json";
 
 type Mask = { box: number[]; bg: string };
@@ -70,6 +70,7 @@ function Title({ a, b, to }: { a: string; b: string; to?: Record<string, string>
 
 function Home() {
   const [i, setI] = useState(0);
+  const { audience } = useAudience();
   useEffect(() => {
     const t = setInterval(() => setI((x) => (x + 1) % BANNERS.length), 6000);
     return () => clearInterval(t);
@@ -102,7 +103,7 @@ function Home() {
 
       <section className="container-site mt-16">
         <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
-        <Grid items={BEST_SELLERS.map((s) => getProduct(s)!)} />
+        <Grid items={forAudience(BEST_SELLERS.map((s) => getProduct(s)!), audience)} />
       </section>
 
       <section className="container-site mt-20 text-center">
@@ -121,7 +122,7 @@ function Home() {
 
       <section className="container-site mt-20">
         <Title a="Todos os" b="Produtos" to={{}} />
-        <Grid items={products.slice(0, 8)} />
+        <Grid items={forAudience(products, audience).slice(0, 8)} />
       </section>
 
       <section className="container-site mt-20">

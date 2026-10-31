@@ -8,13 +8,13 @@ describe("ambiente e preços dos cards", () => {
     expect(resolveAudience("salao")).toBe("salao");
     expect(resolveAudience(null)).toBe(null);
   });
-  it("Fio de Luz profissional mostra 166,16 sem Pix adicional e parcelas coerentes", () => {
+  it("Fio de Luz no salão não tem 5% profissional: preço de catálogo, Pix normal e promoção de kits", () => {
     const p = getProduct("progressiva-fio-de-luz");
     if (!p) throw new Error("Produto obrigatório ausente");
-    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 166.16, pix: null, parcels: { count: 6, value: 27.69, first: 27.71 } });
-    expect(p.variants[0].price).toBe(174.9);
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 174.9, pix: 166.16, parcels: { count: 6, value: 29.15, first: 29.15 } });
+    expect(cardPricing(p, "casa").price).toBe(174.9);
   });
-  it("produto normal mantém Pix 5% no ambiente profissional", () => {
+  it("kits prontos não recebem a promoção de levar 2 ou 3", () => {
     const p = getProduct("kit-banana-e-mel");
     if (!p) throw new Error("Produto obrigatório ausente");
     expect(cardPricing(p, "salao")).toMatchObject({ professional: false, price: 154.9, pix: 147.16 });
@@ -40,10 +40,15 @@ describe("regras comerciais", () => {
 });
 
 describe("ofertas por linha (não cumulativas)", () => {
-  it("Fio de Luz profissional: 1un 166,16 / kit2 307,82 / kit3 419,76", () => {
-    expect(lineTotals(174.9, 1, "comp5").net).toBe(166.16);
+  it("Fio de Luz no salão: 1un 174,90 / leve 2 (12%) 307,82 / leve 3 (15%) 446,00", () => {
+    expect(lineTotals(174.9, 1)).toMatchObject({ net: 174.9, gross: 174.9, units: 1 });
     expect(lineTotals(174.9, 1, "kit2")).toMatchObject({ net: 307.82, gross: 349.8, units: 2 });
-    expect(lineTotals(174.9, 1, "kit3")).toMatchObject({ net: 419.76, gross: 524.7, units: 3 });
+    expect(lineTotals(174.9, 1, "kit3")).toMatchObject({ net: 446, gross: 524.7, units: 3 });
+  });
+  it("frete grátis considera o valor antes do desconto do kit, mesmo que o total fique abaixo de 150", () => {
+    const t = lineTotals(84.9, 1, "kit2"); // 169,80 antes do desconto, 149,42 depois
+    expect(t.net).toBeLessThan(150);
+    expect(checkoutTotals([{ gross: t.gross, net: t.net, offer: "kit2" }], "pix").freeShipping).toBe(true);
   });
   it("complemento consumidor: Sérum Argan 84,90 → 80,66 (economia 4,24)", () => {
     const t = lineTotals(84.9, 1, "comp5");

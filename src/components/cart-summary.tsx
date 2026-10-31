@@ -23,7 +23,7 @@ export function Summary({ lines }: { lines: { gross: number; net: number; offer?
   return (
     <div className="space-y-2 text-sm">
       <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(t.gross)}</span></div>
-      {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas (5/12/20%)</span><span>− {brl(t.offerDiscount)}</span></div>}
+      {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas (5/12/15%)</span><span>− {brl(t.offerDiscount)}</span></div>}
       <div className="flex justify-between"><span>Frete</span><span>{t.freeShipping ? "Grátis" : "Calculado pelo CEP no checkout"}</span></div>
       <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><span>Total no Pix (5% off*)</span><span>{brl(tPix.net)}</span></div>
       <div className="flex justify-between"><span>Total no cartão{t.freeShipping ? "" : " (sem frete)"}</span><span>{brl(t.net)}</span></div>

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Heart, House, Menu, MessageCircle, Scissors, Search, ShoppingBag, User, X } from "lucide-react";
+import { Facebook, Heart, House, Instagram, Menu, Scissors, Search, ShoppingBag, User, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,8 @@ import {
   useCart,
   useFavorites,
   WHATSAPP,
+  INSTAGRAM,
+  FACEBOOK,
   type Audience,
   type Product,
 } from "@/lib/store";
@@ -35,6 +37,29 @@ const NAV = [
   { label: "Máscara", search: { tiposProduto: "Máscara" } },
   { label: "Kits", search: { tiposProduto: "Kits" } },
 ];
+
+/** Simplified WhatsApp mark: speech bubble with a handset (lucide has no brand icons). */
+export function WhatsAppIcon({ className = "h-7 w-7" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+      <g transform="translate(6.2 6.2) scale(0.5)" fill="currentColor" stroke="none">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+      </g>
+    </svg>
+  );
+}
+
+function SocialLinks() {
+  const cls = "grid h-10 w-10 place-items-center rounded-full border border-marquee-foreground/40 transition-colors hover:bg-marquee-foreground hover:text-marquee";
+  return (
+    <div className="flex gap-3">
+      <a href={INSTAGRAM} target="_blank" rel="noreferrer" aria-label="Instagram da Vonix Hair" className={cls}><Instagram className="h-5 w-5" /></a>
+      <a href={FACEBOOK} target="_blank" rel="noreferrer" aria-label="Facebook da Vonix Hair" className={cls}><Facebook className="h-5 w-5" /></a>
+      <a href={WHATSAPP} target="_blank" rel="noreferrer" aria-label="WhatsApp da Vonix Hair" className={cls}><WhatsAppIcon className="h-5 w-5" /></a>
+    </div>
+  );
+}
 
 function SearchBox({ onDone }: { onDone?: () => void }) {
   const nav = useNavigate();
@@ -69,6 +94,18 @@ function AudienceChoice() {
     set(a);
     nav({ to: "/loja", search: a ? { uso: a } : {} });
   };
+  if (audience)
+    return (
+      <section aria-label="Área escolhida" className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg bg-foreground px-3 py-2 text-background">
+        <span className="min-w-0 text-xs font-semibold sm:text-sm">
+          {audience === "salao" ? "Área para cabeleireiras" : "Para mim · cuidados em casa"}
+        </span>
+        <Button type="button" variant="outline" className="h-7 shrink-0 border-background bg-transparent px-3 text-xs text-background hover:bg-background hover:text-foreground"
+          onClick={() => { set(null); nav({ to: "/" }); }}>
+          Trocar área
+        </Button>
+      </section>
+    );
   return (
     <section aria-label="Escolha seu ambiente" className="w-full min-w-0">
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
@@ -84,7 +121,6 @@ function AudienceChoice() {
           </Button>
         ))}
       </div>
-      <div className="flex justify-end"><Button type="button" variant="link" className="h-6 px-0 text-xs text-muted-foreground" onClick={() => go(null)}>Ver todos</Button></div>
     </section>
   );
 }
@@ -176,7 +212,7 @@ export function Shell({ children }: { children: ReactNode }) {
           aria-label="Falar no WhatsApp"
           className={`fixed right-5 z-40 grid ${path.startsWith("/produto/") ? "bottom-24 lg:bottom-5" : "bottom-5"} h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg`}
         >
-          <MessageCircle className="h-7 w-7" />
+          <WhatsAppIcon className="h-8 w-8" />
         </a>
       )}
     </div>
@@ -216,11 +252,10 @@ function Footer() {
         <div className="flex flex-col gap-2 opacity-90">
           <h4 className="mb-2 font-semibold">Atendimento</h4>
           <span>Seg. a sex., 9h às 18h</span>
-          <span>contato@vonixhaircosmeticos.com.br</span>
-          <span>+55 31 9 9008-6296</span>
+          <span className="break-all">contato@vonixhaircosmeticos.com.br</span>
           <span>Rua José Pedro de Carvalho, 30 — MG</span>
           <span>CNPJ: 68.272.005/0001-07</span>
-          <a href="https://instagram.com/vonixhairoficial" target="_blank" rel="noreferrer">Instagram</a>
+          <div className="mt-2"><SocialLinks /></div>
         </div>
       </div>
       <div className="container-site flex flex-wrap justify-between gap-3 border-t border-marquee-foreground/15 py-5 text-xs opacity-80">
@@ -273,9 +308,9 @@ export function ProductCard({ p }: { p: Product }) {
   return (
     <div className="group flex flex-col">
       <div className="relative overflow-hidden rounded-xl bg-card-image">
-        {(pricing.professional || off > 0) && (
+        {off > 0 && (
           <span className="absolute left-2 top-2 z-10 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background">
-            {pricing.professional ? "5% profissional" : `${off}% OFF`}
+            {off}% OFF
           </span>
         )}
         <button
@@ -294,7 +329,8 @@ export function ProductCard({ p }: { p: Product }) {
       </Link>
       <Stars count={p.reviews} />
       <div className="mt-1 flex-1">
-        <PriceBlock price={pricing.price} compare={pricing.professional ? p.variants[0].price : p.compareBase} offer={pricing.professional} />
+        <PriceBlock price={pricing.price} compare={p.compareBase} />
+        {pricing.professional && <p className="mt-1 text-xs font-medium">Leve 2: 12% OFF · Leve 3: 15% OFF</p>}
       </div>
       <Link
         to="/produto/$slug"

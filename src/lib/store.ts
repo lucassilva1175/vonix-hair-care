@@ -24,6 +24,9 @@ export const PIX_DISCOUNT = 0.05;
 export const WHATSAPP =
   "https://wa.me/5531990086296?text=Ol%C3%A1%2C+vim+do+site+e+preciso+de+ajuda.";
 
+export const INSTAGRAM = "https://www.instagram.com/vonixhairoficial";
+export const FACEBOOK = "https://www.facebook.com/vonixhairoficial";
+
 export const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -75,12 +78,12 @@ export const PRO_ONLY = new Set([
 ]);
 export const isProOnly = (slug: string) => PRO_ONLY.has(slug);
 
-/* ---------- line offers: 5% complement, pro kits 2un/12% and 3un/20% ---------- */
+/* ---------- line offers: 5% cart complement, salon promotions 2un/12% and 3un/15% ---------- */
 export type Offer = "comp5" | "kit2" | "kit3";
 export const OFFER_LABEL: Record<Offer, string> = {
   comp5: "5% OFF neste item",
   kit2: "Kit 2 unidades · 12% OFF",
-  kit3: "Kit 3 unidades · 20% OFF",
+  kit3: "Kit 3 unidades · 15% OFF",
 };
 
 /** Line totals in cents-safe math. qty = units for comp5/normal, kits for kit2/kit3. */
@@ -91,7 +94,7 @@ export function lineTotals(price: number, qty: number, offer?: Offer) {
     return { gross: (u * 2 * qty) / 100, net: (kit * qty) / 100, units: 2 * qty };
   }
   if (offer === "kit3") {
-    const kit = Math.round((u * 3 * 80) / 100);
+    const kit = Math.round((u * 3 * 85) / 100);
     return { gross: (u * 3 * qty) / 100, net: (kit * qty) / 100, units: 3 * qty };
   }
   if (offer === "comp5") {
@@ -104,15 +107,17 @@ export function lineTotals(price: number, qty: number, offer?: Offer) {
 /* ---------- persistent cart & favorites ---------- */
 export type CartItem = { slug: string; variant: string; qty: number; offer?: Offer };
 
-function createStore<T>(key: string, initial: T) {
+/** "session" storage forgets the choice when the visit ends, so the visitor chooses again next time. */
+function createStore<T>(key: string, initial: T, kind: "local" | "session" = "local") {
   let state = initial;
   let loaded = false;
   const subs = new Set<() => void>();
+  const storage = () => (kind === "session" ? sessionStorage : localStorage);
   const load = () => {
     if (loaded || typeof window === "undefined") return;
     loaded = true;
     try {
-      const s = localStorage.getItem(key);
+      const s = storage().getItem(key);
       if (s) state = JSON.parse(s);
     } catch {
       /* ignore */
@@ -127,7 +132,7 @@ function createStore<T>(key: string, initial: T) {
     set: (fn: (s: T) => T) => {
       load();
       state = fn(state);
-      localStorage.setItem(key, JSON.stringify(state));
+      storage().setItem(key, JSON.stringify(state));
       subs.forEach((f) => f());
     },
     sub: (f: () => void) => {
@@ -246,13 +251,24 @@ export type Audience = "casa" | "salao" | null;
 export const resolveAudience = (saved: Audience, uso?: string): Audience =>
   saved ?? (uso === "casa" || uso === "salao" ? uso : null);
 
-/** Display only: reuse the single-unit line offer without modifying the catalog. */
+/**
+ * Salon area promotions (buy 2 = 12% off, buy 3 = 15% off) apply to every product sold there
+ * except kits, which already bundle their own discount. No extra 5% on single units.
+ */
+export const hasProPromo = (p: Product) => !!USAGE["salao"]?.(p) && p.category !== "kits";
+
+/** Display only: price is always the catalog price; salon promotions are chosen on the product page. */
 export function cardPricing(p: Product, audience: Audience) {
-  const professional = audience === "salao" && isProOnly(p.slug);
-  const price = lineTotals(p.variants[0].price, 1, professional ? "comp5" : undefined).net;
-  return { professional, price, pix: professional ? null : pixPrice(price), parcels: installments(price) };
+  const price = p.variants[0].price;
+  return { professional: audience === "salao" && hasProPromo(p), price, pix: pixPrice(price), parcels: installments(price) };
 }
-const audienceStore = createStore<Audience>("vonix-audience", null);
+const audienceStore = createStore<Audience>("vonix-audience", null, "session");
+
+/** Keeps each area closed: salon visitors only see salon products, home visitors only home products. */
+export const forAudience = (items: Product[], audience: Audience) => {
+  const f = audience ? USAGE[audience] : undefined;
+  return f ? items.filter(f) : items;
+};
 export function useAudience() {
   const audience = useSyncExternalStore(audienceStore.sub, audienceStore.get, audienceStore.server);
   return { audience, set: (a: Audience) => audienceStore.set(() => a) };
