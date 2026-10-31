@@ -208,6 +208,7 @@ function ProductPage() {
                         <div className="font-medium">{o.label}</div>
                         <div className="text-xs opacity-80">{o.pct ? `${o.pct}% OFF` : "Preço normal"}</div>
                         <div className="mt-1 font-semibold">{brl(t.net)}</div>
+                        {o.offer && <div className="mt-1 text-xs font-semibold text-[#0a5c34] [.bg-foreground_&]:text-[#9be3bb]">Economize {brl(t.gross - t.net)}</div>}
                       </button>
                     );
                   })}
@@ -219,6 +220,11 @@ function ProductPage() {
                   <span className="text-muted-foreground line-through">{brl(sel!.gross)}</span>
                   <span className="text-3xl font-semibold">{brl(sel!.net)}</span>
                 </div>
+                {offer && (
+                  <p className="mt-2 inline-block rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-3 py-1.5 text-sm font-semibold text-[#0a5c34]">
+                    Você economiza {brl(sel!.gross - sel!.net)} neste pedido
+                  </p>
+                )}
               </div>
             ) : (
               <div className="mt-6"><PriceBlock price={v.price} compare={compare} big /></div>
