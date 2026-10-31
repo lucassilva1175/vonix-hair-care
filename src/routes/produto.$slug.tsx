@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Grid, Md, PriceBlock, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
+import { quoteShipping } from "@/lib/checkout.functions";
 import { FREE_SHIPPING_ABOVE, WHATSAPP, brl, discountPct, getProduct, getSavedCep, hasFreeShipping, isProOnly, lineTotals, maskCep, products, saveCep, useAudience, useCart, useFavorites, type Offer } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
@@ -27,9 +28,10 @@ export const Route = createFileRoute("/produto/$slug")({
   component: ProductPage,
 });
 
-function ShippingCalc({ subtotal }: { subtotal: number }) {
+function ShippingCalc({ subtotal, slug, variant, qty }: { subtotal: number; slug: string; variant: string; qty: number }) {
   const [cep, setCep] = useState("");
   const [dest, setDest] = useState<{ city: string; uf: string } | null>(null);
+  const [opts, setOpts] = useState<{ id: number; name: string; company: string; price: number; days: number; free: boolean }[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
@@ -54,6 +56,9 @@ function ShippingCalc({ subtotal }: { subtotal: number }) {
       }
       saveCep(cep);
       setDest({ city: r.localidade, uf: r.uf });
+      const q = await quoteShipping({ data: { cep: d, items: [{ slug, variant, qty }] } });
+      setOpts(q.ok ? q.options : []);
+      if (!q.ok) setErr(q.message);
     } catch {
       setErr("Não foi possível consultar o CEP. Tente novamente.");
     } finally {
@@ -84,13 +89,15 @@ function ShippingCalc({ subtotal }: { subtotal: number }) {
       {dest && (
         <div className="mt-3 rounded-lg bg-muted p-3 text-sm">
           <p className="text-muted-foreground">Entrega para {dest.city}/{dest.uf}</p>
-          {hasFreeShipping(subtotal) ? (
-            <p className="mt-1 font-medium">Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após o desconto do Pix).</p>
-          ) : (
-            <p className="mt-1 text-muted-foreground">
-              Cotação com transportadoras (Melhor Envio) ainda não conectada nesta prévia — valor e prazo serão exibidos quando a integração for ativada.
-            </p>
-          )}
+          {hasFreeShipping(subtotal) && <p className="mt-1 font-medium">Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após o desconto do Pix).</p>}
+          <ul className="mt-2 space-y-1">
+            {opts.map((o) => (
+              <li key={o.id} className="flex justify-between gap-3">
+                <span>{o.company} {o.name} <span className="text-muted-foreground">· até {o.days} dias úteis</span></span>
+                <b>{o.free ? "Grátis" : brl(o.price)}</b>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
@@ -220,7 +227,7 @@ function ProductPage() {
               <li>Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos</li>
               <li><a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">Dúvidas? Fale com a gente no WhatsApp</a></li>
             </ul>
-            <ShippingCalc subtotal={total} />
+            <ShippingCalc subtotal={total} slug={p.slug} variant={v.label} qty={qty} />
           </div>
         </div>
         {p.description && (
