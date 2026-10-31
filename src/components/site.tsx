@@ -63,10 +63,12 @@ const MARQUEE = [
 
 const NAV = [
   { label: "Mais vendidos", search: { secao: "mais-vendidos" } },
-  { label: "Todos os produtos", search: {} },
+  { label: "Produtos", search: {} },
   { label: "Progressiva", search: { tiposProduto: "Progressiva" } },
   { label: "Máscara", search: { tiposProduto: "Máscara" } },
   { label: "Combos", search: { tiposProduto: "Combos" } },
+  { label: "Kera+", search: { q: "kera" } },
+  { label: "Cachos", search: { q: "cachos" } },
 ];
 
 /** Simplified WhatsApp mark: speech bubble with a handset (lucide has no brand icons). */
@@ -225,7 +227,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <p className="font-display text-base italic">“Até aqui nos ajudou o Senhor”</p>
             <SearchBox />
             <AudienceChoice />
-            <nav className="flex whitespace-nowrap gap-5 text-xs uppercase">
+            <nav className="flex flex-wrap justify-center whitespace-nowrap gap-x-5 gap-y-1 text-xs uppercase">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="shrink-0 hover:underline">
                   {n.label}

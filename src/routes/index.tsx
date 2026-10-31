@@ -101,6 +101,11 @@ function Home() {
         <Grid carousel items={forAudience(BEST_SELLERS.map((s) => getProduct(s)!), audience)} />
       </section>
 
+      <section className="container-site mt-16">
+        <Title a="Todos os" b="Combos" to={{ tiposProduto: "Combos" }} />
+        <Grid carousel items={forAudience(products.filter((p) => p.category === "kits"), audience)} />
+      </section>
+
       <section className="container-site mt-20 text-center">
         <h2 className="text-2xl font-bold tracking-tight md:text-3xl [&_em]:not-italic">Encontre o Tratamento <em>Ideal</em></h2>
         <p className="mt-2 text-muted-foreground">Escolha a necessidade do seu cabelo e veja os produtos indicados.</p>

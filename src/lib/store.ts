@@ -227,7 +227,7 @@ export const TYPES: Record<string, (p: Product) => boolean> = {
   Combos: (p) => p.category === "kits",
   Finalizadores: (p) => p.category === "finalizadores",
 };
-export const BEST_SELLERS = ["kit-cafe-verde", "kit-banana-e-mel", "kit-cronograma-capilar", "kit-whey-protein"];
+export const BEST_SELLERS = ["kit-cafe-verde", "kit-banana-e-mel", "kit-cronograma-capilar", "kit-whey-protein", "kit-cauterizacao", "kit-cachos"];
 
 export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compareBase, p.variants[0].price)));
 
