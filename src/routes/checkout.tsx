@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Shell } from "@/components/site";
+import { SecuritySeal, Shell } from "@/components/site";
 import { ShippingBar } from "@/components/cart-summary";
 import { toItem, track } from "@/lib/analytics";
+import { isValidCpf } from "@/lib/cpf";
 import { createPayment, getOrderStatus, getPaymentConfig, quoteShipping } from "@/lib/checkout.functions";
-import { OFFER_LABEL, WHATSAPP, brl, checkoutTotals, getSavedCep, installments, maskCep, saveCep, useCart } from "@/lib/store";
+import { OFFER_LABEL, WHATSAPP, brl, checkoutTotals, getSavedCep, installments, maskCep, saveCep, useCart, useHydrated } from "@/lib/store";
 import { couponCheck, couponPercent, findCoupon, getPrize, type Coupon } from "@/lib/coupons";
 
 export const Route = createFileRoute("/checkout")({
@@ -46,7 +47,7 @@ declare global {
 /** Appmax returns Brasília time as "Y-m-d H:i:s". */
 const parseExpiry = (s: string) => new Date(`${s.replace(" ", "T")}-03:00`).getTime();
 
-function PixPanel({ pix, paid, onCopy, copied }: { pix: PixResult; paid: boolean; onCopy: () => void; copied: boolean }) {
+function PixPanel({ pix, paid, onCopy, copied, onRestart }: { pix: PixResult; paid: boolean; onCopy: () => void; copied: boolean; onRestart: () => void }) {
   const [left, setLeft] = useState(() => parseExpiry(pix.expiresAt) - Date.now());
   useEffect(() => {
     const t = setInterval(() => setLeft(parseExpiry(pix.expiresAt) - Date.now()), 1000);
@@ -69,9 +70,15 @@ function PixPanel({ pix, paid, onCopy, copied }: { pix: PixResult; paid: boolean
       <img src={`data:image/png;base64,${pix.qrcode}`} alt="QR Code do Pix" width={220} height={220} className="mx-auto mt-4 h-[220px] w-[220px]" />
       <p className="mt-4 text-sm">Abra o app do seu banco, escolha Pix e leia o QR Code, ou copie o código abaixo.</p>
       <textarea readOnly value={pix.emv} rows={3} className="mt-3 w-full rounded-lg border border-border bg-background p-2 text-xs" onFocus={(e) => e.currentTarget.select()} />
-      <button type="button" onClick={onCopy} className="mt-3 w-full rounded-full bg-action py-3 font-medium text-action-foreground">
-        {copied ? "Código copiado!" : "Copiar código Pix"}
-      </button>
+      {left > 0 ? (
+        <button type="button" onClick={onCopy} className="mt-3 w-full rounded-full bg-action py-3 font-medium text-action-foreground">
+          {copied ? "Código copiado!" : "Copiar código Pix"}
+        </button>
+      ) : (
+        <button type="button" onClick={onRestart} className="mt-3 w-full rounded-full bg-action py-3 font-medium text-action-foreground">
+          Gerar um novo Pix
+        </button>
+      )}
       <p className="mt-3 text-sm text-muted-foreground">
         {left > 0 ? `Expira em ${mm}:${String(ss).padStart(2, "0")}. ` : "Este Pix expirou. Volte e gere outro. "}Aguardando pagamento — esta tela atualiza sozinha.
       </p>
@@ -81,6 +88,7 @@ function PixPanel({ pix, paid, onCopy, copied }: { pix: PixResult; paid: boolean
 
 function Checkout() {
   const c = useCart();
+  const hydrated = useHydrated();
   const [f, setF] = useState({ nome: "", email: "", cpf: "", whatsapp: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" });
   const [cepMsg, setCepMsg] = useState<string | null>(null);
   const [cepLoading, setCepLoading] = useState(false);
@@ -289,6 +297,10 @@ function Checkout() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValidCpf(f.cpf)) {
+      setError("CPF inválido. Confira os números.");
+      return;
+    }
     track("add_payment_info", { payment_type: pay, value: total });
     if (pay === "pix") void submitPayment();
     else if (!cfg?.externalId) setError("Pagamento por cartão indisponível no momento. Use o Pix.");
@@ -307,6 +319,11 @@ function Checkout() {
             pix={pix}
             paid={paid}
             copied={copied}
+            onRestart={() => {
+              setPix(null);
+              setCopied(false);
+              setError(null);
+            }}
             onCopy={() => {
               navigator.clipboard?.writeText(pix.emv).then(() => setCopied(true)).catch(() => undefined);
             }}
@@ -323,6 +340,13 @@ function Checkout() {
           <p className="mt-2 text-sm text-muted-foreground">Pedido nº {cardDone.orderId}. Você receberá os detalhes por e-mail e WhatsApp.</p>
           <Link to="/loja" className="mt-6 inline-block rounded-full bg-action px-6 py-3 text-action-foreground">Continuar comprando</Link>
         </div>
+      </Shell>
+    );
+
+  if (!hydrated)
+    return (
+      <Shell>
+        <div className="container-site min-h-[50vh] py-20" aria-busy="true" />
       </Shell>
     );
 
@@ -350,26 +374,26 @@ function Checkout() {
 
           <fieldset className="space-y-3">
             <legend className="mb-1 text-lg font-semibold">1. Contato</legend>
-            <input required placeholder="Nome completo" value={f.nome} onChange={set("nome")} autoComplete="name" className={inp} />
-            <input required type="email" inputMode="email" placeholder="E-mail" value={f.email} onChange={set("email")} autoComplete="email" className={inp} />
-            <input required inputMode="tel" placeholder="WhatsApp com DDD" value={f.whatsapp} onChange={set("whatsapp")} autoComplete="tel" className={inp} />
-            <input required inputMode="numeric" placeholder="CPF (necessário para emissão da nota fiscal)" value={f.cpf} maxLength={14} onChange={(e) => setF((old) => ({ ...old, cpf: maskCpf(e.target.value) }))} className={inp} />
+            <input required aria-label="Nome completo" placeholder="Nome completo" value={f.nome} onChange={set("nome")} autoComplete="name" className={inp} />
+            <input required type="email" inputMode="email" aria-label="E-mail" placeholder="E-mail" value={f.email} onChange={set("email")} autoComplete="email" className={inp} />
+            <input required inputMode="tel" aria-label="WhatsApp com DDD" placeholder="WhatsApp com DDD" value={f.whatsapp} onChange={set("whatsapp")} autoComplete="tel" className={inp} />
+            <input required inputMode="numeric" aria-label="CPF" placeholder="CPF (necessário para emissão da nota fiscal)" value={f.cpf} maxLength={14} onChange={(e) => setF((old) => ({ ...old, cpf: maskCpf(e.target.value) }))} className={inp} />
           </fieldset>
 
           <fieldset className="space-y-3">
             <legend className="mb-1 text-lg font-semibold">2. Entrega</legend>
-            <input required inputMode="numeric" placeholder="CEP (00000-000)" value={f.cep} maxLength={9} onChange={(e) => { const m = maskCep(e.target.value); setF((old) => ({ ...old, cep: m })); lookup(m); }} autoComplete="postal-code" className={inp} />
+            <input required inputMode="numeric" aria-label="CEP" placeholder="CEP (00000-000)" value={f.cep} maxLength={9} onChange={(e) => { const m = maskCep(e.target.value); setF((old) => ({ ...old, cep: m })); lookup(m); }} autoComplete="postal-code" className={inp} />
             {cepLoading && <p role="status" className="text-sm text-muted-foreground">Buscando endereço…</p>}
             {cepMsg && !cepLoading && <p role="status" className="text-sm text-muted-foreground">{cepMsg}</p>}
-            <input required placeholder="Rua" value={f.rua} onChange={set("rua")} autoComplete="address-line1" className={inp} />
+            <input required aria-label="Rua" placeholder="Rua" value={f.rua} onChange={set("rua")} autoComplete="address-line1" className={inp} />
             <div className="grid grid-cols-2 gap-3">
-              <input ref={numeroRef} required inputMode="numeric" placeholder="Número" value={f.numero} onChange={set("numero")} autoComplete="address-line2" className={inp} />
-              <input placeholder="Complemento (opcional)" value={f.complemento} onChange={set("complemento")} className={inp} />
+              <input ref={numeroRef} required inputMode="numeric" aria-label="Número" placeholder="Número" value={f.numero} onChange={set("numero")} autoComplete="off" className={inp} />
+              <input aria-label="Complemento" placeholder="Complemento (opcional)" value={f.complemento} onChange={set("complemento")} autoComplete="address-line2" className={inp} />
             </div>
-            <input required placeholder="Bairro" value={f.bairro} onChange={set("bairro")} autoComplete="address-level3" className={inp} />
+            <input required aria-label="Bairro" placeholder="Bairro" value={f.bairro} onChange={set("bairro")} autoComplete="address-level3" className={inp} />
             <div className="grid grid-cols-[1fr_80px] gap-3">
-              <input required placeholder="Cidade" value={f.cidade} onChange={set("cidade")} autoComplete="address-level2" className={inp} />
-              <input required placeholder="UF" value={f.uf} onChange={set("uf")} maxLength={2} className={inp} />
+              <input required aria-label="Cidade" placeholder="Cidade" value={f.cidade} onChange={set("cidade")} autoComplete="address-level2" className={inp} />
+              <input required aria-label="UF" placeholder="UF" value={f.uf} onChange={set("uf")} maxLength={2} autoComplete="address-level1" className={inp} />
             </div>
 
             <div className="space-y-2 pt-2" aria-live="polite">
@@ -404,7 +428,7 @@ function Checkout() {
             ) : (
               <div className="space-y-2">
                 <div className="flex gap-2">
-                  <input placeholder="Código do cupom" value={coupon} onChange={(e) => setCoupon(e.target.value)} className={inp} />
+                  <input aria-label="Código do cupom" placeholder="Código do cupom" value={coupon} onChange={(e) => setCoupon(e.target.value)} className={inp} />
                   <button type="button" onClick={applyCoupon} className="shrink-0 rounded-lg border border-foreground px-4 text-sm">Aplicar</button>
                   <button type="button" aria-label="Remover cupom" onClick={() => { setShowCoupon(false); setCoupon(""); setCouponMsg(null); setApplied(null); }} className="shrink-0 text-sm underline">Remover</button>
                 </div>
@@ -417,6 +441,7 @@ function Checkout() {
           <button disabled={busy || !chosen} className="w-full rounded-full bg-action py-3.5 font-medium text-action-foreground disabled:opacity-60">
             {busy ? "Processando…" : pay === "pix" ? `Gerar Pix · ${brl(total)}` : `Pagar ${brl(total)} no cartão`}
           </button>
+          <div className="flex justify-center"><SecuritySeal /></div>
           {!chosen && <p className="text-center text-sm text-muted-foreground">Informe o CEP e escolha a entrega para continuar.</p>}
           <p className="text-center text-sm text-muted-foreground">
             Precisa de ajuda para finalizar? <a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">Fale com a gente no WhatsApp</a>

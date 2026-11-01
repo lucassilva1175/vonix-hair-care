@@ -41,6 +41,7 @@ Site publicado hoje: o antigo (`vonixhaircosmeticos.com.br`). **Não fazer merge
 | GIRA4 | 4% | R$ 99 | 25% |
 | GIRA5 | 5% | R$ 150 | 25% |
 | GIRA6 | 6% | R$ 250 | 25% |
+| BT10 (Bela, digitado à mão) | 10% | nenhum | fora da roleta |
 
   O cupom incide só em itens sem oferta e soma com o Pix. Testado contra os 43 produtos: nenhuma combinação dá prejuízo (pior caso: Combo Monovonix 500 ml, preço baixo).
 - **Estrelas:** só mostram nota onde há avaliação real. Nunca inventar nota.
@@ -50,7 +51,7 @@ Site publicado hoje: o antigo (`vonixhaircosmeticos.com.br`). **Não fazer merge
 1. Segredos no Lovable: `APPMAX_*`, `MELHORENVIO_TOKEN`, `STORE_ORIGIN_CEP` (ver `.env.example` e `INTEGRACOES.md`) e teste em sandbox.
 2. Confirmar com a fábrica: quais produtos têm formol, lista INCI e notificação Anvisa de cada um.
 3. Medidas e pesos reais das embalagens (frete).
-4. Autorização escrita de quem aparece nos depoimentos. **Contrato da Bela Tiozzo:** não republicar vídeos dela (cláusulas 5.2 e 6); o cupom **BT10** ainda não existe no site (falta o desconto do cliente).
+4. Autorização escrita de quem aparece nos depoimentos. **Contrato da Bela Tiozzo:** não republicar vídeos dela (cláusulas 5.2 e 6); o cupom **BT10** (10% para o cliente, sem mínimo, fora da roleta) vale só para o tráfego e os criativos dela.
 5. Subir o preço do Combo Monovonix (planilha `precificacao-vonix.xlsx`).
 6. Migrar Meta Pixel e Utmify do site antigo.
 7. Confirmar com o contador a regra da roleta (promoção com sorteio).

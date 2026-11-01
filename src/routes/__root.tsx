@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" },
-      { rel: "icon", href: "https://vonixhaircosmeticos.com.br/favicon-light.png", type: "image/png" },
+      { rel: "icon", href: "/favicon.ico" },
     ],
     scripts: [
       {

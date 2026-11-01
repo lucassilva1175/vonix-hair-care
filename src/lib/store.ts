@@ -159,6 +159,9 @@ function createStore<T>(key: string, initial: T, kind: "local" | "session" = "lo
 const cartStore = createStore<CartItem[]>("vonix-cart", []);
 const favStore = createStore<string[]>("vonix-favs", []);
 
+/** False while the page is server-rendered/hydrating, so pages that depend on localStorage don't flash an empty state. */
+export const useHydrated = () => useSyncExternalStore(() => () => undefined, () => true, () => false);
+
 export function useCart() {
   const items = useSyncExternalStore(cartStore.sub, cartStore.get, cartStore.server);
   const lines = items

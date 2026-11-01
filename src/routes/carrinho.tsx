@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/site";
-import { OFFER_LABEL, brl, complementsFor, pixPrice, useCart } from "@/lib/store";
+import { OFFER_LABEL, brl, complementsFor, pixPrice, useCart, useHydrated } from "@/lib/store";
 import { ShippingBar, Summary } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/carrinho")({
@@ -61,11 +61,14 @@ function Suggestions() {
 
 function Cart() {
   const c = useCart();
+  const hydrated = useHydrated();
   return (
     <Shell>
       <div className="container-site py-10 pb-28 lg:pb-10">
         <h1 className="mb-8 font-display text-5xl">Carrinho</h1>
-        {c.lines.length === 0 ? (
+        {!hydrated ? (
+          <div className="min-h-[40vh]" aria-busy="true" />
+        ) : c.lines.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-muted-foreground">Seu carrinho está vazio.</p>
             <Link to="/loja" className="mt-6 inline-block rounded-full bg-action px-6 py-3 text-action-foreground">Ver produtos</Link>

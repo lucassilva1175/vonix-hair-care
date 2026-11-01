@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import * as appmax from "./appmax.server";
+import { isValidCpf } from "./cpf";
 import { env } from "./env.server";
 import { calculateShipping } from "./melhorenvio.server";
 import { checkoutTotals, getProduct, lineTotals, type Offer } from "./store";
@@ -60,7 +61,7 @@ export const getPaymentConfig = createServerFn({ method: "GET" }).handler(async 
 const customerSchema = z.object({
   nome: z.string().min(3).max(120),
   email: z.string().email().max(160),
-  cpf: z.string().min(11).max(14),
+  cpf: z.string().min(11).max(14).refine(isValidCpf, "CPF inválido. Confira os números."),
   whatsapp: z.string().min(10).max(20),
 });
 const addressSchema = z.object({

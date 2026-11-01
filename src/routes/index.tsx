@@ -53,7 +53,7 @@ function Title({ a, b, to }: { a: string; b: string; to?: Record<string, string>
         {a} <em>{b}</em>
       </h2>
       {to && (
-        <Link to="/loja" search={to} className="flex items-center gap-1 border-b border-foreground text-xs uppercase">
+        <Link to="/loja" search={to} className="flex items-center gap-1 border-b border-foreground py-2 text-xs uppercase">
           Ver todos <ArrowRight className="h-3 w-3" />
         </Link>
       )}
@@ -70,6 +70,7 @@ function Home() {
   }, []);
   return (
     <Shell>
+      <h1 className="sr-only">Vonix Hair — Cosméticos Capilares Profissionais</h1>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
           <Link to="/produto/$slug" params={{ slug: BANNERS[i]! }} className="banner-wrap relative block aspect-[1080/1350] md:aspect-[1850/700]">
@@ -86,9 +87,9 @@ function Home() {
           <button aria-label="Próximo" onClick={() => setI((i + 1) % 7)} className="absolute right-4 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background">
             <ChevronRight className="h-4 w-4" />
           </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-3">
             {BANNERS.map((_, k) => (
-              <button key={k} aria-label={`Banner ${k + 1}`} onClick={() => setI(k)} className={`h-3 w-3 rounded-full border border-foreground ${k === i ? "bg-foreground" : "bg-background/70"}`} />
+              <button key={k} aria-label={`Banner ${k + 1}`} onClick={() => setI(k)} className={`relative h-3 w-3 rounded-full border border-foreground before:absolute before:-inset-1.5 before:content-[''] ${k === i ? "bg-foreground" : "bg-background/70"}`} />
             ))}
           </div>
         </div>

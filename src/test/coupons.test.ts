@@ -10,6 +10,8 @@ describe("cupons e roleta", () => {
   it("código é aceito sem diferenciar maiúsculas e espaços; desconhecido não vale", () => {
     expect(findCoupon(" gira5 ")?.code).toBe("GIRA5");
     expect(findCoupon("QUALQUER")).toBeUndefined();
+    expect(couponPercent(findCoupon("bt10"), 20)).toBe(0.1);
+    expect(WHEEL.some((w) => w.code === "BT10")).toBe(false);
     expect(findCoupon("")).toBeUndefined();
   });
   it("valor mínimo é medido antes dos descontos", () => {

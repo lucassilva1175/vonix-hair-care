@@ -98,6 +98,21 @@ export function PaymentMethods({ dark = false }: { dark?: boolean }) {
   );
 }
 
+/** Security seal: only facts that hold (HTTPS on the host, payment processed by Appmax, card tokenized in the browser). No third-party certification is claimed. */
+export function SecuritySeal({ dark = false }: { dark?: boolean }) {
+  return (
+    <div role="group" aria-label="Compra segura" className={`inline-flex items-center gap-3 rounded-xl border px-3.5 py-2.5 ${dark ? "border-marquee-foreground/35 text-marquee-foreground" : "border-border bg-white text-foreground"}`}>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-action text-action-foreground">
+        <ShieldCheck className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <span className="leading-tight">
+        <b className="block text-sm">Compra 100% segura</b>
+        <span className="block text-xs opacity-75">Conexão criptografada · pagamento processado pela Appmax</span>
+      </span>
+    </div>
+  );
+}
+
 /** Reassurance strip: only conditions the store already advertises. */
 export function Benefits() {
   const items = [
@@ -155,7 +170,7 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
         aria-label="Buscar"
         className="h-11 w-full rounded-full border border-border bg-background px-4 pr-10 text-sm outline-none focus:border-foreground"
       />
-      <button aria-label="Buscar" className="absolute right-3 top-3">
+      <button aria-label="Buscar" className="absolute right-0 top-0 grid h-11 w-11 place-items-center">
         <Search className="h-4 w-4" />
       </button>
     </form>
@@ -216,7 +231,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
       <header className="sticky top-0 z-40 border-b border-border bg-background">
         <div className="container-site flex items-center gap-4 py-3">
-          <button className="lg:hidden" aria-label="Abrir menu" onClick={() => setOpen(true)}>
+          <button className="-m-2 p-2 lg:hidden" aria-label="Abrir menu" onClick={() => setOpen(true)}>
             <Menu className="h-6 w-6" />
           </button>
           <Link to="/" className="shrink-0">
@@ -236,16 +251,16 @@ export function Shell({ children }: { children: ReactNode }) {
             </nav>
           </div>
           <div className="ml-auto flex items-center gap-4 text-sm">
-            <Link to="/favoritos" aria-label="Favoritos">
+            <Link to="/favoritos" aria-label="Favoritos" className="-m-2 p-2">
               <Heart className="h-5 w-5" />
             </Link>
             <Link to="/conta" className="hidden items-center gap-1 sm:flex">
               <User className="h-4 w-4" /> Entrar
             </Link>
-            <Link to="/carrinho" aria-label="Carrinho" className="relative">
+            <Link to="/carrinho" aria-label="Carrinho" className="relative -m-2 p-2">
               <ShoppingBag className="h-5 w-5" />
               {count > 0 && (
-                <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background">
+                <span className="absolute -right-0 -top-0 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background">
                   {count}
                 </span>
               )}
@@ -310,17 +325,17 @@ function Footer() {
         <div>
           <div className="mb-4"><GoldLogo className="h-14" /></div>
           <p className="opacity-80">
-            Cosméticos da maior indústria brasileira, com qualidade e entrega rápida.
+            Cosméticos capilares profissionais, com entrega para todo o Brasil.
           </p>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1 [&_a]:py-1.5">
           <h4 className="mb-2 font-semibold">Comprar</h4>
           <Link to="/loja">Todos os Produtos</Link>
           <Link to="/loja" search={{ tiposProduto: "Combos" }}>Combos</Link>
           <Link to="/loja" search={{ tiposProduto: "Finalizadores" }}>Finalizadores</Link>
           <Link to="/loja" search={{ necessidades: "Hidratação" }}>Hidratação</Link>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1 [&_a]:py-1.5">
           <h4 className="mb-2 font-semibold">Ajuda</h4>
           <Link to="/$page" params={{ page: "sobre" }}>Sobre a Vonix Hair</Link>
           <Link to="/conta">Meus pedidos</Link>
@@ -339,10 +354,11 @@ function Footer() {
       <div className="container-site flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-marquee-foreground/15 py-5 text-sm">
         <span className="font-semibold">Formas de pagamento</span>
         <PaymentMethods dark />
+        <SecuritySeal dark />
       </div>
       <div className="container-site flex flex-wrap justify-between gap-3 border-t border-marquee-foreground/15 py-5 text-xs opacity-80">
         <span>© 2026 Vonix Hair. Todos os direitos reservados.</span>
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-x-4 gap-y-0 [&_a]:py-2">
           <Link to="/$page" params={{ page: "politica-de-privacidade" }}>Política de Privacidade</Link>
           <Link to="/$page" params={{ page: "termos-de-uso" }}>Termos de Uso</Link>
           <Link to="/$page" params={{ page: "politica-de-trocas-e-devolucoes" }}>Política de Troca e Devoluções</Link>
@@ -537,7 +553,7 @@ function ProductCarousel({ items }: { items: Product[] }) {
           <button type="button" aria-label="Anterior" disabled={page === 0} onClick={() => go(-1)} className={btn}>
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <div className="flex items-center gap-1.5" role="tablist" aria-label="Páginas">
+          <div className="flex items-center gap-4" role="tablist" aria-label="Páginas">
             {Array.from({ length: pages }, (_, i) => (
               <button
                 key={i}
@@ -546,7 +562,7 @@ function ProductCarousel({ items }: { items: Product[] }) {
                 aria-selected={i === page}
                 aria-label={`Página ${i + 1}`}
                 onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all ${i === page ? "w-6 bg-[#7a5a2e]" : "w-2 bg-[oklch(0.8_0.01_85)]"}`}
+                className={`relative h-2 rounded-full transition-all before:absolute before:-inset-2 before:content-[''] ${i === page ? "w-6 bg-[#7a5a2e]" : "w-2 bg-[oklch(0.8_0.01_85)]"}`}
               />
             ))}
           </div>

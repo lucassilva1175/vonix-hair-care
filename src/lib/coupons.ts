@@ -18,6 +18,8 @@ export const COUPONS: Coupon[] = [
   { code: "GIRA4", label: "4% OFF em compras acima de R$ 99", percent: 4, minSubtotal: 99 },
   { code: "GIRA5", label: "5% OFF em compras acima de R$ 150", percent: 5, minSubtotal: 150 },
   { code: "GIRA6", label: "6% OFF em compras acima de R$ 250", percent: 6, minSubtotal: 250 },
+  // Parceria Bela Tiozzo: só digitado à mão (link/criativos dela), nunca na roleta.
+  { code: "BT10", label: "10% OFF em qualquer compra", percent: 10 },
 ];
 
 /** Prize wheel: every spin wins; arc size = chance, so what you see is what you get (weights sum to 100). */
