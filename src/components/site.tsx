@@ -85,11 +85,11 @@ export function WhatsAppIcon({ className = "h-7 w-7" }: { className?: string }) 
 
 /** Payment methods the checkout really accepts (Appmax: Pix and credit card). Add boleto/wallets here only once they are built. */
 export function PaymentMethods({ dark = false }: { dark?: boolean }) {
-  const pill = `inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${dark ? "border-marquee-foreground/35 text-marquee-foreground" : "border-border bg-white text-foreground"}`;
+  const pill = `inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-small font-semibold ${dark ? "border-marquee-foreground/35 text-marquee-foreground" : "border-border bg-white text-foreground"}`;
   return (
     <ul aria-label="Formas de pagamento" className="flex flex-wrap items-center gap-2">
       <li className={pill}>
-        <span className="rounded bg-[#0a5c34] px-1 py-0.5 text-[9px] font-bold tracking-wider text-white">PIX</span> Pix · 5% OFF
+        <span className="rounded bg-[#0a5c34] px-1 py-0.5 text-small font-semibold tracking-wider text-white">PIX</span> Pix · 5% OFF
       </li>
       <li className={pill}>
         <CreditCard className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" /> Cartão de crédito · até 6x sem juros
@@ -106,8 +106,8 @@ export function SecuritySeal({ dark = false }: { dark?: boolean }) {
         <ShieldCheck className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
       </span>
       <span className="leading-tight">
-        <b className="block text-sm">Compra 100% segura</b>
-        <span className="block text-xs opacity-75">Conexão criptografada · pagamento processado pela Appmax</span>
+        <b className="block text-body">Compra 100% segura</b>
+        <span className="block text-small opacity-75">Conexão criptografada · pagamento processado pela Appmax</span>
       </span>
     </div>
   );
@@ -130,8 +130,8 @@ export function Benefits() {
               <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
             </span>
             <span className="min-w-0 leading-tight">
-              <b className="block text-sm">{title}</b>
-              <span className="block text-xs text-muted-foreground">{text}</span>
+              <b className="block text-body">{title}</b>
+              <span className="block text-small text-muted-foreground">{text}</span>
             </span>
           </li>
         ))}
@@ -168,7 +168,7 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
         onChange={(e) => setQ(e.target.value)}
         placeholder="Buscar produtos, combos, tratamentos..."
         aria-label="Buscar"
-        className="h-11 w-full rounded-full border border-border bg-background px-4 pr-10 text-sm outline-none focus:border-foreground"
+        className="h-11 w-full rounded-full border border-border bg-background px-4 pr-10 text-body outline-none focus:border-foreground"
       />
       <button aria-label="Buscar" className="absolute right-0 top-0 grid h-11 w-11 place-items-center">
         <Search className="h-4 w-4" />
@@ -187,10 +187,10 @@ function AudienceChoice() {
   if (audience)
     return (
       <section aria-label="Área escolhida" className="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg bg-foreground px-3 py-2 text-background">
-        <span className="min-w-0 text-xs font-semibold sm:text-sm">
+        <span className="min-w-0 text-small font-semibold sm:text-body">
           {audience === "salao" ? "Área para cabeleireiras" : "Para mim · cuidados em casa"}
         </span>
-        <Button type="button" variant="outline" className="h-7 shrink-0 border-background bg-transparent px-3 text-xs text-background hover:bg-background hover:text-foreground"
+        <Button type="button" variant="outline" className="h-7 shrink-0 border-background bg-transparent px-3 text-small text-background hover:bg-background hover:text-foreground"
           onClick={() => { set(null); nav({ to: "/" }); }}>
           Trocar área
         </Button>
@@ -207,7 +207,7 @@ function AudienceChoice() {
             onClick={() => go(value)}
             className={`h-auto min-h-16 min-w-0 gap-2 whitespace-normal border-foreground px-2 py-2 shadow-none ${audience === value ? "bg-foreground text-background hover:bg-foreground hover:text-background" : "bg-background text-foreground hover:bg-muted"}`}>
             <Icon aria-hidden="true" />
-            <span className="min-w-0 text-left"><span className="block text-[11px] font-semibold sm:text-xs">{label}</span><span className="block text-[11px] font-normal">{support}</span></span>
+            <span className="min-w-0 text-left"><span className="block text-small font-semibold sm:text-small">{label}</span><span className="block text-small font-normal">{support}</span></span>
           </Button>
         ))}
       </div>
@@ -222,7 +222,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const hideWhatsApp = path === "/carrinho" || path === "/checkout";
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
-      <div className="overflow-hidden bg-marquee py-2.5 text-xs font-medium tracking-wide text-marquee-foreground">
+      <div className="overflow-hidden bg-marquee py-2.5 text-small font-medium tracking-wide text-marquee-foreground">
         <div className="flex w-max animate-marquee gap-12 whitespace-nowrap">
           {[...MARQUEE, ...MARQUEE, ...MARQUEE].map((m, i) => (
             <span key={i}>{m} &nbsp;✧</span>
@@ -237,12 +237,12 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link to="/" className="shrink-0">
             <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-11 w-auto" />
           </Link>
-          <p className="mx-auto min-w-0 flex-1 text-center font-display text-sm italic leading-tight lg:hidden">“Até aqui nos ajudou o Senhor”</p>
+          <p className="mx-auto min-w-0 flex-1 text-center text-body italic leading-tight lg:hidden">“Até aqui nos ajudou o Senhor”</p>
           <div className="mx-auto hidden min-w-0 w-full max-w-xl flex-col items-center gap-1.5 lg:flex">
-            <p className="font-display text-base italic">“Até aqui nos ajudou o Senhor”</p>
+            <p className="text-body italic">“Até aqui nos ajudou o Senhor”</p>
             <SearchBox />
             <AudienceChoice />
-            <nav className="flex flex-wrap justify-center whitespace-nowrap gap-x-5 gap-y-1 text-xs uppercase">
+            <nav className="flex flex-wrap justify-center whitespace-nowrap gap-x-5 gap-y-1 text-small uppercase">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="shrink-0 hover:underline">
                   {n.label}
@@ -250,7 +250,7 @@ export function Shell({ children }: { children: ReactNode }) {
               ))}
             </nav>
           </div>
-          <div className="ml-auto flex items-center gap-4 text-sm">
+          <div className="ml-auto flex items-center gap-4 text-body">
             <Link to="/favoritos" aria-label="Favoritos" className="-m-2 p-2">
               <Heart className="h-5 w-5" />
             </Link>
@@ -260,7 +260,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link to="/carrinho" aria-label="Carrinho" className="relative -m-2 p-2">
               <ShoppingBag className="h-5 w-5" />
               {count > 0 && (
-                <span className="absolute -right-0 -top-0 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background">
+                <span className="absolute -right-0 -top-0 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-small text-background">
                   {count}
                 </span>
               )}
@@ -281,7 +281,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <button aria-label="Fechar menu" onClick={() => setOpen(false)} className="mb-6">
               <X className="h-6 w-6" />
             </button>
-            <nav className="flex flex-col gap-4 text-sm uppercase">
+            <nav className="flex flex-col gap-4 text-body uppercase">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} onClick={() => setOpen(false)}>
                   {n.label}
@@ -315,13 +315,13 @@ export function Shell({ children }: { children: ReactNode }) {
 function Footer() {
   return (
     <footer className="mt-20 bg-marquee text-marquee-foreground">
-      <div className="container-site grid gap-6 border-b border-marquee-foreground/15 py-6 text-center text-sm sm:grid-cols-4">
+      <div className="container-site grid gap-6 border-b border-marquee-foreground/15 py-6 text-center text-body sm:grid-cols-4">
         <span>Entrega para todo o Brasil</span>
         <span>Compra 100% segura</span>
         <span>Até 6x sem juros no cartão</span>
         <span>Frete grátis acima de R$ 150 em produtos</span>
       </div>
-      <div className="container-site grid gap-10 py-12 text-sm sm:grid-cols-4">
+      <div className="container-site grid gap-10 py-12 text-body sm:grid-cols-4">
         <div>
           <div className="mb-4"><GoldLogo className="h-14" /></div>
           <p className="opacity-80">
@@ -351,12 +351,12 @@ function Footer() {
           <div className="mt-2"><SocialLinks /></div>
         </div>
       </div>
-      <div className="container-site flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-marquee-foreground/15 py-5 text-sm">
+      <div className="container-site flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-marquee-foreground/15 py-5 text-body">
         <span className="font-semibold">Formas de pagamento</span>
         <PaymentMethods dark />
         <SecuritySeal dark />
       </div>
-      <div className="container-site flex flex-wrap justify-between gap-3 border-t border-marquee-foreground/15 py-5 text-xs opacity-80">
+      <div className="container-site flex flex-wrap justify-between gap-3 border-t border-marquee-foreground/15 py-5 text-small opacity-80">
         <span>© 2026 Vonix Hair. Todos os direitos reservados.</span>
         <div className="flex flex-wrap gap-x-4 gap-y-0 [&_a]:py-2">
           <Link to="/$page" params={{ page: "politica-de-privacidade" }}>Política de Privacidade</Link>
@@ -372,21 +372,21 @@ function Footer() {
 export function PriceBlock({ price, compare, big, offer = false }: { price: number; compare?: number | null; big?: boolean; offer?: boolean }) {
   const i = installments(price);
   return (
-    <div className={big ? "space-y-2" : "space-y-1.5 text-sm"}>
+    <div className={big ? "space-y-2" : "space-y-1.5 text-body"}>
       <div className="flex items-baseline gap-2">
         {compare && compare > price && (
           <span className="text-muted-foreground line-through">{brl(compare)}</span>
         )}
-        <span className={big ? "text-3xl font-semibold" : "font-semibold"}>{brl(price)}</span>
+        <span className={big ? "text-h2 font-semibold" : "font-semibold"}>{brl(price)}</span>
       </div>
       {!offer && (
         <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] text-[#0a5c34] ${big ? "px-4 py-3" : "px-2.5 py-1.5"}`}>
-          <span className="rounded bg-[#0a5c34] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white">PIX</span>
-          <b className={big ? "text-2xl" : "text-base"}>{brl(pixPrice(price))}</b>
-          <span className={`font-semibold ${big ? "text-sm" : "text-xs"}`}>5% OFF à vista</span>
+          <span className="rounded bg-[#0a5c34] px-1.5 py-0.5 text-small font-semibold tracking-wider text-white">PIX</span>
+          <b className={big ? "text-h2" : "text-body"}>{brl(pixPrice(price))}</b>
+          <span className={`font-semibold ${big ? "text-body" : "text-small"}`}>5% OFF à vista</span>
         </div>
       )}
-      <div className={`flex items-center gap-1.5 font-medium ${big ? "text-base" : "text-xs"}`}>
+      <div className={`flex items-center gap-1.5 font-medium ${big ? "text-body" : "text-small"}`}>
         <CreditCard className={big ? "h-5 w-5" : "h-4 w-4"} strokeWidth={1.6} aria-hidden="true" />
         <span>{i.count}x de <b>{brl(i.value)}</b> sem juros no cartão</span>
       </div>
@@ -402,7 +402,7 @@ export function Stars({ slug, big = false }: { slug: string; big?: boolean }) {
   const list = reviewsFor(slug);
   const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
   const label = avg.toFixed(1).replace(".", ",");
-  const size = big ? "h-4 w-4 md:h-5 md:w-5" : "h-3.5 w-3.5";
+  const size = big ? "h-3 w-3" : "h-3.5 w-3.5";
   const five = (filled: boolean) => (
     <span className="flex gap-0.5">
       {[0, 1, 2, 3, 4].map((i) => (
@@ -411,7 +411,7 @@ export function Stars({ slug, big = false }: { slug: string; big?: boolean }) {
     </span>
   );
   return (
-    <div className="flex items-center gap-2 text-xs" role="img" aria-label={list.length ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
+    <div className="flex items-center gap-2 text-small" role="img" aria-label={list.length ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
       <span className="relative inline-block text-[#d4a22f]" aria-hidden="true">
         {five(false)}
         {avg > 0 && (
@@ -420,7 +420,7 @@ export function Stars({ slug, big = false }: { slug: string; big?: boolean }) {
           </span>
         )}
       </span>
-      {list.length > 0 && <b className="text-sm">{label}</b>}
+      {list.length > 0 && <b className="text-body">{label}</b>}
     </div>
   );
 }
@@ -448,7 +448,7 @@ export function ProductCard({ p }: { p: Product }) {
     <div className="group flex h-full flex-col rounded-2xl border border-border bg-white p-2.5 shadow-sm md:p-3">
       <div className="relative overflow-hidden rounded-xl bg-white">
         {off > 0 && (
-          <span className="absolute left-2 top-2 z-10 rounded-md bg-[#7a5a2e] px-1.5 py-0.5 text-[11px] font-bold text-white">
+          <span className="absolute left-2 top-2 z-10 rounded-md bg-[#7a5a2e] px-1.5 py-0.5 text-small font-semibold text-white">
             -{off}%
           </span>
         )}
@@ -465,24 +465,23 @@ export function ProductCard({ p }: { p: Product }) {
       </div>
       <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-1">
         {hasFreeShipping(pricing.price) && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-action px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-action-foreground">
+          <span className="inline-flex items-center gap-1 rounded-md bg-action px-1.5 py-0.5 text-small font-semibold tracking-wide text-action-foreground">
             <Truck className="h-3 w-3" aria-hidden="true" /> FRETE GRÁTIS
           </span>
         )}
         {pricing.professional && (
-          <span className="rounded-md bg-foreground px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-background">LEVE 2: 12% · LEVE 3: 15%</span>
+          <span className="rounded-md bg-foreground px-1.5 py-0.5 text-small font-semibold tracking-wide text-background">LEVE 2: 12% · LEVE 3: 15%</span>
         )}
       </div>
-      <div className="mt-1 text-[10px] font-bold tracking-[0.16em]">VONIX HAIR</div>
-      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-2 min-h-[2.4rem] text-sm font-semibold leading-tight hover:underline md:text-base md:leading-snug">
+      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-2 min-h-[2.4rem] text-name font-semibold leading-tight hover:underline md:leading-snug">
         {p.name}
       </Link>
       <div className="mt-1.5"><Stars slug={p.slug} big /></div>
       <div className="mt-1.5 flex items-end justify-between gap-1.5">
         <div className="min-w-0 leading-tight">
-          {p.compareBase && p.compareBase > pricing.price && <div className="text-[11px] text-muted-foreground line-through">{brl(p.compareBase)}</div>}
-          <div className="text-lg font-bold md:text-xl">{brl(pricing.price)}</div>
-          <div className="text-xs font-medium">{par.count}x {brl(par.value)}<span className="hidden font-normal text-muted-foreground sm:inline"> sem juros</span></div>
+          {p.compareBase && p.compareBase > pricing.price && <div className="text-small text-muted-foreground line-through">{brl(p.compareBase)}</div>}
+          <div className="text-price font-semibold">{brl(pricing.price)}</div>
+          <div className="text-small font-medium">{par.count}x {brl(par.value)}<span className="hidden font-normal text-muted-foreground sm:inline"> sem juros</span></div>
         </div>
         <button
           type="button"
@@ -494,11 +493,11 @@ export function ProductCard({ p }: { p: Product }) {
         </button>
       </div>
       <div className="mt-1.5 flex items-center gap-1 whitespace-nowrap rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-1.5 py-1 text-[#0a5c34]">
-        <span className="rounded bg-[#0a5c34] px-1 py-0.5 text-[9px] font-bold tracking-wider text-white">PIX</span>
-        <b className="text-[13px] md:text-sm">{brl(pixPrice(pricing.price))}</b>
-        <span className="text-[9px] font-semibold md:text-[10px]">-5%</span>
+        <span className="rounded bg-[#0a5c34] px-1 py-0.5 text-small font-semibold tracking-wider text-white">PIX</span>
+        <b className="text-small md:text-body">{brl(pixPrice(pricing.price))}</b>
+        <span className="text-small font-semibold md:text-small">-5%</span>
       </div>
-      {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-[11px] leading-snug text-muted-foreground md:line-clamp-3 md:text-xs">{p.short}</p>}
+      {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-small leading-snug text-muted-foreground md:line-clamp-3 md:text-small">{p.short}</p>}
     </div>
   );
 }
@@ -604,8 +603,8 @@ export function Md({ text }: { text: string }) {
         const t = b.trim();
         if (!t) return null;
         if (t === "---") return <hr key={i} className="border-border" />;
-        if (t.startsWith("# ")) return <h1 key={i} className="font-display text-4xl">{t.slice(2)}</h1>;
-        if (t.startsWith("## ")) return <h2 key={i} className="pt-3 text-lg font-semibold">{t.slice(3)}</h2>;
+        if (t.startsWith("# ")) return <h1 key={i} className="font-display text-h1">{t.slice(2)}</h1>;
+        if (t.startsWith("## ")) return <h2 key={i} className="pt-3 text-name font-semibold">{t.slice(3)}</h2>;
         const ls = t.split("\n");
         if (ls.every((l) => /^(- |\d+\. )/.test(l)))
           return (

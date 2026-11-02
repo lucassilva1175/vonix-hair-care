@@ -116,7 +116,7 @@ export function PrizeWheel() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 left-4 z-40 flex items-center gap-2 rounded-full bg-[#5a0e4d] px-4 py-3 text-sm font-semibold text-white shadow-lg"
+          className="fixed bottom-5 left-4 z-40 flex items-center gap-2 rounded-full bg-[#5a0e4d] px-4 py-3 text-body font-semibold text-white shadow-lg"
         >
           <Gift className="h-5 w-5" aria-hidden="true" /> Gire e ganhe
         </button>
@@ -127,11 +127,11 @@ export function PrizeWheel() {
             <button type="button" aria-label="Fechar" onClick={close} className="absolute right-3 top-3 rounded-full p-1.5 text-[#c72c8e]">
               <X className="h-5 w-5" />
             </button>
-            <h2 className="pr-8 text-2xl font-bold tracking-tight">Roleta de ofertas</h2>
+            <h2 className="pr-8">Roleta de ofertas</h2>
 
             {phase !== "won" ? (
               <>
-                <p className="mt-2 text-sm text-muted-foreground">Gire a roleta e ganhe um cupom de desconto. <b>Todo giro ganha.</b></p>
+                <p className="mt-2 text-body text-muted-foreground">Gire a roleta e ganhe um cupom de desconto. <b>Todo giro ganha.</b></p>
                 <div className="relative mx-auto mt-4 w-72 max-w-full">
                   <div aria-hidden="true" className="absolute -top-1 left-1/2 z-10 h-0 w-0 -translate-x-1/2 border-x-[10px] border-t-[18px] border-x-transparent border-t-[#c9992f]" />
                   <svg
@@ -166,8 +166,8 @@ export function PrizeWheel() {
                 >
                   {phase === "spinning" ? "Girando…" : "Girar a roleta"}
                 </button>
-                {!accepted && <p className="mt-1.5 text-center text-xs text-muted-foreground">Aceite os termos para poder girar.</p>}
-                <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+                {!accepted && <p className="mt-1.5 text-center text-small text-muted-foreground">Aceite os termos para poder girar.</p>}
+                <label className="mt-3 flex items-start gap-2 text-small text-muted-foreground">
                   <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
                     Ao girar, você aceita os termos da <Link to="/$page" params={{ page: "politica-de-privacidade" }} className="underline" onClick={close}>Política de Privacidade</Link>. Não pedimos nenhum dado seu para girar. 1 giro por visitante.
@@ -177,16 +177,16 @@ export function PrizeWheel() {
             ) : (
               prize && (
                 <div role="status" className="mt-3 text-center">
-                  <p className="text-sm text-muted-foreground">Você ganhou</p>
-                  <p className="mt-1 text-4xl font-extrabold text-[#5a0e4d]">{prize.percent}% OFF</p>
-                  <p className="mt-1 text-sm">{prize.label}</p>
+                  <p className="text-body text-muted-foreground">Você ganhou</p>
+                  <p className="mt-1 text-h1 font-semibold text-[#5a0e4d]">{prize.percent}% OFF</p>
+                  <p className="mt-1 text-body">{prize.label}</p>
                   <div className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-lg border-2 border-dashed border-[#c9992f] bg-[#fdf8f4] px-4 py-2">
-                    <b className="font-mono text-xl tracking-widest">{prize.code}</b>
+                    <b className="text-price tracking-widest tabular-nums">{prize.code}</b>
                     <button type="button" onClick={copy} aria-label="Copiar cupom" className="rounded p-1.5 text-[#5a0e4d]">
                       {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                     </button>
                   </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
+                  <p className="mt-3 text-small text-muted-foreground">
                     Aplicado automaticamente no checkout, por {prizeDays} dias neste aparelho. Vale para itens sem outra oferta; não soma com o Leve 2 / Leve 3. Soma com o desconto do Pix.
                   </p>
                   <Link to="/loja" onClick={close} className="mt-4 block rounded-lg bg-[#5a0e4d] py-3 font-semibold text-white">Ver produtos</Link>
@@ -197,7 +197,7 @@ export function PrizeWheel() {
         </div>
       )}
       {had && !open && prize && (
-        <button type="button" onClick={() => { setPhase("won"); setOpen(true); }} className="fixed bottom-5 left-4 z-40 flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-[#5a0e4d] shadow-lg ring-1 ring-[#c9992f]">
+        <button type="button" onClick={() => { setPhase("won"); setOpen(true); }} className="fixed bottom-5 left-4 z-40 flex items-center gap-2 rounded-full bg-white px-3 py-2 text-small font-semibold text-[#5a0e4d] shadow-lg ring-1 ring-[#c9992f]">
           <Gift className="h-4 w-4" aria-hidden="true" /> Cupom {prize.code}
         </button>
       )}

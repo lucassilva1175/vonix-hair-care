@@ -59,7 +59,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
           style={pos ? { transform: `scale(${ZOOM})`, transformOrigin: `${pos.x}% ${pos.y}%` } : undefined}
           className={`aspect-square w-full object-contain ${pos ? "" : "transition-transform duration-200"}`}
         />
-        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-xs font-semibold shadow">
+        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-small font-semibold shadow">
           <ZoomIn className="h-4 w-4" aria-hidden="true" /> Ampliar
         </span>
         {n > 1 && (
@@ -70,7 +70,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
             <button type="button" aria-label="Próxima imagem" onClick={(e) => { e.stopPropagation(); go(1); }} className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background/90 shadow">
               <ChevronRight className="h-5 w-5" />
             </button>
-            <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-foreground/80 px-2.5 py-1 text-xs text-background">{i + 1}/{n}</span>
+            <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-foreground/80 px-2.5 py-1 text-small text-background">{i + 1}/{n}</span>
           </>
         )}
       </div>
@@ -85,7 +85,7 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
       {open && (
         <div role="dialog" aria-modal="true" aria-label={`${name}: imagem ampliada`} className="fixed inset-0 z-[70] flex flex-col bg-black/95">
           <div className="flex items-center justify-between gap-2 p-3 text-white">
-            <span className="text-sm">{i + 1} de {n} · {big ? "arraste para ver os detalhes" : "toque na imagem para ampliar"}</span>
+            <span className="text-body">{i + 1} de {n} · {big ? "arraste para ver os detalhes" : "toque na imagem para ampliar"}</span>
             <div className="flex gap-2">
               <button type="button" aria-label={big ? "Reduzir" : "Ampliar"} onClick={() => setBig((b) => !b)} className="grid h-10 w-10 place-items-center rounded-full bg-white/15">
                 {big ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}

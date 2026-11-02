@@ -96,7 +96,7 @@ function ShippingCalc({ subtotal, slug, variant, qty }: { subtotal: number; slug
   };
   return (
     <div className="mt-6 rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2 text-sm font-medium">
+      <div className="flex items-center gap-2 text-body font-medium">
         <Truck className="h-4 w-4" strokeWidth={1.5} />
         Calcular frete
       </div>
@@ -108,15 +108,15 @@ function ShippingCalc({ subtotal, slug, variant, qty }: { subtotal: number; slug
           onChange={(e) => setCep(maskCep(e.target.value))}
           onKeyDown={(e) => e.key === "Enter" && calc()}
           aria-label="CEP de entrega"
-          className="h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-sm"
+          className="h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-body"
         />
-        <button onClick={calc} disabled={loading} className="shrink-0 rounded-full border border-foreground bg-background px-5 text-sm font-medium text-foreground disabled:opacity-60">
+        <button onClick={calc} disabled={loading} className="shrink-0 rounded-full border border-foreground bg-background px-5 text-body font-medium text-foreground disabled:opacity-60">
           {loading ? "..." : "Calcular"}
         </button>
       </div>
-      {err && <p className="mt-2 text-sm text-destructive">{err}</p>}
+      {err && <p className="mt-2 text-body text-destructive">{err}</p>}
       {dest && (
-        <div className="mt-3 rounded-lg bg-muted p-3 text-sm">
+        <div className="mt-3 rounded-lg bg-muted p-3 text-body">
           <p className="text-muted-foreground">Entrega para {dest.city}/{dest.uf}</p>
           {hasFreeShipping(subtotal) && <p className="mt-1 font-medium">Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após o desconto do Pix).</p>}
           <ul className="mt-2 space-y-1">
@@ -166,19 +166,19 @@ function ProductPage() {
   return (
     <Shell>
       <div className="container-site py-8 pb-28 lg:pb-8">
-        <nav className="mb-6 text-xs text-muted-foreground">
+        <nav className="mb-6 text-small text-muted-foreground">
           <Link to="/">Início</Link> / <Link to="/loja" search={{ categoria: p.category }}>{p.categoryLabel}</Link> / {p.name}
         </nav>
         <div className="grid gap-10 lg:grid-cols-2">
           <ProductGallery key={p.slug} images={p.images} name={p.name} />
           <div className="min-w-0">
-            {off > 0 && <span className="rounded-full bg-foreground px-3 py-1 text-xs text-background">{off}% OFF</span>}
-            <h1 className="mt-3 font-display text-4xl md:text-5xl">{p.name}</h1>
+            {off > 0 && <span className="rounded-full bg-foreground px-3 py-1 text-small text-background">{off}% OFF</span>}
+            <h1 className="mt-3 font-display text-h1">{p.name}</h1>
             <Stars slug={p.slug} />
             {p.short && <p className="mt-3 text-muted-foreground">{p.short}</p>}
             {proMode ? (
               <div className="mt-6">
-                <div className="mb-2 text-sm font-medium">Promoção para cabeleireiras — mesmo produto, mesmo tamanho</div>
+                <div className="mb-2 text-body font-medium">Promoção para cabeleireiras — mesmo produto, mesmo tamanho</div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {PRO_OFFERS.map((o) => {
                     const t = lineTotals(v.price, 1, o.offer);
@@ -186,25 +186,25 @@ function ProductPage() {
                       <button
                         key={o.label}
                         onClick={() => setOffer(o.offer)}
-                        className={`rounded-xl border p-3 text-left text-sm ${offer === o.offer ? "border-foreground bg-foreground text-background" : "border-border"}`}
+                        className={`rounded-xl border p-3 text-left text-body ${offer === o.offer ? "border-foreground bg-foreground text-background" : "border-border"}`}
                       >
                         <div className="font-medium">{o.label}</div>
-                        <div className="text-xs opacity-80">{o.pct ? `${o.pct}% OFF` : "Preço normal"}</div>
+                        <div className="text-small opacity-80">{o.pct ? `${o.pct}% OFF` : "Preço normal"}</div>
                         <div className="mt-1 font-semibold">{brl(t.net)}</div>
-                        {o.offer && <div className="mt-1 text-xs font-semibold text-[#0a5c34] [.bg-foreground_&]:text-[#9be3bb]">Economize {brl(t.gross - t.net)}</div>}
+                        {o.offer && <div className="mt-1 text-small font-semibold text-[#0a5c34] [.bg-foreground_&]:text-[#9be3bb]">Economize {brl(t.gross - t.net)}</div>}
                       </button>
                     );
                   })}
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="mt-2 text-small text-muted-foreground">
                   O desconto do combo não soma com o desconto de 5% do Pix nem com cupom. O frete grátis acima de {brl(FREE_SHIPPING_ABOVE)} vale pelo valor dos produtos antes dos descontos.
                 </p>
                 <div className="mt-3 flex items-baseline gap-2">
                   <span className="text-muted-foreground line-through">{brl(sel!.gross)}</span>
-                  <span className="text-3xl font-semibold">{brl(sel!.net)}</span>
+                  <span className="text-h2 font-semibold">{brl(sel!.net)}</span>
                 </div>
                 {offer && (
-                  <p className="mt-2 inline-block rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-3 py-1.5 text-sm font-semibold text-[#0a5c34]">
+                  <p className="mt-2 inline-block rounded-lg border border-[#b9e5cd] bg-[#e7f6ee] px-3 py-1.5 text-body font-semibold text-[#0a5c34]">
                     Você economiza {brl(sel!.gross - sel!.net)} neste pedido
                   </p>
                 )}
@@ -214,24 +214,24 @@ function ProductPage() {
             )}
             {p.variants.length > 1 && (
               <div className="mt-6">
-                <div className="mb-2 text-sm font-medium">Tamanho</div>
+                <div className="mb-2 text-body font-medium">Tamanho</div>
                 <div className="flex flex-wrap gap-2">
                   {p.variants.map((x, k) => (
-                    <button key={x.label} onClick={() => setVi(k)} className={`rounded-full border px-4 py-2 text-sm ${k === vi ? "border-foreground bg-foreground text-background" : "border-border"}`}>
+                    <button key={x.label} onClick={() => setVi(k)} className={`rounded-full border px-4 py-2 text-body ${k === vi ? "border-foreground bg-foreground text-background" : "border-border"}`}>
                       {x.label} · {brl(x.price)}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            {p.variants.length === 1 && <div className="mt-4 text-sm text-muted-foreground">Tamanho: {v.label}</div>}
+            {p.variants.length === 1 && <div className="mt-4 text-body text-muted-foreground">Tamanho: {v.label}</div>}
             <div className="mt-6 flex items-center gap-3">
               <div className="flex items-center rounded-full border border-border">
                 <button aria-label="Diminuir" className="p-3" onClick={() => setQty(Math.max(1, qty - 1))}><Minus className="h-4 w-4" /></button>
                 <span className="w-8 text-center" data-testid="qty">{qty}</span>
                 <button aria-label="Aumentar" className="p-3" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4" /></button>
               </div>
-              <span className="text-xs text-muted-foreground">{proMode && offer ? (offer === "kit2" ? "combos de 2 un." : "combos de 3 un.") : "unidade(s)"}</span>
+              <span className="text-small text-muted-foreground">{proMode && offer ? (offer === "kit2" ? "combos de 2 un." : "combos de 3 un.") : "unidade(s)"}</span>
               <button aria-label="Favoritar" onClick={() => fav.toggle(p.slug)} className="rounded-full border border-border p-3">
                 <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
               </button>
@@ -246,7 +246,7 @@ function ProductPage() {
             </div>
             <div className="mt-4"><PaymentMethods /></div>
             <div className="mt-3"><SecuritySeal /></div>
-            <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
+            <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>Compra 100% segura</li>
               <li>5% de desconto no Pix e até 6x sem juros no cartão</li>
               <li>Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos</li>
@@ -259,18 +259,18 @@ function ProductPage() {
         <ProductReviews slug={p.slug} />
         {related.length > 0 && (
           <section className="mt-20">
-            <h2 className="mb-6 text-2xl font-bold tracking-tight md:text-3xl [&_em]:not-italic">Você também pode <em>gostar</em></h2>
+            <h2 className="mb-6 [&_em]:not-italic">Você também pode <em>gostar</em></h2>
             <Grid carousel items={related} />
           </section>
         )}
       </div>
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:hidden">
         <div className="min-w-0 leading-tight">
-          <div className="truncate text-xs text-muted-foreground">{p.name}</div>
+          <div className="truncate text-small text-muted-foreground">{p.name}</div>
           <div className="font-semibold">{brl(total)}</div>
-          {!(proMode && offer) && <div className="text-xs font-semibold text-[#0a5c34]">{brl(pixPrice(total))} no Pix</div>}
+          {!(proMode && offer) && <div className="text-small font-semibold text-[#0a5c34]">{brl(pixPrice(total))} no Pix</div>}
         </div>
-        <button className="ml-auto shrink-0 rounded-full bg-action px-6 py-3 text-sm font-medium text-action-foreground" onClick={() => { add(); nav({ to: "/carrinho" }); }}>
+        <button className="ml-auto shrink-0 rounded-full bg-action px-6 py-3 text-body font-medium text-action-foreground" onClick={() => { add(); nav({ to: "/carrinho" }); }}>
           Comprar agora
         </button>
       </div>

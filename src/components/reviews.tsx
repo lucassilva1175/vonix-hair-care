@@ -29,8 +29,8 @@ export function ReviewCard({ r }: { r: Review }) {
       )}
       <figcaption className="p-4">
         <div className="text-star" aria-label={`${r.rating} de 5 estrelas`}>{"★".repeat(r.rating)}</div>
-        <blockquote className="mt-1 text-sm">{r.comment}</blockquote>
-        <div className="mt-2 text-xs text-muted-foreground"><b className="text-foreground">{r.author}</b> · {month(r.date)}</div>
+        <blockquote className="mt-1 text-body">{r.comment}</blockquote>
+        <div className="mt-2 text-small text-muted-foreground"><b className="text-foreground">{r.author}</b> · {month(r.date)}</div>
       </figcaption>
     </figure>
   );
@@ -43,8 +43,8 @@ export function ProductReviews({ slug }: { slug: string }) {
   const avg = list.reduce((s, r) => s + r.rating, 0) / list.length;
   return (
     <section className="mt-16" aria-label="Avaliações de clientes">
-      <h2 className="font-display text-3xl">Avaliações de <em>clientes</em></h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <h2 className="font-display text-h2">Avaliações de <em>clientes</em></h2>
+      <p className="mt-1 text-body text-muted-foreground">
         <span className="text-star">★</span> {avg.toFixed(1).replace(".", ",")} · {list.length} {list.length === 1 ? "avaliação" : "avaliações"} com foto ou vídeo
       </p>
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">

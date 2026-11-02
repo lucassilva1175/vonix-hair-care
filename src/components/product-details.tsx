@@ -39,11 +39,11 @@ function specs(p: Product) {
 function Row({ title, children, open = false }: { title: string; children: ReactNode; open?: boolean }) {
   return (
     <details open={open} className="group border-b border-border first:border-t">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-lg [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-name [&::-webkit-details-marker]:hidden">
         {title}
         <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
       </summary>
-      <div className="pb-5 text-sm">{children}</div>
+      <div className="pb-5 text-body">{children}</div>
     </details>
   );
 }
@@ -61,8 +61,8 @@ export function ProductDetails({ p }: { p: Product }) {
       <dl className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
         {specs(p).map(([k, v]) => (
           <div key={k}>
-            <dt className="text-sm font-bold">{k}</dt>
-            <dd className="text-sm text-muted-foreground">{v}</dd>
+            <dt className="text-body font-semibold">{k}</dt>
+            <dd className="text-body text-muted-foreground">{v}</dd>
           </div>
         ))}
       </dl>

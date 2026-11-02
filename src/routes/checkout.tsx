@@ -23,7 +23,7 @@ export const Route = createFileRoute("/checkout")({
   component: Checkout,
 });
 
-const inp = "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm";
+const inp = "h-11 w-full rounded-lg border border-border bg-background px-3 text-body";
 
 const maskCpf = (v: string) =>
   v.replace(/\D/g, "").slice(0, 11).replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1-$2");
@@ -56,8 +56,8 @@ function PixPanel({ pix, paid, onCopy, copied, onRestart }: { pix: PixResult; pa
   if (paid)
     return (
       <div role="status" className="rounded-2xl border border-border bg-card p-6 text-center">
-        <h1 className="font-display text-4xl">Pagamento confirmado!</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Pedido nº {pix.orderId}. Você receberá os detalhes por e-mail e WhatsApp.</p>
+        <h1 className="font-display text-h1">Pagamento confirmado!</h1>
+        <p className="mt-2 text-body text-muted-foreground">Pedido nº {pix.orderId}. Você receberá os detalhes por e-mail e WhatsApp.</p>
         <Link to="/loja" className="mt-6 inline-block rounded-full bg-action px-6 py-3 text-action-foreground">Continuar comprando</Link>
       </div>
     );
@@ -65,11 +65,11 @@ function PixPanel({ pix, paid, onCopy, copied, onRestart }: { pix: PixResult; pa
   const ss = Math.max(0, Math.floor((left % 60000) / 1000));
   return (
     <div className="rounded-2xl border border-border bg-card p-6 text-center">
-      <h1 className="font-display text-4xl">Pague com Pix</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Pedido nº {pix.orderId} · {brl(pix.total)}</p>
+      <h1 className="font-display text-h1">Pague com Pix</h1>
+      <p className="mt-2 text-body text-muted-foreground">Pedido nº {pix.orderId} · {brl(pix.total)}</p>
       <img src={`data:image/png;base64,${pix.qrcode}`} alt="QR Code do Pix" width={220} height={220} className="mx-auto mt-4 h-[220px] w-[220px]" />
-      <p className="mt-4 text-sm">Abra o app do seu banco, escolha Pix e leia o QR Code, ou copie o código abaixo.</p>
-      <textarea readOnly value={pix.emv} rows={3} className="mt-3 w-full rounded-lg border border-border bg-background p-2 text-xs" onFocus={(e) => e.currentTarget.select()} />
+      <p className="mt-4 text-body">Abra o app do seu banco, escolha Pix e leia o QR Code, ou copie o código abaixo.</p>
+      <textarea readOnly value={pix.emv} rows={3} className="mt-3 w-full rounded-lg border border-border bg-background p-2 text-small" onFocus={(e) => e.currentTarget.select()} />
       {left > 0 ? (
         <button type="button" onClick={onCopy} className="mt-3 w-full rounded-full bg-action py-3 font-medium text-action-foreground">
           {copied ? "Código copiado!" : "Copiar código Pix"}
@@ -79,7 +79,7 @@ function PixPanel({ pix, paid, onCopy, copied, onRestart }: { pix: PixResult; pa
           Gerar um novo Pix
         </button>
       )}
-      <p className="mt-3 text-sm text-muted-foreground">
+      <p className="mt-3 text-body text-muted-foreground">
         {left > 0 ? `Expira em ${mm}:${String(ss).padStart(2, "0")}. ` : "Este Pix expirou. Volte e gere outro. "}Aguardando pagamento — esta tela atualiza sozinha.
       </p>
     </div>
@@ -336,8 +336,8 @@ function Checkout() {
     return (
       <Shell>
         <div className="container-site max-w-xl py-16 text-center" role="status">
-          <h1 className="font-display text-4xl">Pagamento aprovado!</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Pedido nº {cardDone.orderId}. Você receberá os detalhes por e-mail e WhatsApp.</p>
+          <h1 className="font-display text-h1">Pagamento aprovado!</h1>
+          <p className="mt-2 text-body text-muted-foreground">Pedido nº {cardDone.orderId}. Você receberá os detalhes por e-mail e WhatsApp.</p>
           <Link to="/loja" className="mt-6 inline-block rounded-full bg-action px-6 py-3 text-action-foreground">Continuar comprando</Link>
         </div>
       </Shell>
@@ -367,13 +367,13 @@ function Checkout() {
       <div className="container-site grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_380px]">
         <form className="min-w-0 space-y-8" onSubmit={onSubmit}>
           <div>
-            <h1 className="font-display text-5xl">Finalizar compra</h1>
-            <p className="mt-2 text-sm text-muted-foreground"><b>Compre sem criar uma conta.</b> Login é opcional e não é pedido em nenhuma etapa.</p>
-            {cfg?.sandbox && <p role="note" className="mt-3 rounded-lg border border-foreground bg-muted p-3 text-sm"><b>Ambiente de testes.</b> Nenhuma cobrança real será feita.</p>}
+            <h1 className="font-display text-h1">Finalizar compra</h1>
+            <p className="mt-2 text-body text-muted-foreground"><b>Compre sem criar uma conta.</b> Login é opcional e não é pedido em nenhuma etapa.</p>
+            {cfg?.sandbox && <p role="note" className="mt-3 rounded-lg border border-foreground bg-muted p-3 text-body"><b>Ambiente de testes.</b> Nenhuma cobrança real será feita.</p>}
           </div>
 
           <fieldset className="space-y-3">
-            <legend className="mb-1 text-lg font-semibold">1. Contato</legend>
+            <legend className="mb-1 text-name font-semibold">1. Contato</legend>
             <input required aria-label="Nome completo" placeholder="Nome completo" value={f.nome} onChange={set("nome")} autoComplete="name" className={inp} />
             <input required type="email" inputMode="email" aria-label="E-mail" placeholder="E-mail" value={f.email} onChange={set("email")} autoComplete="email" className={inp} />
             <input required inputMode="tel" aria-label="WhatsApp com DDD" placeholder="WhatsApp com DDD" value={f.whatsapp} onChange={set("whatsapp")} autoComplete="tel" className={inp} />
@@ -381,10 +381,10 @@ function Checkout() {
           </fieldset>
 
           <fieldset className="space-y-3">
-            <legend className="mb-1 text-lg font-semibold">2. Entrega</legend>
+            <legend className="mb-1 text-name font-semibold">2. Entrega</legend>
             <input required inputMode="numeric" aria-label="CEP" placeholder="CEP (00000-000)" value={f.cep} maxLength={9} onChange={(e) => { const m = maskCep(e.target.value); setF((old) => ({ ...old, cep: m })); lookup(m); }} autoComplete="postal-code" className={inp} />
-            {cepLoading && <p role="status" className="text-sm text-muted-foreground">Buscando endereço…</p>}
-            {cepMsg && !cepLoading && <p role="status" className="text-sm text-muted-foreground">{cepMsg}</p>}
+            {cepLoading && <p role="status" className="text-body text-muted-foreground">Buscando endereço…</p>}
+            {cepMsg && !cepLoading && <p role="status" className="text-body text-muted-foreground">{cepMsg}</p>}
             <input required aria-label="Rua" placeholder="Rua" value={f.rua} onChange={set("rua")} autoComplete="address-line1" className={inp} />
             <div className="grid grid-cols-2 gap-3">
               <input ref={numeroRef} required inputMode="numeric" aria-label="Número" placeholder="Número" value={f.numero} onChange={set("numero")} autoComplete="off" className={inp} />
@@ -397,12 +397,12 @@ function Checkout() {
             </div>
 
             <div className="space-y-2 pt-2" aria-live="polite">
-              <div className="text-sm font-medium">Forma de entrega</div>
-              {quoting && <p className="text-sm text-muted-foreground">Calculando frete…</p>}
-              {quoteErr && !quoting && <p role="alert" className="text-sm text-destructive">{quoteErr}</p>}
-              {!quoting && !quoteErr && !options.length && <p className="text-sm text-muted-foreground">Informe o CEP para ver as opções de entrega.</p>}
+              <div className="text-body font-medium">Forma de entrega</div>
+              {quoting && <p className="text-body text-muted-foreground">Calculando frete…</p>}
+              {quoteErr && !quoting && <p role="alert" className="text-body text-destructive">{quoteErr}</p>}
+              {!quoting && !quoteErr && !options.length && <p className="text-body text-muted-foreground">Informe o CEP para ver as opções de entrega.</p>}
               {!quoting && options.map((o) => (
-                <label key={o.id} className={`flex items-center justify-between rounded-lg border p-3 text-sm ${serviceId === o.id ? "border-action bg-card font-medium" : "border-border"}`}>
+                <label key={o.id} className={`flex items-center justify-between rounded-lg border p-3 text-body ${serviceId === o.id ? "border-action bg-card font-medium" : "border-border"}`}>
                   <span className="flex gap-2">
                     <input type="radio" name="frete" checked={serviceId === o.id} onChange={() => setServiceId(o.id)} />
                     <span>{o.company} {o.name} <span className="text-muted-foreground">· até {o.days} dias úteis</span></span>
@@ -414,36 +414,36 @@ function Checkout() {
           </fieldset>
 
           <fieldset className="space-y-3">
-            <legend className="mb-1 text-lg font-semibold">3. Pagamento</legend>
-            <label className={`flex items-center justify-between rounded-lg border p-3 text-sm ${pay === "pix" ? "border-action bg-card font-medium" : "border-border"}`}>
+            <legend className="mb-1 text-name font-semibold">3. Pagamento</legend>
+            <label className={`flex items-center justify-between rounded-lg border p-3 text-body ${pay === "pix" ? "border-action bg-card font-medium" : "border-border"}`}>
               <span className="flex gap-2"><input type="radio" name="pay" checked={pay === "pix"} onChange={() => setPay("pix")} /> Pix (5% de desconto nos itens sem outra oferta)</span>
               <b>{brl(tPix.net + shipping)}</b>
             </label>
-            <label className={`flex items-center justify-between rounded-lg border p-3 text-sm ${pay === "card" ? "border-action bg-card font-medium" : "border-border"}`}>
+            <label className={`flex items-center justify-between rounded-lg border p-3 text-body ${pay === "card" ? "border-action bg-card font-medium" : "border-border"}`}>
               <span className="flex gap-2"><input type="radio" name="pay" checked={pay === "card"} onChange={() => setPay("card")} /> Cartão de crédito — até 6x sem juros</span>
               <b>{brl(tCard.net + shipping)}</b>
             </label>
             {!showCoupon ? (
-              <button type="button" onClick={() => setShowCoupon(true)} className="text-sm underline">Tem um cupom?</button>
+              <button type="button" onClick={() => setShowCoupon(true)} className="text-body underline">Tem um cupom?</button>
             ) : (
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <input aria-label="Código do cupom" placeholder="Código do cupom" value={coupon} onChange={(e) => setCoupon(e.target.value)} className={inp} />
-                  <button type="button" onClick={applyCoupon} className="shrink-0 rounded-lg border border-foreground px-4 text-sm">Aplicar</button>
-                  <button type="button" aria-label="Remover cupom" onClick={() => { setShowCoupon(false); setCoupon(""); setCouponMsg(null); setApplied(null); }} className="shrink-0 text-sm underline">Remover</button>
+                  <button type="button" onClick={applyCoupon} className="shrink-0 rounded-lg border border-foreground px-4 text-body">Aplicar</button>
+                  <button type="button" aria-label="Remover cupom" onClick={() => { setShowCoupon(false); setCoupon(""); setCouponMsg(null); setApplied(null); }} className="shrink-0 text-body underline">Remover</button>
                 </div>
-                {couponMsg && <p role="alert" className="text-sm text-muted-foreground">{couponMsg}</p>}
+                {couponMsg && <p role="alert" className="text-body text-muted-foreground">{couponMsg}</p>}
               </div>
             )}
           </fieldset>
 
-          {error && <p role="alert" className="rounded-lg border border-destructive p-3 text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="rounded-lg border border-destructive p-3 text-body text-destructive">{error}</p>}
           <button disabled={busy || !chosen} className="w-full rounded-full bg-action py-3.5 font-medium text-action-foreground disabled:opacity-60">
             {busy ? "Processando…" : pay === "pix" ? `Gerar Pix · ${brl(total)}` : `Pagar ${brl(total)} no cartão`}
           </button>
           <div className="flex justify-center"><SecuritySeal /></div>
-          {!chosen && <p className="text-center text-sm text-muted-foreground">Informe o CEP e escolha a entrega para continuar.</p>}
-          <p className="text-center text-sm text-muted-foreground">
+          {!chosen && <p className="text-center text-body text-muted-foreground">Informe o CEP e escolha a entrega para continuar.</p>}
+          <p className="text-center text-body text-muted-foreground">
             Precisa de ajuda para finalizar? <a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">Fale com a gente no WhatsApp</a>
           </p>
         </form>
@@ -451,7 +451,7 @@ function Checkout() {
         {/* Card fields live in their own form so Appmax JS can tokenize them; the main form triggers it. */}
         <div className="lg:col-start-1 lg:row-start-2">
           <form id="card-form" data-appmax-checkout hidden={pay !== "card"} className="min-w-0 space-y-3" onSubmit={(e) => e.preventDefault()}>
-            <div className="text-lg font-semibold">Dados do cartão</div>
+            <div className="text-name font-semibold">Dados do cartão</div>
             <input form="card-form" required name="card-number" inputMode="numeric" autoComplete="cc-number" placeholder="Número do cartão" value={card.number} onChange={(e) => setCard((o) => ({ ...o, number: e.target.value.replace(/[^\d ]/g, "").slice(0, 23) }))} className={inp} />
             <input form="card-form" required name="card-holder-name" autoComplete="cc-name" placeholder="Nome impresso no cartão" value={card.holder} onChange={(e) => setCard((o) => ({ ...o, holder: e.target.value }))} className={inp} />
             <div className="grid grid-cols-3 gap-3">
@@ -470,26 +470,26 @@ function Checkout() {
 
         <aside className="min-w-0 space-y-4 lg:col-start-2 lg:row-start-1 lg:row-span-2" aria-label="Resumo do pedido">
           <ShippingBar subtotal={c.subtotal} />
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-body">
             {c.lines.map((l) => (
               <li key={l.slug + l.variant + (l.offer ?? "")} className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-start gap-2">
                 <img src={l.product.images[0]} alt={l.product.name} width={48} height={48} className="h-12 w-12 rounded border border-border bg-background object-contain" />
                 <span className="min-w-0 break-words">
                   {l.units}× {l.product.name} <span className="text-muted-foreground">({l.variant})</span>
-                  {l.offer && <span className="block text-xs text-muted-foreground">{OFFER_LABEL[l.offer]}{l.offer !== "comp5" ? ` · ${l.qty} combo(s)` : ""}</span>}
+                  {l.offer && <span className="block text-small text-muted-foreground">{OFFER_LABEL[l.offer]}{l.offer !== "comp5" ? ` · ${l.qty} combo(s)` : ""}</span>}
                 </span>
                 <span className="whitespace-nowrap font-medium">{brl(l.net)}</span>
               </li>
             ))}
           </ul>
-          <div className="space-y-2 text-sm" data-testid="summary">
+          <div className="space-y-2 text-body" data-testid="summary">
             <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(t.gross)}</span></div>
             {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas</span><span>− {brl(t.offerDiscount)}</span></div>}
             {t.couponDiscount > 0 && applied && <div className="flex justify-between"><span>Cupom {applied.code}</span><span>− {brl(t.couponDiscount)}</span></div>}
             {t.pixDiscount > 0 && <div className="flex justify-between"><span>Desconto Pix (5% nos itens sem oferta)</span><span>− {brl(t.pixDiscount)}</span></div>}
-            {t.hasOffers && <p className="text-xs text-muted-foreground">Ofertas não cumulativas no mesmo item.</p>}
+            {t.hasOffers && <p className="text-small text-muted-foreground">Ofertas não cumulativas no mesmo item.</p>}
             <div className="flex justify-between"><span>Frete</span><span>{chosen ? (chosen.free ? "Grátis" : brl(chosen.price)) : "Informe o CEP"}</span></div>
-            <div className="flex justify-between border-t border-border pt-2 text-base font-semibold"><span>Total {pay === "pix" ? "no Pix" : "no cartão"}{chosen ? "" : " (sem frete)"}</span><span>{brl(total)}</span></div>
+            <div className="flex justify-between border-t border-border pt-2 text-body font-semibold"><span>Total {pay === "pix" ? "no Pix" : "no cartão"}{chosen ? "" : " (sem frete)"}</span><span>{brl(total)}</span></div>
             {pay === "card" && <div className="text-muted-foreground">até 6x de {brl(inst.value)} sem juros{inst.first !== inst.value ? ` (1ª de ${brl(inst.first)})` : ""}</div>}
           </div>
         </aside>
