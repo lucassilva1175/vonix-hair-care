@@ -59,6 +59,8 @@ export async function sendPaidOrder(order: AppmaxOrder) {
   const a = c.address ?? {};
   await bling("POST", "/pedidos/vendas", {
     numeroLoja: String(o.id),
+    ...(env("BLING_LOJA_ID") ? { loja: { id: Number(env("BLING_LOJA_ID")) } } : {}),
+    observacoes: "Origem: site Vonix Hair (vonixhaircosmeticos.com.br) | Pedido Appmax " + o.id,
     data: new Date().toISOString().slice(0, 10),
     contato: { nome: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim(), tipoPessoa: "F", numeroDocumento: c.document_number, email: c.email, celular: c.phone },
     itens: o.products.map((p) => ({ codigo: p.sku, descricao: p.name, unidade: "UN", quantidade: p.quantity, valor: p.unit_value })),
@@ -70,4 +72,109 @@ export async function sendPaidOrder(order: AppmaxOrder) {
     },
   });
   return "enviado";
+}
+
+export type PainelOrder = { id: number; numero: number; data: string; total: number; cliente: string; situacao: string; canal: string };
+
+/** Nome do canal a partir do nome da loja cadastrada no Bling (Shopee, TikTok Shop, Magalu, site...). */
+function canalDe(nome: string, id: number | undefined) {
+  if (/shopee/i.test(nome)) return "Shopee";
+  if (/tiktok/i.test(nome)) return "TikTok Shop";
+  if (/magalu|magazine/i.test(nome)) return "Magalu";
+  if (/mercado\s*livre/i.test(nome)) return "Mercado Livre";
+  if (id && String(id) === env("BLING_LOJA_ID")) return "Site Vonix";
+  if (/site|vonix|e-?commerce|loja virtual/i.test(nome)) return "Site Vonix";
+  return nome || (id ? `Loja ${id}` : "Sem loja");
+}
+
+/** Pedidos de venda dos últimos `days` dias, de todas as lojas ligadas ao Bling, com o canal de cada um. */
+export async function listOrders(days: number): Promise<PainelOrder[]> {
+  const nomes = new Map<number, string>();
+  try {
+    const l = await bling<{ data?: { id: number; descricao?: string; nome?: string }[] }>("GET", "/lojas");
+    for (const x of l.data ?? []) nomes.set(x.id, x.descricao ?? x.nome ?? "");
+  } catch (e) {
+    console.error("[bling] lojas", e);
+  }
+  const fim = new Date();
+  const ini = new Date(fim.getTime() - days * 86_400_000);
+  const dia = (d: Date) => d.toISOString().slice(0, 10);
+  const out: PainelOrder[] = [];
+  for (let pagina = 1; pagina <= 5; pagina++) {
+    const r = await bling<{ data?: { id: number; numero: number; data: string; total: number; contato?: { nome?: string }; situacao?: { valor?: number }; loja?: { id?: number } }[] }>(
+      "GET",
+      `/pedidos/vendas?pagina=${pagina}&limite=100&dataInicial=${dia(ini)}&dataFinal=${dia(fim)}`,
+    );
+    const rows = r.data ?? [];
+    for (const p of rows) {
+      out.push({ id: p.id, numero: p.numero, data: p.data, total: p.total, cliente: p.contato?.nome ?? "", situacao: String(p.situacao?.valor ?? ""), canal: canalDe(nomes.get(p.loja?.id ?? 0) ?? "", p.loja?.id) });
+    }
+    if (rows.length < 100) break;
+  }
+  return out;
+}
+
+export type PedidoDetalhe = {
+  cliente: string; documento: string; email: string; telefone: string;
+  endereco: string; frete: number; desconto: number; observacoes: string;
+  itens: { descricao: string; quantidade: number; valor: number; custo: number }[];
+  custoTotal: number; lucro: number;
+};
+
+const custos = new Map<number, number>();
+/** Preço de custo (o que a Vonix paga) do produto no cadastro do Bling; 0 quando não está cadastrado. */
+async function custoDoProduto(id: number | undefined) {
+  if (!id) return 0;
+  const hit = custos.get(id);
+  if (hit !== undefined) return hit;
+  let custo = 0;
+  try {
+    const r = await bling<{ data?: { precoCusto?: number; fornecedor?: { precoCusto?: number; precoCompra?: number } } }>("GET", `/produtos/${id}`);
+    custo = r.data?.fornecedor?.precoCusto || r.data?.precoCusto || r.data?.fornecedor?.precoCompra || 0;
+  } catch (e) {
+    console.error("[bling] produto", e);
+  }
+  custos.set(id, custo);
+  return custo;
+}
+
+/** Detalhe de um pedido: dados do cliente (telefone, e-mail, CPF), endereço de entrega e itens. */
+export async function getOrderDetail(id: number): Promise<PedidoDetalhe> {
+  type Addr = { endereco?: string; numero?: string; complemento?: string; bairro?: string; cep?: string; municipio?: string; uf?: string };
+  const p = (await bling<{
+    data: {
+      contato?: { id?: number; nome?: string; numeroDocumento?: string };
+      itens?: { descricao?: string; quantidade?: number; valor?: number; produto?: { id?: number } }[];
+      transporte?: { frete?: number; etiqueta?: Addr & { nome?: string } };
+      desconto?: { valor?: number };
+      observacoes?: string;
+    };
+  }>("GET", `/pedidos/vendas/${id}`)).data;
+  let c: { email?: string; telefone?: string; celular?: string; endereco?: { geral?: Addr } } = {};
+  if (p.contato?.id) {
+    try {
+      c = (await bling<{ data: typeof c }>("GET", `/contatos/${p.contato.id}`)).data;
+    } catch (e) {
+      console.error("[bling] contato", e);
+    }
+  }
+  const a: Addr = p.transporte?.etiqueta?.endereco ? p.transporte.etiqueta : (c.endereco?.geral ?? {});
+  const endereco = [a.endereco && `${a.endereco}${a.numero ? ", " + a.numero : ""}`, a.complemento, a.bairro, [a.municipio, a.uf].filter(Boolean).join(" - "), a.cep && `CEP ${a.cep}`].filter(Boolean).join(" · ");
+  const itens = [];
+  for (const i of p.itens ?? []) itens.push({ descricao: i.descricao ?? "", quantidade: i.quantidade ?? 0, valor: i.valor ?? 0, custo: await custoDoProduto(i.produto?.id) });
+  const custoTotal = itens.reduce((s, i) => s + i.custo * i.quantidade, 0);
+  const vendido = itens.reduce((s, i) => s + i.valor * i.quantidade, 0) - (p.desconto?.valor ?? 0);
+  return {
+    cliente: p.contato?.nome ?? "",
+    documento: p.contato?.numeroDocumento ?? "",
+    email: c.email ?? "",
+    telefone: c.celular || c.telefone || "",
+    endereco,
+    frete: p.transporte?.frete ?? 0,
+    desconto: p.desconto?.valor ?? 0,
+    observacoes: p.observacoes ?? "",
+    itens,
+    custoTotal,
+    lucro: vendido - custoTotal,
+  };
 }
