@@ -18,7 +18,10 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as LojaRouteImport } from './routes/loja'
+import { Route as PainelRouteImport } from './routes/painel'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
+import { Route as ApiPublicAppmaxWebhookRouteImport } from './routes/api.public.appmax-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -65,9 +68,24 @@ const LojaRoute = LojaRouteImport.update({
   path: '/loja',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   id: '/produto/$slug',
   path: '/produto/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAppmaxWebhookRoute = ApiPublicAppmaxWebhookRouteImport.update({
+  id: '/api/public/appmax-webhook',
+  path: '/api/public/appmax-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -81,7 +99,10 @@ export interface FileRoutesByFullPath {
   '/conta': typeof ContaRoute
   '/favoritos': typeof FavoritosRoute
   '/loja': typeof LojaRoute
+  '/painel': typeof PainelRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/api/public/appmax-webhook': typeof ApiPublicAppmaxWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -93,7 +114,10 @@ export interface FileRoutesByTo {
   '/conta': typeof ContaRoute
   '/favoritos': typeof FavoritosRoute
   '/loja': typeof LojaRoute
+  '/painel': typeof PainelRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/api/public/appmax-webhook': typeof ApiPublicAppmaxWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -106,7 +130,10 @@ export interface FileRoutesById {
   '/conta': typeof ContaRoute
   '/favoritos': typeof FavoritosRoute
   '/loja': typeof LojaRoute
+  '/painel': typeof PainelRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produto/$slug': typeof ProdutoSlugRoute
+  '/api/public/appmax-webhook': typeof ApiPublicAppmaxWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -120,7 +147,10 @@ export interface FileRouteTypes {
     | '/conta'
     | '/favoritos'
     | '/loja'
+    | '/painel'
+    | '/sitemap.xml'
     | '/produto/$slug'
+    | '/api/public/appmax-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -132,7 +162,10 @@ export interface FileRouteTypes {
     | '/conta'
     | '/favoritos'
     | '/loja'
+    | '/painel'
+    | '/sitemap.xml'
     | '/produto/$slug'
+    | '/api/public/appmax-webhook'
   id:
     | '__root__'
     | '/'
@@ -144,7 +177,10 @@ export interface FileRouteTypes {
     | '/conta'
     | '/favoritos'
     | '/loja'
+    | '/painel'
+    | '/sitemap.xml'
     | '/produto/$slug'
+    | '/api/public/appmax-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -157,7 +193,10 @@ export interface RootRouteChildren {
   ContaRoute: typeof ContaRoute
   FavoritosRoute: typeof FavoritosRoute
   LojaRoute: typeof LojaRoute
+  PainelRoute: typeof PainelRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
+  ApiPublicAppmaxWebhookRoute: typeof ApiPublicAppmaxWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -225,11 +264,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LojaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/produto/$slug': {
       id: '/produto/$slug'
       path: '/produto/$slug'
       fullPath: '/produto/$slug'
       preLoaderRoute: typeof ProdutoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/appmax-webhook': {
+      id: '/api/public/appmax-webhook'
+      path: '/api/public/appmax-webhook'
+      fullPath: '/api/public/appmax-webhook'
+      preLoaderRoute: typeof ApiPublicAppmaxWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -245,7 +305,10 @@ const rootRouteChildren: RootRouteChildren = {
   ContaRoute: ContaRoute,
   FavoritosRoute: FavoritosRoute,
   LojaRoute: LojaRoute,
+  PainelRoute: PainelRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
+  ApiPublicAppmaxWebhookRoute: ApiPublicAppmaxWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
