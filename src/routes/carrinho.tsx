@@ -1,9 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toItem, track } from "@/lib/analytics";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Shell } from "@/components/site";
-import { OFFER_LABEL, brl, complementsFor, pixPrice, useCart, useHydrated } from "@/lib/store";
+import {
+  CART_REVALIDATED_KEY,
+  OFFER_LABEL,
+  brl,
+  complementsFor,
+  pixPrice,
+  useCart,
+  useHydrated,
+} from "@/lib/store";
 import { ShippingBar, Summary } from "@/components/cart-summary";
 
 export const Route = createFileRoute("/carrinho")({
@@ -11,6 +19,7 @@ export const Route = createFileRoute("/carrinho")({
     meta: [
       { title: "Carrinho — Vonix Hair" },
       { name: "description", content: "Seu carrinho Vonix Hair." },
+      { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Carrinho — Vonix Hair" },
       { property: "og:description", content: "Seu carrinho Vonix Hair." },
       { property: "og:type", content: "website" },
@@ -65,8 +74,13 @@ function Suggestions() {
                 Economia de {brl(v.price - offer)} neste item
               </div>
               <button
-                onClick={() => c.add(p.slug, v.label, 1, "comp5")}
-                className="mt-3 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-small font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                onClick={() => {
+                  c.add(p.slug, v.label, 1, "comp5");
+                  track("add_to_cart", { value: offer, items: [toItem(p, v.label, offer)] });
+                }}
+                type="button"
+                aria-label={`Adicionar ${p.name} à sacola`}
+                className="mt-3 min-h-11 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-small font-semibold text-emerald-700 transition hover:bg-emerald-100 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 Adicionar
               </button>
@@ -82,6 +96,18 @@ function Cart() {
   const c = useCart();
   const hydrated = useHydrated();
   const seen = useRef("");
+  const [cartAdjusted, setCartAdjusted] = useState(false);
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (sessionStorage.getItem(CART_REVALIDATED_KEY) === "1") {
+        sessionStorage.removeItem(CART_REVALIDATED_KEY);
+        setCartAdjusted(true);
+      }
+    } catch {
+      // In private mode the cart stays usable without an adjustment notice.
+    }
+  }, [hydrated, c.lines]);
   useEffect(() => {
     if (!hydrated || !c.lines.length) return;
     const items = c.lines.map((l) => toItem(l.product, l.variant, l.net / l.units, l.units));
@@ -94,18 +120,73 @@ function Cart() {
     <Shell>
       <div className="container-site py-10 pb-28 lg:pb-10">
         <h1 className="mb-8 font-display text-h1">Carrinho</h1>
-        {!hydrated ? (
-          <div className="min-h-[40vh]" aria-busy="true" />
-        ) : c.lines.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-muted-foreground">Seu carrinho está vazio.</p>
-            <Link
-              to="/loja"
-              className="mt-6 inline-block rounded-full bg-action px-6 py-3 text-action-foreground"
+        {hydrated && cartAdjusted && (
+          <div
+            className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-body text-amber-950"
+            role="status"
+          >
+            <p>
+              Atualizamos sua sacola conforme os produtos e ofertas disponíveis. Itens indisponíveis
+              são removidos e ofertas sem elegibilidade são recalculadas, quando aplicável. Confira
+              os valores antes de finalizar.
+            </p>
+            <button
+              type="button"
+              aria-label="Dispensar aviso do carrinho"
+              className="shrink-0 rounded-md border border-amber-500 px-3 py-1 text-small font-semibold"
+              onClick={() => setCartAdjusted(false)}
             >
-              Ver produtos
-            </Link>
+              Fechar
+            </button>
           </div>
+        )}
+        {!hydrated ? (
+          <div className="min-h-[40vh]" aria-busy="true">
+            <noscript>
+              <section className="mx-auto max-w-xl rounded-xl border border-border bg-card p-6 text-center">
+                <h2 className="font-display text-h2">Sua sacola depende do navegador</h2>
+                <p className="mt-3 text-body">
+                  Ative o JavaScript para conferir sua sacola, ajustar quantidades e finalizar a
+                  compra.
+                </p>
+                <a
+                  href="/loja"
+                  className="mt-5 inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-6 font-semibold text-white"
+                >
+                  Voltar à loja
+                </a>
+              </section>
+            </noscript>
+          </div>
+        ) : c.lines.length === 0 ? (
+          <section
+            aria-label="Sua sacola"
+            className="mx-auto flex max-w-2xl flex-col items-center rounded-2xl border border-border bg-card px-6 py-12 text-center shadow-sm sm:py-16"
+          >
+            <span className="mb-5 grid h-16 w-16 place-items-center rounded-full bg-emerald-50 text-emerald-700">
+              <ShoppingBag aria-hidden="true" className="h-8 w-8" strokeWidth={1.7} />
+            </span>
+            <h2 className="font-display text-h2">Sua sacola está vazia</h2>
+            <p className="mt-3 max-w-md text-body text-muted-foreground">
+              Explore os tratamentos Vonix Hair e escolha os produtos para sua rotina. Os valores e
+              a entrega serão conferidos antes do pagamento.
+            </p>
+            <div className="mt-7 flex w-full flex-wrap justify-center gap-3">
+              <Link
+                to="/loja"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-body font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Explorar produtos
+              </Link>
+              <Link
+                to="/loja"
+                search={{ tiposProduto: "Kits" }}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-background px-6 py-3 text-body font-semibold transition hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Explorar kits
+              </Link>
+            </div>
+          </section>
         ) : (
           <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
             <div className="min-w-0">
@@ -140,26 +221,33 @@ function Cart() {
                           Leve 2 e ganhe 12% OFF · leve 3 ou mais e ganhe 15% OFF
                         </div>
                       )}
-                      <div className="mt-2 flex items-center gap-2">
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
                         <button
-                          aria-label="Diminuir"
+                          type="button"
+                          aria-label={`Diminuir quantidade de ${l.product.name}, ${l.variant}${l.offer ? `, ${OFFER_LABEL[l.offer]}` : ""}`}
                           onClick={() => c.setQty(l.slug, l.variant, l.qty - 1, l.offer)}
-                          className="rounded-full border border-border p-1.5"
+                          disabled={l.qty <= 1}
+                          className="grid min-h-11 min-w-11 place-items-center rounded-full border border-border focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="w-6 text-center">{l.qty}</span>
+                        <span className="w-6 text-center" aria-live="polite">
+                          {l.qty}
+                        </span>
                         <button
-                          aria-label="Aumentar"
+                          type="button"
+                          aria-label={`Aumentar quantidade de ${l.product.name}, ${l.variant}${l.offer ? `, ${OFFER_LABEL[l.offer]}` : ""}`}
                           onClick={() => c.setQty(l.slug, l.variant, l.qty + 1, l.offer)}
-                          className="rounded-full border border-border p-1.5"
+                          disabled={l.qty >= 99}
+                          className="grid min-h-11 min-w-11 place-items-center rounded-full border border-border focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
                         <button
-                          aria-label="Remover"
+                          type="button"
+                          aria-label={`Remover ${l.product.name}, ${l.variant}${l.offer ? `, ${OFFER_LABEL[l.offer]}` : ""}`}
                           onClick={() => c.remove(l.slug, l.variant, l.offer)}
-                          className="ml-3 text-muted-foreground"
+                          className="grid min-h-11 min-w-11 place-items-center rounded-full text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -194,14 +282,24 @@ function Cart() {
           </div>
         )}
       </div>
-      {c.lines.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-3 lg:hidden">
-          <Link
-            to="/checkout"
-            className="block rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] py-3.5 text-center"
-          >
-            Finalizar minha compra
-          </Link>
+      {hydrated && c.lines.length > 0 && (
+        <div
+          role="region"
+          aria-label="Resumo do carrinho no celular"
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-3 shadow-[0_-8px_24px_-20px_rgba(0,0,0,0.3)] lg:hidden"
+        >
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 shrink-0" aria-live="polite">
+              <span className="block text-small text-muted-foreground">Produtos, sem frete</span>
+              <strong className="money block text-name">{brl(c.netSubtotal)}</strong>
+            </div>
+            <Link
+              to="/checkout"
+              className="ml-auto flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-md bg-emerald-600 px-3 py-3 text-center text-body font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Finalizar minha compra
+            </Link>
+          </div>
         </div>
       )}
     </Shell>

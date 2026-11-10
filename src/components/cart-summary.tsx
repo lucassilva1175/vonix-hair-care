@@ -18,12 +18,12 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
         <div className="min-w-0 leading-snug">
           {free ? (
             <>
-              <b className="block text-name text-emerald-800">Você ganhou frete grátis! 🎉</b>
-              <span className="text-small text-emerald-900/80">Aproveite: o frete não será cobrado neste pedido.</span>
+              <b className="block text-name text-emerald-800">Seu pedido atingiu o valor para frete grátis</b>
+              <span className="text-small text-emerald-900/80">Informe o CEP no checkout para confirmar disponibilidade e prazo.</span>
             </>
           ) : (
             <span>
-              Faltam <b className="text-emerald-700">{brl(missingForFreeShipping(subtotal))}</b> para ganhar frete grátis.
+              Faltam <b className="text-emerald-700">{brl(missingForFreeShipping(subtotal))}</b> para alcançar o valor mínimo para frete grátis.
             </span>
           )}
         </div>
@@ -42,7 +42,7 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
         />
       </div>
       <p className="mt-2.5 text-small text-muted-foreground">
-        Frete grátis acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos. Seu cupom e o desconto no Pix mantêm esse benefício.
+        Condição para pedidos acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos. Sujeita à cotação de uma transportadora para o CEP informado.
       </p>
     </div>
   );
@@ -56,9 +56,9 @@ export function Summary({ lines }: { lines: { gross: number; net: number; offer?
     <div className="space-y-2 text-body">
       <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(t.gross)}</span></div>
       {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas (5/12/15%)</span><span>− {brl(t.offerDiscount)}</span></div>}
-      <div className="flex justify-between"><span>Frete</span><span>{t.freeShipping ? "Grátis" : "Calculado pelo CEP no checkout"}</span></div>
-      <div className="flex justify-between border-t border-border pt-2 text-body font-semibold"><span>Total no Pix (5% off*)</span><span>{brl(tPix.net)}</span></div>
-      <div className="flex justify-between"><span>Total no cartão{t.freeShipping ? "" : " (sem frete)"}</span><span>{brl(t.net)}</span></div>
+      <div className="flex justify-between"><span>Frete</span><span>{t.freeShipping ? "Elegível a grátis — confirmar CEP" : "Calculado pelo CEP no checkout"}</span></div>
+      <div className="flex justify-between border-t border-border pt-2 text-body font-semibold"><span>Produtos no Pix (sem frete, até 5% off*)</span><span>{brl(tPix.net)}</span></div>
+      <div className="flex justify-between"><span>Produtos no cartão (sem frete)</span><span>{brl(t.net)}</span></div>
       <div className="text-muted-foreground">ou até 6x de {brl(i.value)} sem juros{i.first !== i.value ? ` (1ª de ${brl(i.first)})` : ""}</div>
       {t.hasOffers && (
         <p className="text-small text-muted-foreground">*Ofertas não cumulativas no mesmo item: o desconto do Pix vale apenas para itens sem outra oferta.</p>

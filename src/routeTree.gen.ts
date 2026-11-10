@@ -26,6 +26,10 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminAfiliadasRouteImport } from './routes/admin.afiliadas'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as ApiInternalAffiliateMailWorkerRouteImport } from './routes/api.internal.affiliate-mail-worker'
+import { Route as ApiInternalBlingConnectRouteImport } from './routes/api.internal.bling-connect'
+import { Route as ApiInternalMetaRecoveryRouteImport } from './routes/api.internal.meta-recovery'
+import { Route as ApiInternalOrderHealthRouteImport } from './routes/api.internal.order-health'
+import { Route as ApiInternalOrderWorkerRouteImport } from './routes/api.internal.order-worker'
 import { Route as ApiPublicAppmaxWebhookRouteImport } from './routes/api.public.appmax-webhook'
 import { Route as ApiPublicMetaCatalogRouteImport } from './routes/api.public.meta-catalog'
 import { Route as ApiPublicMetaEventRouteImport } from './routes/api.public.meta-event'
@@ -117,6 +121,26 @@ const ApiInternalAffiliateMailWorkerRoute =
     path: '/api/internal/affiliate-mail-worker',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalBlingConnectRoute = ApiInternalBlingConnectRouteImport.update({
+  id: '/api/internal/bling-connect',
+  path: '/api/internal/bling-connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalMetaRecoveryRoute = ApiInternalMetaRecoveryRouteImport.update({
+  id: '/api/internal/meta-recovery',
+  path: '/api/internal/meta-recovery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalOrderHealthRoute = ApiInternalOrderHealthRouteImport.update({
+  id: '/api/internal/order-health',
+  path: '/api/internal/order-health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalOrderWorkerRoute = ApiInternalOrderWorkerRouteImport.update({
+  id: '/api/internal/order-worker',
+  path: '/api/internal/order-worker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAppmaxWebhookRoute = ApiPublicAppmaxWebhookRouteImport.update({
   id: '/api/public/appmax-webhook',
   path: '/api/public/appmax-webhook',
@@ -156,6 +180,10 @@ export interface FileRoutesByFullPath {
   '/admin/afiliadas': typeof AdminAfiliadasRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/api/internal/affiliate-mail-worker': typeof ApiInternalAffiliateMailWorkerRoute
+  '/api/internal/bling-connect': typeof ApiInternalBlingConnectRoute
+  '/api/internal/meta-recovery': typeof ApiInternalMetaRecoveryRoute
+  '/api/internal/order-health': typeof ApiInternalOrderHealthRoute
+  '/api/internal/order-worker': typeof ApiInternalOrderWorkerRoute
   '/api/public/appmax-webhook': typeof ApiPublicAppmaxWebhookRoute
   '/api/public/meta-catalog': typeof ApiPublicMetaCatalogRoute
   '/api/public/meta-event': typeof ApiPublicMetaEventRoute
@@ -179,6 +207,10 @@ export interface FileRoutesByTo {
   '/admin/afiliadas': typeof AdminAfiliadasRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/api/internal/affiliate-mail-worker': typeof ApiInternalAffiliateMailWorkerRoute
+  '/api/internal/bling-connect': typeof ApiInternalBlingConnectRoute
+  '/api/internal/meta-recovery': typeof ApiInternalMetaRecoveryRoute
+  '/api/internal/order-health': typeof ApiInternalOrderHealthRoute
+  '/api/internal/order-worker': typeof ApiInternalOrderWorkerRoute
   '/api/public/appmax-webhook': typeof ApiPublicAppmaxWebhookRoute
   '/api/public/meta-catalog': typeof ApiPublicMetaCatalogRoute
   '/api/public/meta-event': typeof ApiPublicMetaEventRoute
@@ -203,6 +235,10 @@ export interface FileRoutesById {
   '/admin/afiliadas': typeof AdminAfiliadasRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/api/internal/affiliate-mail-worker': typeof ApiInternalAffiliateMailWorkerRoute
+  '/api/internal/bling-connect': typeof ApiInternalBlingConnectRoute
+  '/api/internal/meta-recovery': typeof ApiInternalMetaRecoveryRoute
+  '/api/internal/order-health': typeof ApiInternalOrderHealthRoute
+  '/api/internal/order-worker': typeof ApiInternalOrderWorkerRoute
   '/api/public/appmax-webhook': typeof ApiPublicAppmaxWebhookRoute
   '/api/public/meta-catalog': typeof ApiPublicMetaCatalogRoute
   '/api/public/meta-event': typeof ApiPublicMetaEventRoute
@@ -228,6 +264,10 @@ export interface FileRouteTypes {
     | '/admin/afiliadas'
     | '/produto/$slug'
     | '/api/internal/affiliate-mail-worker'
+    | '/api/internal/bling-connect'
+    | '/api/internal/meta-recovery'
+    | '/api/internal/order-health'
+    | '/api/internal/order-worker'
     | '/api/public/appmax-webhook'
     | '/api/public/meta-catalog'
     | '/api/public/meta-event'
@@ -251,6 +291,10 @@ export interface FileRouteTypes {
     | '/admin/afiliadas'
     | '/produto/$slug'
     | '/api/internal/affiliate-mail-worker'
+    | '/api/internal/bling-connect'
+    | '/api/internal/meta-recovery'
+    | '/api/internal/order-health'
+    | '/api/internal/order-worker'
     | '/api/public/appmax-webhook'
     | '/api/public/meta-catalog'
     | '/api/public/meta-event'
@@ -274,6 +318,10 @@ export interface FileRouteTypes {
     | '/admin/afiliadas'
     | '/produto/$slug'
     | '/api/internal/affiliate-mail-worker'
+    | '/api/internal/bling-connect'
+    | '/api/internal/meta-recovery'
+    | '/api/internal/order-health'
+    | '/api/internal/order-worker'
     | '/api/public/appmax-webhook'
     | '/api/public/meta-catalog'
     | '/api/public/meta-event'
@@ -298,6 +346,10 @@ export interface RootRouteChildren {
   AdminAfiliadasRoute: typeof AdminAfiliadasRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   ApiInternalAffiliateMailWorkerRoute: typeof ApiInternalAffiliateMailWorkerRoute
+  ApiInternalBlingConnectRoute: typeof ApiInternalBlingConnectRoute
+  ApiInternalMetaRecoveryRoute: typeof ApiInternalMetaRecoveryRoute
+  ApiInternalOrderHealthRoute: typeof ApiInternalOrderHealthRoute
+  ApiInternalOrderWorkerRoute: typeof ApiInternalOrderWorkerRoute
   ApiPublicAppmaxWebhookRoute: typeof ApiPublicAppmaxWebhookRoute
   ApiPublicMetaCatalogRoute: typeof ApiPublicMetaCatalogRoute
   ApiPublicMetaEventRoute: typeof ApiPublicMetaEventRoute
@@ -425,6 +477,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalAffiliateMailWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/bling-connect': {
+      id: '/api/internal/bling-connect'
+      path: '/api/internal/bling-connect'
+      fullPath: '/api/internal/bling-connect'
+      preLoaderRoute: typeof ApiInternalBlingConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/meta-recovery': {
+      id: '/api/internal/meta-recovery'
+      path: '/api/internal/meta-recovery'
+      fullPath: '/api/internal/meta-recovery'
+      preLoaderRoute: typeof ApiInternalMetaRecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/order-health': {
+      id: '/api/internal/order-health'
+      path: '/api/internal/order-health'
+      fullPath: '/api/internal/order-health'
+      preLoaderRoute: typeof ApiInternalOrderHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/order-worker': {
+      id: '/api/internal/order-worker'
+      path: '/api/internal/order-worker'
+      fullPath: '/api/internal/order-worker'
+      preLoaderRoute: typeof ApiInternalOrderWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/appmax-webhook': {
       id: '/api/public/appmax-webhook'
       path: '/api/public/appmax-webhook'
@@ -474,6 +554,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAfiliadasRoute: AdminAfiliadasRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   ApiInternalAffiliateMailWorkerRoute: ApiInternalAffiliateMailWorkerRoute,
+  ApiInternalBlingConnectRoute: ApiInternalBlingConnectRoute,
+  ApiInternalMetaRecoveryRoute: ApiInternalMetaRecoveryRoute,
+  ApiInternalOrderHealthRoute: ApiInternalOrderHealthRoute,
+  ApiInternalOrderWorkerRoute: ApiInternalOrderWorkerRoute,
   ApiPublicAppmaxWebhookRoute: ApiPublicAppmaxWebhookRoute,
   ApiPublicMetaCatalogRoute: ApiPublicMetaCatalogRoute,
   ApiPublicMetaEventRoute: ApiPublicMetaEventRoute,

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { Check, Heart, Minus, Plus, Truck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BuyDrawer } from "@/components/buy-drawer";
 import { ProductGallery } from "@/components/product-gallery";
@@ -30,7 +30,9 @@ import {
   useAudience,
   useCart,
   useFavorites,
+  useHydrated,
   volumePct,
+  type Product,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
@@ -52,7 +54,7 @@ export const Route = createFileRoute("/produto/$slug")({
     // Prévia no WhatsApp/Facebook e Google exigem endereço completo da imagem.
     const images = p.images.map((src) => (src.startsWith("http") ? src : `${SITE_URL}${src}`));
     const url = `${SITE_URL}/produto/${p.slug}`;
-    const description = `${p.short || p.name} Até 6x sem juros, 5% OFF no Pix e frete grátis acima de R$ ${FREE_SHIPPING_ABOVE.toFixed(0)}. Vonix Hair.`;
+    const description = `${p.name} na Vonix Hair. Até 6x sem juros, até 5% no Pix em itens sem outra oferta. Frete grátis acima de R$ ${FREE_SHIPPING_ABOVE.toFixed(0)} sujeito à cotação do CEP.`;
     const rated = reviewsFor(p.slug);
     return {
       meta: [
@@ -94,7 +96,7 @@ export const Route = createFileRoute("/produto/$slug")({
               url,
               priceCurrency: "BRL",
               price: p.variants[0].price.toFixed(2),
-              availability: "https://schema.org/InStock",
+              // Omit availability until live Bling stock can be verified for this SKU.
               itemCondition: "https://schema.org/NewCondition",
               hasMerchantReturnPolicy: {
                 "@type": "MerchantReturnPolicy",
@@ -162,34 +164,58 @@ export function ShippingCalc({
     }
     setLoading(true);
     saveCep(cep);
-    // Neither request depends on the other; freight survives address outages.
-    await Promise.all([
-      addressLookup({ data: { cep: d } })
-        .then((r) => {
-          if (current !== request.current) return;
-          if (r.ok) setDest({ city: r.address.city, uf: r.address.uf });
-          else setErr(r.message);
-        })
-        .catch(() => {
-          if (current === request.current)
-            setErr("Endereço indisponível. Você pode preenchê-lo manualmente no checkout.");
-        }),
-      shippingLookup({ data: { cep: d, items: [{ slug, variant, qty }] } })
-        .then((q) => {
-          if (current !== request.current) return;
-          setOpts(q.ok ? q.options : []);
-          if (!q.ok) setErr((old) => [old, q.message].filter(Boolean).join(" "));
-        })
-        .catch(() => {
-          if (current === request.current)
-            setErr((old) =>
-              [old, "Não foi possível calcular o frete agora. Tente novamente."]
-                .filter(Boolean)
-                .join(" "),
-            );
-        }),
-    ]);
-    if (current === request.current) setLoading(false);
+    // Address and carrier requests are independent. A hung address lookup
+    // must never prevent a successful freight result from being actionable.
+    void addressLookup({ data: { cep: d } })
+      .then((r) => {
+        if (current !== request.current) return;
+        if (r.ok) setDest({ city: r.address.city, uf: r.address.uf });
+        else setErr((old) => [old, r.message].filter(Boolean).join(" "));
+      })
+      .catch(() => {
+        if (current === request.current)
+          setErr((old) =>
+            [old, "Endereço indisponível. Você pode preenchê-lo manualmente no checkout."]
+              .filter(Boolean)
+              .join(" "),
+          );
+      });
+
+    // Even if the local API or a carrier never replies, restore the
+    // calculation button and ignore any outdated result after the deadline.
+    const watchdog = window.setTimeout(() => {
+      if (current !== request.current) return;
+      request.current += 1;
+      setLoading(false);
+      setOpts([]);
+      setDest(null);
+      setErr("O cálculo de frete demorou demais. Tente novamente ou consulte o atendimento.");
+    }, 12000);
+    try {
+      const q = await shippingLookup({ data: { cep: d, items: [{ slug, variant, qty }] } });
+      if (current !== request.current) return;
+      setOpts(q.ok ? q.options : []);
+      if (q.ok && q.options.length === 0)
+        setErr((old) =>
+          [
+            old,
+            "Não há opções de entrega para este CEP. Confira o endereço ou fale com nosso atendimento.",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        );
+      if (!q.ok) setErr((old) => [old, q.message].filter(Boolean).join(" "));
+    } catch {
+      if (current === request.current)
+        setErr((old) =>
+          [old, "Não foi possível calcular o frete agora. Tente novamente."]
+            .filter(Boolean)
+            .join(" "),
+        );
+    } finally {
+      window.clearTimeout(watchdog);
+      if (current === request.current) setLoading(false);
+    }
   };
   return (
     <div className="mt-6 rounded-xl border border-border bg-card p-4">
@@ -230,10 +256,10 @@ export function ShippingCalc({
               ? `Entrega para ${dest.city}/${dest.uf}`
               : `Estimativa de frete para o CEP ${cep}`}
           </p>
-          {hasFreeShipping(subtotal) && (
+          {hasFreeShipping(subtotal) && opts.some((o) => o.free) && (
             <p className="mt-1 font-medium">
-              Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após
-              o desconto do Pix).
+              Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, calculado antes
+              dos descontos.
             </p>
           )}
           <ul className="mt-2 space-y-1">
@@ -262,13 +288,26 @@ const QTY_OPTIONS: { n: number; label: string }[] = [
 
 function ProductPage() {
   const p = Route.useLoaderData();
+  // TanStack Router may retain the same route component while only the slug
+  // changes. Keying its purchase state by product prevents a previous SKU's
+  // size, quantity or buy drawer from leaking into the next product.
+  return <ProductPurchase key={p.slug} p={p} />;
+}
+
+function ProductPurchase({ p }: { p: Product }) {
   const cart = useCart();
   const fav = useFavorites();
+  const hydrated = useHydrated();
   const { audience } = useAudience();
   const nav = useNavigate();
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
   const [buyOpen, setBuyOpen] = useState(false);
+  const closeBuyDrawer = useCallback(() => setBuyOpen(false), []);
+  const payFromDrawer = useCallback(() => {
+    setBuyOpen(false);
+    nav({ to: "/checkout" });
+  }, [nav]);
   const v = p.variants[vi] ?? p.variants[0]!;
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
@@ -281,15 +320,7 @@ function ProductPage() {
   const unitPrice = sel.net / sel.units;
   useEffect(() => {
     track("view_item", { value: v.price, items: [toItem(p, v.label, v.price)] });
-  }, [p.slug]);
-  /** Comprar agora: pula o carrinho e vai direto ao pagamento (gaveta lateral no computador). */
-  const goCheckout = () => {
-    try {
-      if (window.innerWidth >= 1024) sessionStorage.setItem("vonix-lateral", "1");
-      else sessionStorage.removeItem("vonix-lateral");
-    } catch { /* sem armazenamento */ }
-    nav({ to: "/checkout" });
-  };
+  }, [p, v.label, v.price]);
   const add = () => {
     cart.add(p.slug, v.label, qty);
     track("add_to_cart", {
@@ -300,7 +331,7 @@ function ProductPage() {
   const total = sel.net;
   return (
     <Shell>
-      {buyOpen && <BuyDrawer onClose={() => setBuyOpen(false)} onPay={goCheckout} />}
+      {buyOpen && <BuyDrawer onClose={closeBuyDrawer} onPay={payFromDrawer} />}
       <div className="container-site py-8 pb-28 lg:pb-8">
         <nav className="mb-6 text-small text-muted-foreground">
           <Link to="/">Início</Link> /{" "}
@@ -333,9 +364,7 @@ function ProductPage() {
               <div className="mt-6">
                 <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                   <div className="font-display text-h2 leading-tight">
-                    {audience === "salao"
-                      ? "Promoção para cabeleireiras"
-                      : "Compre mais e economize"}
+                    {audience === "salao" ? "Condição por quantidade" : "Compre mais e economize"}
                   </div>
                   <div className="text-small text-muted-foreground">
                     mesmo produto, mesmo tamanho
@@ -357,6 +386,7 @@ function ProductPage() {
                         type="button"
                         role="radio"
                         aria-checked={on}
+                        disabled={!hydrated}
                         onClick={() => setQty(o.n)}
                         className={`relative flex min-w-0 items-center gap-3 rounded-2xl border-2 p-3.5 text-left transition-all sm:flex-col sm:items-start sm:gap-1.5 sm:p-4 ${on ? "border-[#c9992f] bg-[#fff8e8] shadow-[0_6px_18px_-8px_rgba(201,153,47,0.6)]" : "border-border bg-white hover:border-[#c9992f]/60"}`}
                       >
@@ -444,8 +474,10 @@ function ProductPage() {
                   {p.variants.map((x, k) => (
                     <button
                       key={x.label}
+                      disabled={!hydrated}
                       onClick={() => setVi(k)}
-                      className={`rounded-full border px-4 py-2 text-body ${k === vi ? "border-foreground bg-foreground text-background" : "border-border"}`}
+                      type="button"
+                      className={`min-h-11 rounded-full border px-4 py-2 text-body focus-visible:outline-2 focus-visible:outline-offset-2 ${k === vi ? "border-foreground bg-foreground text-background" : "border-border"}`}
                     >
                       {x.label} · {brl(x.price)}
                     </button>
@@ -459,8 +491,10 @@ function ProductPage() {
             <div className="mt-6 flex items-center gap-3">
               <div className="flex items-center rounded-full border border-border">
                 <button
-                  aria-label="Diminuir"
-                  className="p-3"
+                  type="button"
+                  aria-label={`Diminuir quantidade de ${p.name}`}
+                  disabled={!hydrated || qty <= 1}
+                  className="grid min-h-11 min-w-11 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                 >
                   <Minus className="h-4 w-4" />
@@ -469,8 +503,10 @@ function ProductPage() {
                   {qty}
                 </span>
                 <button
-                  aria-label="Aumentar"
-                  className="p-3"
+                  type="button"
+                  aria-label={`Aumentar quantidade de ${p.name}`}
+                  disabled={!hydrated || qty >= 99}
+                  className="grid min-h-11 min-w-11 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
                   onClick={() => setQty((q) => Math.min(99, q + 1))}
                 >
                   <Plus className="h-4 w-4" />
@@ -478,16 +514,20 @@ function ProductPage() {
               </div>
               <span className="text-small text-muted-foreground">unidade(s)</span>
               <button
-                aria-label="Favoritar"
+                type="button"
+                aria-label={`${fav.has(p.slug) ? "Remover" : "Adicionar"} ${p.name} ${fav.has(p.slug) ? "dos" : "aos"} favoritos`}
+                aria-pressed={fav.has(p.slug)}
+                disabled={!hydrated}
                 onClick={() => fav.toggle(p.slug)}
-                className="rounded-full border border-border p-3"
+                className="grid h-11 w-11 place-items-center rounded-full border border-border"
               >
                 <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
               </button>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <button
-                className="rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] py-3.5"
+                className="rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-wait disabled:opacity-55 py-3.5"
+                disabled={!hydrated}
                 onClick={() => {
                   add();
                   setBuyOpen(true);
@@ -496,7 +536,8 @@ function ProductPage() {
                 Comprar agora
               </button>
               <button
-                className="rounded-md border-2 border-foreground py-3.5 font-medium"
+                className="rounded-md border-2 border-foreground py-3.5 font-medium disabled:cursor-wait disabled:opacity-55"
+                disabled={!hydrated}
                 onClick={() => {
                   add();
                   toast.success("Adicionado ao carrinho");
@@ -511,11 +552,11 @@ function ProductPage() {
             <div className="mt-3">
               <SecuritySeal />
             </div>
-            <ShippingCalc subtotal={total} slug={p.slug} variant={v.label} qty={qty} />
+            <ShippingCalc subtotal={sel.gross} slug={p.slug} variant={v.label} qty={qty} />
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
                 Frete grátis em compras acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos
-                descontos
+                descontos, sujeito à cotação do CEP
               </li>
               <li>
                 <Link
@@ -556,7 +597,8 @@ function ProductPage() {
           )}
         </div>
         <button
-          className="ml-auto shrink-0 rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] px-6 py-3 text-body"
+          className="ml-auto shrink-0 rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-wait disabled:opacity-55 px-6 py-3 text-body"
+          disabled={!hydrated}
           onClick={() => {
             add();
             setBuyOpen(true);
