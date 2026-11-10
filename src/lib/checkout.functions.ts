@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as appmax from "./appmax.server";
 import { isValidCpf } from "./cpf";
 import { env } from "./env.server";
+import { saveEnvio } from "./envios.server";
 import { calculateShipping } from "./melhorenvio.server";
 import { normalizeRef, refCampaign } from "./affiliate-ref";
 import { checkoutTotals, getProduct, lineTotals, type Offer } from "./store";
@@ -145,6 +146,19 @@ export const createPayment = createServerFn({ method: "POST" })
         products,
       });
       const total = totals.net + option.price;
+      await saveEnvio({
+        appmaxOrderId: orderId,
+        serviceId: option.id,
+        cliente: { nome: data.customer.nome, email: data.customer.email, cpf: document, whatsapp: data.customer.whatsapp },
+        endereco: { ...data.address, uf: data.address.uf.toUpperCase() },
+        itens: lines.map((l) => ({
+          nome: `${l.product.name} (${l.variant})`.slice(0, 120),
+          quantidade: l.units,
+          valor_unitario: Number((l.net / l.units).toFixed(2)),
+          unidades: l.units,
+        })),
+        valorSeguro: totals.net,
+      });
 
       if (data.method === "pix") {
         const pix = await appmax.payWithPix(orderId, document);

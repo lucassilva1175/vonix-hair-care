@@ -7,7 +7,7 @@ import { env } from "./env.server";
  */
 export const dbEnabled = () => Boolean(env("SUPABASE_URL") && env("SUPABASE_SERVICE_ROLE_KEY"));
 
-async function rest<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function rest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const key = env("SUPABASE_SERVICE_ROLE_KEY");
   const r = await fetch(`${env("SUPABASE_URL").replace(/\/$/, "")}/rest/v1/${path}`, {
     ...init,

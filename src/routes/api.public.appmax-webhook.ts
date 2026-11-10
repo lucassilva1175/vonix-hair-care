@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as appmax from "@/lib/appmax.server";
 import * as bling from "@/lib/bling.server";
+import { issueLabel } from "@/lib/envios.server";
 
 /**
  * Appmax webhooks carry no signature, so the payload is never trusted:
@@ -22,6 +23,11 @@ export const Route = createFileRoute("/api/public/appmax-webhook")({
                 console.log("[bling]", orderId, await bling.sendPaidOrder(order));
               } catch (e) {
                 console.error("[bling]", e);
+              }
+              try {
+                console.log("[etiqueta]", orderId, await issueLabel(orderId));
+              } catch (e) {
+                console.error("[etiqueta]", orderId, e);
               }
             }
           }

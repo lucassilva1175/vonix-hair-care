@@ -15,5 +15,6 @@ Veja `.env.example`. No Lovable, cadastre-os como segredos do projeto. Nunca col
 ## Pendências conhecidas
 - Medidas e peso das embalagens estão como estimativa (`MELHORENVIO_*`). Ajuste com os valores reais, senão o frete sai errado.
 - Os status exatos de pedido da Appmax não estão todos na documentação; confirme em sandbox o texto de "aprovado" (`isPaid` em `appmax.server.ts`).
-- Não há banco de pedidos neste projeto: os pedidos ficam no painel da Appmax. Compra do Melhor Envio (etiqueta) não é automática.
+- Etiqueta automática (`src/lib/envios.server.ts`): no checkout os dados de envio são gravados em `public.envios` (`supabase/envios.sql`); quando o webhook confirma o pagamento, a loja compra e gera a etiqueta no Melhor Envio (carrinho → checkout → gerar). Para ligar: rodar o SQL, ter `SUPABASE_*`, preencher `STORE_ORIGIN_*`, ter saldo no Melhor Envio, usar `MELHORENVIO_ENV=production` com token que tenha as permissões de compra, e `MELHORENVIO_AUTO_LABEL=true`. Falhas ficam em `envios.status = 'erro'` com o motivo em `erro`; não repete sozinha (evita cobrar duas vezes).
+- Declaração de conteúdo (`non_commercial`) é usada no lugar da nota fiscal; se a transportadora exigir NF-e, a etiqueta será recusada e o motivo cai em `envios.erro`.
 - "Até 6x sem juros" precisa estar configurado na própria Appmax; o site apenas envia o número de parcelas.
