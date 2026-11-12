@@ -55,8 +55,14 @@ CREATE TABLE IF NOT EXISTS public.vonix_affiliate_admin_invites (
   email text PRIMARY KEY CHECK(email=lower(email)),
   role text NOT NULL DEFAULT 'reviewer' CHECK(role IN ('reviewer','owner')),
   password_set_at timestamptz,
+  ever_activated_at timestamptz,
   invited_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE public.vonix_affiliate_admin_invites
+  ADD COLUMN IF NOT EXISTS ever_activated_at timestamptz;
+UPDATE public.vonix_affiliate_admin_invites
+  SET ever_activated_at=password_set_at
+  WHERE password_set_at IS NOT NULL AND ever_activated_at IS NULL;
 ALTER TABLE public.vonix_affiliate_admin_invites ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.vonix_affiliate_admin_invites FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.vonix_affiliate_admin_invites TO authenticated;
@@ -76,16 +82,19 @@ BEGIN
   FROM auth.users WHERE id=auth.uid() AND email_confirmed_at IS NOT NULL
     AND encrypted_password IS NOT NULL AND length(encrypted_password)>0;
   IF current_email IS NULL THEN RETURN false; END IF;
+  -- A deactivated member cannot re-activate after their first activation.
   UPDATE public.vonix_affiliate_admin_invites
-    SET password_set_at=now()
-    WHERE email=current_email AND password_set_at IS NULL;
+    SET password_set_at=now(), ever_activated_at=now()
+    WHERE email=current_email AND password_set_at IS NULL
+      AND ever_activated_at IS NULL;
   RETURN EXISTS (
     SELECT 1 FROM public.vonix_affiliate_admin_invites
     WHERE email=current_email AND password_set_at IS NOT NULL
+      AND ever_activated_at IS NOT NULL
   );
 END $$;
 REVOKE ALL ON FUNCTION public.vonix_affiliate_activate_admin_account()
-  FROM PUBLIC, anon;
+  FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.vonix_affiliate_activate_admin_account()
   TO authenticated;
 
