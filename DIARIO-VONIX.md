@@ -98,3 +98,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Achado: as descrições dos produtos (products.json) dizem "Loggi, Jadlog, Correios e Total Express", mas o checkout só oferece JeT, Jadlog e Correios. Texto a corrigir (mudança visível: mostrar ao Lucas antes de publicar).
 - Conector Abency (dados de anúncio) bloqueado: teste grátis acabou; usei o Gerenciador direto.
 - Como desfazer: nada alterado no site além deste diário.
+
+## 12/11/2026 (20h10) — rotina automática, só conferência
+- Meta (Gerenciador, janela até 11/11, sem dado novo de hoje): conta R$ 1.067,90; FRIO Combo Banana e Mel R$ 352,94, 7.983 impressões, ativo; Remarketing MORNO 30D "Ativo" com R$ 0,00 (ainda sem entrega). Nenhuma campanha reprovada visível. Orçamento mantido em R$ 30/dia (sem venda real).
+- Site no ar: home 1,6 s, botox 0,45 s, fio de luz 0,44 s, checkout 0,40 s, todos 200; preço R$ 180,90 presente.
+- Clarity não reaberto nesta rodada (conferência curta); mudança do dia: nenhuma. Menos de 100 visitas pagas após a mudança de 11/11: "ainda é cedo".
+- Como desfazer: nada alterado além deste diário.
