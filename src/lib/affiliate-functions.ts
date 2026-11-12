@@ -27,7 +27,7 @@ import {
 import {
   affiliateAdminSameOrigin,
   affiliateMutationSameOrigin,
-  affiliateAdminSessionValid,
+  affiliateAdminSessionAuthorized,
   affiliateAdminMayErase,
   affiliateLegacyAdminSessionValid,
   destroyAffiliateAdminSession,
@@ -271,7 +271,8 @@ export const resendAffiliateApplicantInvite = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store, max-age=0");
-    if (!affiliateAdminSameOrigin() || !affiliateAdminSessionValid()) {
+    setResponseHeader("Referrer-Policy", "no-referrer");
+    if (!affiliateAdminSameOrigin() || !(await affiliateAdminSessionAuthorized())) {
       return { ok: false as const, reason: "Acesso negado. Faça login novamente." };
     }
     if (!(await consumeAffiliateRateLimit("admin"))) {
@@ -354,7 +355,7 @@ export const loginAffiliateAdmin = createServerFn({ method: "POST" })
 
 export const getAffiliateAdminSession = createServerFn({ method: "GET" }).handler(async () => {
   setResponseHeader("Cache-Control", "no-store");
-  return { authenticated: affiliateAdminSessionValid() };
+  return { authenticated: await affiliateAdminSessionAuthorized() };
 });
 
 export const logoutAffiliateAdmin = createServerFn({ method: "POST" }).handler(async () => {
@@ -368,7 +369,8 @@ export const getAffiliateApplicationPrivateDetail = createServerFn({ method: "PO
   .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data }) => {
     setResponseHeader("Cache-Control", "private, no-store, max-age=0");
-    if (!affiliateAdminSameOrigin() || !affiliateAdminSessionValid()) {
+    setResponseHeader("Referrer-Policy", "no-referrer");
+    if (!affiliateAdminSameOrigin() || !(await affiliateAdminSessionAuthorized())) {
       return { ok: false as const, reason: "Acesso negado. Faça login novamente." };
     }
     if (!(await affiliateRateLimitAllowed("admin"))) {
@@ -401,7 +403,7 @@ export const getAffiliateApplications = createServerFn({ method: "POST" })
     // Private admin data/diagnostics: never cache or reveal through referrers.
     setResponseHeader("Cache-Control", "private, no-store, max-age=0");
     setResponseHeader("Referrer-Policy", "no-referrer");
-    if (!affiliateAdminSameOrigin() || !affiliateAdminSessionValid()) {
+    if (!affiliateAdminSameOrigin() || !(await affiliateAdminSessionAuthorized())) {
       return { ok: false as const, reason: "Acesso negado. Faça login novamente." };
     }
     if (!(await affiliateRateLimitAllowed("admin"))) {
@@ -427,7 +429,7 @@ export const getAffiliateOperationalReadiness = createServerFn({ method: "POST" 
     // Private admin data/diagnostics: never cache or reveal through referrers.
     setResponseHeader("Cache-Control", "private, no-store, max-age=0");
     setResponseHeader("Referrer-Policy", "no-referrer");
-    if (!affiliateAdminSameOrigin() || !affiliateAdminSessionValid())
+    if (!affiliateAdminSameOrigin() || !(await affiliateAdminSessionAuthorized()))
       return { ok: false as const, reason: "Acesso negado. Faça login novamente." };
     if (!(await affiliateRateLimitAllowed("admin")))
       return { ok: false as const, reason: "Acesso temporariamente indisponível." };
@@ -495,7 +497,7 @@ export const getAffiliateRetentionPreview = createServerFn({ method: "POST" })
     // Private admin data/diagnostics: never cache or reveal through referrers.
     setResponseHeader("Cache-Control", "private, no-store, max-age=0");
     setResponseHeader("Referrer-Policy", "no-referrer");
-    if (!affiliateAdminSameOrigin() || !affiliateAdminSessionValid())
+    if (!affiliateAdminSameOrigin() || !(await affiliateAdminSessionAuthorized()))
       return { ok: false as const, reason: "Acesso negado. Faça login novamente." };
     if (!(await affiliateRateLimitAllowed("admin")))
       return { ok: false as const, reason: "Acesso temporariamente indisponível." };
@@ -521,7 +523,9 @@ export const reviewAffiliateApplication = createServerFn({ method: "POST" })
       ),
   )
   .handler(async ({ data }) => {
-    if (!affiliateAdminSameOrigin() || !affiliateAdminSessionValid()) {
+    setResponseHeader("Cache-Control", "private, no-store, max-age=0");
+    setResponseHeader("Referrer-Policy", "no-referrer");
+    if (!affiliateAdminSameOrigin() || !(await affiliateAdminSessionAuthorized())) {
       return { ok: false as const, reason: "Acesso negado. Faça login novamente." };
     }
     if (!(await affiliateRateLimitAllowed("admin"))) {
