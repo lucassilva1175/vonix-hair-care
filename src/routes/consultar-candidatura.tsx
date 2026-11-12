@@ -95,7 +95,7 @@ export function AffiliateTrackingCodePage() {
 
   return (
     <AffiliateShell mode="account">
-      <main className="min-h-[75vh] bg-[#faf5f0] px-5 py-14 text-[#392832] sm:py-20">
+      <div className="min-h-[75vh] bg-[#faf5f0] px-5 py-14 text-[#392832] sm:py-20">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8 text-center">
             <LockKeyhole className="mx-auto h-9 w-9 text-[#825164]" aria-hidden="true" />
@@ -218,7 +218,7 @@ export function AffiliateTrackingCodePage() {
             </p>
           </section>
         </div>
-      </main>
+      </div>
     </AffiliateShell>
   );
 }

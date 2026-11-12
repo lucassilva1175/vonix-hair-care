@@ -145,10 +145,10 @@ export function AffiliateShell({
               <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Visitar a loja oficial
             </Link>
             <Link
-              to="/acompanhar-inscricao"
+              to="/consultar-candidatura"
               className="underline decoration-[#bc9e9c] underline-offset-4 hover:text-white"
             >
-              Acompanhar candidatura
+              Acompanhar inscrição por código
             </Link>
             {mode === "landing" && (
               <a
@@ -158,6 +158,12 @@ export function AffiliateShell({
                 Perguntas frequentes
               </a>
             )}
+            <Link
+              to="/acompanhar-inscricao"
+              className="underline decoration-[#bc9e9c] underline-offset-4 hover:text-white"
+            >
+              Inscrições antigas por e-mail
+            </Link>
             <a
               href={INSTAGRAM}
               target="_blank"

@@ -712,6 +712,12 @@ export function AffiliateAdminPage() {
 
   return (
     <div className="min-h-screen bg-[#f9f6f3] text-[#332428]">
+      <a
+        href="#conteudo-admin-afiliadas"
+        className="sr-only rounded-md bg-white px-4 py-2 text-[#633847] focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[90]"
+      >
+        Pular para o painel de afiliadas
+      </a>
       <header className="border-b border-[#e8dbd8] bg-white">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5">
           <Link to="/" aria-label="Voltar para Vonix Hair">
@@ -734,7 +740,11 @@ export function AffiliateAdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-10 sm:py-14">
+      <main
+        id="conteudo-admin-afiliadas"
+        tabIndex={-1}
+        className="mx-auto max-w-7xl px-5 py-10 sm:py-14"
+      >
         <div className="mb-9">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#f0e2e1] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#7e404a]">
             <ShieldCheck className="h-4 w-4" /> Acesso restrito
