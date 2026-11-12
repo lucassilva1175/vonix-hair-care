@@ -630,11 +630,6 @@ function Checkout() {
               <li className="rounded-xl bg-muted px-2 py-2">Compra 100% segura</li>
             </ul>
 
-            <section className={panel} aria-label="Quem já usa Vonix">
-              <p className="mb-2 text-small font-semibold">Quem já usa Vonix. Toque para assistir.</p>
-              <ProvasEmVideo all seed="checkout" max={6} />
-            </section>
-
             <fieldset className={panel}>
               <StepTitle n={1}>Contato</StepTitle>
               <input
@@ -879,6 +874,11 @@ function Checkout() {
                 </div>
               )}
             </fieldset>
+
+            <section className={panel} aria-label="Quem já usa Vonix">
+              <p className="mb-2 text-small font-semibold">Quem já usa Vonix. Toque para assistir.</p>
+              <ProvasEmVideo all seed="checkout" max={6} />
+            </section>
           </form>
 
           {/* Card fields live in their own form so Appmax JS can tokenize them; the main form triggers it. */}
