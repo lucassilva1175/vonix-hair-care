@@ -85,10 +85,15 @@ export function AffiliateTeamAccess() {
         return;
       }
       const invite = row.data as Invitation;
+      // A previously authenticated browser session is not a fresh invitation
+      // proof. Require a verified one-time link/code before first activation.
+      const freshlyVerified = freshVerifiedAddress.current === normalized;
       setStage(
         !invite.password_set_at
-          ? "first-password"
-          : freshVerifiedAddress.current === normalized
+          ? freshlyVerified
+            ? "first-password"
+            : "email"
+          : freshlyVerified
             ? "reset-password"
             : "password",
       );
@@ -265,6 +270,11 @@ export function AffiliateTeamAccess() {
   async function activatePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+    const verified = freshVerifiedAddress.current;
+    if (!verified || verified !== email.trim().toLowerCase()) {
+      setError("Confirme novamente seu e-mail pelo código ou link individual.");
+      return;
+    }
     if (password.length < 12 || password.length > 128 || password !== repeatPassword) {
       setError("Crie uma senha de pelo menos 12 caracteres e confirme-a corretamente.");
       return;
@@ -272,10 +282,31 @@ export function AffiliateTeamAccess() {
     setBusy(true);
     setError("");
     try {
+      // Revalidate Auth identity and invite before touching a password.
+      const identity = await vonixAffiliateAuth.auth.getUser();
+      if (
+        identity.error ||
+        !identity.data.user?.email_confirmed_at ||
+        identity.data.user.email?.toLowerCase() !== verified
+      )
+        throw new Error("Auth identity changed after verification.");
+      const row = await vonixAffiliateAuth
+        .from("vonix_affiliate_admin_invites")
+        .select("role,password_set_at")
+        .eq("email", verified)
+        .maybeSingle();
+      if (
+        row.error ||
+        !row.data ||
+        (row.data.role !== "owner" && row.data.role !== "reviewer") ||
+        row.data.password_set_at !== null
+      )
+        throw new Error("Invitation absent, invalid or not pending.");
       const updated = await vonixAffiliateAuth.auth.updateUser({ password });
       if (updated.error) throw new Error("Password update failed.");
       const marked = await vonixAffiliateAuth.rpc("vonix_affiliate_activate_admin_account");
       if (marked.error || marked.data !== true) throw new Error("Activation failed.");
+      freshVerifiedAddress.current = null;
       setRepeatPassword("");
       setStage("password");
       setNotice("Sua senha pessoal foi criada e o convite administrativo foi ativado.");

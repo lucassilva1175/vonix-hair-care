@@ -124,6 +124,8 @@ jobs:
           # A mocked Supabase Auth schema exists ONLY in the disposable container.
           docker cp supabase/vonix-affiliate-auth-qa-scaffold.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-auth-qa-scaffold.sql
           docker cp supabase/vonix-affiliate-portal-status.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-portal-status.sql
+          docker cp supabase/vonix-affiliate-admin-activation-guard-20261112.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-admin-activation-guard-20261112.sql
+          docker cp supabase/vonix-affiliate-admin-activation-guard-qa-20261112.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-admin-activation-guard-qa-20261112.sql
           docker cp supabase/vonix-affiliate-verified-email-rls.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-verified-email-rls.sql
           docker cp supabase/vonix-affiliate-verified-email-rls-qa.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-verified-email-rls-qa.sql
           docker cp supabase/vonix-affiliate-simple-form-20261110.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-simple-form-20261110.sql
@@ -146,6 +148,8 @@ jobs:
           docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
             -f /tmp/vonix-affiliate-portal-status.sql
           docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
+            -f /tmp/vonix-affiliate-admin-activation-guard-20261112.sql
+          docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
             -f /tmp/vonix-affiliate-verified-email-rls.sql
           docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
             -f /tmp/vonix-affiliate-verified-email-rls-qa.sql
@@ -164,4 +168,6 @@ jobs:
           docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
             -f /tmp/vonix-affiliate-status-quota-qa-20261111.sql
 
+          docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
+            -f /tmp/vonix-affiliate-admin-activation-guard-qa-20261112.sql
           node scripts/qa-affiliate-concurrency.mjs
