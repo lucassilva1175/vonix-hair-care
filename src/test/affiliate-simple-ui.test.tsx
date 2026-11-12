@@ -325,6 +325,38 @@ describe("Vonix short single-page application form", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Informe um usuário válido");
   });
 
+  it("explains an unknown CEP and keeps the manual address form usable", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ erro: true })),
+    );
+    render(<AffiliateSimpleForm />);
+    fireEvent.change(screen.getByLabelText(/CEP/), { target: { value: "30110012" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar CEP" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "CEP não encontrado. Preencha o endereço manualmente.",
+    );
+    expect(screen.getByLabelText(/Rua \/ Avenida/)).toBeEnabled();
+    fireEvent.change(screen.getByLabelText(/CEP/), { target: { value: "30120020" } });
+    expect(screen.queryByText(/CEP não encontrado/)).not.toBeInTheDocument();
+  });
+
+  it("provides a manual fallback when the CEP provider is unavailable", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("synthetic offline lookup");
+      }),
+    );
+    render(<AffiliateSimpleForm />);
+    fireEvent.change(screen.getByLabelText(/CEP/), { target: { value: "30110012" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar CEP" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente.",
+    );
+    expect(screen.getByRole("button", { name: "Buscar CEP" })).toBeEnabled();
+  });
+
   it("clears only CEP-autofilled address fields on postal code change, preserving manual edits", async () => {
     vi.stubGlobal(
       "fetch",

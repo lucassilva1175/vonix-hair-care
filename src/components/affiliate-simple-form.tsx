@@ -286,6 +286,7 @@ export function AffiliateSimpleForm({
   }
   const [message, setMessage] = useState("");
   const [zipLoading, setZipLoading] = useState(false);
+  const [zipFeedback, setZipFeedback] = useState("");
   const zipRequest = useRef(0);
   // Track only CEP-provided values. Never clear an applicant's manual edits.
   const zipAutoFilled = useRef<Partial<Record<"street" | "district" | "city" | "state", string>>>(
@@ -322,6 +323,7 @@ export function AffiliateSimpleForm({
         // Old results can no longer overwrite a changed CEP; allow a new lookup.
         zipRequest.current++;
         setZipLoading(false);
+        setZipFeedback("");
         const auto = zipAutoFilled.current;
         zipAutoFilled.current = {};
         setValues((prev) => ({
@@ -348,20 +350,35 @@ export function AffiliateSimpleForm({
     if (digits.length !== 8 || zipLoading) return;
     const request = ++zipRequest.current;
     setZipLoading(true);
+    setZipFeedback("");
     try {
       const res = await fetch("https://viacep.com.br/ws/" + digits + "/json/", {
         signal: AbortSignal.timeout(5000),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        if (zipRequest.current === request)
+          setZipFeedback(
+            "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente.",
+          );
+        return;
+      }
       const data: unknown = await res.json();
-      if (typeof data !== "object" || !data || "erro" in data) return;
+      if (zipRequest.current !== request) return;
+      if (typeof data !== "object" || !data || "erro" in data) {
+        setZipFeedback("CEP não encontrado. Preencha o endereço manualmente.");
+        return;
+      }
       const obj = data as Record<string, unknown>;
       const text = (key: string, limit: number) => {
         const v = obj[key];
         return typeof v === "string" && v.trim().length <= limit ? v.trim() : "";
       };
       const uf = text("uf", 2).toUpperCase();
-      if (!WIZARD_BRAZIL_STATES.some((state) => state === uf)) return;
+      if (!WIZARD_BRAZIL_STATES.some((state) => state === uf)) {
+        setZipFeedback("Não foi possível validar o endereço deste CEP. Preencha manualmente.");
+        return;
+      }
+      setZipFeedback("CEP consultado. Confira os dados e complete o endereço.");
       setValues((prev) => {
         if (zipRequest.current !== request || onlyDigits(prev.postalCode) !== digits) return prev;
         const suggested = {
@@ -380,7 +397,10 @@ export function AffiliateSimpleForm({
         return next;
       });
     } catch {
-      // CEP lookup only assists; the full address can always be entered manually.
+      if (zipRequest.current === request)
+        setZipFeedback(
+          "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente.",
+        );
     } finally {
       if (zipRequest.current === request) setZipLoading(false);
     }
@@ -655,6 +675,15 @@ export function AffiliateSimpleForm({
               {zipLoading ? "Buscando CEP..." : "Buscar CEP"}
             </button>
           </div>
+          {zipFeedback && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="rounded-xl border border-[#ead8cd] bg-[#fff9f5] px-4 py-3 text-sm text-[#704b53]"
+            >
+              {zipFeedback}
+            </p>
+          )}
           <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
             {field("street", "Rua / Avenida", {
               placeholder: "Nome do logradouro",

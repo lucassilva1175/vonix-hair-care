@@ -82,6 +82,16 @@ afterEach(() => {
 });
 
 describe("Vonix affiliate private panel", () => {
+  it("provides a keyboard-accessible skip link to the protected dashboard main region", () => {
+    render(<Page />);
+    expect(screen.getByRole("link", { name: "Pular para o painel de afiliadas" })).toHaveAttribute(
+      "href",
+      "#conteudo-admin-afiliadas",
+    );
+    expect(screen.getByRole("main")).toHaveAttribute("id", "conteudo-admin-afiliadas");
+    expect(screen.getByRole("main")).toHaveAttribute("tabindex", "-1");
+  });
+
   it("shows full confidential answers only after deliberate request and hides them again", async () => {
     server.getAffiliateApplicationPrivateDetail.mockResolvedValueOnce({
       ok: true,
