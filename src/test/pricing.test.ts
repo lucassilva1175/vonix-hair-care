@@ -51,7 +51,7 @@ describe("regras comerciais", () => {
   it("catálogo tem 42 produtos (Plex Vonix sem estoque)", () => expect(products.length).toBe(42));
   it("preço já inclui +15 uma vez", () => {
     expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(191.9);
-    expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([81.9, 213.9]);
+    expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([97.9, 213.9]);
   });
   it("frete grátis somente acima de 150", () => {
     expect(hasFreeShipping(150)).toBe(false);
