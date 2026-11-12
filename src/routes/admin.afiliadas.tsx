@@ -279,7 +279,7 @@ export function AffiliateAdminPage() {
     setOtp("");
     clearPrivateData();
     setLoading(false);
-    setError("Sua sessão expirou. Faça login novamente.");
+    setError("Sua sessão expirou ou sua permissão foi alterada. Faça login novamente.");
     return true;
   }
 

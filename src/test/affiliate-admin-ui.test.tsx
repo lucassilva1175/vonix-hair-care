@@ -606,7 +606,9 @@ describe("Vonix affiliate private panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Verificar preparação" }));
     expect(await screen.findByText("Acesso da equipe")).toBeInTheDocument();
     expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
-    expect(screen.getByText("Sua sessão expirou. Faça login novamente.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Sua sessão expirou ou sua permissão foi alterada. Faça login novamente."),
+    ).toBeInTheDocument();
   });
 
   it("clears private data when a retention preview returns access denied", async () => {
@@ -753,7 +755,9 @@ describe("Vonix affiliate private panel", () => {
       window.dispatchEvent(new Event("focus"));
     });
     expect(await screen.findByText("Acesso da equipe")).toBeInTheDocument();
-    expect(screen.getByText("Sua sessão expirou. Faça login novamente.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Sua sessão expirou ou sua permissão foi alterada. Faça login novamente."),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
     expect(screen.queryByText("secret-candidate@example.invalid")).not.toBeInTheDocument();
   });
@@ -780,7 +784,9 @@ describe("Vonix affiliate private panel", () => {
       finish({ authenticated: false });
     });
     expect(await screen.findByText("Acesso da equipe")).toBeInTheDocument();
-    expect(screen.queryByText("Sua sessão expirou. Faça login novamente.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Sua sessão expirou ou sua permissão foi alterada. Faça login novamente."),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
   });
 

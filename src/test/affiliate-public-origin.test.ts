@@ -49,7 +49,7 @@ vi.mock("@/lib/affiliate-admin-auth.server", () => ({
 vi.mock("@/lib/affiliate-admin-session.server", () => ({
   affiliateAdminSameOrigin: gates.sameOrigin,
   affiliateMutationSameOrigin: gates.sameOrigin,
-  affiliateAdminSessionValid: gates.session,
+  affiliateAdminSessionAuthorized: gates.session,
   destroyAffiliateAdminSession: vi.fn(),
   affiliateAdminMayErase: gates.mayErase,
   affiliateLegacyAdminSessionValid: gates.legacyOwner,

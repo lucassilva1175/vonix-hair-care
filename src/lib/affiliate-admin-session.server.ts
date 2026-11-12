@@ -1,4 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { z } from "zod";
+import { affiliateDatabaseConfig } from "./affiliate-database.server";
 import { deleteCookie, getCookie, getRequest, setCookie } from "@tanstack/react-start/server";
 import { env } from "./env.server";
 import {
@@ -191,8 +193,56 @@ export function affiliateLegacyAdminSessionValid(): boolean {
   return verifyAffiliateSessionToken(getCookie(cookieName()), sessionSigningKey());
 }
 
+/** Only checks the signed cookie. Never use this alone to authorize protected
+ * applicant reads or mutations: roles and activation can change mid-session. */
 export function affiliateAdminSessionValid(): boolean {
   return affiliateLegacyAdminSessionValid() || affiliateMemberSession() !== null;
+}
+
+const activeMemberRow = z
+  .array(
+    z.object({
+      email: z.string().email().max(180),
+      role: z.enum(["owner", "reviewer"]),
+      password_set_at: z.string().datetime({ offset: true }).nullable(),
+    }),
+  )
+  .max(1);
+
+/** Validate the current invited-team roster on EVERY protected request.
+ * A revoked, downgraded or deactivated one-hour cookie must fail immediately;
+ * network, malformed data and missing dedicated database all deny by default.
+ * The separately authenticated legacy password+TOTP owner is unaffected. */
+export async function affiliateAdminSessionAuthorized(): Promise<boolean> {
+  if (affiliateLegacyAdminSessionValid()) return true;
+  const identity = affiliateMemberSession();
+  if (!identity) return false;
+  const db = affiliateDatabaseConfig();
+  if (!db) return false;
+  try {
+    const response = await fetch(
+      db.url +
+        "/rest/v1/vonix_affiliate_admin_invites?select=email,role,password_set_at&email=eq." +
+        encodeURIComponent(identity.email) +
+        "&limit=1",
+      {
+        method: "GET",
+        headers: db.headers,
+        redirect: "manual",
+        signal: AbortSignal.timeout(6000),
+      },
+    );
+    if (!response.ok) return false;
+    const rows = activeMemberRow.parse(await response.json());
+    return (
+      rows.length === 1 &&
+      rows[0]!.email === identity.email &&
+      rows[0]!.role === identity.role &&
+      !!rows[0]!.password_set_at
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** Member reviewers may triage. Only the legacy owner or a member owner may erase data. */
