@@ -41,7 +41,8 @@ import { AffiliateTeamAccess } from "@/routes/acesso-equipe-afiliadas";
 
 const invitedEmail = "new.owner@example.invalid";
 const user = { email: invitedEmail, email_confirmed_at: "2026-11-12T12:00:00Z" };
-const invite = { role: "owner", password_set_at: null };
+const invite = { role: "owner", password_set_at: null, ever_activated_at: null };
+const revoked = { ...invite, ever_activated_at: "2026-11-12T20:00:00Z" };
 const noUser = { data: { user: null }, error: null };
 const yesUser = { data: { user }, error: null };
 
@@ -102,6 +103,40 @@ describe("Current invite and fresh Auth identity mandatory for first admin activ
     expect(
       screen.queryByRole("heading", { name: "Crie sua senha pessoal" }),
     ).not.toBeInTheDocument();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects a revoked former owner after fresh OTP without offering first activation", async () => {
+    mocks.getUser.mockResolvedValueOnce(noUser).mockResolvedValue(yesUser);
+    mockInvite(async () => ({ data: revoked, error: null }));
+    render(<AffiliateTeamAccess />);
+    fireEvent.change(await screen.findByRole("textbox", { name: "E-mail autorizado" }), {
+      target: { value: invitedEmail },
+    });
+    fireEvent.change(screen.getByLabelText("Código recebido, se disponível"), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Validar" }));
+    expect(
+      await screen.findByRole("heading", { name: "Acesso não autorizado" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Crie sua senha pessoal" }),
+    ).not.toBeInTheDocument();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("refuses to change Auth password when pending invite is revoked after OTP proof", async () => {
+    mocks.getUser.mockResolvedValueOnce(noUser).mockResolvedValue(yesUser);
+    const lookup = vi
+      .fn()
+      .mockResolvedValueOnce({ data: invite, error: null })
+      .mockResolvedValueOnce({ data: revoked, error: null });
+    mockInvite(lookup);
+    await verifyFreshOtp();
+    submitFirstPassword();
+    await waitFor(() => expect(lookup).toHaveBeenCalledTimes(2));
     expect(mocks.updateUser).not.toHaveBeenCalled();
     expect(mocks.rpc).not.toHaveBeenCalled();
   });

@@ -31,7 +31,11 @@ type Stage =
   | "first-password"
   | "reset-password"
   | "denied";
-type Invitation = { role: "reviewer" | "owner"; password_set_at: string | null };
+type Invitation = {
+  role: "reviewer" | "owner";
+  password_set_at: string | null;
+  ever_activated_at: string | null;
+};
 
 /** A display-only shortcut; no authentication or authorization bypass. */
 function unauthenticatedTeamAccessStage(): Stage {
@@ -75,7 +79,7 @@ export function AffiliateTeamAccess() {
       setEmail(normalized);
       const row = await vonixAffiliateAuth
         .from("vonix_affiliate_admin_invites")
-        .select("role,password_set_at")
+        .select("role,password_set_at,ever_activated_at")
         .eq("email", normalized)
         .maybeSingle();
       if (requestId !== identityVersion.current) return;
@@ -85,6 +89,13 @@ export function AffiliateTeamAccess() {
         return;
       }
       const invite = row.data as Invitation;
+      // Once activated, a subsequently revoked invitation is not a new one.
+      // Deny before offering password creation, including after a fresh OTP.
+      if (!invite.password_set_at && invite.ever_activated_at !== null) {
+        freshVerifiedAddress.current = null;
+        setStage("denied");
+        return;
+      }
       // A previously authenticated browser session is not a fresh invitation
       // proof. Require a verified one-time link/code before first activation.
       const freshlyVerified = freshVerifiedAddress.current === normalized;
@@ -292,14 +303,15 @@ export function AffiliateTeamAccess() {
         throw new Error("Auth identity changed after verification.");
       const row = await vonixAffiliateAuth
         .from("vonix_affiliate_admin_invites")
-        .select("role,password_set_at")
+        .select("role,password_set_at,ever_activated_at")
         .eq("email", verified)
         .maybeSingle();
       if (
         row.error ||
         !row.data ||
         (row.data.role !== "owner" && row.data.role !== "reviewer") ||
-        row.data.password_set_at !== null
+        row.data.password_set_at !== null ||
+        row.data.ever_activated_at !== null
       )
         throw new Error("Invitation absent, invalid or not pending.");
       const updated = await vonixAffiliateAuth.auth.updateUser({ password });
@@ -357,7 +369,7 @@ export function AffiliateTeamAccess() {
         throw new Error("Auth identity mismatch.");
       const row = await vonixAffiliateAuth
         .from("vonix_affiliate_admin_invites")
-        .select("role,password_set_at")
+        .select("role,password_set_at,ever_activated_at")
         .eq("email", verified)
         .maybeSingle();
       if (row.error || !row.data?.password_set_at) {

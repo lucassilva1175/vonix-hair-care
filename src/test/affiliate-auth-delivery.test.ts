@@ -50,6 +50,43 @@ describe("Verified Supabase Auth OTP via transactional email", () => {
     expect(url).not.toContain("questionnaire_encrypted");
   });
 
+  it("does not send owner recovery OTPs to previously activated and revoked team accounts", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            email: inbox,
+            password_set_at: null,
+            ever_activated_at: "2026-11-12T20:00:00+00:00",
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            email: inbox,
+            password_set_at: null,
+            ever_activated_at: null,
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            email: inbox,
+            password_set_at: "2026-11-11T13:00:00+00:00",
+            ever_activated_at: "2026-11-11T13:00:00+00:00",
+          },
+        ]),
+      );
+    vi.stubGlobal("fetch", fetcher);
+    expect(await affiliateEmailAuthorizedForPortal(inbox, "owner")).toBe(false);
+    expect(await affiliateEmailAuthorizedForPortal(inbox, "owner")).toBe(true);
+    expect(await affiliateEmailAuthorizedForPortal(inbox, "owner")).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
   it("does not treat missing applicant data as an authorized email", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json([])));
     expect(await affiliateEmailAuthorizedForPortal(inbox, "applicant")).toBe(false);

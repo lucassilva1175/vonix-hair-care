@@ -28,6 +28,8 @@ const pendingRow = z.object({
   email: address,
   role: z.literal("owner"),
   password_set_at: z.null(),
+  // An owner whose activation was revoked is never a first-time invite.
+  ever_activated_at: z.null(),
 });
 const grant = z.object({
   action_link: z.string().url().optional(),
@@ -84,8 +86,8 @@ async function fetchPendingOwners(db: Database): Promise<PendingAffiliateOwner[]
   try {
     const response = await fetch(
       db.url +
-        "/rest/v1/vonix_affiliate_admin_invites?select=email,role,password_set_at" +
-        "&role=eq.owner&password_set_at=is.null&order=email.asc&limit=12",
+        "/rest/v1/vonix_affiliate_admin_invites?select=email,role,password_set_at,ever_activated_at" +
+        "&role=eq.owner&password_set_at=is.null&ever_activated_at=is.null&order=email.asc&limit=12",
       {
         method: "GET",
         headers: db.headers,

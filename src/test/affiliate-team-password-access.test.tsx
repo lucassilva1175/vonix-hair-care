@@ -87,7 +87,7 @@ describe("Vonix affiliate already-activated owner password sign-in", () => {
       select: () => ({
         eq: () => ({
           maybeSingle: async () => ({
-            data: { role: "owner", password_set_at: null },
+            data: { role: "owner", password_set_at: null, ever_activated_at: null },
             error: null,
           }),
         }),
