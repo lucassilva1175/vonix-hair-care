@@ -109,7 +109,7 @@ const questions = [
   {
     question: "Vou receber produtos, cupom, pagamento ou comissão?",
     answer:
-      "O envio da candidatura não garante produtos gratuitos, cupons ativos, remuneração, comissão ou uma parceria. Qualquer condição comercial depende de aprovação, comunicação oficial e eventual acordo específico.",
+      "O envio da candidatura não garante produtos gratuitos, cupons ativos, remuneração, comissão ou uma parceria. Qualquer condição comercial depende de aprovação, comunicação oficial e eventual acordo específico. Para afiliadas aprovadas: você vende pelo preço do site, com comissão de 8% sobre cada venda confirmada, mais R$ 500 a cada R$ 10 mil vendidos, e pode virar supervisora ao bater as metas, ganhando também, em média, 4% sobre o valor bruto vendido pela sua equipe.",
   },
   {
     question: "Como funciona a avaliação?",
@@ -299,6 +299,62 @@ export function AffiliateLandingIntro({
           <span>Vonix Hair</span>
         </div>
       </div>
+
+      <section
+        id="ganhos"
+        data-testid="vonix-affiliate-earnings"
+        aria-labelledby="vonix-affiliate-earnings-title"
+        className="scroll-mt-24 bg-[#f9f0e9] px-5 py-16 sm:py-24"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <Eyebrow>Quanto você ganha</Eyebrow>
+            <h2
+              id="vonix-affiliate-earnings-title"
+              className="mt-5 font-display text-4xl leading-tight tracking-tight text-[#352029] sm:text-5xl"
+            >
+              Você vende pelo preço do site.{" "}
+              <span className="italic text-[#a36b73]">A Vonix cuida do resto.</span>
+            </h2>
+            <p className="mt-5 text-base leading-[1.8] text-[#775e62]">
+              Sem estoque e sem comprar produto: você divulga com o seu link, a Vonix Hair vende,
+              entrega e atende o cliente, e a sua parte entra a cada venda.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                big: "8%",
+                title: "Comissão de 8% em cada venda",
+                text: "Por exemplo: R$ 1.000 vendidos pelo seu link rendem R$ 80 para você.",
+              },
+              {
+                big: "+ R$ 500",
+                title: "Bônus a cada R$ 10 mil vendidos",
+                text: "Chegou aos R$ 10 mil em vendas, ganha mais R$ 500 além da comissão.",
+              },
+              {
+                big: "Supervisora",
+                title: "Cresça para supervisora",
+                text: "Bateu todas as metas? Vira supervisora: segue com os 8% das suas vendas e ganha, em média, mais 4% sobre todo o valor bruto vendido pela sua equipe.",
+              },
+            ].map(({ big, title, text }) => (
+              <article
+                key={title}
+                className="rounded-[1.75rem] border border-[#e6d4ca] bg-white p-7 shadow-[0_14px_35px_rgba(66,32,42,.055)]"
+              >
+                <p className="font-display text-4xl text-[#a56470] sm:text-5xl">{big}</p>
+                <h3 className="mt-5 font-display text-2xl text-[#38232c]">{title}</h3>
+                <p className="mt-3 text-sm leading-[1.75] text-[#766066]">{text}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-6 text-xs leading-relaxed text-[#80666a]">
+            Valores sobre vendas confirmadas e pagas. As metas da supervisora são combinadas pela
+            equipe com cada afiliada aprovada.
+          </p>
+        </div>
+      </section>
 
       <section id="criterios" className="scroll-mt-24 bg-[#fffaf6] px-5 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl">
