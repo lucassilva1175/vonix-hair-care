@@ -156,3 +156,10 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Antes: toda unidade era cotada com 0,6 kg (caixa padrão), então produtos de 1 L/1 kg saíam com frete menor que o real. Agora o peso vem do tamanho do produto: conteúdo + 0,25 kg de embalagem (1 L/1 kg = 1,25 kg; 500 ml = 0,75 kg), nunca abaixo de 0,6 kg; kits e sem tamanho ficam em 0,6 kg. Vale no checkout e na etiqueta automática do Melhor Envio (mesmo peso). `unitWeightKg` em src/lib/melhorenvio.server.ts.
 - Efeito esperado: frete de produtos de 1 L sobe um pouco (mais próximo do real). Confirmar pesos dos demais tamanhos com o Lucas.
 - Como desfazer: git revert desta PR.
+
+## 13/11/2026 (tarde) — Auditoria Clarity + Google Analytics (conta "Vonix Hair", propriedade 557116983, acesso pelo 3º e-mail do Chrome: authuser=2)
+- GA (6-12/11): 5.498 sessões, mas 93% "Direct" (5.133) com engajamento 1,2% e 1 s = robô. Países: Hong Kong 3,9 mil + China 1,5 mil usuários (Brasil 148). 4,8 mil visualizações só em /loja ("Loja — Vonix Hair"). Agora: 38 de 41 usuários ativos são de Hong Kong. Os números do GA (9,3 mil usuários, +1.199%) estão inflados e NÃO são clientes; o Clarity (167 sessões reais) é o número confiável.
+- Tráfego real (GA): Paid Social 89 sessões, só 23,6% engajadas (7 s médios): ~76% saem antes de ver a página (celular no app do Instagram/Facebook, LCP 3,1 s no Clarity); Social orgânico 57 (43,9% engajadas, 38 s); Busca orgânica 23 (56,5%, 1m43); IA (ChatGPT etc.) 12.
+- Compras no GA: 1 compra na semana com receita R$ 15,80 (valor errado: pedido real é > R$ 90): conferir o valor enviado no evento purchase.
+- Pendente: bloquear o robô de Hong Kong/China (Cloudflare/regra de país ou filtro de tráfego interno no GA), filtrar no GA; acelerar a página do produto no celular (resposta do Botox 2,0 s no teste de hoje, 94 KB); conferir valor do evento purchase.
+- Como desfazer: nada alterado além deste diário.
