@@ -1160,10 +1160,10 @@ export function AffiliateAdminPage() {
                 className="flex w-full max-w-sm gap-2"
               >
                 <input
-                  aria-label="Buscar por nome ou e-mail"
+                  aria-label="Buscar por nome, Instagram, TikTok ou e-mail"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
-                  placeholder="Nome ou e-mail"
+                  placeholder="Nome, Instagram, TikTok ou e-mail"
                   maxLength={70}
                   className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#e8d7d4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-[#e8c9c5]"
                 />

@@ -82,6 +82,23 @@ afterEach(() => {
 });
 
 describe("Vonix affiliate private panel", () => {
+  it("supports Instagram, TikTok and email searches without exposing private applicant fields", async () => {
+    render(<Page />);
+    await screen.findByText("Segredo da candidata");
+    const search = screen.getByRole("textbox", {
+      name: "Buscar por nome, Instagram, TikTok ou e-mail",
+    });
+    expect(search).toHaveAttribute("placeholder", "Nome, Instagram, TikTok ou e-mail");
+    fireEvent.change(search, { target: { value: "@qa" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+    await waitFor(() =>
+      expect(server.getAffiliateApplications).toHaveBeenCalledWith({
+        data: expect.objectContaining({ status: "pendente", search: "@qa" }),
+      }),
+    );
+    expect(screen.queryByText("529.982.247-25")).not.toBeInTheDocument();
+  });
+
   it("provides a keyboard-accessible skip link to the protected dashboard main region", () => {
     render(<Page />);
     expect(screen.getByRole("link", { name: "Pular para o painel de afiliadas" })).toHaveAttribute(
