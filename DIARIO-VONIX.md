@@ -119,3 +119,10 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Appmax: pedido 132738782 (12/11 14:52, R$ 180,90, Botox, veio do anúncio, app do Facebook) gerou Pix e EXPIROU: o checkout funciona, o gargalo é pagar o Pix (só 2 de ~10 Pix pagos desde 30/10).
 - Cliques mortos: faixa verde de frete e 4 quadros coloridos do topo do checkout pareciam botões (PR #153: cartão discreto com ícones).
 - Botão "Copiar código Pix" não fazia nada (sem aviso) quando o navegador do Instagram/Facebook bloqueia a área de transferência: agora tem plano B (campo selecionado) e aviso; tela do Pix pensada para celular: botão grande no topo, 4 passos, QR só em tela grande.
+
+## 13/11/2026 (8h10) — rotina automática, só conferência
+- Meta (30 dias até 12/11, dado de hoje ainda não fechado): conta R$ 1.115,40. FRIO Combo Banana e Mel R$ 386,99 (8.700 impressões, ativo, 2 recomendações do Meta não aplicadas). Remarketing MORNO 30D ativo, R$ 6,51 (160 impressões: começou a entregar). Demais campanhas desativadas. 20 rascunhos pendentes (não publicados). Colunas de carrinho/compra não carregaram no texto da página; sem número novo de compras.
+- Site no ar: home 1,3 s, botox 0,18 s, fio de luz 0,63 s, checkout 0,14 s, todos 200.
+- Clarity não reaberto nesta rodada. Conector Abency segue bloqueado (teste acabou).
+- Mudança do dia: nenhuma; menos de 100 visitas pagas após a última mudança: "ainda é cedo". Orçamento mantido em R$ 30/dia (sem venda real).
+- Como desfazer: nada alterado além deste diário.
