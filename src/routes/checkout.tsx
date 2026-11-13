@@ -376,6 +376,10 @@ function Checkout() {
   const [parcels, setParcels] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // O aviso de erro some assim que o cliente mexe em algum campo (não fica um erro velho na tela).
+  useEffect(() => {
+    setError(null);
+  }, [f, pay, card, parcels, serviceId]);
   const [pix, setPix] = useState<PixResult | null>(null);
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -611,7 +615,9 @@ function Checkout() {
           );
       }
     } catch {
-      setError("Não conseguimos processar agora. Tente novamente em instantes.");
+      setError(
+        "Não conseguimos enviar seu pedido. Confira nome, e-mail, WhatsApp, CPF e endereço e tente de novo. Se continuar, fale com a gente no WhatsApp.",
+      );
     } finally {
       setBusy(false);
     }
@@ -647,10 +653,16 @@ function Checkout() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidCpf(f.cpf)) {
-      setError("CPF inválido. Confira os números.");
-      return;
-    }
+    // Avisa qual campo está errado e leva o cursor até ele (a tela rola sozinha até o campo).
+    const fail = (msg: string, field: string) => {
+      setError(msg);
+      document.querySelector<HTMLInputElement>(`input[aria-label="${field}"]`)?.focus();
+    };
+    const phone = f.whatsapp.replace(/\D/g, "");
+    if (f.nome.trim().length < 3) return fail("Digite seu nome completo.", "Nome completo");
+    if (phone.length < 10 || phone.length > 13)
+      return fail("Digite seu WhatsApp com DDD, por exemplo (31) 99999-9999.", "WhatsApp com DDD");
+    if (!isValidCpf(f.cpf)) return fail("CPF inválido. Confira os números.", "CPF");
     track("add_payment_info", { payment_type: pay, value: total });
     if (pay === "pix") void submitPayment();
     else if (!cfg?.externalId) setError("Pagamento por cartão indisponível no momento. Use o Pix.");
@@ -728,6 +740,12 @@ function Checkout() {
   // Botão de pagar: o de verdade fica dentro da caixa do método escolhido; quando ele sai da tela, uma barra fixa o repete.
   const renderPay = (floating: boolean) => (
     <>
+      {/* O erro aparece sempre junto do botão que o cliente está vendo: na barra fixa, ou na caixa quando o botão está na tela. */}
+      {error && (floating || payVisible) && (
+        <p role="alert" className="rounded-lg border border-destructive bg-white p-2.5 text-small text-destructive">
+          {error}
+        </p>
+      )}
       {!chosen && !quoting && (
         <p className="text-center text-small text-muted-foreground">Digite o CEP para liberar o pagamento</p>
       )}
@@ -861,7 +879,8 @@ function Checkout() {
                 maxLength={9}
                 onChange={(e) => {
                   const m = maskCep(e.target.value);
-                  setF((old) => ({ ...old, cep: m }));
+                  // CEP novo = endereço novo: apaga o do CEP anterior para nunca ficar rua/cidade de outro lugar escondida.
+                  setF((old) => (old.cep === m ? old : { ...old, cep: m, rua: "", bairro: "", cidade: "", uf: "" }));
                 }}
                 autoComplete="postal-code"
                 className={inp}
@@ -1295,14 +1314,6 @@ function Checkout() {
           </div>
         </aside>
         <div className="min-w-0 space-y-4 lg:col-start-1">
-          {error && (
-            <p
-              role="alert"
-              className="rounded-lg border border-destructive p-3 text-body text-destructive"
-            >
-              {error}
-            </p>
-          )}
           {cfg && !cfg.pixEnabled && (
             <p role="status" className="rounded-lg border border-border bg-muted p-3 text-body">
               Estamos ativando os pagamentos desta loja. Em breve você poderá finalizar por aqui.
