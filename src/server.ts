@@ -60,6 +60,7 @@ function withSecurityHeaders(response: Response): Response {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    if (isBlockedCountry(request.headers.get("cf-ipcountry"))) return blockedResponse();
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
