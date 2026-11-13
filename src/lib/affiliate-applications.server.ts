@@ -326,7 +326,10 @@ export async function getAffiliateStatusWithCode(raw: string) {
 
 export async function affiliateOperationalReadiness() {
   const dbConfigured = Boolean(affiliateDatabaseConfig());
-  const recruitmentOpen = affiliateRecruitmentOpen();
+  // The live intake gate supports a dedicated owner acknowledgement as well as
+  // the legacy environment switch. Administrative diagnostics must report the
+  // same effective gate used by the public form, not only the old env flag.
+  const recruitmentOpen = await affiliateOperatorIntakeEnabled();
   const otp = env("AFFILIATE_ADMIN_TOTP_SECRET").replace(/\s/g, "");
   const checks = [
     {

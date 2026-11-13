@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { affiliateOperatorIntakeEnabled } from "@/lib/affiliate-applications.server";
+import {
+  affiliateOperationalReadiness,
+  affiliateOperatorIntakeEnabled,
+} from "@/lib/affiliate-applications.server";
 
 const names = [
   "AFFILIATE_RECRUITMENT_OPEN",
@@ -37,6 +40,24 @@ afterEach(() => {
 });
 
 describe("Vonix owner-controlled recruitment switch", () => {
+  it("reports the actual owner-enabled intake state in administrative launch readiness", async () => {
+    const mock = vi.fn(async (url: string) => {
+      if (url.includes("vonix_affiliate_operator_intake")) {
+        return Response.json([
+          { enabled: true, owner_acknowledged_at: "2026-11-10T16:00:00+00:00" },
+        ]);
+      }
+      return Response.json({});
+    });
+    vi.stubGlobal("fetch", mock);
+    const readiness = await affiliateOperationalReadiness();
+    expect(readiness.recruitmentOpen).toBe(true);
+    expect(readiness.checks.find((check) => check.id === "launch")?.ok).toBe(true);
+    expect(mock.mock.calls.some(([url]) => url.includes("vonix_affiliate_operator_intake"))).toBe(
+      true,
+    );
+  });
+
   it("fails closed unless the private database confirms operator consent", async () => {
     const request = vi
       .fn()

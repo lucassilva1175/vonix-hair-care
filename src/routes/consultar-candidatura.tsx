@@ -28,6 +28,7 @@ export function AffiliateTrackingCodePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [codeRevealed, setCodeRevealed] = useState(false);
   const lookupVersion = useRef(0);
 
   async function copyPrivateCode() {
@@ -87,6 +88,22 @@ export function AffiliateTrackingCodePage() {
     }
   }, []);
 
+  // Private statuses should not remain visible when a shared device changes tabs.
+  // Retain the code for the applicant, but mask it and require another explicit lookup.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") return;
+      lookupVersion.current++;
+      setBusy(false);
+      setResult(null);
+      setError("");
+      setCopied(false);
+      setCodeRevealed(false);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+
   async function check(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !/^[A-Za-z0-9_-]{32}$/.test(code)) return;
@@ -106,13 +123,14 @@ export function AffiliateTrackingCodePage() {
             </p>
           </div>
           <section className="rounded-[2rem] border border-[#e8d7d3] bg-white p-6 shadow-lg sm:p-10">
-            <form onSubmit={(event) => void check(event)}>
+            <form aria-busy={busy} onSubmit={(event) => void check(event)}>
               <label htmlFor="affiliate-private-code" className="block text-sm font-bold">
                 Código privado de acompanhamento
               </label>
               <input
                 id="affiliate-private-code"
                 aria-label="Código privado de acompanhamento"
+                type={codeRevealed ? "text" : "password"}
                 autoComplete="off"
                 spellCheck={false}
                 maxLength={32}
@@ -125,12 +143,23 @@ export function AffiliateTrackingCodePage() {
                   setBusy(false);
                   setCode(event.target.value.trim());
                   setCopied(false);
+                  setCodeRevealed(false);
                   setResult(null);
                   setError("");
                 }}
                 placeholder="Cole o código salvo após sua inscrição"
                 className="mt-2 min-h-12 w-full rounded-xl border border-[#dac4c8] px-4 font-semibold text-sm outline-none focus:ring-2 focus:ring-[#e6c8ce]"
               />
+              {code.length > 0 && (
+                <button
+                  type="button"
+                  aria-pressed={codeRevealed}
+                  onClick={() => setCodeRevealed((value) => !value)}
+                  className="mt-3 min-h-11 w-full rounded-full border border-[#b9969e] px-5 text-sm font-bold text-[#633847]"
+                >
+                  {codeRevealed ? "Ocultar código privado" : "Mostrar código privado"}
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={busy || !/^[A-Za-z0-9_-]{32}$/.test(code)}
