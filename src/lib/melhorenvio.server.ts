@@ -60,7 +60,7 @@ export async function calculateShipping(toCep: string, products: ShippingProduct
       })),
     }),
   });
-  if (!res.ok) throw new Error(`Melhor Envio ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw Object.assign(new Error(`Melhor Envio ${res.status}: ${(await res.text()).slice(0, 300)}`), { status: res.status });
   const data = (await res.json()) as {
     id: number;
     name: string;

@@ -68,7 +68,14 @@ export const quoteShipping = createServerFn({ method: "POST" })
       return { ok: true as const, options: await shippingOptions(data.cep, buildLines(data.items), data.coupon) };
     } catch (e) {
       console.error("[frete]", e);
-      return { ok: false as const, message: "Não foi possível calcular o frete agora. Tente novamente em instantes." };
+      // Recusa 400/404/422 da cotação = o CEP não existe na base dos Correios (ex.: 40020-000). 401/403/429/5xx = problema nosso ou passageiro.
+      const status = Number((e as { status?: unknown }).status);
+      if (status === 400 || status === 404 || status === 422)
+        return {
+          ok: false as const,
+          message: "Esse CEP não foi encontrado na base dos Correios. Confira o número ou use o CEP de uma rua próxima.",
+        };
+      return { ok: false as const, message: "Não foi possível calcular o frete agora. Toque em “Tentar de novo”." };
     }
   });
 

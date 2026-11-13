@@ -179,7 +179,7 @@ function PixPanel({
       <div role="status" className="rounded-2xl border border-border bg-card p-6 text-center">
         <h1 className="font-display text-h1">Pagamento confirmado!</h1>
         <p className="mt-2 text-body text-muted-foreground">
-          Pedido nº {pix.orderId}. Você receberá os detalhes por e-mail e WhatsApp.
+          Pedido nº {pix.orderId}. Anote este número: com ele a gente encontra o seu pedido se você precisar de ajuda.
         </p>
         <Link
           to="/loja"
@@ -349,6 +349,8 @@ function Checkout() {
   const [editAddr, setEditAddr] = useState(false);
   const [showCompl, setShowCompl] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const lastQuotedCep = useRef("");
+  const [quoteTry, setQuoteTry] = useState(0);
   const [payEl, setPayEl] = useState<HTMLButtonElement | null>(null);
   const [payVisible, setPayVisible] = useState(false);
   useEffect(() => {
@@ -458,7 +460,9 @@ function Checkout() {
   useEffect(() => {
     const d = f.cep.replace(/\D/g, "");
     setOptions([]);
-    setServiceId(null);
+    // CEP novo escolhe o frete de novo; cupom ou carrinho novo mantêm o que o cliente já tinha escolhido (se ainda existir).
+    if (lastQuotedCep.current !== d) setServiceId(null);
+    lastQuotedCep.current = d;
     setQuoteErr(null);
     if (d.length !== 8 || !items.length) {
       setQuoting(false);
@@ -494,7 +498,7 @@ function Checkout() {
     return () => {
       cancelled = true;
     };
-  }, [f.cep, itemsKey, applied?.code]);
+  }, [f.cep, itemsKey, applied?.code, quoteTry]);
 
   const gross = checkoutTotals(c.lines, "card").gross;
   const pct = couponPercent(applied ?? undefined, gross);
@@ -704,7 +708,7 @@ function Checkout() {
         <div className="container-site max-w-xl py-16 text-center" role="status">
           <h1 className="font-display text-h1">Pagamento aprovado!</h1>
           <p className="mt-2 text-body text-muted-foreground">
-            Pedido nº {cardDone.orderId}. Você receberá os detalhes por e-mail e WhatsApp.
+            Pedido nº {cardDone.orderId}. Anote este número: com ele a gente encontra o seu pedido se você precisar de ajuda.
           </p>
           <Link
             to="/loja"
@@ -992,9 +996,17 @@ function Checkout() {
               <div className="space-y-2 pt-2" aria-live="polite">
                 {quoting && <p className="text-body text-muted-foreground">Calculando frete…</p>}
                 {quoteErr && !quoting && (
-                  <p role="alert" className="text-body text-destructive">
-                    {quoteErr}
-                  </p>
+                  <div className="space-y-1">
+                    <p role="alert" className="text-body text-destructive">
+                      {quoteErr}
+                    </p>
+                    {/* Falha passageira: o cliente tenta de novo sem precisar digitar o CEP outra vez. */}
+                    {/calcular o frete agora/.test(quoteErr) && (
+                      <button type="button" onClick={() => setQuoteTry((n) => n + 1)} className="text-small underline">
+                        Tentar de novo
+                      </button>
+                    )}
+                  </div>
                 )}
                 {!quoting &&
                   options.map((o) => (
