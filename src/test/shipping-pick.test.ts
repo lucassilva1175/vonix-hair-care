@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickTwoShipping } from "@/lib/shipping-pick";
+import { pickTwoShipping, pickThreeShipping } from "@/lib/shipping-pick";
 
 const q = (id: number, price: number, days: number) => ({ id, price, days });
 
@@ -53,5 +53,21 @@ describe("pickFreeShipping", () => {
   });
   it("lista vazia não escolhe nada", () => {
     expect(pickFreeShipping([])).toBeUndefined();
+  });
+});
+
+describe("pickThreeShipping", () => {
+  const q = (id: number, company: string, name: string, price: number, days: number) => ({ id, company, name, price, days });
+  it("mostra 3 opções: rápida, econômica e Correios PAC", () => {
+    const r = pickThreeShipping([
+      q(1, "Correios", "SEDEX", 79.56, 3),
+      q(2, "Correios", "PAC", 45, 9),
+      q(3, ".Package", "Jadlog", 30, 6),
+      q(4, "JeT", "Standard", 16.8, 8),
+    ]);
+    expect(r.map((x) => x.id).sort()).toEqual([1, 2, 4]);
+  });
+  it("com só duas cotações mostra duas", () => {
+    expect(pickThreeShipping([q(1, "Correios", "SEDEX", 79, 3), q(4, "JeT", "Standard", 16, 8)])).toHaveLength(2);
   });
 });

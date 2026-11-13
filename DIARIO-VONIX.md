@@ -140,6 +140,10 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Clarity e pixel não reabertos nesta rodada. Mudança do dia: nenhuma ("ainda é cedo": menos de 100 visitas pagas após a última mudança). Orçamento mantido em R$ 30/dia.
 - Como desfazer: nada alterado além deste diário.
 
+## 13/11/2026 (tarde) — frete com 3 opções (pedido do Lucas)
+- Checkout abaixo de R$ 150 passa a mostrar até 3 opções: rápida, econômica e uma terceira intermediária (de preferência Correios PAC, senão a mais barata que sobra). O mais barato continua pré-selecionado. Frete grátis (≥ R$ 150) continua com 1 opção. Preços e prazos são os reais do Melhor Envio. src/lib/shipping-pick.ts (pickThreeShipping).
+- Como desfazer: git revert desta PR.
+
 ## 13/11/2026 (tarde) — frete surpresa (vídeo da cliente, CEP 60824-000 Fortaleza) e gravações Clarity
 - Vídeo (11:05-11:06): Progressiva Fio de Luz R$ 109,90, CEP 60824-000; o checkout mostrou frete R$ 79,66 (total R$ 189,56) = o Correios SEDEX estava pré-selecionado. Para a cliente o frete custava 72% do produto: causa provável de desistência. Também não havia frete visível no carrinho ("Informe o CEP").
 - Causa: antes da PR #158 (publicada 11:24) o site pré-selecionava a opção rápida (SEDEX). Agora pré-seleciona a mais barata.
