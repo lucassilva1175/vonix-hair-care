@@ -93,8 +93,8 @@ function Cart() {
   }, [hydrated, c.lines, c.netSubtotal]);
   return (
     <Shell>
-      <div className="container-site py-10 pb-28 lg:pb-10">
-        <h1 className="mb-8 font-display text-h1">Carrinho</h1>
+      <div className="container-site py-5 pb-28 sm:py-10 lg:pb-10">
+        <h1 className="mb-4 font-display text-h1 sm:mb-8">Carrinho</h1>
         {!hydrated ? (
           <div className="min-h-[40vh]" aria-busy="true" />
         ) : c.lines.length === 0 ? (
@@ -110,10 +110,6 @@ function Cart() {
         ) : (
           <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
             <div className="min-w-0">
-              <section aria-label="Quem já usa Vonix" className="mb-6 rounded-2xl border border-border bg-card p-3">
-                <p className="mb-2 text-small font-semibold">Quem já usa Vonix. Toque para assistir.</p>
-                <ProvasEmVideo all seed="carrinho" max={8} />
-              </section>
               <ul className="divide-y divide-border">
                 {c.lines.map((l) => (
                   <li key={l.slug + l.variant + (l.offer ?? "")} className="flex gap-4 py-4">
@@ -182,6 +178,10 @@ function Cart() {
                 ))}
               </ul>
               <Suggestions />
+              <section aria-label="Quem já usa Vonix" className="mt-6 rounded-2xl border border-border bg-card p-3">
+                <p className="mb-2 text-small font-semibold">Quem já usa Vonix. Toque para assistir.</p>
+                <ProvasEmVideo all seed="carrinho" max={8} />
+              </section>
             </div>
             <aside className="space-y-4">
               <ShippingBar subtotal={c.subtotal} />

@@ -82,7 +82,12 @@ function TesteRelogio() {
   const dois = (n: number) => String(n).padStart(2, "0");
   return (
     <div role="timer" aria-live="off" className="bg-foreground px-3 py-2 text-center text-small font-semibold text-background">
-      Preços baixos por tempo limitado: termina em {d}d {dois(h)}h {dois(m)}min {dois(s)}s (20/11, às 23h59). Depois, os preços voltam ao normal.
+      <span className="sm:hidden">
+        Preços baixos até 20/11 · faltam {d}d {dois(h)}h {dois(m)}min {dois(s)}s
+      </span>
+      <span className="hidden sm:inline">
+        Preços baixos por tempo limitado: termina em {d}d {dois(h)}h {dois(m)}min {dois(s)}s (20/11, às 23h59). Depois, os preços voltam ao normal.
+      </span>
     </div>
   );
 }
