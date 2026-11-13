@@ -197,6 +197,18 @@ function PixPanel({
       <p className="mt-2 text-body text-muted-foreground">
         Pedido nº {pix.orderId} · {brl(pix.total)}
       </p>
+      {/* Contador do Pix: o prazo é o de verdade, vindo da Appmax (o Pix deixa de valer quando chega a zero). */}
+      <p
+        role="timer"
+        aria-live="off"
+        data-testid="pix-timer"
+        className="mt-4 flex cursor-default select-none items-center justify-between gap-3 rounded-xl border border-[#c9a45c]/50 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-left text-small font-medium text-white"
+      >
+        <span className="leading-snug">{left > 0 ? "Seu Pix expira em" : "Este Pix expirou"}</span>
+        <span className="money shrink-0 rounded-lg border border-[#c9a45c]/40 bg-black/30 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-[#e3c07a]">
+          {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
+        </span>
+      </p>
       {left > 0 ? (
         <button
           type="button"
@@ -248,9 +260,7 @@ function PixPanel({
         />
       </details>
       <p className="mt-3 text-body text-muted-foreground">
-        {left > 0
-          ? `Expira em ${mm}:${String(ss).padStart(2, "0")}. `
-          : "Este Pix expirou. Volte e gere outro. "}
+        {left > 0 ? "" : "Este Pix expirou. Volte e gere outro. "}
         Aguardando pagamento — esta tela atualiza sozinha.
       </p>
     </div>
