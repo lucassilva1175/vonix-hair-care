@@ -103,6 +103,53 @@ describe("Private Vonix email-less applicant status portal", () => {
     }
   });
 
+  it("does not initiate private auto-lookup from a one-time code on an initially hidden tab", async () => {
+    window.sessionStorage.setItem("vonix-affiliate-once-code", code);
+    const spy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    try {
+      render(<AffiliateTrackingCodePage />);
+      await waitFor(() =>
+        expect(screen.getByLabelText("Código privado de acompanhamento")).toHaveValue(code),
+      );
+      expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
+      expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+      expect(window.sessionStorage.getItem("vonix-affiliate-once-code")).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("ignores private status responses completed while the document is hidden even before a visibility event", async () => {
+    let resolve!: (value: unknown) => void;
+    server.getAffiliateStatusByCode.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    render(<AffiliateTrackingCodePage />);
+    fireEvent.change(screen.getByLabelText("Código privado de acompanhamento"), {
+      target: { value: code },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    const spy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    try {
+      await act(async () => {
+        resolve({
+          ok: true,
+          status: "aprovada",
+          rejectionReason: null,
+          submittedAt: "2026-11-11T12:00:00Z",
+          reviewedAt: null,
+        });
+        await Promise.resolve();
+      });
+      expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("consumes one-time code from signup and auto-consults without URL leakage", async () => {
     const code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
     window.sessionStorage.setItem("vonix-affiliate-once-code", code);

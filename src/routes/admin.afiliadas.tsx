@@ -334,6 +334,10 @@ export function AffiliateAdminPage() {
         return;
       }
       setAuthorized(true);
+      // A background tab may finish its initial list request before the
+      // visibility listener is installed. Never expose candidate details
+      // until the tab becomes visible and its signed session is revalidated.
+      if (document.visibilityState === "hidden") setSessionRechecking(true);
       setStatus(nextStatus);
       setMailFilter(nextMailFilter);
       setPage(nextPage);
