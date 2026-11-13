@@ -22,6 +22,87 @@ afterEach(() => {
 });
 
 describe("Private Vonix email-less applicant status portal", () => {
+  it("masks the private receipt by default and only reveals it on explicit request", () => {
+    render(<AffiliateTrackingCodePage />);
+    const field = screen.getByLabelText("Código privado de acompanhamento");
+    fireEvent.change(field, { target: { value: code } });
+    expect(field).toHaveAttribute("type", "password");
+    const reveal = screen.getByRole("button", { name: "Mostrar código privado" });
+    expect(reveal).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(reveal);
+    expect(field).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: "Ocultar código privado" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Ocultar código privado" }));
+    expect(field).toHaveAttribute("type", "password");
+    expect(field).toHaveValue(code);
+  });
+
+  it("hides sensitive lookup status on tab background without deleting the saved code", async () => {
+    server.getAffiliateStatusByCode.mockResolvedValue({
+      ok: true,
+      status: "aprovada",
+      rejectionReason: null,
+      submittedAt: "2026-11-11T12:00:00Z",
+      reviewedAt: "2026-11-11T13:00:00Z",
+    });
+    render(<AffiliateTrackingCodePage />);
+    const field = screen.getByLabelText("Código privado de acompanhamento");
+    fireEvent.change(field, { target: { value: code } });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    expect(await screen.findByText("Candidatura aprovada")).toBeInTheDocument();
+    let state: DocumentVisibilityState = "hidden";
+    const spy = vi.spyOn(document, "visibilityState", "get").mockImplementation(() => state);
+    try {
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+      expect(field).toHaveValue(code);
+      expect(field).toHaveAttribute("type", "password");
+      state = "visible";
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+      expect(server.getAffiliateStatusByCode).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("ignores an in-flight private status response after its tab becomes hidden", async () => {
+    let finish!: (result: unknown) => void;
+    server.getAffiliateStatusByCode.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    render(<AffiliateTrackingCodePage />);
+    fireEvent.change(screen.getByLabelText("Código privado de acompanhamento"), {
+      target: { value: code },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    expect(screen.getByRole("button", { name: "Consultando..." })).toBeDisabled();
+    const spy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    try {
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await act(async () => {
+        finish({
+          ok: true,
+          status: "aprovada",
+          rejectionReason: null,
+          submittedAt: "2026-11-11T12:00:00Z",
+          reviewedAt: null,
+        });
+        await Promise.resolve();
+      });
+      expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Consultar minha inscrição" })).toBeEnabled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("consumes one-time code from signup and auto-consults without URL leakage", async () => {
     const code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
     window.sessionStorage.setItem("vonix-affiliate-once-code", code);
