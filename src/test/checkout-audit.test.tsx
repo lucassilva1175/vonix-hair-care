@@ -164,6 +164,34 @@ describe("checkout auditado sem chamadas reais", () => {
     expect(screen.getByLabelText("Rua")).toHaveValue("");
     expect(screen.getByLabelText("Cidade")).toHaveValue("");
   });
+  it("aplicar cupom não troca o frete que o cliente escolheu; falha passageira tem 'Tentar de novo'", async () => {
+    const barato = { id: 1, name: "PAC", company: "Correios", price: 20, days: 5, free: false };
+    const rapido = { id: 2, name: "SEDEX", company: "Correios", price: 40, days: 2, free: false };
+    mocks.quote.mockResolvedValue({ ok: true, options: [rapido, barato] });
+    render(<Checkout />);
+    fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
+    await screen.findByText(/Correios SEDEX/);
+    const radios = () => screen.getAllByRole("radio", { name: /Correios (PAC|SEDEX)/ });
+    // o mais barato já vem marcado
+    expect(radios().find((r) => (r as HTMLInputElement).checked)?.closest("label")).toHaveTextContent("PAC");
+    // o cliente escolhe o SEDEX e depois aplica um cupom
+    fireEvent.click(radios().find((r) => r.closest("label")?.textContent?.includes("SEDEX")) as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: /Tem um cupom/ }));
+    fireEvent.change(screen.getByLabelText("Código do cupom"), { target: { value: "GIRA3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
+    await waitFor(() => expect(mocks.quote.mock.calls.length).toBeGreaterThan(1));
+    await screen.findByText(/Cupom GIRA3 aplicado/);
+    await waitFor(() =>
+      expect(radios().find((r) => (r as HTMLInputElement).checked)?.closest("label")).toHaveTextContent("SEDEX"),
+    );
+    // falha passageira: aparece o botão e ele refaz a cotação
+    mocks.quote.mockResolvedValueOnce({ ok: false, message: "Não foi possível calcular o frete agora. Toque em “Tentar de novo”." });
+    fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "01310100" } });
+    const retry = await screen.findByRole("button", { name: "Tentar de novo" });
+    const before = mocks.quote.mock.calls.length;
+    fireEvent.click(retry);
+    await waitFor(() => expect(mocks.quote.mock.calls.length).toBeGreaterThan(before));
+  });
   it("frete funciona sem endereço; dados manuais permitem continuar", async () => {
     mocks.address.mockRejectedValue(new Error("timeout"));
     render(<Checkout />);
