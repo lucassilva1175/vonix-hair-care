@@ -175,3 +175,8 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Regra 8 (escassez/urgência só real): o contador de 15 minutos do checkout (PR #158) era "só visual", não mudava nada ao zerar: urgência falsa. Retirado (função CheckoutTimer). O contador do Pix (expira de verdade, vem da Appmax) e o relógio do teste de preços (até 20/11 23h59, data real) continuam.
 - **Decisão do Lucas (13/11, tarde):** ele mandou devolver o contador de 15 minutos ("volte meu contador agora"). Voltou como aviso só visual, com texto neutro ("Você tem 15 minutos para finalizar com tranquilidade"), em preto e dourado; não bloqueia a compra nem muda preço. A decisão é dele.
 - Como desfazer: git revert desta PR.
+
+## 13/11/2026 (16h10) — rotina automática, só conferência
+- Meta (30 dias até 12/11; hoje ainda não fechado): igual às rodadas anteriores: conta R$ 1.115,40; FRIO Combo Banana e Mel ativo e Remarketing MORNO 30D ativo; demais desativadas; 20 rascunhos não publicados; nenhuma reprovada visível. Colunas de carrinho/compra não carregam em texto: sem número novo de compras.
+- Site no ar: home 200 em 1,6 s (um pouco mais lenta que as 12h10). Clarity e pixel não reabertos. Mudança do dia: nenhuma ("ainda é cedo": menos de 100 visitas pagas após a última mudança). Orçamento mantido em R$ 30/dia.
+- Como desfazer: nada alterado além deste diário.
