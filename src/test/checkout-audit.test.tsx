@@ -193,7 +193,7 @@ describe("checkout auditado sem chamadas reais", () => {
     expect(events[0]?.[2]).toMatchObject({
       shipping_tier: "Correios PAC",
       currency: "BRL",
-      value: 169.9,
+      value: getProduct("kit-banana-e-mel")?.variants[0].price,
     });
     expect(Object.keys(events[0]?.[2] as object).sort()).toEqual([
       "currency",

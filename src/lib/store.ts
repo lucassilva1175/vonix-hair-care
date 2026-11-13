@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import raw from "@/data/products.json";
+import teste from "@/data/teste-precos.json";
 import { bfPct } from "@/lib/black-friday";
 
 export type Variant = { label: string; price: number };
@@ -18,12 +19,32 @@ export type Product = {
 
 /** Produtos sem estoque por enquanto: saem da loja, do sitemap e do catálogo da Meta. Para voltar, é só remover o slug daqui. */
 export const OUT_OF_STOCK = new Set<string>(["plex-vonix"]);
-export const products = (raw as unknown as Product[]).filter((p) => !OUT_OF_STOCK.has(p.slug));
+
+/**
+ * Teste de preços (13/11 a 20/11/2026): até "fim" valem os preços de teste-precos.json;
+ * depois dessa data (prazo real) voltam sozinhos os preços de products.json. O preço é lido na hora, então vale também no servidor.
+ */
+export const TESTE_FIM = new Date(teste.fim);
+export const testeAtivo = (now: Date = new Date()) => now < TESTE_FIM;
+const testePrecos = teste.precos as Record<string, Record<string, number>>;
+const comPrecoDeTeste = (p: Product): Product => ({
+  ...p,
+  variants: p.variants.map((v) => {
+    const promo = testePrecos[p.slug]?.[v.label];
+    if (promo === undefined) return v;
+    const regular = v.price;
+    return Object.defineProperty({ label: v.label }, "price", { enumerable: true, get: () => (testeAtivo() ? promo : regular) });
+  }) as Product["variants"],
+});
+export const products = (raw as unknown as Product[])
+  .filter((p) => !OUT_OF_STOCK.has(p.slug))
+  .map(comPrecoDeTeste);
 export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
 
 export const FREE_SHIPPING_ABOVE = 150;
 export const MAX_INSTALLMENTS = 6;
-export const PIX_DISCOUNT = 0.05;
+/** Desconto no Pix: zero desde 12/11/2026 (preço único, Pix e cartão no mesmo valor). */
+export const PIX_DISCOUNT = 0;
 export const WHATSAPP =
   "https://wa.me/5531990086296?text=Ol%C3%A1%2C+vim+do+site+e+preciso+de+ajuda.";
 
@@ -36,8 +57,11 @@ export const brl = (v: number) =>
 
 const cents = (v: number) => Math.round(v * 100);
 
-/** Pix price derived from the (new) sale price. */
-export const pixPrice = (v: number) => Math.round((cents(v) * 95) / 100) / 100;
+/** Pix price derived from the sale price (hoje igual ao preço: sem desconto no Pix). */
+export const pixPrice = (v: number) => Math.round((cents(v) * (100 - PIX_DISCOUNT * 100)) / 100) / 100;
+
+/** Preço do complemento do carrinho (5% OFF no próprio item): regra própria, separada do Pix. */
+export const complementPrice = (v: number) => Math.round((cents(v) * 95) / 100) / 100;
 
 /** Splits a total into up to 6 interest-free parcels; the first absorbs leftover cents. */
 export function installments(total: number, n = MAX_INSTALLMENTS) {
@@ -270,6 +294,7 @@ export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compar
 /**
  * Order totals in cents, line-aware.
  * - Free shipping: product subtotal BEFORE any discount strictly above R$ 150.
+ * - Pix: sem desconto (PIX_DISCOUNT = 0); o código fica para o caso de voltar um desconto no futuro.
  * - Line offers (comp5/kit2/kit3) are already baked into each line's net and
  *   are NEVER cumulative: Pix 5% and coupons apply only to lines without an offer.
  */
@@ -282,7 +307,8 @@ export function checkoutTotals(
   const net = cents(lines.reduce((s, l) => s + l.net, 0));
   const eligible = cents(lines.reduce((s, l) => s + (lineHasOffer(l) ? 0 : l.net), 0));
   const couponDisc = Math.round(eligible * couponPct);
-  const pixDisc = method === "pix" ? Math.round(((eligible - couponDisc) * 95) / 100) - (eligible - couponDisc) : 0;
+  const pixDisc =
+    method === "pix" ? Math.round(((eligible - couponDisc) * (100 - PIX_DISCOUNT * 100)) / 100) - (eligible - couponDisc) : 0;
   const total = net - couponDisc + pixDisc;
   return {
     gross: gross / 100,

@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { USAGE, cardPricing, forAudience, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineHasOffer, lineTotals, migrateCart, pixPrice, products, volumePct } from "@/lib/store";
+
+// O teste de preços (13/11 a 20/11/2026) lê a data na hora: fixamos "hoje" dentro do prazo para os números ficarem estáveis.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-14T12:00:00-03:00"));
+});
+afterAll(() => vi.useRealTimers());
 
 describe("ambiente e preços dos cards", () => {
   it("links sem uso ou com uso legado não limpam o ambiente escolhido", () => {
@@ -8,17 +15,17 @@ describe("ambiente e preços dos cards", () => {
     expect(resolveAudience("salao")).toBe("salao");
     expect(resolveAudience(null)).toBe(null);
   });
-  it("Fio de Luz no salão não tem 5% profissional: preço de catálogo, Pix normal e promoção de kits", () => {
+  it("Fio de Luz no salão: preço do teste, Pix no mesmo preço (sem desconto) e promoção de kits", () => {
     const p = getProduct("progressiva-fio-de-luz");
     if (!p) throw new Error("Produto obrigatório ausente");
-    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 191.9, pix: 182.31, parcels: { count: 6, value: 31.98, first: 32 } });
-    expect(cardPricing(p, "casa").price).toBe(191.9);
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 109.9, pix: 109.9, parcels: { count: 6, value: 18.31, first: 18.35 } });
+    expect(cardPricing(p, "casa").price).toBe(109.9);
   });
   it("kits prontos também têm a promoção de levar 2 ou 3, sem 5% extra, no salão e em casa", () => {
     const p = getProduct("kit-banana-e-mel");
     if (!p) throw new Error("Produto obrigatório ausente");
-    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 169.9, pix: 161.41 });
-    expect(cardPricing(p, "casa")).toMatchObject({ professional: true, price: 169.9, pix: 161.41 });
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 99.9, pix: 99.9 });
+    expect(cardPricing(p, "casa")).toMatchObject({ professional: true, price: 99.9, pix: 99.9 });
   });
   it("todo produto do site tem a promoção de levar mais de um, em qualquer área", () => {
     for (const a of ["casa", "salao", null] as const)
@@ -49,9 +56,15 @@ describe("ambiente e preços dos cards", () => {
 
 describe("regras comerciais", () => {
   it("catálogo tem 42 produtos (Plex Vonix sem estoque)", () => expect(products.length).toBe(42));
-  it("preço já inclui +15 uma vez", () => {
+  it("durante o teste de preços valem os preços de teste", () => {
+    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(109.9);
+    expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([59.9, 119.9]);
+  });
+  it("depois de 20/11 às 23h59 os preços voltam sozinhos aos de antes (prazo real)", () => {
+    vi.setSystemTime(new Date("2026-11-21T00:00:01-03:00"));
     expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(191.9);
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([97.9, 213.9]);
+    vi.setSystemTime(new Date("2026-11-14T12:00:00-03:00"));
   });
   it("frete grátis somente acima de 150", () => {
     expect(hasFreeShipping(150)).toBe(false);
@@ -62,7 +75,7 @@ describe("regras comerciais", () => {
     expect(i.count).toBe(6);
     expect(Math.round((i.first + i.value * 5) * 100)).toBe(17490);
   });
-  it("Pix 5% sobre o novo preço", () => expect(pixPrice(174.9)).toBe(166.16));
+  it("Pix sem desconto: mesmo preço do cartão", () => expect(pixPrice(174.9)).toBe(174.9));
 });
 
 describe("ofertas por linha (não cumulativas)", () => {
@@ -110,15 +123,15 @@ describe("desconto por quantidade (segue a quantidade, em qualquer lugar)", () =
     expect(net(2) / 2).toBeGreaterThan(net(3) / 3);
     expect(net(1)).toBe(164.9);
   });
-  it("linha com desconto por quantidade não recebe Pix 5% nem cupom por cima", () => {
+  it("linha com desconto por quantidade não recebe cupom por cima, e o Pix não tem desconto", () => {
     const one = lineTotals(100, 1);
     const two = lineTotals(100, 2);
     const t = checkoutTotals([{ gross: one.gross, net: one.net }, { gross: two.gross, net: two.net }], "pix", 0.1);
     expect(t.hasOffers).toBe(true);
     expect(t.couponDiscount).toBe(10); // 10% só sobre a linha de 1 unidade
-    expect(t.pixDiscount).toBe(4.5); // 5% só sobre ela, depois do cupom
+    expect(t.pixDiscount).toBe(0); // Pix sem desconto
     expect(t.offerDiscount).toBe(24); // 12% de 200
-    expect(t.net).toBe(100 - 10 - 4.5 + 176);
+    expect(t.net).toBe(100 - 10 + 176);
     expect(lineHasOffer({ gross: 100, net: 100 })).toBe(false);
     expect(lineHasOffer({ gross: 200, net: 176 })).toBe(true);
   });
@@ -140,8 +153,8 @@ describe("desconto por quantidade (segue a quantidade, em qualquer lugar)", () =
 
 describe("checkout", () => {
   const line = (gross: number, net = gross, offer?: "comp5" | "kit2" | "kit3") => ({ gross, net, offer });
-  it("Banana e Mel no Pix: 147,16 COM frete grátis (base antes do desconto)", () => {
-    expect(checkoutTotals([line(154.9)], "pix")).toMatchObject({ net: 147.16, pixDiscount: 7.74, freeShipping: true });
+  it("Banana e Mel no Pix: 154,90 (sem desconto no Pix) COM frete grátis", () => {
+    expect(checkoutTotals([line(154.9)], "pix")).toMatchObject({ net: 154.9, pixDiscount: 0, freeShipping: true });
   });
   it("Banana e Mel no cartão: 154,90 com frete grátis", () => {
     expect(checkoutTotals([line(154.9)], "card")).toMatchObject({ net: 154.9, freeShipping: true });
@@ -157,12 +170,11 @@ describe("checkout", () => {
     const lines = [line(309.8), line(114.9), line(84.9, 80.66, "comp5")];
     expect(checkoutTotals(lines, "card")).toMatchObject({ gross: 509.6, net: 505.36, offerDiscount: 4.24 });
   });
-  it("Pix NUNCA incide sobre linha com oferta: só nos itens normais", () => {
+  it("Pix não tem desconto: o total no Pix é igual ao do cartão", () => {
     const lines = [line(309.8), line(114.9), line(84.9, 80.66, "comp5")];
     const t = checkoutTotals(lines, "pix");
-    // 5% apenas sobre 424,70 = 21,24 (403,47) + 80,66 = 484,13
-    expect(t.pixDiscount).toBe(21.23);
-    expect(t.net).toBe(484.13);
+    expect(t.pixDiscount).toBe(0);
+    expect(t.net).toBe(505.36);
   });
   it("kit profissional não recebe Pix nem cupom por cima", () => {
     const lines = [line(349.8, 307.82, "kit2")];

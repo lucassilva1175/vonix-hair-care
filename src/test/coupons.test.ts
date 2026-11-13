@@ -22,10 +22,10 @@ describe("cupons e roleta", () => {
     expect(couponPercent(c, 10)).toBe(0.05);
     expect(couponPercent(c, 1000)).toBe(0.05);
     expect(WHEEL.some((w) => w.code === SIGNUP_COUPON)).toBe(false);
-    // em 1 unidade (sem oferta), com Pix: cupom 5% e depois Pix 5%
+    // em 1 unidade (sem oferta), no Pix: só o cupom de 5% (Pix sem desconto)
     const t = checkoutTotals([{ gross: 100, net: 100 }], "pix", 0.05);
     expect(t.couponDiscount).toBe(5);
-    expect(t.net).toBe(90.25);
+    expect(t.net).toBe(95);
   });
   it("valor mínimo é medido antes dos descontos", () => {
     const c = findCoupon("GIRA6")!;
@@ -39,10 +39,10 @@ describe("cupons e roleta", () => {
     expect(COUPONS.every((c) => !c.freeShipping)).toBe(true);
     expect(couponFreeShipping(findCoupon("GIRA5"), 500)).toBe(false);
   });
-  it("cupom soma com o Pix, mas não incide sobre itens com oferta (Leve 2 / Leve 3)", () => {
+  it("cupom vale no Pix (sem desconto próprio), mas não incide sobre itens com oferta (Leve 2 / Leve 3)", () => {
     const normal = { gross: 200, net: 200 };
     const kit = { gross: 349.8, net: 307.82, offer: "kit2" as const };
-    expect(checkoutTotals([normal], "pix", 0.1)).toMatchObject({ couponDiscount: 20, pixDiscount: 9, net: 171 });
+    expect(checkoutTotals([normal], "pix", 0.1)).toMatchObject({ couponDiscount: 20, pixDiscount: 0, net: 180 });
     expect(checkoutTotals([kit], "pix", 0.1)).toMatchObject({ couponDiscount: 0, pixDiscount: 0, net: 307.82 });
   });
 });
