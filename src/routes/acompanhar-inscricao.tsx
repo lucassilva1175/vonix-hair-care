@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   ArrowRight,
@@ -37,6 +38,15 @@ type OwnApplication = {
   submitted_at: string;
   reviewed_at: string | null;
 };
+
+// Keep the public legacy portal resilient to stale or malformed API responses.
+const ownApplicationSchema = z.object({
+  application_id: z.string().min(1).max(100),
+  status: z.enum(["pendente", "aprovada", "recusada"]),
+  rejection_reason: z.string().max(120).nullable(),
+  submitted_at: z.string().datetime({ offset: true }),
+  reviewed_at: z.string().datetime({ offset: true }).nullable(),
+});
 
 const statusUi = {
   pendente: {
@@ -77,6 +87,9 @@ export function AffiliateApplicationTracker() {
     setError("");
     setApplication(null);
     setSignedEmail("");
+    // Never refresh private status while the page is hidden. An Auth callback
+    // can fire in the background, but resuming must revalidate the user anew.
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
     try {
       // getUser checks the Auth server; do not trust an unvalidated local token.
       const userResult = await vonixAffiliateAuth.auth.getUser();
@@ -99,9 +112,14 @@ export function AffiliateApplicationTracker() {
         setError("Não foi possível consultar sua solicitação agora. Tente novamente.");
         return;
       }
-      const item = response.data?.[0] as OwnApplication | undefined;
-      if (item && ["pendente", "aprovada", "recusada"].includes(item.status)) {
-        setApplication(item);
+      const item: unknown = response.data?.[0];
+      if (item) {
+        const parsed = ownApplicationSchema.safeParse(item);
+        if (!parsed.success) {
+          setError("Não foi possível validar os dados da candidatura. Tente novamente mais tarde.");
+          return;
+        }
+        setApplication(parsed.data satisfies OwnApplication);
       }
     } catch {
       if (refreshVersion.current === requestId)
@@ -123,9 +141,25 @@ export function AffiliateApplicationTracker() {
         if (active) void refresh();
       });
     });
+    const onVisibilityChange = () => {
+      if (!active) return;
+      if (document.visibilityState === "hidden") {
+        // Revoke in-flight confidential reads and remove the email + decision
+        // from the DOM immediately, before a shared device changes hands.
+        ++versionRef.current;
+        setChecking(true);
+        setApplication(null);
+        setSignedEmail("");
+        setError("");
+      } else if (document.visibilityState === "visible") {
+        void refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       active = false;
       ++versionRef.current;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       subscription.unsubscribe();
     };
   }, [refresh]);
