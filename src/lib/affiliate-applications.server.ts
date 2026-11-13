@@ -315,8 +315,8 @@ export async function getAffiliateStatusWithCode(raw: string) {
       z.object({
         status: z.enum(["pendente", "aprovada", "recusada"]),
         rejection_reason: z.string().max(55).nullable(),
-        created_at: z.string().max(70),
-        reviewed_at: z.string().max(70).nullable(),
+        created_at: z.string().datetime({ offset: true }).max(70),
+        reviewed_at: z.string().datetime({ offset: true }).max(70).nullable(),
       }),
     )
     .max(1)

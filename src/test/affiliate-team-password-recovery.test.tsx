@@ -54,7 +54,11 @@ beforeEach(() => {
     select: () => ({
       eq: () => ({
         maybeSingle: async () => ({
-          data: { role: "owner", password_set_at: "2026-11-11T18:00:00Z" },
+          data: {
+            role: "owner",
+            password_set_at: "2026-11-11T18:00:00Z",
+            ever_activated_at: "2026-11-11T18:00:00Z",
+          },
           error: null,
         }),
       }),
@@ -81,6 +85,36 @@ describe("Verified existing-owner password recovery", () => {
     expect(
       screen.queryByRole("heading", { name: "Redefinir sua senha pessoal" }),
     ).not.toBeInTheDocument();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("does not offer password recovery when activation history is missing", async () => {
+    mocks.getUser.mockResolvedValueOnce(signedOut).mockResolvedValue(verified);
+    mocks.from.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: {
+              role: "owner",
+              password_set_at: "2026-11-11T18:00:00Z",
+              ever_activated_at: null,
+            },
+            error: null,
+          }),
+        }),
+      }),
+    });
+    render(<AffiliateTeamAccess />);
+    fireEvent.change(await screen.findByRole("textbox", { name: "E-mail autorizado" }), {
+      target: { value: "owner@example.invalid" },
+    });
+    fireEvent.change(screen.getByLabelText("Código recebido, se disponível"), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Validar" }));
+    expect(
+      await screen.findByRole("heading", { name: "Acesso não autorizado" }),
+    ).toBeInTheDocument();
     expect(mocks.updateUser).not.toHaveBeenCalled();
   });
 

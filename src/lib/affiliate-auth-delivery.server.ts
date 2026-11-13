@@ -101,7 +101,8 @@ export async function affiliateEmailAuthorizedForPortal(
     return (
       owners.length === 1 &&
       owners[0]!.email.toLowerCase() === parsed.data &&
-      (owners[0]!.password_set_at !== null || owners[0]!.ever_activated_at === null)
+      ((owners[0]!.password_set_at !== null && owners[0]!.ever_activated_at !== null) ||
+        (owners[0]!.password_set_at === null && owners[0]!.ever_activated_at === null))
     );
   }
   const rows = z

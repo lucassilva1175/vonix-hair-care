@@ -205,6 +205,7 @@ const activeMemberRow = z
       email: z.string().email().max(180),
       role: z.enum(["owner", "reviewer"]),
       password_set_at: z.string().datetime({ offset: true }).nullable(),
+      ever_activated_at: z.string().datetime({ offset: true }).nullable(),
     }),
   )
   .max(1);
@@ -222,7 +223,7 @@ export async function affiliateAdminSessionAuthorized(): Promise<boolean> {
   try {
     const response = await fetch(
       db.url +
-        "/rest/v1/vonix_affiliate_admin_invites?select=email,role,password_set_at&email=eq." +
+        "/rest/v1/vonix_affiliate_admin_invites?select=email,role,password_set_at,ever_activated_at&email=eq." +
         encodeURIComponent(identity.email) +
         "&limit=1",
       {
@@ -238,7 +239,8 @@ export async function affiliateAdminSessionAuthorized(): Promise<boolean> {
       rows.length === 1 &&
       rows[0]!.email === identity.email &&
       rows[0]!.role === identity.role &&
-      !!rows[0]!.password_set_at
+      !!rows[0]!.password_set_at &&
+      !!rows[0]!.ever_activated_at
     );
   } catch {
     return false;

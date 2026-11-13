@@ -51,7 +51,11 @@ beforeEach(() => {
     select: () => ({
       eq: () => ({
         maybeSingle: async () => ({
-          data: { role: "owner", password_set_at: "2026-11-11T12:00:00Z" },
+          data: {
+            role: "owner",
+            password_set_at: "2026-11-11T12:00:00Z",
+            ever_activated_at: "2026-11-11T12:00:00Z",
+          },
           error: null,
         }),
       }),

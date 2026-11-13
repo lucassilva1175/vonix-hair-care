@@ -23,6 +23,7 @@ const ownerRow = z.object({
   email: address,
   role: z.literal("owner"),
   password_set_at: z.string().datetime({ offset: true }).nullable(),
+  ever_activated_at: z.string().datetime({ offset: true }).nullable(),
 });
 const pendingRow = z.object({
   email: address,
@@ -53,7 +54,7 @@ async function authorizedActivatedOwner(db: Database): Promise<boolean> {
     if (!(await affiliateRateLimitAllowed("admin"))) return false;
     const url =
       db.url +
-      "/rest/v1/vonix_affiliate_admin_invites?select=email,role,password_set_at&email=eq." +
+      "/rest/v1/vonix_affiliate_admin_invites?select=email,role,password_set_at,ever_activated_at&email=eq." +
       encodeURIComponent(identity.email) +
       "&limit=1";
     const response = await fetch(url, {
@@ -68,7 +69,10 @@ async function authorizedActivatedOwner(db: Database): Promise<boolean> {
       .max(1)
       .parse(await response.json());
     return (
-      owners.length === 1 && owners[0]!.email === identity.email && !!owners[0]!.password_set_at
+      owners.length === 1 &&
+      owners[0]!.email === identity.email &&
+      !!owners[0]!.password_set_at &&
+      !!owners[0]!.ever_activated_at
     );
   } catch {
     return false;
