@@ -269,6 +269,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      {!isCheckout && (
       <div className="overflow-hidden bg-marquee py-2.5 text-small font-medium tracking-wide text-marquee-foreground">
         <div className="flex w-max animate-marquee gap-12 whitespace-nowrap">
           {[...MARQUEE, ...MARQUEE, ...MARQUEE].map((m, i) => (
@@ -276,6 +277,7 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </div>
       </div>
+      )}
       <TesteRelogio />
       {/* Acompanham a rolagem: logo (com menu, entrar e carrinho), a busca e a escolha "Para mim / Cabeleireiras". O resto rola com a página. */}
       {!isCheckout && !isProduct && (
