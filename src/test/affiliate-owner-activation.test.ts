@@ -49,7 +49,10 @@ const tokenHash = "a".repeat(64);
 const privateShareLink = live + "#vonix_invite=" + tokenHash;
 const actor = "activated.owner@example.invalid";
 const owner = [{ email: actor, role: "owner", password_set_at: "2026-11-10T19:00:00+00:00" }];
-const pending = [{ email, role: "owner", password_set_at: null }];
+const pending = [{ email, role: "owner", password_set_at: null, ever_activated_at: null }];
+const revoked = [
+  { email, role: "owner", password_set_at: null, ever_activated_at: "2026-11-12T20:00:00+00:00" },
+];
 const tokenLink =
   root +
   "/auth/v1/verify?token=" +
@@ -117,7 +120,28 @@ describe("owner-mediated one-time activation without transactional email", () =>
     });
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(fetcher.mock.calls[1]![0]).toContain("password_set_at=is.null");
+    expect(fetcher.mock.calls[1]![0]).toContain("ever_activated_at=is.null");
     expect(fetcher.mock.calls[1]![0]).toContain("role=eq.owner");
+  });
+
+  it("never lists a previously activated and revoked owner as a pending new invite", async () => {
+    const fetcher = mockFetch(Response.json(owner), Response.json(revoked));
+    // An invalid upstream roster cannot be interpreted as pending. Fail closed.
+    expect(await listPendingAffiliateOwnerActivations()).toEqual({
+      ok: false,
+      owners: [],
+      reason: "temporarily-unavailable",
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1]![0]).toContain("ever_activated_at=is.null");
+  });
+
+  it("never resends an activation mail or token to a revoked former owner", async () => {
+    const fetcher = mockFetch(Response.json(owner), Response.json(revoked));
+    expect((await sendPendingAffiliateOwnerActivationEmail(email)).ok).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(gates.sendEmail).not.toHaveBeenCalled();
+    expect(gates.managedEmail).not.toHaveBeenCalled();
   });
 
   it("allows only an activated owner to request a branded email for a pending owner", async () => {

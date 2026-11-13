@@ -71,7 +71,9 @@ export async function affiliateEmailAuthorizedForPortal(
     db.url +
       "/rest/v1/" +
       table +
-      "?select=email&email=eq." +
+      (purpose === "owner"
+        ? "?select=email,password_set_at,ever_activated_at&email=eq."
+        : "?select=email&email=eq.") +
       encodeURIComponent(parsed.data) +
       "&limit=1",
     {
@@ -82,10 +84,30 @@ export async function affiliateEmailAuthorizedForPortal(
     },
   );
   if (!response.ok) throw new Error("Private affiliation lookup failed.");
+  const payload: unknown = await response.json();
+  if (purpose === "owner") {
+    // C25's immutable marker distinguishes a new invite from an owner revoked
+    // after initial activation. Do not send further OTPs to a removed member.
+    const owners = z
+      .array(
+        z.object({
+          email: z.string().email(),
+          password_set_at: z.string().datetime({ offset: true }).nullable(),
+          ever_activated_at: z.string().datetime({ offset: true }).nullable(),
+        }),
+      )
+      .max(1)
+      .parse(payload);
+    return (
+      owners.length === 1 &&
+      owners[0]!.email.toLowerCase() === parsed.data &&
+      (owners[0]!.password_set_at !== null || owners[0]!.ever_activated_at === null)
+    );
+  }
   const rows = z
     .array(z.object({ email: z.string().email() }))
     .max(1)
-    .parse(await response.json());
+    .parse(payload);
   return rows.length === 1 && rows[0]!.email.toLowerCase() === parsed.data;
 }
 
