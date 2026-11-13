@@ -163,3 +163,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Compras no GA: 1 compra na semana com receita R$ 15,80 (valor errado: pedido real é > R$ 90): conferir o valor enviado no evento purchase.
 - Pendente: bloquear o robô de Hong Kong/China (Cloudflare/regra de país ou filtro de tráfego interno no GA), filtrar no GA; acelerar a página do produto no celular (resposta do Botox 2,0 s no teste de hoje, 94 KB); conferir valor do evento purchase.
 - Como desfazer: nada alterado além deste diário.
+
+## 13/11/2026 (tarde) — bloqueio do robô de Hong Kong e China (ordem do Lucas: corrigir o Analytics)
+- O domínio vonixhair.com passa pelo Cloudflare (nameservers alina/glen), mas não está na conta Cloudflare do Lucas (conta vazia): provavelmente gerenciado pelo Lovable, sem acesso para criar regra lá. Solução no próprio código: src/server.ts devolve 403 quando o cabeçalho `cf-ipcountry` é HK ou CN (src/lib/bot-block.ts). Brasil e demais países não são afetados; sem o cabeçalho não bloqueia.
+- Motivo: 5,4 mil visitas falsas em 7 dias (GA), 38 dos 41 usuários ativos eram de Hong Kong.
+- Analytics: retenção já em 14 meses, métrica otimizada ligada, fluxo G-J8TYLB425K ok. Filtro "Internal Traffic" ainda em Teste (ativar é irreversível; precisa conferir os IPs antes).
+- Como desfazer: esvaziar BLOCKED_COUNTRIES em src/lib/bot-block.ts ou git revert.
