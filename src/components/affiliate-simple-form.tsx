@@ -96,6 +96,7 @@ function Field({
   autoComplete,
   onBlur,
   type = "text",
+  disabled = false,
 }: {
   id: Key;
   label: string;
@@ -109,6 +110,7 @@ function Field({
   autoComplete?: string;
   onBlur?: () => void;
   type?: string;
+  disabled?: boolean;
 }) {
   return (
     <div>
@@ -125,6 +127,7 @@ function Field({
         name={id}
         type={type}
         value={value}
+        disabled={disabled}
         required={required}
         maxLength={maxLength}
         placeholder={placeholder}
@@ -310,6 +313,8 @@ export function AffiliateSimpleForm({
   }, [dirty, sent]);
 
   function update(key: Key, raw: string) {
+    // Do not let the visible values drift away from an in-flight, signed receipt.
+    if (submitting.current) return;
     const value =
       key === "postalCode"
         ? onlyDigits(raw)
@@ -454,6 +459,9 @@ export function AffiliateSimpleForm({
       document.getElementById("affiliate-unconfirmed-code")?.focus();
       return;
     }
+    // Ignore any CEP response that arrives after submission starts.
+    zipRequest.current++;
+    setZipLoading(false);
     submitting.current = true;
     setSending(true);
     setMessage("");
@@ -602,6 +610,7 @@ export function AffiliateSimpleForm({
       type={key === "phone" ? "tel" : "text"}
       label={label}
       value={values[key]}
+      disabled={sending}
       onChange={(value) => update(key, value)}
       error={errors[key]}
       {...options}
@@ -610,6 +619,7 @@ export function AffiliateSimpleForm({
 
   return (
     <form
+      aria-busy={sending}
       onSubmit={(e) => void submit(e)}
       className="overflow-hidden rounded-[2rem] border border-[#eadbd6] bg-white shadow-[0_15px_70px_rgba(80,32,39,.08)]"
     >
@@ -669,7 +679,7 @@ export function AffiliateSimpleForm({
             <button
               type="button"
               onClick={() => void lookupPostalCode()}
-              disabled={zipLoading || onlyDigits(values.postalCode).length !== 8}
+              disabled={sending || zipLoading || onlyDigits(values.postalCode).length !== 8}
               className="min-h-12 rounded-xl border border-[#c9aeb2] px-5 text-sm font-semibold text-[#633a43] disabled:opacity-50"
             >
               {zipLoading ? "Buscando CEP..." : "Buscar CEP"}
@@ -707,6 +717,7 @@ export function AffiliateSimpleForm({
               <select
                 id="simple-state"
                 name="state"
+                disabled={sending}
                 required
                 className={inputClass}
                 value={values.state}
@@ -784,6 +795,7 @@ export function AffiliateSimpleForm({
           <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-[#654b53]">
             <input
               type="checkbox"
+              disabled={sending}
               required
               checked={accepted}
               onChange={(e) => {
@@ -818,6 +830,7 @@ export function AffiliateSimpleForm({
             <input
               id="simple-website"
               type="text"
+              disabled={sending}
               tabIndex={-1}
               autoComplete="off"
               value={trap}

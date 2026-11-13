@@ -135,6 +135,8 @@ jobs:
           docker cp supabase/vonix-affiliate-reapply-reasons-qa-20261111.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-reapply-reasons-qa-20261111.sql
           docker cp supabase/vonix-affiliate-status-quota-20261111.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-status-quota-20261111.sql
           docker cp supabase/vonix-affiliate-status-quota-qa-20261111.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-status-quota-qa-20261111.sql
+          docker cp supabase/vonix-affiliate-admin-social-search-20261113.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-admin-social-search-20261113.sql
+          docker cp supabase/vonix-affiliate-admin-social-search-qa-20261113.sql vonix-affiliates-sql-qa:/tmp/vonix-affiliate-admin-social-search-qa-20261113.sql
           docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
             -f /tmp/vonix-affiliate-applications.sql
           docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
@@ -170,4 +172,9 @@ jobs:
 
           docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
             -f /tmp/vonix-affiliate-admin-activation-guard-qa-20261112.sql
+          # C26: social handle search for email-less applicants, no network or real accounts.
+          docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
+            -f /tmp/vonix-affiliate-admin-social-search-20261113.sql
+          docker exec vonix-affiliates-sql-qa psql -X -v ON_ERROR_STOP=1 -U postgres -d vonix_affiliates_qa \
+            -f /tmp/vonix-affiliate-admin-social-search-qa-20261113.sql
           node scripts/qa-affiliate-concurrency.mjs

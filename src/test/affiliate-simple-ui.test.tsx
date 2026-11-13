@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const server = vi.hoisted(() => ({ submit: vi.fn() }));
 const analytics = vi.hoisted(() => ({ track: vi.fn() }));
@@ -81,6 +81,29 @@ describe("Vonix short single-page application form", () => {
     ]) {
       expect(screen.queryByLabelText(new RegExp(removed, "i"))).not.toBeInTheDocument();
     }
+  });
+
+  it("locks applicant fields while the private receipt is being committed and unlocks on failure", async () => {
+    let finish!: (result: { ok: false; reason: string }) => void;
+    server.submit.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    await waitFor(() => expect(server.submit).toHaveBeenCalledOnce());
+    expect(screen.getByRole("button", { name: "Enviando candidatura..." })).toBeDisabled();
+    expect(screen.getByLabelText(/Nome completo/)).toBeDisabled();
+    expect(screen.getByLabelText(/Telefone com DDD/)).toBeDisabled();
+    expect(screen.getByLabelText(/^Instagram/)).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: /Autorizo o uso destes dados/ })).toBeDisabled();
+    await act(async () => finish({ ok: false, reason: "Falha simulada de envio" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Falha simulada de envio");
+    expect(screen.getByLabelText(/Nome completo/)).toBeEnabled();
+    expect(screen.getByLabelText(/^Instagram/)).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: /Autorizo o uso destes dados/ })).toBeEnabled();
   });
 
   it("submits a minimal payload with required followers and complete address", async () => {
