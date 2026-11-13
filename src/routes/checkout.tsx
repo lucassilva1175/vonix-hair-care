@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CreditCard, Lock, QrCode, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, ChevronDown, CreditCard, Lock, ShieldCheck, Truck } from "lucide-react";
 import { SecuritySeal, Shell } from "@/components/site";
 import { ShippingBar } from "@/components/cart-summary";
-import { ProvasEmVideo } from "@/components/provas-em-video";
 import { useCepAddress } from "@/hooks/use-cep-address";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
@@ -96,6 +95,41 @@ declare global {
 
 /** Appmax returns Brasília time as "Y-m-d H:i:s". */
 const parseExpiry = (s: string) => new Date(`${s.replace(" ", "T")}-03:00`).getTime();
+
+/** Contador de 15 min a partir da entrada no checkout (guardado na sessão, não reinicia ao recarregar). Só visual: não muda preço nem bloqueia a compra; some ao zerar. */
+function CheckoutTimer() {
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    let start = Date.now();
+    try {
+      const saved = Number(sessionStorage.getItem("vonix-checkout-inicio"));
+      if (saved > 0) start = saved;
+      else sessionStorage.setItem("vonix-checkout-inicio", String(start));
+    } catch {
+      /* sem sessionStorage: conta a partir de agora */
+    }
+    const tick = () => setLeft(start + 15 * 60_000 - Date.now());
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (left === null || left <= 0) return null;
+  const mm = Math.floor(left / 60_000);
+  const ss = Math.floor((left % 60_000) / 1000);
+  return (
+    <p
+      role="timer"
+      aria-live="off"
+      data-testid="checkout-timer"
+      className="mt-3 flex cursor-default select-none items-center justify-between gap-3 rounded-xl border border-[#c9a45c]/50 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-small font-medium text-white"
+    >
+      <span className="leading-snug">Você tem 15 minutos para finalizar com tranquilidade</span>
+      <span className="money shrink-0 rounded-lg border border-[#c9a45c]/40 bg-black/30 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-[#e3c07a]">
+        {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
+      </span>
+    </p>
+  );
+}
 
 /** Copia o texto mesmo quando o navegador do Instagram/Facebook bloqueia a área de transferência (usa o campo selecionado como plano B). */
 async function copyText(text: string, el?: HTMLTextAreaElement | null) {
@@ -225,6 +259,38 @@ function PixPanel({
 
 const STEPS = ["Contato", "Entrega", "Pagamento"];
 
+/** Losangos do Pix (desenho próprio, só o símbolo). */
+function PixMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" aria-hidden="true">
+      <g fill="#2fb39a">
+        <rect x="9.2" y="1.6" width="5.6" height="5.6" rx="1.2" transform="rotate(45 12 4.4)" />
+        <rect x="9.2" y="16.8" width="5.6" height="5.6" rx="1.2" transform="rotate(45 12 19.6)" />
+        <rect x="1.6" y="9.2" width="5.6" height="5.6" rx="1.2" transform="rotate(45 4.4 12)" />
+        <rect x="16.8" y="9.2" width="5.6" height="5.6" rx="1.2" transform="rotate(45 19.6 12)" />
+      </g>
+    </svg>
+  );
+}
+
+/** Bandeiras aceitas no cartão: pequenas etiquetas, só com texto/forma simples. */
+function CardBrands() {
+  const chip = "grid h-7 place-items-center rounded border border-border bg-white px-1.5 text-[0.65rem] leading-none";
+  return (
+    <span className="flex shrink-0 items-center gap-1" aria-hidden="true">
+      <span className={`${chip} font-bold italic text-[#1a3a8f]`}>VISA</span>
+      <span className={`${chip} w-9`}>
+        <svg viewBox="0 0 24 16" className="h-4 w-6">
+          <circle cx="9" cy="8" r="6" fill="#e32c2b" />
+          <circle cx="15" cy="8" r="6" fill="#f79e1b" fillOpacity=".9" />
+        </svg>
+      </span>
+      <span className={`${chip} font-bold text-[#0b3b3a]`}>elo</span>
+      <span className={`${chip} hidden font-bold text-[#2a6ebb] sm:grid`}>AMEX</span>
+    </span>
+  );
+}
+
 function Drawer({ children, progress, steps }: { children: React.ReactNode; progress: number; steps: boolean[] }) {
   return (
     <div className="fixed inset-0 z-[90] flex justify-end bg-black/50 backdrop-blur-[2px]" style={{ animation: "vx-fade .25s ease-out" }} onClick={() => history.back()}>
@@ -279,6 +345,24 @@ function Checkout() {
     uf: "",
   });
   const numeroRef = useRef<HTMLInputElement>(null);
+  // Checkout curto: com o endereço já preenchido pelo CEP, rua/bairro/cidade/UF ficam recolhidos numa linha só.
+  const [editAddr, setEditAddr] = useState(false);
+  const [showCompl, setShowCompl] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [payEl, setPayEl] = useState<HTMLButtonElement | null>(null);
+  const [payVisible, setPayVisible] = useState(false);
+  useEffect(() => {
+    if (!payEl || typeof IntersectionObserver === "undefined") {
+      setPayVisible(false);
+      return;
+    }
+    const io = new IntersectionObserver(([e]) => setPayVisible(!!e?.isIntersecting), {
+      rootMargin: "0px 0px -90px 0px",
+    });
+    io.observe(payEl);
+    return () => io.disconnect();
+  }, [payEl]);
+  const compactAddr = !editAddr && !!(f.rua && f.bairro && f.cidade && f.uf);
   const [pay, setPay] = useState<"pix" | "card">("pix");
   const [showCoupon, setShowCoupon] = useState(false);
   const [coupon, setCoupon] = useState("");
@@ -640,11 +724,45 @@ function Checkout() {
     );
 
   const inst = installments(total);
+  const payDisabled = busy || quoting || !chosen || !cfg || !cfg.pixEnabled;
+  // Botão de pagar: o de verdade fica dentro da caixa do método escolhido; quando ele sai da tela, uma barra fixa o repete.
+  const renderPay = (floating: boolean) => (
+    <>
+      {!chosen && !quoting && (
+        <p className="text-center text-small text-muted-foreground">Digite o CEP para liberar o pagamento</p>
+      )}
+      <button
+        ref={floating ? undefined : setPayEl}
+        type={floating ? "button" : "submit"}
+        form={floating ? undefined : "checkout-form"}
+        aria-hidden={floating ? true : undefined}
+        tabIndex={floating ? -1 : undefined}
+        onClick={floating ? () => (document.getElementById("checkout-form") as HTMLFormElement | null)?.requestSubmit() : undefined}
+        disabled={payDisabled}
+        data-testid={floating ? "checkout-pay-float" : "checkout-pay-button"}
+        className="group flex w-full items-center gap-3 rounded-xl border border-[#c9a45c]/60 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-left text-white shadow-[0_14px_28px_-14px_rgba(0,0,0,0.75)] transition hover:from-[#2d2d2d] hover:to-[#111] active:scale-[0.99] disabled:cursor-not-allowed disabled:border-border disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-500 disabled:shadow-none"
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#c9a45c]/70 bg-black/30 text-[#e3c07a] group-disabled:border-neutral-300 group-disabled:bg-transparent group-disabled:text-neutral-400">
+          <Lock className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block text-name font-semibold tracking-wide">
+            {busy ? "Processando…" : pay === "pix" ? `Gerar Pix · ${brl(total)}` : `Pagar ${brl(total)} no cartão`}
+          </span>
+          <span className="mt-0.5 block text-[0.72rem] font-normal tracking-wide text-white/70 group-disabled:text-neutral-500">
+            {pay === "pix" ? "Aprovação na hora · pagamento seguro" : "Em até 6x sem juros · pagamento seguro"}
+          </span>
+        </span>
+        <ArrowRight className="h-5 w-5 shrink-0 text-[#e3c07a] transition group-hover:translate-x-0.5 group-disabled:text-neutral-400" strokeWidth={2} aria-hidden="true" />
+      </button>
+    </>
+  );
+  const payButton = <div className="space-y-2">{renderPay(false)}</div>;
   const stepsDone = [!!(f.nome && f.email && f.whatsapp && f.cpf), !!chosen, false];
   const progress = (stepsDone.filter(Boolean).length + 1) / 3;
 
   const body = (
-      <div className={lateral ? "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-3" : "container-site grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 py-4 lg:gap-8 lg:py-8 lg:grid-cols-[minmax(0,1fr)_380px]"}>
+      <div className={lateral ? "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-3" : "container-site grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 py-4 pb-40 lg:gap-8 lg:py-8 lg:pb-40 lg:grid-cols-[minmax(0,1fr)_380px]"}>
         <div className="min-w-0 space-y-3">
           <form id="checkout-form" className="min-w-0 space-y-3" onSubmit={onSubmit}>
             <div>
@@ -654,7 +772,8 @@ function Checkout() {
                 {missingForFreeShipping(gross) > 0
                   ? `Faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
                   : "Você ganhou frete grátis"}
-              </p>
+              </p>
+              <CheckoutTimer />
               {cfg?.sandbox && (
                 <p
                   role="note"
@@ -665,23 +784,21 @@ function Checkout() {
               )}
             </div>
 
-            <ul aria-label="Vantagens da compra" className="grid cursor-default select-none grid-cols-2 gap-x-3 gap-y-3 rounded-2xl border border-[#eadfc6] bg-[#fbf7ee] px-3.5 py-3.5">
+            <ul
+              aria-label="Garantias da compra"
+              data-testid="checkout-trust"
+              className="flex cursor-default select-none flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2.5 text-[0.78rem] font-medium text-emerald-900"
+            >
               {(
                 [
-                  [QrCode, "Pix ou cartão", "mesmo preço"],
-                  [CreditCard, "Até 6x", "sem juros no cartão"],
-                  [Truck, "Frete grátis", `acima de ${brl(FREE_SHIPPING_ABOVE)}`],
-                  [ShieldCheck, "Compra segura", "seus dados protegidos"],
+                  [Lock, "Ambiente seguro"],
+                  [ShieldCheck, "Pagamento processado pela Appmax"],
+                  [Truck, `Frete grátis acima de ${brl(FREE_SHIPPING_ABOVE)}`],
                 ] as const
-              ).map(([Icon, title, sub]) => (
-                <li key={title} className="flex items-center gap-2.5">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f1e6c8] text-[#8a6a1c]">
-                    <Icon className="h-4 w-4" strokeWidth={1.7} aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 leading-tight">
-                    <b className="block text-small font-semibold text-foreground">{title}</b>
-                    <span className="block text-[0.75rem] text-muted-foreground">{sub}</span>
-                  </span>
+              ).map(([Icon, text]) => (
+                <li key={text} className={`items-center gap-1.5 ${Icon === Truck ? "hidden sm:flex" : "flex"}`}>
+                  <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+                  {text}
                 </li>
               ))}
             </ul>
@@ -713,7 +830,7 @@ function Checkout() {
                 required
                 inputMode="tel"
                 aria-label="WhatsApp com DDD"
-                placeholder="WhatsApp com DDD"
+                placeholder="WhatsApp (DDD)"
                 value={f.whatsapp}
                 onChange={set("whatsapp")}
                 autoComplete="tel"
@@ -771,6 +888,37 @@ function Checkout() {
                   {cepMsg}
                 </p>
               )}
+              {compactAddr && (
+                <div data-testid="checkout-address-summary" className="space-y-2">
+                  <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3.5 text-body">
+                    <span className="min-w-0">
+                      <b className="block">{f.rua}{f.numero ? `, ${f.numero}` : ""}</b>
+                      <span className="block text-muted-foreground">
+                        {f.bairro} · {f.cidade}/{f.uf}
+                      </span>
+                      {f.complemento && <span className="block text-muted-foreground">{f.complemento}</span>}
+                    </span>
+                    <button type="button" onClick={() => setEditAddr(true)} className="shrink-0 text-small underline">
+                      Corrigir
+                    </button>
+                  </div>
+                  {!showCompl && !f.complemento ? (
+                    <button type="button" onClick={() => setShowCompl(true)} className="text-small underline">
+                      + Adicionar complemento (apto, bloco)
+                    </button>
+                  ) : (
+                    <input
+                      aria-label="Complemento"
+                      placeholder="Complemento (opcional)"
+                      value={f.complemento}
+                      onChange={set("complemento")}
+                      autoComplete="address-line2"
+                      className={inp}
+                    />
+                  )}
+                </div>
+              )}
+              {!compactAddr && (<>
               <input
                 required
                 aria-label="Rua"
@@ -820,6 +968,7 @@ function Checkout() {
                   className={`${inp} ${f.uf ? tint : ""}`}
                 />
 </div>
+              </>)}
 
               <div className="space-y-2 pt-2" aria-live="polite">
                 {quoting && <p className="text-body text-muted-foreground">Calculando frete…</p>}
@@ -852,175 +1001,153 @@ function Checkout() {
               </div>
             </fieldset>
 
-            <fieldset className={panel}>
+            <fieldset className="space-y-2">
               <StepTitle n={3}>Pagamento</StepTitle>
-              <label
-                className={`flex items-center justify-between rounded-lg border-2 p-3.5 text-body ${pay === "pix" ? "border-action bg-card font-medium" : "border-border"}`}
+              <div
+                data-testid="pay-option-pix"
+                className={`space-y-3 rounded-xl border bg-white p-3.5 ${pay === "pix" ? "border-border border-l-4 border-l-[#111]" : "border-border"}`}
               >
-                <span className="flex gap-2">
-                  <input
-                    type="radio"
-                    name="pay"
-                    checked={pay === "pix"}
-                    onChange={() => setPay("pix")}
-                  />{" "}
-                  Pix
-                </span>
-                <b>{brl(tPix.net + shipping)}</b>
-              </label>
-              <label
-                className={`flex items-center justify-between rounded-lg border-2 p-3.5 text-body ${pay === "card" ? "border-action bg-card font-medium" : "border-border"}`}
-              >
-                <span className="flex gap-2">
-                  <input
-                    type="radio"
-                    name="pay"
-                    checked={pay === "card"}
-                    onChange={() => setPay("card")}
-                  />{" "}
-                  Cartão de crédito · até 6x sem juros
-                </span>
-                <b>{brl(tCard.net + shipping)}</b>
-              </label>
-              {!showCoupon ? (
-                <button
-                  type="button"
-                  onClick={() => setShowCoupon(true)}
-                  className="text-body underline"
-                >
-                  Tem um cupom?
-                </button>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
+                <label className="flex cursor-pointer items-center justify-between gap-3 text-body font-semibold">
+                  <span className="flex items-center gap-2.5">
                     <input
-                      aria-label="Código do cupom"
-                      placeholder="Código do cupom"
-                      value={coupon}
-                      onChange={(e) => setCoupon(e.target.value)}
-                      className={inp}
+                      type="radio"
+                      name="pay"
+                      className="h-5 w-5 accent-[#111]"
+                      checked={pay === "pix"}
+                      onChange={() => setPay("pix")}
                     />
-                    <button
-                      type="button"
-                      onClick={applyCoupon}
-                      className="shrink-0 rounded-lg border border-foreground px-4 text-body"
-                    >
-                      Aplicar
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Remover cupom"
-                      onClick={() => {
-                        setShowCoupon(false);
-                        setCoupon("");
-                        setCouponMsg(null);
-                        setApplied(null);
-                      }}
-                      className="shrink-0 text-body underline"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                  {couponMsg && (
-                    <p role="alert" className="text-body text-muted-foreground">
-                      {couponMsg}
+                    Pix
+                  </span>
+                  <PixMark />
+                </label>
+                {pay === "pix" && (
+                  <>
+                    {payButton}
+                    <p className="text-small text-muted-foreground">
+                      Aprovação na hora. Na próxima tela você recebe o QR Code e o código para copiar e colar.
                     </p>
-                  )}
-                </div>
-              )}
+                  </>
+                )}
+              </div>
+              <div
+                data-testid="pay-option-card"
+                className={`rounded-xl border bg-white p-3.5 ${pay === "card" ? "rounded-b-none border-b-0 border-border border-l-4 border-l-[#111]" : "border-border"}`}
+              >
+                <label className="flex cursor-pointer items-center justify-between gap-3 text-body font-semibold">
+                  <span className="flex items-center gap-2.5">
+                    <input
+                      type="radio"
+                      name="pay"
+                      className="h-5 w-5 accent-[#111]"
+                      checked={pay === "card"}
+                      onChange={() => setPay("card")}
+                    />
+                    Cartão de crédito
+                  </span>
+                  <CardBrands />
+                </label>
+              </div>
             </fieldset>
 
-            <section className={panel} aria-label="Quem já usa Vonix">
-              <p className="mb-2 text-small font-semibold">Quem já usa Vonix. Toque para assistir.</p>
-              <ProvasEmVideo all seed="checkout" max={6} />
-            </section>
           </form>
 
           {/* Card fields live in their own form so Appmax JS can tokenize them; the main form triggers it. */}
-          <div>
+          <div className={pay === "card" ? "-mt-3" : ""}>
+            {/* Continuação visual da caixa "Cartão de crédito": mesma barra preta à esquerda, sem espaço entre as duas. */}
             <form
               id="card-form"
               data-appmax-checkout
               hidden={pay !== "card"}
-              className={`min-w-0 ${panel}`}
+              data-testid="card-form"
+              className="min-w-0 space-y-3 rounded-b-xl border border-t-0 border-l-4 border-border border-l-[#111] bg-white p-3.5 pt-1"
               onSubmit={(e) => e.preventDefault()}
             >
-              <div className="text-name font-semibold">Dados do cartão</div>
-              <input
-                form="card-form"
-                required
-                name="card-number"
-                inputMode="numeric"
-                autoComplete="cc-number"
-                placeholder="Número do cartão"
-                value={card.number}
-                onChange={(e) =>
-                  setCard((o) => ({
-                    ...o,
-                    number: e.target.value.replace(/[^\d ]/g, "").slice(0, 23),
-                  }))
-                }
-                className={inp}
-              />
               <input
                 form="card-form"
                 required
                 name="card-holder-name"
+                aria-label="Nome no cartão"
                 autoComplete="cc-name"
-                placeholder="Nome impresso no cartão"
+                placeholder="Nome no cartão"
                 value={card.holder}
                 onChange={(e) => setCard((o) => ({ ...o, holder: e.target.value }))}
-                className={inp}
+                className={`${inp} h-12`}
               />
+              <div className="relative">
+                <input
+                  form="card-form"
+                  required
+                  name="card-number"
+                  aria-label="Número do cartão"
+                  inputMode="numeric"
+                  autoComplete="cc-number"
+                  placeholder="1234 1234 1234 1234"
+                  value={card.number}
+                  onChange={(e) =>
+                    setCard((o) => ({
+                      ...o,
+                      number: e.target.value.replace(/[^\d ]/g, "").slice(0, 23),
+                    }))
+                  }
+                  className={`${inp} h-12 pr-12`}
+                />
+                <CreditCard className="pointer-events-none absolute right-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" strokeWidth={1.5} aria-hidden="true" />
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <input
                   form="card-form"
                   required
                   name="exp-month"
+                  aria-label="Mês de validade"
                   inputMode="numeric"
                   autoComplete="cc-exp-month"
-                  placeholder="Mês (MM)"
+                  placeholder="MM"
                   maxLength={2}
                   value={card.month}
                   onChange={(e) =>
                     setCard((o) => ({ ...o, month: e.target.value.replace(/\D/g, "") }))
                   }
-                  className={inp}
+                  className={`${inp} h-12`}
                 />
                 <input
                   form="card-form"
                   required
                   name="exp-year"
+                  aria-label="Ano de validade"
                   inputMode="numeric"
                   autoComplete="cc-exp-year"
-                  placeholder="Ano (AAAA)"
+                  placeholder="AAAA"
                   maxLength={4}
                   value={card.year}
                   onChange={(e) =>
                     setCard((o) => ({ ...o, year: e.target.value.replace(/\D/g, "") }))
                   }
-                  className={inp}
+                  className={`${inp} h-12`}
                 />
-                <input
-                  form="card-form"
-                  required
-                  name="cvv"
-                  inputMode="numeric"
-                  autoComplete="cc-csc"
-                  placeholder="CVV"
-                  maxLength={4}
-                  value={card.cvv}
-                  onChange={(e) =>
-                    setCard((o) => ({ ...o, cvv: e.target.value.replace(/\D/g, "") }))
-                  }
-                  className={inp}
-                />
+                <div className="relative">
+                  <input
+                    form="card-form"
+                    required
+                    name="cvv"
+                    aria-label="CVV"
+                    inputMode="numeric"
+                    autoComplete="cc-csc"
+                    placeholder="CVV"
+                    maxLength={4}
+                    value={card.cvv}
+                    onChange={(e) =>
+                      setCard((o) => ({ ...o, cvv: e.target.value.replace(/\D/g, "") }))
+                    }
+                    className={`${inp} h-12 pr-9`}
+                  />
+                  <CreditCard className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" strokeWidth={1.5} aria-hidden="true" />
+                </div>
               </div>
               <select
                 aria-label="Parcelas"
                 value={parcels}
                 onChange={(e) => setParcels(Number(e.target.value))}
-                className={inp}
+                className={`${inp} h-12`}
               >
                 {[1, 2, 3, 4, 5, 6].map((n) => (
                   <option key={n} value={n}>
@@ -1028,8 +1155,58 @@ function Checkout() {
                   </option>
                 ))}
               </select>
+              {pay === "card" && payButton}
             </form>
             <form data-appmax-customer hidden />
+          </div>
+
+          <div className="space-y-2">
+            {!showCoupon ? (
+              <button type="button" onClick={() => setShowCoupon(true)} className="text-body underline">
+                Tem um cupom?
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    aria-label="Código do cupom"
+                    placeholder="Código do cupom"
+                    value={coupon}
+                    onChange={(e) => setCoupon(e.target.value)}
+                    className={inp}
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    className="shrink-0 rounded-lg border border-foreground px-4 text-body"
+                  >
+                    Aplicar
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Remover cupom"
+                    onClick={() => {
+                      setShowCoupon(false);
+                      setCoupon("");
+                      setCouponMsg(null);
+                      setApplied(null);
+                    }}
+                    className="shrink-0 text-body underline"
+                  >
+                    Remover
+                  </button>
+                </div>
+                {couponMsg && (
+                  <p role="alert" className="text-body text-muted-foreground">
+                    {couponMsg}
+                  </p>
+                )}
+              </div>
+            )}
+            <p className="flex items-center gap-2 pt-1 text-small text-muted-foreground">
+              <Lock className="h-4 w-4 shrink-0 text-[#8a6a1c]" aria-hidden="true" />
+              Seu pagamento é protegido e criptografado, processado pela Appmax.
+            </p>
           </div>
         </div>
 
@@ -1038,6 +1215,21 @@ function Checkout() {
           aria-label="Resumo do pedido"
           data-lateral={lateral}
         >
+          <button
+            type="button"
+            aria-expanded={showSummary}
+            onClick={() => setShowSummary((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 text-left text-body font-semibold lg:hidden"
+          >
+            <span>
+              Resumo do pedido · {c.lines.reduce((n, l) => n + l.units, 0)} {c.lines.reduce((n, l) => n + l.units, 0) === 1 ? "item" : "itens"}
+            </span>
+            <span className="flex items-center gap-1">
+              {brl(total)}
+              <ChevronDown className={`h-4 w-4 transition ${showSummary ? "rotate-180" : ""}`} aria-hidden="true" />
+            </span>
+          </button>
+          <div className={`space-y-4 ${showSummary ? "" : "hidden"} lg:block`} data-testid="order-summary-body">
           <ul className="space-y-2 text-body">
             {c.lines.map((l) => (
               <li
@@ -1100,6 +1292,7 @@ function Checkout() {
               </div>
             )}
           </div>
+          </div>
         </aside>
         <div className="min-w-0 space-y-4 lg:col-start-1">
           {error && (
@@ -1120,29 +1313,22 @@ function Checkout() {
               .
             </p>
           )}
-          <div className="sticky bottom-0 z-20 -mx-4 space-y-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
-            {!chosen && !quoting && (
-              <p className="text-center text-small text-muted-foreground">
-                Digite o CEP para liberar o pagamento
-              </p>
-            )}
-            <button
-              type="submit"
-              form="checkout-form"
-              disabled={busy || quoting || !chosen || !cfg || !cfg.pixEnabled}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] py-4 text-name disabled:cursor-not-allowed disabled:bg-emerald-200 disabled:text-emerald-900/60 disabled:shadow-none"
+          {!payVisible && (
+            <div
+              data-testid="checkout-pay-bar"
+              className={lateral
+                ? "sticky bottom-0 z-20 -mx-4 space-y-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur"
+                : "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background px-4 py-3 shadow-[0_-8px_20px_-12px_rgba(0,0,0,0.3)]"}
             >
-              <Lock className="h-5 w-5" strokeWidth={2.2} aria-hidden="true" />
-              {busy
-                ? "Processando…"
-                : pay === "pix"
-                  ? `Gerar Pix · ${brl(total)}`
-                  : `Pagar ${brl(total)} no cartão`}
-            </button>
-          </div>
+              <div className="mx-auto w-full max-w-xl space-y-2">{renderPay(true)}</div>
+            </div>
+          )}
           <div className="flex justify-center">
             <SecuritySeal />
           </div>
+          <p className="text-center text-small text-muted-foreground">
+            Vonix Hair · CNPJ 68.272.005/0001-07 · 7 dias para desistir da compra, conforme a lei
+          </p>
           <p className="text-center text-body text-muted-foreground">
             Dúvidas?{" "}
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">

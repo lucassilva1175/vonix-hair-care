@@ -106,9 +106,8 @@ describe("checkout auditado sem chamadas reais", () => {
     if (!card) throw new Error("Formulário de cartão ausente");
     const cta = screen.getByRole("button", { name: /Pagar .* no cartão/ });
     expect(card.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      screen.getByTestId("summary").compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    // O botão agora fica dentro da caixa do método escolhido (como nos grandes e-commerces); o resumo continua visível.
+    expect(screen.getByTestId("summary")).toBeInTheDocument();
     expect(container.querySelector("form form")).toBeNull();
     expect(card).toHaveAttribute("data-appmax-checkout");
     for (const name of ["card-number", "card-holder-name", "exp-month", "exp-year", "cvv"])
@@ -161,9 +160,11 @@ describe("checkout auditado sem chamadas reais", () => {
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
     await waitFor(() => expect(mocks.address).toHaveBeenCalledTimes(1));
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "01310100" } });
-    await waitFor(() => expect(screen.getByLabelText("Cidade")).toHaveValue("BH"));
+    const resumo = () => screen.getByTestId("checkout-address-summary");
+    await waitFor(() => expect(resumo()).toHaveTextContent("BH/MG"));
     resolveOld({ ok: true, address: { ...address.address, city: "OLD" } });
-    await waitFor(() => expect(screen.getByLabelText("Cidade")).toHaveValue("BH"));
+    await waitFor(() => expect(resumo()).toHaveTextContent("BH/MG"));
+    expect(resumo()).not.toHaveTextContent("OLD");
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "01310" } });
     expect(screen.queryByText(/Correios PAC/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Gerar Pix/ })).toBeDisabled();
