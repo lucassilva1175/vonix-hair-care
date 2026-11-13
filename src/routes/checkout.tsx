@@ -97,6 +97,41 @@ declare global {
 /** Appmax returns Brasília time as "Y-m-d H:i:s". */
 const parseExpiry = (s: string) => new Date(`${s.replace(" ", "T")}-03:00`).getTime();
 
+/** Contador de 15 min a partir da entrada no checkout (guardado na sessão, não reinicia ao recarregar). Só visual: não muda preço nem bloqueia a compra; some ao zerar. */
+function CheckoutTimer() {
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    let start = Date.now();
+    try {
+      const saved = Number(sessionStorage.getItem("vonix-checkout-inicio"));
+      if (saved > 0) start = saved;
+      else sessionStorage.setItem("vonix-checkout-inicio", String(start));
+    } catch {
+      /* sem sessionStorage: conta a partir de agora */
+    }
+    const tick = () => setLeft(start + 15 * 60_000 - Date.now());
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (left === null || left <= 0) return null;
+  const mm = Math.floor(left / 60_000);
+  const ss = Math.floor((left % 60_000) / 1000);
+  return (
+    <p
+      role="timer"
+      aria-live="off"
+      data-testid="checkout-timer"
+      className="mt-3 flex cursor-default select-none items-center justify-between gap-3 rounded-xl bg-[#111] px-4 py-3 text-small font-medium text-white"
+    >
+      <span className="leading-snug">Você tem 15 minutos para finalizar com tranquilidade</span>
+      <span className="money shrink-0 rounded-lg bg-white/10 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-white">
+        {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
+      </span>
+    </p>
+  );
+}
+
 /** Copia o texto mesmo quando o navegador do Instagram/Facebook bloqueia a área de transferência (usa o campo selecionado como plano B). */
 async function copyText(text: string, el?: HTMLTextAreaElement | null) {
   try {
@@ -385,8 +420,10 @@ function Checkout() {
         if (cancelled) return;
         if (r.ok) {
           setOptions(r.options);
+          // Pré-seleciona sempre o frete MAIS BARATO (o cliente troca pelo mais rápido se quiser).
+          const cheapest = [...r.options].sort((a, b) => a.price - b.price || a.days - b.days)[0];
           setServiceId((cur) =>
-            r.options.some((o) => o.id === cur) ? cur : (r.options[0]?.id ?? null),
+            r.options.some((o) => o.id === cur) ? cur : (cheapest?.id ?? null),
           );
           if (!r.options.length)
             setQuoteErr("Nenhuma transportadora atende este CEP. Fale com a gente no WhatsApp.");
@@ -653,6 +690,7 @@ function Checkout() {
                   ? `Faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
                   : "Você ganhou frete grátis"}
               </p>
+              <CheckoutTimer />
               {cfg?.sandbox && (
                 <p
                   role="note"
