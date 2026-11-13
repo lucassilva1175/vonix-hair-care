@@ -682,6 +682,23 @@ describe("Vonix affiliate private panel", () => {
     expect(server.getAffiliateApplications).toHaveBeenCalledTimes(1);
   });
 
+  it("never exposes confidential candidate cards when initially opened in a background tab", async () => {
+    let visibility: DocumentVisibilityState = "hidden";
+    const spy = vi.spyOn(document, "visibilityState", "get").mockImplementation(() => visibility);
+    try {
+      render(<Page />);
+      await waitFor(() => expect(server.getAffiliateApplications).toHaveBeenCalledTimes(1));
+      expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
+      expect(screen.queryByText("secret-candidate@example.invalid")).not.toBeInTheDocument();
+      visibility = "visible";
+      await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+      expect(server.getAffiliateAdminSession).toHaveBeenCalledTimes(2);
+      expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("hides private data as soon as the tab becomes hidden and rechecks it on return", async () => {
     const listenerSpy = vi.spyOn(document, "addEventListener");
     render(<Page />);

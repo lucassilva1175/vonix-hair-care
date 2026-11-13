@@ -57,6 +57,14 @@ export function AffiliateTrackingCodePage() {
       // Each result is only valid for the code used by this exact request.
       // Changing codes or launching a newer query invalidates older replies.
       if (lookupVersion.current !== requestId) return;
+      // A background-tab request might complete before the visibility event.
+      // Never expose a private status before the tab becomes visible.
+      if (document.visibilityState === "hidden") {
+        setCodeRevealed(false);
+        setResult(null);
+        setError("");
+        return;
+      }
       if (!response.ok) setError(response.reason);
       else
         setResult({
@@ -84,7 +92,9 @@ export function AffiliateTrackingCodePage() {
     }
     if (/^[A-Za-z0-9_-]{32}$/.test(oneTimeCode)) {
       setCode(oneTimeCode);
-      void lookup(oneTimeCode);
+      // Retain the once-only handoff in the masked field if a tab opens in
+      // background. The applicant can request the lookup when visible.
+      if (document.visibilityState === "visible") void lookup(oneTimeCode);
     }
   }, []);
 
