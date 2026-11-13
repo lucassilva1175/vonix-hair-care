@@ -97,6 +97,29 @@ declare global {
 /** Appmax returns Brasília time as "Y-m-d H:i:s". */
 const parseExpiry = (s: string) => new Date(`${s.replace(" ", "T")}-03:00`).getTime();
 
+/** Copia o texto mesmo quando o navegador do Instagram/Facebook bloqueia a área de transferência (usa o campo selecionado como plano B). */
+async function copyText(text: string, el?: HTMLTextAreaElement | null) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* tenta o plano B */
+  }
+  try {
+    if (el) {
+      el.focus();
+      el.select();
+      el.setSelectionRange(0, text.length);
+      return document.execCommand("copy");
+    }
+  } catch {
+    /* sem cópia automática */
+  }
+  return false;
+}
+
 function PixPanel({
   pix,
   paid,
@@ -106,10 +129,12 @@ function PixPanel({
 }: {
   pix: PixResult;
   paid: boolean;
-  onCopy: () => void;
+  onCopy: (el: HTMLTextAreaElement | null) => Promise<boolean>;
   copied: boolean;
   onRestart: () => void;
 }) {
+  const codeRef = useRef<HTMLTextAreaElement>(null);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [left, setLeft] = useState(() => parseExpiry(pix.expiresAt) - Date.now());
   useEffect(() => {
     const t = setInterval(() => setLeft(parseExpiry(pix.expiresAt) - Date.now()), 1000);
@@ -138,28 +163,14 @@ function PixPanel({
       <p className="mt-2 text-body text-muted-foreground">
         Pedido nº {pix.orderId} · {brl(pix.total)}
       </p>
-      <img
-        src={`data:image/png;base64,${pix.qrcode}`}
-        alt="QR Code do Pix"
-        width={220}
-        height={220}
-        className="mx-auto mt-4 h-[220px] w-[220px]"
-      />
-      <p className="mt-4 text-body">
-        Abra o app do seu banco, escolha Pix e leia o QR Code, ou copie o código abaixo.
-      </p>
-      <textarea
-        readOnly
-        value={pix.emv}
-        rows={3}
-        className="mt-3 w-full rounded-lg border border-border bg-background p-2 text-small"
-        onFocus={(e) => e.currentTarget.select()}
-      />
       {left > 0 ? (
         <button
           type="button"
-          onClick={onCopy}
-          className="mt-3 w-full rounded-full bg-action py-3 font-medium text-action-foreground"
+          onClick={async () => {
+            const ok = await onCopy(codeRef.current);
+            setCopyFailed(!ok);
+          }}
+          className="mt-4 w-full rounded-full bg-action py-4 text-name font-semibold text-action-foreground"
         >
           {copied ? "Código copiado!" : "Copiar código Pix"}
         </button>
@@ -167,11 +178,41 @@ function PixPanel({
         <button
           type="button"
           onClick={onRestart}
-          className="mt-3 w-full rounded-full bg-action py-3 font-medium text-action-foreground"
+          className="mt-4 w-full rounded-full bg-action py-4 text-name font-semibold text-action-foreground"
         >
           Gerar um novo Pix
         </button>
       )}
+      {copyFailed && (
+        <p role="alert" className="mt-2 text-body text-destructive">
+          Não conseguimos copiar sozinhos. Toque e segure no código abaixo, escolha "Copiar" e cole no app do seu banco.
+        </p>
+      )}
+      <ol className="mx-auto mt-4 max-w-sm list-decimal space-y-1 pl-5 text-left text-body">
+        <li>Toque em <b>Copiar código Pix</b>.</li>
+        <li>Abra o app do seu banco e escolha <b>Pix → Pix Copia e Cola</b>.</li>
+        <li>Cole o código e confirme o pagamento.</li>
+        <li>Pronto: volte aqui, esta tela confirma sozinha.</li>
+      </ol>
+      <textarea
+        ref={codeRef}
+        readOnly
+        value={pix.emv}
+        rows={3}
+        aria-label="Código Pix copia e cola"
+        className="mt-4 w-full rounded-lg border border-border bg-background p-2 text-small"
+        onFocus={(e) => e.currentTarget.select()}
+      />
+      <details className="mt-4 hidden text-left sm:block" open>
+        <summary className="cursor-pointer text-center text-body font-medium">Pagando pelo computador? Leia o QR Code</summary>
+        <img
+          src={`data:image/png;base64,${pix.qrcode}`}
+          alt="QR Code do Pix"
+          width={200}
+          height={200}
+          className="mx-auto mt-3 h-[200px] w-[200px]"
+        />
+      </details>
       <p className="mt-3 text-body text-muted-foreground">
         {left > 0
           ? `Expira em ${mm}:${String(ss).padStart(2, "0")}. `
@@ -549,11 +590,10 @@ function Checkout() {
               setCopied(false);
               setError(null);
             }}
-            onCopy={() => {
-              navigator.clipboard
-                ?.writeText(pix.emv)
-                .then(() => setCopied(true))
-                .catch(() => undefined);
+            onCopy={async (el) => {
+              const ok = await copyText(pix.emv, el);
+              if (ok) setCopied(true);
+              return ok;
             }}
           />
         </div>

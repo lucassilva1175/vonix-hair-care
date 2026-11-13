@@ -112,3 +112,10 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Relógio real no topo do site (`TesteRelogio`), some sozinho ao acabar (livro, MANUAL linhas 752-753: timer só com data real; se acabar, não reabrir igual).
 - `PIX_DISCOUNT = 0`; o complemento do carrinho (5% no item) ganhou preço próprio (`complementPrice`).
 - Meta: com esses preços, venda por anúncio (≈R$ 40/venda) dá prejuízo de ≈R$ 10; vale para WhatsApp/orgânico/recompra. Avaliar em 17/11 (metade) e 20/11 (fim); o livro pede ≈35 vendas para concluir teste de preço (MANUAL linha 437).
+
+## 12/11/2026 (noite) — Clarity: cliques mortos e Pix no celular
+
+- Clarity (3 dias, ~150 visitantes reais): 117 viram produto, ~9 pôs no carrinho; 12 abriram o checkout; 6 informaram frete; 2 chegaram ao pagamento.
+- Appmax: pedido 132738782 (12/11 14:52, R$ 180,90, Botox, veio do anúncio, app do Facebook) gerou Pix e EXPIROU: o checkout funciona, o gargalo é pagar o Pix (só 2 de ~10 Pix pagos desde 30/10).
+- Cliques mortos: faixa verde de frete e 4 quadros coloridos do topo do checkout pareciam botões (PR #153: cartão discreto com ícones).
+- Botão "Copiar código Pix" não fazia nada (sem aviso) quando o navegador do Instagram/Facebook bloqueia a área de transferência: agora tem plano B (campo selecionado) e aviso; tela do Pix pensada para celular: botão grande no topo, 4 passos, QR só em tela grande.
