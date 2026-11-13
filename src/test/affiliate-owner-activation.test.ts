@@ -48,7 +48,14 @@ const email = "pending.owner@example.invalid";
 const tokenHash = "a".repeat(64);
 const privateShareLink = live + "#vonix_invite=" + tokenHash;
 const actor = "activated.owner@example.invalid";
-const owner = [{ email: actor, role: "owner", password_set_at: "2026-11-10T19:00:00+00:00" }];
+const owner = [
+  {
+    email: actor,
+    role: "owner",
+    password_set_at: "2026-11-10T19:00:00+00:00",
+    ever_activated_at: "2026-11-10T19:00:00+00:00",
+  },
+];
 const pending = [{ email, role: "owner", password_set_at: null, ever_activated_at: null }];
 const revoked = [
   { email, role: "owner", password_set_at: null, ever_activated_at: "2026-11-12T20:00:00+00:00" },
@@ -107,6 +114,21 @@ describe("owner-mediated one-time activation without transactional email", () =>
   it("requires an activated owner currently present in the dedicated database", async () => {
     const fetcher = mockFetch(
       Response.json([{ email: actor, role: "owner", password_set_at: null }]),
+    );
+    expect((await listPendingAffiliateOwnerActivations()).ok).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses owner-only invite listing when own activation history is missing", async () => {
+    const fetcher = mockFetch(
+      Response.json([
+        {
+          email: actor,
+          role: "owner",
+          password_set_at: "2026-11-10T19:00:00+00:00",
+          ever_activated_at: null,
+        },
+      ]),
     );
     expect((await listPendingAffiliateOwnerActivations()).ok).toBe(false);
     expect(fetcher).toHaveBeenCalledTimes(1);

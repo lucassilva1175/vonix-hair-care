@@ -87,6 +87,33 @@ describe("Verified Supabase Auth OTP via transactional email", () => {
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
+  it("refuses owner email recovery when only one of the two activation stamps exists", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            email: inbox,
+            password_set_at: "2026-11-11T13:00:00+00:00",
+            ever_activated_at: null,
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            email: inbox,
+            password_set_at: null,
+            ever_activated_at: "2026-11-11T13:00:00+00:00",
+          },
+        ]),
+      );
+    vi.stubGlobal("fetch", fetcher);
+    expect(await affiliateEmailAuthorizedForPortal(inbox, "owner")).toBe(false);
+    expect(await affiliateEmailAuthorizedForPortal(inbox, "owner")).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it("does not treat missing applicant data as an authorized email", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json([])));
     expect(await affiliateEmailAuthorizedForPortal(inbox, "applicant")).toBe(false);

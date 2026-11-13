@@ -47,7 +47,11 @@ function identity(email: string) {
 }
 function roster(passwordSet: boolean) {
   return {
-    data: { role: "owner", password_set_at: passwordSet ? "2026-11-11T11:00:00Z" : null },
+    data: {
+      role: "owner",
+      password_set_at: passwordSet ? "2026-11-11T11:00:00Z" : null,
+      ever_activated_at: passwordSet ? "2026-11-11T11:00:00Z" : null,
+    },
     error: null,
   };
 }

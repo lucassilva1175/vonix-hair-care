@@ -100,16 +100,41 @@ describe("Affiliate admin current roster session revocation", () => {
   });
 
   it("keeps current active owners and reviewers permitted with server-verified identical roles", async () => {
-    const f = vi.fn(async () => reply([{ email, role: "owner", password_set_at: activatedAt }]));
+    const f = vi.fn(async () =>
+      reply([
+        { email, role: "owner", password_set_at: activatedAt, ever_activated_at: activatedAt },
+      ]),
+    );
     vi.stubGlobal("fetch", f);
     expect(await affiliateAdminSessionAuthorized()).toBe(true);
     member.affiliateMemberSession.mockReturnValue({ email, role: "reviewer" });
-    f.mockResolvedValueOnce(reply([{ email, role: "reviewer", password_set_at: activatedAt }]));
+    f.mockResolvedValueOnce(
+      reply([
+        { email, role: "reviewer", password_set_at: activatedAt, ever_activated_at: activatedAt },
+      ]),
+    );
     expect(await affiliateAdminSessionAuthorized()).toBe(true);
     const [url, options] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain("email=eq.");
     expect(options.method).toBe("GET");
     expect(options.redirect).toBe("manual");
+  });
+
+  it("refuses member sessions with a password stamp but no immutable activation history", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        reply([
+          {
+            email,
+            role: "owner",
+            password_set_at: activatedAt,
+            ever_activated_at: null,
+          },
+        ]),
+      ),
+    );
+    expect(await affiliateAdminSessionAuthorized()).toBe(false);
   });
 
   it("fails closed on unavailable database, network failure, redirect and invalid JSON", async () => {

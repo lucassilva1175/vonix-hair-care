@@ -91,7 +91,7 @@ export function AffiliateTeamAccess() {
       const invite = row.data as Invitation;
       // Once activated, a subsequently revoked invitation is not a new one.
       // Deny before offering password creation, including after a fresh OTP.
-      if (!invite.password_set_at && invite.ever_activated_at !== null) {
+      if ((invite.password_set_at === null) !== (invite.ever_activated_at === null)) {
         freshVerifiedAddress.current = null;
         setStage("denied");
         return;
@@ -372,7 +372,7 @@ export function AffiliateTeamAccess() {
         .select("role,password_set_at,ever_activated_at")
         .eq("email", verified)
         .maybeSingle();
-      if (row.error || !row.data?.password_set_at) {
+      if (row.error || !row.data?.password_set_at || !row.data?.ever_activated_at) {
         throw new Error("Owner is not activated.");
       }
       const updated = await vonixAffiliateAuth.auth.updateUser({ password });

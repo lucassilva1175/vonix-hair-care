@@ -174,6 +174,27 @@ describe("short Vonix affiliate form and compatible encrypted storage", () => {
     await expect(getAffiliateStatusWithCode("instagram_public")).rejects.toThrow();
   });
 
+  it("rejects malformed private-status timestamps instead of displaying Invalid Date", async () => {
+    const code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    const broken = [
+      { status: "pendente", rejection_reason: null, created_at: "yesterday", reviewed_at: null },
+      {
+        status: "recusada",
+        rejection_reason: "seguidores_insuficientes",
+        created_at: "2026-11-11T11:00:00Z",
+        reviewed_at: "not-a-date",
+      },
+    ];
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json([broken[0]]))
+      .mockResolvedValueOnce(Response.json([broken[1]]));
+    vi.stubGlobal("fetch", mocked);
+    await expect(getAffiliateStatusWithCode(code)).rejects.toThrow();
+    await expect(getAffiliateStatusWithCode(code)).rejects.toThrow();
+    expect(mocked).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps phone/address private and exposes only follower counts in triage", () => {
     const checked = affiliateSimpleSchema.parse(valid);
     const cipher = encryptSimpleAffiliateApplication(checked);
