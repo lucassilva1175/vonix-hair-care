@@ -1,9 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toItem, track } from "@/lib/analytics";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, Truck } from "lucide-react";
 import { Shell } from "@/components/site";
-import { OFFER_LABEL, brl, complementPrice, complementsFor, useCart, useHydrated } from "@/lib/store";
+import {
+  OFFER_LABEL,
+  brl,
+  complementPrice,
+  complementsFor,
+  getSavedCep,
+  maskCep,
+  saveCep,
+  useCart,
+  useHydrated,
+} from "@/lib/store";
+import { quoteShipping } from "@/lib/checkout.functions";
 import { ShippingBar, Summary } from "@/components/cart-summary";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 
@@ -22,6 +34,92 @@ export const Route = createFileRoute("/carrinho")({
 });
 
 /** Até 3 complementos contextuais, sempre visíveis, com 5% OFF no próprio item. */
+type CartOpt = { id: number; name: string; company: string; price: number; days: number; free: boolean };
+
+/** Frete estimado já no carrinho: o cliente vê o valor ANTES do checkout (sem cobrança surpresa). Mostra o mais barato primeiro. */
+function CartShipping({
+  items,
+}: {
+  items: { slug: string; variant: string; qty: number; offer?: string }[];
+}) {
+  const quote = useServerFn(quoteShipping);
+  const [cep, setCep] = useState("");
+  const [opts, setOpts] = useState<CartOpt[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const request = useRef(0);
+  const key = JSON.stringify(items);
+  const run = async (value: string) => {
+    const d = value.replace(/\D/g, "");
+    const current = ++request.current;
+    setOpts([]);
+    setErr(null);
+    if (d.length !== 8 || !items.length) return;
+    saveCep(value);
+    setLoading(true);
+    try {
+      const r = await quote({ data: { cep: d, items: items as never } });
+      if (current !== request.current) return;
+      if (r.ok) setOpts([...r.options].sort((a, b) => a.price - b.price || a.days - b.days));
+      else setErr(r.message);
+    } catch {
+      if (current === request.current) setErr("Não foi possível calcular o frete agora.");
+    } finally {
+      if (current === request.current) setLoading(false);
+    }
+  };
+  useEffect(() => {
+    const saved = getSavedCep();
+    if (saved) setCep(saved);
+  }, []);
+  useEffect(() => {
+    if (cep.replace(/\D/g, "").length === 8) void run(cep);
+    // recalcula quando o carrinho muda
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return (
+    <div className="rounded-xl border border-border bg-card p-4" data-testid="cart-shipping">
+      <div className="flex items-center gap-2 text-body font-medium">
+        <Truck className="h-4 w-4" strokeWidth={1.5} />
+        Calcule o frete antes de finalizar
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input
+          inputMode="numeric"
+          aria-label="CEP para calcular o frete"
+          placeholder="00000-000"
+          value={cep}
+          onChange={(e) => {
+            const v = maskCep(e.target.value);
+            setCep(v);
+            if (v.replace(/\D/g, "").length === 8) void run(v);
+            else setOpts([]);
+          }}
+          className="min-w-0 flex-1 rounded-full border border-border bg-background px-4 py-2.5"
+        />
+      </div>
+      {loading && <p className="mt-2 text-small text-muted-foreground">Calculando…</p>}
+      {err && <p className="mt-2 text-small text-red-700">{err}</p>}
+      {opts.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {opts.map((o, i) => (
+            <li
+              key={o.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-small"
+            >
+              <span>
+                {o.company} {o.name} · {o.days} dia{o.days === 1 ? "" : "s"} úteis
+                {i === 0 && opts.length > 1 ? " · mais barato" : ""}
+              </span>
+              <span className="money font-semibold">{o.free ? "Grátis" : brl(o.price)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function Suggestions() {
   const c = useCart();
   const items = complementsFor(c.lines.map((l) => l.slug));
@@ -185,6 +283,14 @@ function Cart() {
             </div>
             <aside className="space-y-4">
               <ShippingBar subtotal={c.subtotal} />
+              <CartShipping
+                items={c.lines.map((l) => ({
+                  slug: l.slug,
+                  variant: l.variant,
+                  qty: l.qty,
+                  ...(l.offer ? { offer: l.offer } : {}),
+                }))}
+              />
               <Summary lines={c.lines} />
               <Link
                 to="/checkout"
