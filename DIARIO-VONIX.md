@@ -126,3 +126,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Clarity não reaberto nesta rodada. Conector Abency segue bloqueado (teste acabou).
 - Mudança do dia: nenhuma; menos de 100 visitas pagas após a última mudança: "ainda é cedo". Orçamento mantido em R$ 30/dia (sem venda real).
 - Como desfazer: nada alterado além deste diário.
+
+## 13/11/2026 (12h10) — rotina automática, só conferência
+- Meta (30 dias até 12/11, dado de hoje ainda não fechado): igual à rodada das 8h10: conta R$ 1.115,40; FRIO Combo Banana e Mel ativo (R$ 386,99); Remarketing MORNO 30D ativo (R$ 6,51); demais desativadas; nenhuma reprovada visível; 20 rascunhos não publicados. Colunas de carrinho/compra não carregaram em texto: sem número novo de compras.
+- Site no ar: home 0,55 s, botox 0,77 s, checkout 0,39 s, todos 200.
+- Clarity e pixel não reabertos nesta rodada. Mudança do dia: nenhuma ("ainda é cedo": menos de 100 visitas pagas após a última mudança). Orçamento mantido em R$ 30/dia.
+- Como desfazer: nada alterado além deste diário.
