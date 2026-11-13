@@ -129,6 +129,56 @@ describe("Vonix short single-page application form", () => {
     });
   });
 
+  it("keeps a confirmed private tracking code masked until explicitly revealed", async () => {
+    server.submit.mockImplementation(async (args: { data: { trackingCode?: string } }) => ({
+      ok: true,
+      trackingCode: args.data.trackingCode,
+    }));
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const field = await screen.findByLabelText("Código privado de acompanhamento");
+    expect(field).toHaveAttribute("type", "password");
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar código privado" }));
+    expect(field).toHaveAttribute("type", "text");
+    fireEvent.click(screen.getByRole("button", { name: "Ocultar código privado" }));
+    expect(field).toHaveAttribute("type", "password");
+    expect(screen.getByRole("button", { name: "Copiar código" })).toBeInTheDocument();
+  });
+
+  it("re-masks an exposed confirmation receipt on backgrounding the browser tab", async () => {
+    server.submit.mockImplementation(async (args: { data: { trackingCode?: string } }) => ({
+      ok: true,
+      trackingCode: args.data.trackingCode,
+    }));
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const field = await screen.findByLabelText("Código privado de acompanhamento");
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar código privado" }));
+    expect(field).toHaveAttribute("type", "text");
+    const spy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    try {
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      expect(field).toHaveAttribute("type", "password");
+      expect(screen.getByRole("button", { name: "Copiar código" })).toBeInTheDocument();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("masks an unconfirmed receipt when a network response is lost", async () => {
+    server.submit.mockRejectedValue(new Error("synthetic network lost"));
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const field = await screen.findByLabelText("Código privado da tentativa não confirmada");
+    expect(field).toHaveAttribute("type", "password");
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar código da tentativa" }));
+    expect(field).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: "Copiar código de tentativa" })).toBeInTheDocument();
+  });
+
   it("displays a private tracking code only after successful server receipt", async () => {
     server.submit.mockImplementation(async (args: { data: { trackingCode?: string } }) => ({
       ok: true,

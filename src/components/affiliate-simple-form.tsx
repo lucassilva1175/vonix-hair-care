@@ -167,6 +167,7 @@ export function AffiliateSimpleForm({
   const [sent, setSent] = useState(false);
   const [trackingCode, setTrackingCode] = useState("");
   const [trackingCopied, setTrackingCopied] = useState(false);
+  const [codeRevealed, setCodeRevealed] = useState(false);
   const [trackingNavigationError, setTrackingNavigationError] = useState("");
   const attemptCode = useRef("");
   // A retry can reuse the private receipt only with exactly the same data.
@@ -192,6 +193,15 @@ export function AffiliateSimpleForm({
       // The form still works when browser storage is denied; the user must
       // keep this page open to copy the pending code after a network failure.
     }
+  }, []);
+
+  // The receipt is a bearer token. Mask it again if a shared device changes tabs.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") setCodeRevealed(false);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   function downloadCode(code: string, confirmed: boolean) {
@@ -230,6 +240,7 @@ export function AffiliateSimpleForm({
     setRecoveredAttempt(false);
     setUnconfirmedCode("");
     setUnconfirmedCopied(false);
+    setCodeRevealed(false);
     try {
       window.sessionStorage.removeItem(pendingReceiptSessionKey);
     } catch {
@@ -463,6 +474,7 @@ export function AffiliateSimpleForm({
     zipRequest.current++;
     setZipLoading(false);
     submitting.current = true;
+    setCodeRevealed(false);
     setSending(true);
     setMessage("");
     try {
@@ -539,11 +551,22 @@ export function AffiliateSimpleForm({
             <input
               readOnly
               id="affiliate-confirmed-code"
+              type={codeRevealed ? "text" : "password"}
+              autoComplete="off"
+              spellCheck={false}
               aria-label="Código privado de acompanhamento"
               value={trackingCode}
               onFocus={(event) => event.currentTarget.select()}
               className="mt-3 w-full rounded-lg border border-[#d5bac0] bg-white px-3 py-3 text-center font-semibold text-sm tracking-wider text-[#49323a]"
             />
+            <button
+              type="button"
+              aria-pressed={codeRevealed}
+              onClick={() => setCodeRevealed((value) => !value)}
+              className="mt-3 min-h-11 w-full rounded-full border border-[#b9969e] px-4 text-sm font-bold text-[#683643]"
+            >
+              {codeRevealed ? "Ocultar código privado" : "Mostrar código privado"}
+            </button>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
@@ -855,12 +878,23 @@ export function AffiliateSimpleForm({
               </p>
               <input
                 id="affiliate-unconfirmed-code"
+                type={codeRevealed ? "text" : "password"}
+                autoComplete="off"
+                spellCheck={false}
                 aria-label="Código privado da tentativa não confirmada"
                 readOnly
                 value={unconfirmedCode}
                 onFocus={(event) => event.currentTarget.select()}
                 className="mt-3 w-full rounded-lg border border-amber-200 bg-white p-3 text-center font-semibold tracking-wide"
               />
+              <button
+                type="button"
+                aria-pressed={codeRevealed}
+                onClick={() => setCodeRevealed((value) => !value)}
+                className="mt-3 min-h-11 w-full rounded-full border border-amber-300 px-4 text-sm font-bold text-[#683643]"
+              >
+                {codeRevealed ? "Ocultar código da tentativa" : "Mostrar código da tentativa"}
+              </button>
               <div className="mt-3 flex flex-wrap gap-3">
                 <button
                   type="button"

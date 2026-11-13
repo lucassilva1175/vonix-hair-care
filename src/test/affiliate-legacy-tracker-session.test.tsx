@@ -77,6 +77,71 @@ afterEach(() => {
 });
 
 describe("Legacy affiliate applicant tracker session consistency", () => {
+  it("refuses malformed legacy status timestamps rather than showing Invalid Date", async () => {
+    service.getUser.mockResolvedValue(identity("verified@example.invalid"));
+    const malformed = answer("aprovada");
+    malformed.data[0]!.submitted_at = "not-an-ISO-date";
+    service.from.mockImplementation(() => ({
+      select: () => ({ order: () => ({ limit: async () => malformed }) }),
+    }));
+    render(<AffiliateApplicationTracker />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível validar os dados da candidatura",
+    );
+    expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("Invalid Date");
+  });
+
+  it("conceals a verified email and decision when tab is hidden, then rechecks on resume", async () => {
+    service.getUser.mockResolvedValue(identity("visible@example.invalid"));
+    service.from.mockImplementation(() => ({
+      select: () => ({ order: () => ({ limit: async () => answer("aprovada") }) }),
+    }));
+    const spy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    try {
+      render(<AffiliateApplicationTracker />);
+      await screen.findByText("Candidatura aprovada");
+      expect(screen.getByText("visible@example.invalid")).toBeInTheDocument();
+      spy.mockReturnValue("hidden");
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+      expect(screen.queryByText("visible@example.invalid")).not.toBeInTheDocument();
+      spy.mockReturnValue("visible");
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await screen.findByText("Candidatura aprovada");
+      expect(service.getUser).toHaveBeenCalledTimes(2);
+      expect(service.from).toHaveBeenCalledTimes(2);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("discards an in-flight status response and refuses hidden Auth refreshes", async () => {
+    const pending = deferred<ReturnType<typeof answer>>();
+    service.getUser.mockResolvedValue(identity("private@example.invalid"));
+    service.from.mockImplementation(() => ({
+      select: () => ({ order: () => ({ limit: () => pending.promise }) }),
+    }));
+    const spy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    try {
+      render(<AffiliateApplicationTracker />);
+      await waitFor(() => expect(service.from).toHaveBeenCalledTimes(1));
+      spy.mockReturnValue("hidden");
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await act(async () => {
+        pending.resolve(answer("aprovada"));
+        await pending.promise;
+        authChanged?.();
+        await Promise.resolve();
+      });
+      expect(screen.queryByText("private@example.invalid")).not.toBeInTheDocument();
+      expect(screen.queryByText("Candidatura aprovada")).not.toBeInTheDocument();
+      expect(service.from).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("must not display a previous account's delayed private status under the next verified identity", async () => {
     const previousStatus = deferred<ReturnType<typeof answer>>();
     service.getUser
