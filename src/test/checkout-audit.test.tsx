@@ -134,6 +134,36 @@ describe("checkout auditado sem chamadas reais", () => {
     expect(await screen.findByText("CPF inválido. Confira os números.")).toBeInTheDocument();
     expect(mocks.payment).not.toHaveBeenCalled();
   });
+  it("WhatsApp curto ou nome curto: avisa o campo certo, uma vez só, e não envia o pedido", async () => {
+    render(<Checkout />);
+    await fill();
+    fireEvent.change(screen.getByLabelText("WhatsApp com DDD"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
+    const alerts = await screen.findAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent("Digite seu WhatsApp com DDD");
+    expect(document.activeElement).toBe(screen.getByLabelText("WhatsApp com DDD"));
+    expect(mocks.payment).not.toHaveBeenCalled();
+    // ao corrigir, o aviso antigo some
+    fireEvent.change(screen.getByLabelText("WhatsApp com DDD"), { target: { value: "31999999999" } });
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText("Nome completo"), { target: { value: "Ab" } });
+    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
+    expect(await screen.findByText("Digite seu nome completo.")).toBeInTheDocument();
+    expect(mocks.payment).not.toHaveBeenCalled();
+  });
+  it("trocar o CEP apaga o endereço antigo: nunca fica rua de outro CEP escondida", async () => {
+    mocks.address.mockResolvedValue(address);
+    render(<Checkout />);
+    fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
+    await waitFor(() => expect(screen.getByTestId("checkout-address-summary")).toHaveTextContent("Rua teste"));
+    mocks.address.mockResolvedValue({ ok: false, message: "Não foi possível localizar o endereço deste CEP." });
+    fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "00000000" } });
+    await waitFor(() => expect(screen.queryByTestId("checkout-address-summary")).not.toBeInTheDocument());
+    // os campos manuais aparecem vazios para a pessoa preencher
+    expect(screen.getByLabelText("Rua")).toHaveValue("");
+    expect(screen.getByLabelText("Cidade")).toHaveValue("");
+  });
   it("frete funciona sem endereço; dados manuais permitem continuar", async () => {
     mocks.address.mockRejectedValue(new Error("timeout"));
     render(<Checkout />);
