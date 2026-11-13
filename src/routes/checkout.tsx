@@ -608,7 +608,6 @@ function Checkout() {
             <div>
               <h1 className={lateral ? "sr-only" : "font-display text-h2 lg:text-h1"}>Finalizar compra</h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-emerald-600 px-3 py-2 text-small font-semibold text-white">
-                <span className="rounded bg-white px-1.5 py-0.5 text-[0.7rem] font-extrabold uppercase text-emerald-700">5% OFF</span>
                 {missingForFreeShipping(gross) > 0
                   ? `faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
                   : "você ganhou frete grátis"}
@@ -624,7 +623,7 @@ function Checkout() {
             </div>
 
             <ul aria-label="Vantagens da compra" className="grid grid-cols-2 gap-2 text-center text-small font-semibold sm:grid-cols-4">
-              <li className="rounded-xl bg-emerald-600 px-2 py-2 text-white">Pix com 5% OFF</li>
+              <li className="rounded-xl bg-emerald-600 px-2 py-2 text-white">Pix ou cartão: mesmo preço</li>
               <li className="rounded-xl bg-foreground px-2 py-2 text-background">Até 6x sem juros</li>
               <li className="rounded-xl bg-muted px-2 py-2">Frete grátis acima de {brl(FREE_SHIPPING_ABOVE)}</li>
               <li className="rounded-xl bg-muted px-2 py-2">Compra 100% segura</li>
@@ -808,8 +807,7 @@ function Checkout() {
                     checked={pay === "pix"}
                     onChange={() => setPay("pix")}
                   />{" "}
-                  Pix{" "}
-                  <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-[0.7rem] font-bold uppercase text-white">economize {brl(tPix.pixDiscount)}</span>
+                  Pix
                 </span>
                 <b>{brl(tPix.net + shipping)}</b>
               </label>

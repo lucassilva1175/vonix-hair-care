@@ -19,7 +19,7 @@ import {
   discountPct,
   hasFreeShipping,
   installments,
-  pixPrice,
+  TESTE_FIM,
   cardPricing,
   useAudience,
   useCart,
@@ -61,8 +61,31 @@ const MARQUEE = [
   "LEVE 2 UNIDADES: 12% OFF · LEVE 3: 15% OFF",
   "FRETE GRÁTIS ACIMA DE R$ 150 EM PRODUTOS, ANTES DOS DESCONTOS",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
-  "5% NO PIX EM ITENS SEM OUTRA OFERTA",
+  "PIX OU CARTÃO: O MESMO PREÇO",
 ];
+
+/** Relógio do teste de preços: conta até o prazo real (TESTE_FIM) e some sozinho quando acaba; depois os preços voltam aos de sempre. */
+function TesteRelogio() {
+  const [agora, setAgora] = useState<number | null>(null);
+  useEffect(() => {
+    setAgora(Date.now());
+    const t = setInterval(() => setAgora(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (agora === null) return null;
+  const falta = TESTE_FIM.getTime() - agora;
+  if (falta <= 0) return null;
+  const d = Math.floor(falta / 86_400_000);
+  const h = Math.floor((falta % 86_400_000) / 3_600_000);
+  const m = Math.floor((falta % 3_600_000) / 60_000);
+  const s = Math.floor((falta % 60_000) / 1000);
+  const dois = (n: number) => String(n).padStart(2, "0");
+  return (
+    <div role="timer" aria-live="off" className="bg-foreground px-3 py-2 text-center text-small font-semibold text-background">
+      Preços baixos por tempo limitado: termina em {d}d {dois(h)}h {dois(m)}min {dois(s)}s (20/11, às 23h59). Depois, os preços voltam ao normal.
+    </div>
+  );
+}
 
 const NAV = [
   { label: "Mais vendidos", search: { secao: "mais-vendidos" } },
@@ -100,7 +123,7 @@ export function PaymentMethods({ dark = false }: { dark?: boolean }) {
   return (
     <ul aria-label="Formas de pagamento" className="flex flex-wrap items-center gap-2">
       <li className={pill}>
-        <span className="inline-flex items-center gap-1 rounded-full bg-[#dff1e8] px-2 text-small font-medium text-[#2c6e55]"><PixMark />Pix</span> 5% de desconto
+        <span className="inline-flex items-center gap-1 rounded-full bg-[#dff1e8] px-2 text-small font-medium text-[#2c6e55]"><PixMark />Pix</span> pagamento à vista
       </li>
       <li className={pill}>
         <CreditCard className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" /> Cartão de crédito · até 6x sem juros
@@ -129,7 +152,7 @@ export function Benefits() {
   const items = [
     { Icon: Truck, title: "Frete grátis", text: `acima de R$ ${FREE_SHIPPING_ABOVE} em produtos` },
     { Icon: CreditCard, title: "Até 6x sem juros", text: "no cartão de crédito" },
-    { Icon: QrCode, title: "5% OFF no Pix", text: "pagamento à vista" },
+    { Icon: QrCode, title: "Pix ou cartão", text: "o mesmo preço" },
     { Icon: ShieldCheck, title: "Compra segura", text: "seus dados protegidos" },
   ];
   return (
@@ -248,6 +271,7 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </div>
       </div>
+      <TesteRelogio />
       {/* Acompanham a rolagem: logo (com menu, entrar e carrinho), a busca e a escolha "Para mim / Cabeleireiras". O resto rola com a página. */}
       {!isCheckout && !isProduct && (
         <p className="whitespace-nowrap bg-background pt-2 text-center text-body italic">“Até aqui nos ajudou o Senhor”</p>
@@ -489,7 +513,7 @@ function Footer() {
   );
 }
 
-export function PriceBlock({ price, compare, big, offer = false }: { price: number; compare?: number | null; big?: boolean; offer?: boolean }) {
+export function PriceBlock({ price, compare, big }: { price: number; compare?: number | null; big?: boolean; offer?: boolean }) {
   const i = installments(price);
   return (
     <div className={big ? "space-y-2" : "space-y-1.5 text-body"}>
@@ -499,13 +523,6 @@ export function PriceBlock({ price, compare, big, offer = false }: { price: numb
         )}
         <span className={big ? "text-h2 font-semibold" : "font-semibold"}>{brl(price)}</span>
       </div>
-      {!offer && (
-        <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-2xl bg-[#eef8f2] text-[#2c6e55] ${big ? "px-4 py-3" : "px-3 py-1.5"}`}>
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-small font-medium text-[#2c6e55]"><PixMark />Pix</span>
-          <b className={`font-semibold ${big ? "text-h2" : "text-body"}`}>{brl(pixPrice(price))}</b>
-          <span className={`font-medium ${big ? "text-body" : "text-small"}`}>5% de desconto à vista</span>
-        </div>
-      )}
       <div className={`flex items-center gap-1.5 font-medium ${big ? "text-body" : "text-small"}`}>
         <CreditCard className={big ? "h-5 w-5" : "h-4 w-4"} strokeWidth={1.6} aria-hidden="true" />
         <span>{i.count}x de <b>{brl(i.value)}</b> sem juros no cartão</span>
@@ -624,11 +641,6 @@ export function ProductCard({ p }: { p: Product }) {
         >
           <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
         </button>
-      </div>
-      <div className="mt-1.5 flex items-center gap-1 whitespace-nowrap rounded-full bg-[#eef8f2] px-1.5 py-1 text-[#2c6e55] md:gap-1.5 md:px-2">
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/80 px-1.5 py-0.5 text-small font-medium"><PixMark /><span className="max-md:hidden">Pix</span></span>
-        <b className="text-small font-semibold md:text-body">{brl(pixPrice(pricing.price))}</b>
-        <span className="text-small font-medium max-sm:hidden">-5%</span>
       </div>
       {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-small leading-snug text-muted-foreground md:line-clamp-3 md:text-small">{p.short}</p>}
     </div>

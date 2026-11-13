@@ -104,3 +104,11 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Site no ar: home 1,6 s, botox 0,45 s, fio de luz 0,44 s, checkout 0,40 s, todos 200; preço R$ 180,90 presente.
 - Clarity não reaberto nesta rodada (conferência curta); mudança do dia: nenhuma. Menos de 100 visitas pagas após a mudança de 11/11: "ainda é cedo".
 - Como desfazer: nada alterado além deste diário.
+
+## 12/11/2026 — Teste de preços até 20/11 e Pix sem desconto
+
+- Pedido do Lucas: vender mais, ganhando menos; preço único (sem desconto no Pix, sem preço "de" inventado).
+- 47 variantes em 43 produtos com preço de teste (R$ 30 de lucro por produto, só taxa do cartão e frete médio, sem custo de anúncio): `src/data/teste-precos.json`. Vale até 20/11/2026 às 23h59 (`fim`, UTC 21/11 02:59:59); depois os preços de `products.json` voltam sozinhos (o preço é lido na hora, também no servidor).
+- Relógio real no topo do site (`TesteRelogio`), some sozinho ao acabar (livro, MANUAL linhas 752-753: timer só com data real; se acabar, não reabrir igual).
+- `PIX_DISCOUNT = 0`; o complemento do carrinho (5% no item) ganhou preço próprio (`complementPrice`).
+- Meta: com esses preços, venda por anúncio (≈R$ 40/venda) dá prejuízo de ≈R$ 10; vale para WhatsApp/orgânico/recompra. Avaliar em 17/11 (metade) e 20/11 (fim); o livro pede ≈35 vendas para concluir teste de preço (MANUAL linha 437).

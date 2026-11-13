@@ -9,7 +9,7 @@ import { ProductReviews, ReviewStrip, reviewsFor } from "@/components/reviews";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { ShareButton } from "@/components/share-button";
-import { Grid, PaymentMethods, PixMark, SecuritySeal, Shell, Stars } from "@/components/site";
+import { Grid, PaymentMethods, SecuritySeal, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { lookupAddress } from "@/lib/address.functions";
@@ -26,7 +26,6 @@ import {
   hasFreeShipping,
   lineTotals,
   maskCep,
-  pixPrice,
   products,
   saveCep,
   useAudience,
@@ -54,7 +53,7 @@ export const Route = createFileRoute("/produto/$slug")({
     // Prévia no WhatsApp/Facebook e Google exigem endereço completo da imagem.
     const images = p.images.map((src) => (src.startsWith("http") ? src : `${SITE_URL}${src}`));
     const url = `${SITE_URL}/produto/${p.slug}`;
-    const description = `${p.short || p.name} Até 6x sem juros, 5% OFF no Pix e frete grátis acima de R$ ${FREE_SHIPPING_ABOVE.toFixed(0)}. Vonix Hair.`;
+    const description = `${p.short || p.name} Até 6x sem juros e frete grátis acima de R$ ${FREE_SHIPPING_ABOVE.toFixed(0)}. Vonix Hair.`;
     const rated = reviewsFor(p.slug);
     return {
       meta: [
@@ -436,11 +435,7 @@ function ProductPage() {
                       <span className="money rounded-full bg-[#eef8f2] px-3 py-1 text-body font-semibold text-[#2c6e55]">
                         Você economiza {brl(sel.gross - sel.net)}
                       </span>
-                    ) : (
-                      <span className="money inline-flex items-center gap-1.5 rounded-full bg-[#eef8f2] px-3 py-1 text-body font-medium text-[#2c6e55]">
-                        <PixMark className="h-4 w-4" /> {brl(pixPrice(sel.net))} no Pix
-                      </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -557,11 +552,6 @@ function ProductPage() {
         <div className="min-w-0 leading-tight">
           <div className="truncate text-small text-muted-foreground">{p.name}</div>
           <div className="font-semibold">{brl(total)}</div>
-          {!discounted && (
-            <div className="money text-small font-semibold text-[#2c6e55]">
-              {brl(pixPrice(total))} no Pix
-            </div>
-          )}
         </div>
         <button
           className="ml-auto shrink-0 rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] px-6 py-3 text-body"

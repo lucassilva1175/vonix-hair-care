@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { toItem, track } from "@/lib/analytics";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/site";
-import { OFFER_LABEL, brl, complementsFor, pixPrice, useCart, useHydrated } from "@/lib/store";
+import { OFFER_LABEL, brl, complementPrice, complementsFor, useCart, useHydrated } from "@/lib/store";
 import { ShippingBar, Summary } from "@/components/cart-summary";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 
@@ -35,7 +35,7 @@ function Suggestions() {
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         {items.map((p) => {
           const v = p.variants[0];
-          const offer = pixPrice(v.price);
+          const offer = complementPrice(v.price);
           return (
             <div
               key={p.slug}

@@ -1,0 +1,139 @@
+{
+ "_comentario": "Teste de precos de 13/11 a 20/11/2026: ate 'fim' valem estes precos; depois voltam sozinhos os de products.json. Pix sem desconto.",
+ "fim": "2026-11-21T02:59:59Z",
+ "precos": {
+  "progressiva-fio-de-luz": {
+   "1L": 109.9
+  },
+  "botox-vonix": {
+   "1Kg": 99.9
+  },
+  "shampoo-fio-de-luz-anti-residuo": {
+   "1L": 59.9
+  },
+  "mascara-reparacao-nutri-repair": {
+   "1Kg": 69.9
+  },
+  "kit-cafe-verde": {
+   "300ml": 79.9
+  },
+  "kit-banana-e-mel": {
+   "Kit": 99.9
+  },
+  "kit-cronograma-capilar": {
+   "Kit": 109.9
+  },
+  "kit-whey-protein": {
+   "300ml": 79.9
+  },
+  "plex-vonix": {
+   "1000ml": 109.9
+  },
+  "kit-cauterizacao": {
+   "500ml": 119.9
+  },
+  "kit-desmaia": {
+   "300ml": 59.9
+  },
+  "kit-monovonix": {
+   "260ml": 69.9,
+   "500ml": 99.9
+  },
+  "mascara-hidratacao-lanolina-karite": {
+   "960g": 69.9
+  },
+  "botox-line": {
+   "1Kg": 89.9
+  },
+  "shampoo-hidratante-anabolizante-capilar": {
+   "300ml": 59.9
+  },
+  "botox-line-matizador": {
+   "1Kg": 99.9
+  },
+  "mascara-efeito-teia-tomba-cabelo": {
+   "1Kg": 79.9
+  },
+  "mascara-efeito-teia-coco-nutri": {
+   "1Kg": 79.9
+  },
+  "shampoo-hidratante-desmaia-cabelo": {
+   "1L": 59.9
+  },
+  "mascara-efeito-teia-anabolizante": {
+   "1Kg": 79.9
+  },
+  "ampola-de-hidratacao-mousse-flash": {
+   "18ml": 49.9
+  },
+  "botox-vonix-matizador": {
+   "1Kg": 109.9
+  },
+  "kit-coco-nutri": {
+   "Kit": 69.9
+  },
+  "mascara-whey-protein": {
+   "2Kg": 99.9
+  },
+  "queratina-em-gel": {
+   "500ml": 59.9
+  },
+  "mousse-flash": {
+   "500ml": 69.9
+  },
+  "progressiva-diamond": {
+   "1L": 89.9
+  },
+  "queratina-com-cistina-molecular": {
+   "35ml": 49.9
+  },
+  "shampoo-diamond-anti-residuo": {
+   "1L": 59.9
+  },
+  "mascara-efeito-teia-desmaia-cabelo": {
+   "1Kg": 79.9
+  },
+  "kit-matizador-shampoo-e-mascara": {
+   "Kit": 59.9
+  },
+  "shampoo-hidratante-dep-toc": {
+   "1L": 59.9
+  },
+  "sos-reconstrutor-capilar": {
+   "1000ml": 99.9
+  },
+  "progressiva-lift-em-gel": {
+   "1L": 99.9
+  },
+  "selagem-termica-diamond": {
+   "1 L": 89.9
+  },
+  "progressiva-vonix-special-matizadora": {
+   "1L": 109.9
+  },
+  "queratina-em-massa": {
+   "500g": 59.9
+  },
+  "kit-cachos": {
+   "250ml": 59.9,
+   "1L": 119.9
+  },
+  "power-vonix": {
+   "35ml": 49.9
+  },
+  "defrizante": {
+   "300ml": 49.9,
+   "1L": 69.9
+  },
+  "perfume-capilar-vonix": {
+   "Rubi 60ml": 59.9,
+   "Ouro 60ml": 59.9
+  },
+  "reparador-de-pontas": {
+   "60ml": 59.9
+  },
+  "serum-argan": {
+   "60ml": 69.9
+  }
+ }
+}
