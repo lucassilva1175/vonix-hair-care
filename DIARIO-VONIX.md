@@ -151,3 +151,8 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Clarity: gravação 10:22 de hoje (iPhone, Fio de Luz): comprar agora → checkout → frete em 46 s → campo do cartão aos 1:12 → saiu aos 1:33 sem concluir (antes da PR #158).
 - Pendente (ideia, não feita): oferecer Correios PAC; reconferir conversão do checkout em 1-2 dias.
 - Como desfazer: nada alterado além deste diário.
+
+## 13/11/2026 (tarde) — peso real no frete (1 L = 1,25 kg, dado do Lucas)
+- Antes: toda unidade era cotada com 0,6 kg (caixa padrão), então produtos de 1 L/1 kg saíam com frete menor que o real. Agora o peso vem do tamanho do produto: conteúdo + 0,25 kg de embalagem (1 L/1 kg = 1,25 kg; 500 ml = 0,75 kg), nunca abaixo de 0,6 kg; kits e sem tamanho ficam em 0,6 kg. Vale no checkout e na etiqueta automática do Melhor Envio (mesmo peso). `unitWeightKg` em src/lib/melhorenvio.server.ts.
+- Efeito esperado: frete de produtos de 1 L sobe um pouco (mais próximo do real). Confirmar pesos dos demais tamanhos com o Lucas.
+- Como desfazer: git revert desta PR.

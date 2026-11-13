@@ -1,7 +1,7 @@
 import { isAllowedCarrier } from "./carriers";
 import { env, requireEnv } from "./env.server";
 
-export type ShippingProduct = { id: string; unitPrice: number; quantity: number };
+export type ShippingProduct = { id: string; unitPrice: number; quantity: number; weightKg?: number };
 export type ShippingQuote = { id: number; name: string; company: string; price: number; days: number };
 
 const base = () =>
@@ -54,7 +54,7 @@ export async function calculateShipping(toCep: string, products: ShippingProduct
         width: p.width,
         height: p.height,
         length: p.length,
-        weight: p.weight,
+        weight: x.weightKg ?? p.weight,
         insurance_value: Number(x.unitPrice.toFixed(2)),
         quantity: x.quantity,
       })),
@@ -81,4 +81,18 @@ export async function calculateShipping(toCep: string, products: ShippingProduct
       days: Number(q.custom_delivery_time ?? q.delivery_time ?? 0),
     }))
     .sort((a, b) => a.price - b.price);
+}
+
+/**
+ * Peso de UMA unidade a partir do tamanho do produto (ex.: "1L", "1Kg", "500ml"): conteúdo + 0,25 kg de embalagem
+ * (1 L = 1,25 kg, medida real do Lucas). Nunca abaixo do peso padrão (0,6 kg); sem tamanho (kits etc.) usa o padrão.
+ */
+export function unitWeightKg(sizeText: string): number {
+  const fallback = pkg().weight;
+  const m = /(\d+(?:[.,]\d+)?)\s*(kg|ml|l|g)\b/i.exec(sizeText);
+  if (!m) return fallback;
+  const n = Number((m[1] ?? "0").replace(",", "."));
+  const unit = (m[2] ?? "").toLowerCase();
+  const kg = unit === "kg" || unit === "l" ? n : n / 1000;
+  return Math.max(fallback, Number((kg + 0.25).toFixed(3)));
 }

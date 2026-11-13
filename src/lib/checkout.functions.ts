@@ -4,7 +4,7 @@ import { z } from "zod";
 import * as appmax from "./appmax.server";
 import { isValidCpf } from "./cpf";
 import { env } from "./env.server";
-import { calculateShipping } from "./melhorenvio.server";
+import { calculateShipping, unitWeightKg } from "./melhorenvio.server";
 import { pickFreeShipping, pickThreeShipping } from "./shipping-pick";
 import { normalizeRef, refCampaign } from "./affiliate-ref";
 import { notifyAffiliateSale } from "./affiliate-notify.server";
@@ -49,7 +49,7 @@ export const lookupCoupon = createServerFn({ method: "POST" })
 async function shippingOptions(cep: string, lines: ReturnType<typeof buildLines>, couponCode?: string) {
   const quotes = await calculateShipping(
     cep,
-    lines.map((l) => ({ id: l.product.slug, unitPrice: l.net / l.units, quantity: l.units })),
+    lines.map((l) => ({ id: l.product.slug, unitPrice: l.net / l.units, quantity: l.units, weightKg: unitWeightKg(l.variant) })),
   );
   const t = checkoutTotals(lines, "pix");
   const free = t.freeShipping || couponFreeShipping(findCoupon(couponCode), t.gross);
