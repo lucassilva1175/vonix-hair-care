@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Lock, Truck } from "lucide-react";
+import { CreditCard, Lock, QrCode, ShieldCheck, Truck } from "lucide-react";
 import { SecuritySeal, Shell } from "@/components/site";
 import { ShippingBar } from "@/components/cart-summary";
 import { ProvasEmVideo } from "@/components/provas-em-video";
@@ -607,8 +607,8 @@ function Checkout() {
           <form id="checkout-form" className="min-w-0 space-y-3" onSubmit={onSubmit}>
             <div>
               <h1 className={lateral ? "sr-only" : "font-display text-h2 lg:text-h1"}>Finalizar compra</h1>
-              <p className="mt-2 flex items-center gap-2 text-small text-muted-foreground">
-                <Truck className="h-4 w-4 shrink-0 text-emerald-700" strokeWidth={1.8} aria-hidden="true" />
+              <p className="mt-2 flex cursor-default select-none items-center gap-2 text-small font-medium text-[#2c6e55]">
+                <Truck className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
                 {missingForFreeShipping(gross) > 0
                   ? `Faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
                   : "Você ganhou frete grátis"}
@@ -623,11 +623,23 @@ function Checkout() {
               )}
             </div>
 
-            <ul aria-label="Vantagens da compra" className="flex flex-wrap gap-x-4 gap-y-1 text-small text-muted-foreground">
-              {["Pix ou cartão: mesmo preço", "Até 6x sem juros", `Frete grátis acima de ${brl(FREE_SHIPPING_ABOVE)}`, "Compra 100% segura"].map((t) => (
-                <li key={t} className="flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5 shrink-0 text-emerald-700" strokeWidth={2} aria-hidden="true" />
-                  {t}
+            <ul aria-label="Vantagens da compra" className="grid cursor-default select-none grid-cols-2 gap-x-3 gap-y-3 rounded-2xl border border-[#eadfc6] bg-[#fbf7ee] px-3.5 py-3.5">
+              {(
+                [
+                  [QrCode, "Pix ou cartão", "mesmo preço"],
+                  [CreditCard, "Até 6x", "sem juros no cartão"],
+                  [Truck, "Frete grátis", `acima de ${brl(FREE_SHIPPING_ABOVE)}`],
+                  [ShieldCheck, "Compra segura", "seus dados protegidos"],
+                ] as const
+              ).map(([Icon, title, sub]) => (
+                <li key={title} className="flex items-center gap-2.5">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f1e6c8] text-[#8a6a1c]">
+                    <Icon className="h-4 w-4" strokeWidth={1.7} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <b className="block text-small font-semibold text-foreground">{title}</b>
+                    <span className="block text-[0.75rem] text-muted-foreground">{sub}</span>
+                  </span>
                 </li>
               ))}
             </ul>
