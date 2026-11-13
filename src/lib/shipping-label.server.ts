@@ -1,6 +1,6 @@
 import { env } from "./env.server";
 import { notifyLabelProblem } from "./label-alert.server";
-import { calculateShipping, melhorEnvio, packageSize } from "./melhorenvio.server";
+import { calculateShipping, melhorEnvio, packageSize, unitWeightKg } from "./melhorenvio.server";
 import {
   balanceWarning,
   buildCartBody,
@@ -102,13 +102,16 @@ async function run(order: PaidOrder): Promise<LabelResult> {
   if (existing.length) return { status: "ja-existe", shipmentId: existing[0]?.id, protocol: existing[0]?.protocol };
 
   const units = order.units;
+  // Peso real: cada item pesa conforme o tamanho no nome (ex.: "(1L)" = 1,25 kg), igual ao cálculo do checkout.
+  const totalWeight = order.items.reduce((sum, i) => sum + unitWeightKg(i.name) * i.quantity, 0);
+  const unitAvg = totalWeight > 0 && units > 0 ? totalWeight / units : packageSize().weight;
   const quotes = await calculateShipping(order.customer.postcode, [
-    { id: `pedido-${order.id}`, unitPrice: order.productsTotal / units, quantity: units },
+    { id: `pedido-${order.id}`, unitPrice: order.productsTotal / units, quantity: units, weightKg: unitAvg },
   ]);
   const service = pickService(quotes, order.freightType, order.freightValue);
   if (!service) throw new Error(`Sem cotação de frete para o CEP ${order.customer.postcode}`);
 
-  const body = buildCartBody(order, service.id, sender(order), packageSize(), env("MELHORENVIO_NON_COMMERCIAL", "true") !== "false");
+  const body = buildCartBody(order, service.id, sender(order), { ...packageSize(), weight: unitAvg }, env("MELHORENVIO_NON_COMMERCIAL", "true") !== "false");
   const cart = await melhorEnvio<{ id: string; protocol?: string }>("POST", "/api/v2/me/cart", body);
 
   // Dois avisos quase juntos podem criar dois envios: só o de menor id segue, o outro é removido.
