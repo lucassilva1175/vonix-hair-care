@@ -180,3 +180,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Meta (30 dias até 12/11; hoje ainda não fechado): igual às rodadas anteriores: conta R$ 1.115,40; FRIO Combo Banana e Mel ativo e Remarketing MORNO 30D ativo; demais desativadas; 20 rascunhos não publicados; nenhuma reprovada visível. Colunas de carrinho/compra não carregam em texto: sem número novo de compras.
 - Site no ar: home 200 em 1,6 s (um pouco mais lenta que as 12h10). Clarity e pixel não reabertos. Mudança do dia: nenhuma ("ainda é cedo": menos de 100 visitas pagas após a última mudança). Orçamento mantido em R$ 30/dia.
 - Como desfazer: nada alterado além deste diário.
+
+## 13/11/2026 (17h30) — relatório diário e compra teste segura
+- Compra teste sem pagar: Botox Vonix → carrinho → checkout, CEP 01310-100: frete JeT Standard grátis, total Pix R$ 175,82, botão "Gerar Pix" liberado, sem erro (desktop e 390 px). Só 1 opção de frete apareceu para esse CEP.
+- Pixel Meta ("Vonix | E-commerce"): PageView e Ver conteúdo há 52 min; Adicionar ao carrinho e Iniciar finalização há 2 h; Compra: último evento há 3 dias (sem venda nova).
+- Anúncios 6–12/11: R$ 412,70; FRIO Combo Banana e Mel R$ 387,01 (8,7 mil impressões); Remarketing MORNO R$ 6,51. Sem número de carrinho/compra legível. Orçamento mantido, sem mudança.
+- Relatório completo: Vonix - Atendimento\relatorio-2026-11-13.md. Como desfazer: nada alterado além deste diário.
