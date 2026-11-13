@@ -5,7 +5,7 @@ import * as appmax from "./appmax.server";
 import { isValidCpf } from "./cpf";
 import { env } from "./env.server";
 import { calculateShipping } from "./melhorenvio.server";
-import { pickFreeShipping, pickTwoShipping } from "./shipping-pick";
+import { pickFreeShipping, pickThreeShipping } from "./shipping-pick";
 import { normalizeRef, refCampaign } from "./affiliate-ref";
 import { notifyAffiliateSale } from "./affiliate-notify.server";
 import { checkoutTotals, getProduct, lineTotals, type Offer } from "./store";
@@ -58,7 +58,7 @@ async function shippingOptions(cep: string, lines: ReturnType<typeof buildLines>
     const chosen = pickFreeShipping(quotes);
     return chosen ? [{ ...chosen, free: true, price: 0 }] : [];
   }
-  return pickTwoShipping(quotes).map((q) => ({ ...q, free: false }));
+  return pickThreeShipping(quotes).map((q) => ({ ...q, free: false }));
 }
 
 export const quoteShipping = createServerFn({ method: "POST" })

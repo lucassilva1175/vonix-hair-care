@@ -47,3 +47,19 @@ export function pickFreeShipping<T extends Pick<ShippingQuote, "id" | "price" | 
   if (fast && fast.price - cheapest.price <= FREE_EXTRA_FOR_SPEED) return fast;
   return cheapest;
 }
+
+/**
+ * Até TRÊS opções no checkout: as duas de pickTwoShipping (rápida e econômica) + uma terceira intermediária,
+ * de preferência dos Correios (PAC), senão a mais barata das que sobram. Preços e prazos são sempre os reais da cotação.
+ */
+export function pickThreeShipping<T extends Pick<ShippingQuote, "id" | "price" | "days"> & { company?: string; name?: string }>(
+  quotes: T[],
+): T[] {
+  const base = pickTwoShipping(quotes);
+  const rest = quotes.filter((q) => !base.some((b) => b.id === q.id));
+  const isCorreios = (q: T) => /correios/i.test(`${q.company ?? ""} ${q.name ?? ""}`);
+  const third =
+    [...rest].filter(isCorreios).sort((a, b) => a.price - b.price || a.days - b.days)[0] ??
+    [...rest].sort((a, b) => a.price - b.price || a.days - b.days)[0];
+  return (third ? [...base, third] : base).sort((a, b) => a.days - b.days || a.price - b.price);
+}
