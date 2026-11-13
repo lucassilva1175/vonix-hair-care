@@ -302,8 +302,8 @@ function ProductPage() {
   return (
     <Shell>
       {buyOpen && <BuyDrawer onClose={() => setBuyOpen(false)} onPay={goCheckout} />}
-      <div className="container-site py-8 pb-28 lg:pb-8">
-        <nav className="mb-6 text-small text-muted-foreground">
+      <div className="container-site py-4 pb-28 sm:py-8 lg:pb-8">
+        <nav className="mb-6 hidden text-small text-muted-foreground sm:block">
           <Link to="/">Início</Link> /{" "}
           <Link to="/loja" search={{ categoria: p.category }}>
             {p.categoryLabel}
@@ -331,11 +331,6 @@ function ProductPage() {
             </div>
             {p.short && <p className="mt-3 text-muted-foreground">{p.short}</p>}
             <ReviewStrip slug={p.slug} />
-            <div className="mt-4">
-              <p className="mb-2 text-small font-semibold">Veja em vídeo quem usa</p>
-              <ProvasEmVideo slug={p.slug} seed={p.slug} />
-            </div>
-            <ComentariosInstagram slug={p.slug} max={4} />
             {
               <div className="mt-6">
                 <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
@@ -535,6 +530,11 @@ function ProductPage() {
                 </a>
               </li>
             </ul>
+            <div className="mt-8">
+              <p className="mb-2 text-small font-semibold">Veja em vídeo quem usa</p>
+              <ProvasEmVideo slug={p.slug} seed={p.slug} />
+            </div>
+            <ComentariosInstagram slug={p.slug} max={4} />
           </div>
         </div>
         {p.description && <ProductDetails p={p} />}
