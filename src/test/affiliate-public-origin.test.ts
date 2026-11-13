@@ -24,6 +24,9 @@ const gates = vi.hoisted(() => ({
   legacyOwner: vi.fn(),
   activeOwner: vi.fn(),
   erase: vi.fn(),
+  memberLogin: vi.fn(),
+  legacyLogin: vi.fn(),
+  destroy: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-start", () => ({
@@ -44,13 +47,16 @@ vi.mock("@/lib/affiliate-auth-delivery.server", () => ({
   sendAffiliateManagedAuthOtp: gates.sendManaged,
 }));
 vi.mock("@/lib/affiliate-admin-auth.server", () => ({
-  attemptAffiliateAdminLogin: vi.fn(),
+  attemptAffiliateAdminLogin: gates.legacyLogin,
+}));
+vi.mock("@/lib/affiliate-member-auth.server", () => ({
+  loginAffiliateTeamWithPassword: gates.memberLogin,
 }));
 vi.mock("@/lib/affiliate-admin-session.server", () => ({
   affiliateAdminSameOrigin: gates.sameOrigin,
   affiliateMutationSameOrigin: gates.sameOrigin,
   affiliateAdminSessionAuthorized: gates.session,
-  destroyAffiliateAdminSession: vi.fn(),
+  destroyAffiliateAdminSession: gates.destroy,
   affiliateAdminMayErase: gates.mayErase,
   affiliateLegacyAdminSessionValid: gates.legacyOwner,
 }));
@@ -88,6 +94,10 @@ import {
   eraseAffiliateApplicationAdmin,
   submitAffiliateApplication,
   submitSimpleAffiliateApplication,
+  loginAffiliateAdminMember,
+  loginAffiliateAdmin,
+  getAffiliateAdminSession,
+  logoutAffiliateAdmin,
 } from "@/lib/affiliate-functions";
 
 // Validation takes place in the framework before the handler. These synthetic
@@ -122,6 +132,8 @@ beforeEach(() => {
   gates.legacyOwner.mockReturnValue(false);
   gates.activeOwner.mockResolvedValue(true);
   gates.erase.mockResolvedValue(true);
+  gates.memberLogin.mockResolvedValue({ ok: true });
+  gates.legacyLogin.mockResolvedValue({ ok: true });
 });
 
 describe("Public simplified affiliate submission origin policy", () => {
@@ -419,5 +431,65 @@ describe("LGPD erasure revocation gate", () => {
     expect((await erase({ data })).ok).toBe(false);
     expect(gates.activeOwner).not.toHaveBeenCalled();
     expect(gates.erase).not.toHaveBeenCalled();
+  });
+});
+
+describe("C29: authenticated session endpoints do not expose cacheable credentials or state", () => {
+  const member = loginAffiliateAdminMember as unknown as (args: {
+    data: { email: string; password: string };
+  }) => Promise<{ ok: boolean }>;
+  const legacy = loginAffiliateAdmin as unknown as (args: {
+    data: { password: string; otp: string };
+  }) => Promise<{ ok: boolean }>;
+  const session = getAffiliateAdminSession as unknown as () => Promise<{ authenticated: boolean }>;
+  const logout = logoutAffiliateAdmin as unknown as () => Promise<{ ok: boolean }>;
+
+  function privacyHeaders() {
+    expect(setResponseHeader).toHaveBeenCalledWith("Cache-Control", "private, no-store, max-age=0");
+    expect(setResponseHeader).toHaveBeenCalledWith("Referrer-Policy", "no-referrer");
+  }
+
+  it("disables caching for private member password-grant responses", async () => {
+    expect(
+      await member({ data: { email: "owner@example.invalid", password: "synthetic-test-only" } }),
+    ).toEqual({ ok: true });
+    expect(gates.memberLogin).toHaveBeenCalledOnce();
+    privacyHeaders();
+  });
+
+  it("disables caching for legacy TOTP sign-in responses", async () => {
+    expect(await legacy({ data: { password: "synthetic-test-only", otp: "123456" } })).toEqual({
+      ok: true,
+    });
+    expect(gates.legacyLogin).toHaveBeenCalledOnce();
+    privacyHeaders();
+  });
+
+  it("keeps signed session-check responses no-store and no-referrer", async () => {
+    expect(await session()).toEqual({ authenticated: true });
+    privacyHeaders();
+  });
+
+  it("prevents caching successful logout and clears the server cookie once", async () => {
+    expect(await logout()).toEqual({ ok: true });
+    expect(gates.destroy).toHaveBeenCalledOnce();
+    privacyHeaders();
+  });
+
+  it("prevents caching cross-origin denied logout without altering server sessions", async () => {
+    gates.sameOrigin.mockReturnValue(false);
+    expect(await logout()).toEqual({ ok: false });
+    expect(gates.destroy).not.toHaveBeenCalled();
+    privacyHeaders();
+  });
+
+  it("does not allow caching or referrer propagation of an owner OTP request", async () => {
+    const request = requestAffiliateAccessEmail as unknown as (args: {
+      data: { email: string; purpose: "owner" };
+    }) => Promise<{ status: string }>;
+    expect(await request({ data: { email: "owner@example.invalid", purpose: "owner" } })).toEqual({
+      status: "requested",
+    });
+    privacyHeaders();
   });
 });

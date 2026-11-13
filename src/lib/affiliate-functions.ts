@@ -48,6 +48,12 @@ import {
   processAffiliateEmails,
 } from "./affiliate-applications.server";
 
+/** Sensitive identity responses must never be stored or propagated by a shared cache. */
+function privateAffiliateAuthResponse() {
+  setResponseHeader("Cache-Control", "private, no-store, max-age=0");
+  setResponseHeader("Referrer-Policy", "no-referrer");
+}
+
 function classifyAffiliateFetchFailure(error: unknown): string {
   // Only a fixed, non-sensitive category is returned to callers.
   // Never return the raw error or any header/secret content.
@@ -156,7 +162,7 @@ export const requestAffiliateAccessEmail = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    setResponseHeader("Cache-Control", "private, no-store, max-age=0");
+    privateAffiliateAuthResponse();
     if (!affiliateMutationSameOrigin()) return { status: "denied" as const };
     if (!(await consumeAffiliateRateLimit("admin"))) {
       return { status: "rate-limited" as const };
@@ -347,18 +353,25 @@ export const loginAffiliateAdminMember = createServerFn({ method: "POST" })
       password: z.string().min(12).max(128),
     }),
   )
-  .handler(async ({ data }) => loginAffiliateTeamWithPassword(data.email, data.password));
+  .handler(async ({ data }) => {
+    privateAffiliateAuthResponse();
+    return loginAffiliateTeamWithPassword(data.email, data.password);
+  });
 
 export const loginAffiliateAdmin = createServerFn({ method: "POST" })
   .validator(affiliateAdminSchema.extend({ otp: z.string().max(6).optional() }))
-  .handler(async ({ data }) => attemptAffiliateAdminLogin(data.password, data.otp ?? ""));
+  .handler(async ({ data }) => {
+    privateAffiliateAuthResponse();
+    return attemptAffiliateAdminLogin(data.password, data.otp ?? "");
+  });
 
 export const getAffiliateAdminSession = createServerFn({ method: "GET" }).handler(async () => {
-  setResponseHeader("Cache-Control", "no-store");
+  privateAffiliateAuthResponse();
   return { authenticated: await affiliateAdminSessionAuthorized() };
 });
 
 export const logoutAffiliateAdmin = createServerFn({ method: "POST" }).handler(async () => {
+  privateAffiliateAuthResponse();
   if (!affiliateAdminSameOrigin()) return { ok: false as const };
   destroyAffiliateAdminSession();
   return { ok: true as const };
