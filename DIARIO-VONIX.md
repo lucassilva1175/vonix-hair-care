@@ -126,3 +126,11 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Clarity não reaberto nesta rodada. Conector Abency segue bloqueado (teste acabou).
 - Mudança do dia: nenhuma; menos de 100 visitas pagas após a última mudança: "ainda é cedo". Orçamento mantido em R$ 30/dia (sem venda real).
 - Como desfazer: nada alterado além deste diário.
+
+## 13/11/2026 (tarde) — rotina Clarity (sem mudança de código)
+- Clarity (3 dias, 167 sessões reais, tráfego interno ignorado): 94 viram produto, só 3 foram ao carrinho (3,2%), 13 abriram o checkout, 7 informaram frete, 1 chegou ao pagamento, 2 compras no funil. Cliques mortos 14,4% (24 sessões), retornos rápidos 16,8% (28). Erros de JS: só "java object is gone" do navegador do Instagram (não é do site). LCP 3,1 s (precisa melhorar), CLS bom.
+- Origem: Instagram/Facebook (apps) ≈ 27% das sessões; Google 7.
+- Gargalo: produto → carrinho. A PR #157 (hoje 11h24) já sobe carrinho/compra no celular; os dados do Clarity são de antes dela, então NÃO mexi em mais nada para não misturar o efeito. Reconferir em 1-2 dias.
+- Gravações do checkout e Google Analytics não abertos nesta rodada (o filtro por URL volta ao painel; conector Abency/GA4 devolve erro 404). Sem Pix gerado sem pagamento novo visto.
+- Site no ar: home 1,0 s, botox 0,19 s, checkout 0,14 s, todos 200. Meta: não olhado (só observar; sem mudança).
+- Como desfazer: nada alterado além deste diário.
