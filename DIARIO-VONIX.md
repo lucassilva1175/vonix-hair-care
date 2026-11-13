@@ -133,4 +133,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Gargalo: produto → carrinho. A PR #157 (hoje 11h24) já sobe carrinho/compra no celular; os dados do Clarity são de antes dela, então NÃO mexi em mais nada para não misturar o efeito. Reconferir em 1-2 dias.
 - Gravações do checkout e Google Analytics não abertos nesta rodada (o filtro por URL volta ao painel; conector Abency/GA4 devolve erro 404). Sem Pix gerado sem pagamento novo visto.
 - Site no ar: home 1,0 s, botox 0,19 s, checkout 0,14 s, todos 200. Meta: não olhado (só observar; sem mudança).
+
+## 13/11/2026 (12h10) — rotina automática, só conferência
+- Meta (30 dias até 12/11, dado de hoje ainda não fechado): igual à rodada das 8h10: conta R$ 1.115,40; FRIO Combo Banana e Mel ativo (R$ 386,99); Remarketing MORNO 30D ativo (R$ 6,51); demais desativadas; nenhuma reprovada visível; 20 rascunhos não publicados. Colunas de carrinho/compra não carregaram em texto: sem número novo de compras.
+- Site no ar: home 0,55 s, botox 0,77 s, checkout 0,39 s, todos 200.
+- Clarity e pixel não reabertos nesta rodada. Mudança do dia: nenhuma ("ainda é cedo": menos de 100 visitas pagas após a última mudança). Orçamento mantido em R$ 30/dia.
 - Como desfazer: nada alterado além deste diário.
