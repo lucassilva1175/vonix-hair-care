@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Lock } from "lucide-react";
+import { Check, Lock, Truck } from "lucide-react";
 import { SecuritySeal, Shell } from "@/components/site";
 import { ShippingBar } from "@/components/cart-summary";
 import { ProvasEmVideo } from "@/components/provas-em-video";
@@ -607,10 +607,11 @@ function Checkout() {
           <form id="checkout-form" className="min-w-0 space-y-3" onSubmit={onSubmit}>
             <div>
               <h1 className={lateral ? "sr-only" : "font-display text-h2 lg:text-h1"}>Finalizar compra</h1>
-              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-emerald-600 px-3 py-2 text-small font-semibold text-white">
+              <p className="mt-2 flex items-center gap-2 text-small text-muted-foreground">
+                <Truck className="h-4 w-4 shrink-0 text-emerald-700" strokeWidth={1.8} aria-hidden="true" />
                 {missingForFreeShipping(gross) > 0
-                  ? `faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
-                  : "você ganhou frete grátis"}
+                  ? `Faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
+                  : "Você ganhou frete grátis"}
               </p>
               {cfg?.sandbox && (
                 <p
@@ -622,11 +623,13 @@ function Checkout() {
               )}
             </div>
 
-            <ul aria-label="Vantagens da compra" className="grid grid-cols-2 gap-2 text-center text-small font-semibold sm:grid-cols-4">
-              <li className="rounded-xl bg-emerald-600 px-2 py-2 text-white">Pix ou cartão: mesmo preço</li>
-              <li className="rounded-xl bg-foreground px-2 py-2 text-background">Até 6x sem juros</li>
-              <li className="rounded-xl bg-muted px-2 py-2">Frete grátis acima de {brl(FREE_SHIPPING_ABOVE)}</li>
-              <li className="rounded-xl bg-muted px-2 py-2">Compra 100% segura</li>
+            <ul aria-label="Vantagens da compra" className="flex flex-wrap gap-x-4 gap-y-1 text-small text-muted-foreground">
+              {["Pix ou cartão: mesmo preço", "Até 6x sem juros", `Frete grátis acima de ${brl(FREE_SHIPPING_ABOVE)}`, "Compra 100% segura"].map((t) => (
+                <li key={t} className="flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-emerald-700" strokeWidth={2} aria-hidden="true" />
+                  {t}
+                </li>
+              ))}
             </ul>
 
             <fieldset className={panel}>
