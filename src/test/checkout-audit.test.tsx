@@ -134,6 +134,35 @@ describe("checkout auditado sem chamadas reais", () => {
     expect(await screen.findByText("CPF inválido. Confira os números.")).toBeInTheDocument();
     expect(mocks.payment).not.toHaveBeenCalled();
   });
+  it("tela do Pix mostra o contador preto com o prazo real da Appmax e avisa quando expira", async () => {
+    // A Appmax manda a hora de Brasília ("Y-m-d H:i:s"): 10 minutos à frente.
+    const brt = (min: number) => new Date(Date.now() + min * 60000 - 3 * 3600000).toISOString().slice(0, 19).replace("T", " ");
+    mocks.payment.mockResolvedValue({
+      ok: true,
+      method: "pix",
+      orderId: 7,
+      total: 99.9,
+      pix: { emv: "000201-teste", qrcode: "AAAA", expiresAt: brt(10) },
+    });
+    render(<Checkout />);
+    await fill();
+    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
+    const timer = await screen.findByTestId("pix-timer");
+    expect(timer).toHaveTextContent("Seu Pix expira em");
+    expect(timer).toHaveTextContent(/0[89]:\d\d|10:00/);
+    cleanup();
+    mocks.payment.mockResolvedValue({
+      ok: true,
+      method: "pix",
+      orderId: 8,
+      total: 99.9,
+      pix: { emv: "000201-teste", qrcode: "AAAA", expiresAt: brt(-1) },
+    });
+    render(<Checkout />);
+    await fill();
+    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
+    expect(await screen.findByTestId("pix-timer")).toHaveTextContent("Este Pix expirou");
+  });
   it("WhatsApp curto ou nome curto: avisa o campo certo, uma vez só, e não envia o pedido", async () => {
     render(<Checkout />);
     await fill();
