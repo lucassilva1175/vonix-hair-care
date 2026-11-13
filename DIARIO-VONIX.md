@@ -139,3 +139,11 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Site no ar: home 0,55 s, botox 0,77 s, checkout 0,39 s, todos 200.
 - Clarity e pixel não reabertos nesta rodada. Mudança do dia: nenhuma ("ainda é cedo": menos de 100 visitas pagas após a última mudança). Orçamento mantido em R$ 30/dia.
 - Como desfazer: nada alterado além deste diário.
+
+## 13/11/2026 (tarde) — frete surpresa (vídeo da cliente, CEP 60824-000 Fortaleza) e gravações Clarity
+- Vídeo (11:05-11:06): Progressiva Fio de Luz R$ 109,90, CEP 60824-000; o checkout mostrou frete R$ 79,66 (total R$ 189,56) = o Correios SEDEX estava pré-selecionado. Para a cliente o frete custava 72% do produto: causa provável de desistência. Também não havia frete visível no carrinho ("Informe o CEP").
+- Causa: antes da PR #158 (publicada 11:24) o site pré-selecionava a opção rápida (SEDEX). Agora pré-seleciona a mais barata.
+- Conferido ao vivo (1 Botox R$ 99,90, abaixo de R$ 150): Fortaleza JeT R$ 16,80 (8 dias) pré-selecionado e SEDEX R$ 79,56 como opção; Manaus JeT R$ 31,50 (13 d) / SEDEX R$ 79,56; Cuiabá JeT R$ 25,62 (5 d) / SEDEX R$ 68,29; SP JeT R$ 15,10 (3 d) / SEDEX R$ 38,27. Sem erro de cotação e sem "frete vazio" nesses 4 CEPs. Só SEDEX do Correios aparece (sem PAC).
+- Clarity: gravação 10:22 de hoje (iPhone, Fio de Luz): comprar agora → checkout → frete em 46 s → campo do cartão aos 1:12 → saiu aos 1:33 sem concluir (antes da PR #158).
+- Pendente (ideia, não feita): oferecer Correios PAC; reconferir conversão do checkout em 1-2 dias.
+- Como desfazer: nada alterado além deste diário.
