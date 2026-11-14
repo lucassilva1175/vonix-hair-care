@@ -186,3 +186,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Pixel Meta ("Vonix | E-commerce"): PageView e Ver conteúdo há 52 min; Adicionar ao carrinho e Iniciar finalização há 2 h; Compra: último evento há 3 dias (sem venda nova).
 - Anúncios 6–12/11: R$ 412,70; FRIO Combo Banana e Mel R$ 387,01 (8,7 mil impressões); Remarketing MORNO R$ 6,51. Sem número de carrinho/compra legível. Orçamento mantido, sem mudança.
 - Relatório completo: Vonix - Atendimento\relatorio-2026-11-13.md. Como desfazer: nada alterado além deste diário.
+
+## 14/11/2026 — rotina Clarity (só observação, sem mudança no site)
+- Clarity (3 dias): 125 sessões (113 de bot excluídas). Funil: 70 viram produto → 20 abriram checkout → 10 frete → 3 pagamento. Maior queda: frete → pagamento (10 → 3) e anúncio → produto (muitas sessões do Instagram/Facebook saem em menos de 1 min sem clique). Erros de JS: só "java object is gone" (webview do app, sem efeito) e "script error". Desempenho 76/100, LCP 3,4 s (precisa melhorar).
+- Google Analytics (G-J8TYLB425K): não abriu neste login (pede criar propriedade), sem dados lidos.
+- Nenhum Pix gerado sem pagamento nem erro de pagamento visto. Não achei um bug único e claro sem assistir às gravações do checkout: próximo passo é abrir as gravações de fhhwpm/i4q1zj/w5nf9k (mobile, saíram em /checkout) e o LCP.
+- Como desfazer: nada alterado além deste diário.
