@@ -218,3 +218,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Preços do site conferidos contra a tabela de custo: nenhuma variante sem custo e nenhuma abaixo da margem mínima sem anúncio. Nada alterado em preço, frete ou anúncio.
 - Pendências: confirmar se o relógio de 15 minutos do checkout é tempo real; atendimento IG/FB sem acesso à caixa nas rodadas de hoje.
 - Como desfazer: nada alterado além deste diário.
+
+## 15/11/2026 (17h30) — relatório diário e compra teste segura (só observação, sem mudança no site)
+- Compra teste sem pagar: Botox Vonix → carrinho → checkout, CEP 01310-100: frete grátis (2 a 3 dias úteis), botão "Gerar Pix" liberado, sem erro. Computador OK; celular em quadro de 390 px (sem rolagem lateral, botão ativo).
+- Pixel e gasto de anúncios: não lidos (Gerenciador de Eventos ficou em "Carregando" e a tabela do Gerenciador de Anúncios não mostrou as colunas). Campanha Power segue ativa; sem edição (domingo).
+- Pendências: confirmar se o relógio de 15 minutos do checkout é tempo real; reconferir pixel/Compra quando o Meta carregar.
+- Como desfazer: nada alterado além deste diário.
