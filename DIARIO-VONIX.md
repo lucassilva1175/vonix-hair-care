@@ -218,3 +218,7 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Preços do site conferidos contra a tabela de custo: nenhuma variante sem custo e nenhuma abaixo da margem mínima sem anúncio. Nada alterado em preço, frete ou anúncio.
 - Pendências: confirmar se o relógio de 15 minutos do checkout é tempo real; atendimento IG/FB sem acesso à caixa nas rodadas de hoje.
 - Como desfazer: nada alterado além deste diário.
+
+## 15/11/2026 — rotina dono do resultado
+- Clarity (3 dias): gargalo é checkout → compra (24 abriram, 4 compraram). Melhoria: o checkout agora lembra nome, e-mail e WhatsApp de quem volta (só no aparelho; PR 206). Duas revisões feitas; testes passam. Meta/GA4 não lidos nesta rodada.
+- Como desfazer: reverter o PR 206.
