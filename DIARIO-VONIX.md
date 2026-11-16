@@ -222,3 +222,11 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 ## 16/11/2026 — checkout: nota de confiança em "Seus dados" (PR #220)
 - Clarity (3 dias): produto 96 sessões, carrinho 24, checkout 23, frete 11, pagamento 1; o abandono é depois do frete, na etapa de dados. Mudança: nota curta sob os campos (uso do CPF/e-mail/WhatsApp, pagamento pela Appmax, 7 dias para desistir). Só texto; testes e tipos passam; conferido no checkout local.
 - Como desfazer: git revert do PR #220. Conferência ao vivo pendente (deploy ainda não refletia).
+
+## 16/11/2026 (17h30) — relatório diário e compra teste segura (só observação, sem mudança no site)
+- Compra teste sem pagar: Botox Vonix → carrinho → checkout, CEP 01310-100 já preenchido: frete grátis (3 a 4 dias úteis); ao escolher o frete o botão "Gerar Pix" liberou, sem erro (não cliquei). Computador OK; celular em quadro de 390 px: sem rolagem lateral, frete grátis visível (o Chrome não encolhe a janela; não é celular real).
+- Pixel: o Gerenciador de Eventos deu página de erro; NÃO conferido (PageView/AddToCart/Purchase). Não forcei Purchase.
+- Anúncios (conta 1034566721765909, dados até 15/11): campanha Power ativa, R$ 94,17 gastos, 44 cliques no link, 29 visualizações da página, 4 carrinhos, 2 finalizações, 0 compras. As outras 21 desativadas. Sem edição.
+- Preços/frete: sem mudança. Perfumes separados (15/11) e itens novos precisam de custo real na planilha para conferir margem.
+- Pendências: relógio de 15 min do checkout ainda aparece (confirmar se é tempo real); pixel sem conferir; carrinho de teste do Chrome com itens acumulados.
+- Como desfazer: nada alterado além deste diário.
