@@ -222,3 +222,4 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 ## 16/11/2026 — checkout: nota de confiança em "Seus dados" (PR #220)
 - Clarity (3 dias): produto 96 sessões, carrinho 24, checkout 23, frete 11, pagamento 1; o abandono é depois do frete, na etapa de dados. Mudança: nota curta sob os campos (uso do CPF/e-mail/WhatsApp, pagamento pela Appmax, 7 dias para desistir). Só texto; testes e tipos passam; conferido no checkout local.
 - Como desfazer: git revert do PR #220. Conferência ao vivo pendente (deploy ainda não refletia).
+## 17/11/2026 — rodada dono-do-resultado: só diagnóstico (funil trava depois do frete e INP ruim no celular). Nenhuma mudança publicada; proposta de frete pré-marcado aguarda decisão do dono.
