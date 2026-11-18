@@ -229,3 +229,7 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Meta: campanha Power ativa, 0 compras, gasto acumulado maior que ontem; orçamento aparece como R$ 250/dia (acima do teto de R$ 100): aguardando confirmação do dono. Nada alterado.
 - Pix 5% (16/11) reduz a margem de venda por anúncio; decisão pendente do dono.
 - Como desfazer: nada alterado além deste diário.
+
+## 18/11/2026 — produto no celular: parcelamento na barra fixa (PR #236)
+- Clarity (3 dias): produto 99 sessões → carrinho 4 → checkout 3; pagamento 1. Maior perda: página do produto → carrinho. Mudança: a barra fixa "Comprar agora" mostra "ou 6x de R$ X sem juros" (calculado por installments() em store.ts; preço inalterado). Testes e tipos passam; revisão do diff em dois passes. Conferência ao vivo pendente do deploy.
+- Como desfazer: git revert do PR #236.
