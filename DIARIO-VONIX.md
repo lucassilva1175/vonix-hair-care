@@ -229,3 +229,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Meta: campanha Power ativa, 0 compras, gasto acumulado maior que ontem; orçamento aparece como R$ 250/dia (acima do teto de R$ 100): aguardando confirmação do dono. Nada alterado.
 - Pix 5% (16/11) reduz a margem de venda por anúncio; decisão pendente do dono.
 - Como desfazer: nada alterado além deste diário.
+
+## 18/11/2026 (fim da tarde) — rotina automática, só conferência
+- Compra teste segura (sem pagar): produto → carrinho → checkout com CEP de São Paulo; frete grátis aparece, botão "Gerar Pix" libera após escolher o frete, sem erro e sem rolagem lateral (computador e quadro de 390 px).
+- Meta/anúncios e pixel: não abertos, por ordem do dono (18/11).
+- Preços e frete: sem mudança desde 17/11.
+- Como desfazer: nada alterado no site além deste diário.
