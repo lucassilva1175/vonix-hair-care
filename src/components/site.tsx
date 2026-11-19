@@ -280,9 +280,6 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
       <TesteRelogio />
       {/* Acompanham a rolagem: logo (com menu, entrar e carrinho), a busca e a escolha "Para mim / Cabeleireiras". O resto rola com a página. */}
-      {!isCheckout && !isProduct && (
-        <p className="whitespace-nowrap bg-background pt-2 text-center text-body italic">“Até aqui nos ajudou o Senhor”</p>
-      )}
       <div className="sticky top-0 z-40 border-b border-border bg-background">
         <div className="container-site grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 py-2 lg:flex lg:gap-4">
           {isCheckout ? (
