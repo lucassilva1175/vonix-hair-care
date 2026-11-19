@@ -19,15 +19,18 @@ export function AffiliateVerifiedReviewPreview() {
       className="border-y border-border bg-secondary/30 px-5 py-7 sm:py-8"
     >
       <div className="mx-auto max-w-5xl">
-        <h2 id="product-review-preview-title" className="font-display text-2xl text-primary sm:text-3xl">
+        <h2
+          id="product-review-preview-title"
+          className="font-display text-2xl text-primary sm:text-3xl"
+        >
           O que dizem sobre nossos produtos
         </h2>
         <p
           id="product-review-preview-disclaimer"
           className="mt-3 max-w-4xl text-xs leading-relaxed text-muted-foreground"
         >
-          Avaliações de clientes sobre o produto Botox Vonix. Não são depoimentos de afiliadas e
-          não comprovam compra verificada, vendas, renda ou participação no programa.
+          Avaliações de clientes sobre o produto Botox Vonix. Não são depoimentos de afiliadas e não
+          comprovam compra verificada, vendas, renda ou participação no programa.
         </p>
         <div className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2 sm:gap-8">
           {selectedReviews.map((review) => (

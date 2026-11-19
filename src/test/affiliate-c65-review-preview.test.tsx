@@ -31,18 +31,22 @@ afterEach(() => {
 });
 
 describe("C65 — compact published product reviews", () => {
-  it.each(["Mariana Andrade", "Ayla Muniz"])("derives %s's quote and poster from public JSON", (author) => {
-    render(<AffiliateVerifiedReviewPreview />);
-    const review = reviews.find((item) => item.author === author && item.slug === "botox-vonix");
-    if (!review?.media.poster) throw new Error("Missing published review poster");
-    const figure = screen.getByText(review.author).closest("figure");
-    if (!figure) throw new Error("Missing review figure");
-    expect(within(figure).getByText(`“${review.comment}”`)).toBeInTheDocument();
-    expect(within(figure).getByRole("img")).toHaveAttribute("src", review.media.poster);
-    expect(within(figure).getByRole("img")).toHaveAttribute(
-      "alt", `Imagem de prévia da avaliação de ${review.author} sobre Botox Vonix`,
-    );
-  });
+  it.each(["Mariana Andrade", "Ayla Muniz"])(
+    "derives %s's quote and poster from public JSON",
+    (author) => {
+      render(<AffiliateVerifiedReviewPreview />);
+      const review = reviews.find((item) => item.author === author && item.slug === "botox-vonix");
+      if (!review?.media.poster) throw new Error("Missing published review poster");
+      const figure = screen.getByText(review.author).closest("figure");
+      if (!figure) throw new Error("Missing review figure");
+      expect(within(figure).getByText(`“${review.comment}”`)).toBeInTheDocument();
+      expect(within(figure).getByRole("img")).toHaveAttribute("src", review.media.poster);
+      expect(within(figure).getByRole("img")).toHaveAttribute(
+        "alt",
+        `Imagem de prévia da avaliação de ${review.author} sobre Botox Vonix`,
+      );
+    },
+  );
 
   it("keeps honest product-only labeling, two quotes, local links and no media playback or submission", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
@@ -51,8 +55,14 @@ describe("C65 — compact published product reviews", () => {
     expect(screen.getByText(/Não são depoimentos de afiliadas/)).toHaveTextContent(
       "não comprovam compra verificada, vendas, renda ou participação no programa",
     );
-    expect(screen.getByRole("link", { name: "Ver avaliações completas" })).toHaveAttribute("href", "#avaliacoes-produtos");
-    expect(screen.getByRole("link", { name: "Ver produto na loja" })).toHaveAttribute("href", "/produto/botox-vonix");
+    expect(screen.getByRole("link", { name: "Ver avaliações completas" })).toHaveAttribute(
+      "href",
+      "#avaliacoes-produtos",
+    );
+    expect(screen.getByRole("link", { name: "Ver produto na loja" })).toHaveAttribute(
+      "href",
+      "/produto/botox-vonix",
+    );
     expect(container.querySelector("video, audio, source, [autoplay], form")).toBeNull();
     expect(container.querySelector('[src$=".mp4"]')).toBeNull();
     expect(container.textContent).not.toMatch(/★|estrelas|nota 5/i);
@@ -74,7 +84,9 @@ describe("C65 — compact published product reviews", () => {
       screen.getByTestId("vonix-c53-real-product-reviews"),
     ];
     sequence.slice(0, -1).forEach((before, index) => {
-      expect(before.compareDocumentPosition(sequence[index + 1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        before.compareDocumentPosition(sequence[index + 1]) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     });
     expect(document.querySelectorAll("#avaliacoes-produtos")).toHaveLength(1);
     expect(document.querySelectorAll("#inscricao")).toHaveLength(1);
