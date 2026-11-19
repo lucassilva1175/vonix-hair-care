@@ -228,16 +228,16 @@
 }
 
 :root {
-  /* Paleta Vonix: creme quente, preto quente e dourado da marca nos botões de compra */
-  --background: oklch(0.995 0.004 85);
-  --foreground: oklch(0.2 0.012 60);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.012 60);
-  --muted: oklch(0.965 0.014 85);
-  --muted-foreground: oklch(0.45 0.02 70);
-  --border: oklch(0.9 0.02 85);
-  --marquee: oklch(0.2 0.02 60);
-  --marquee-foreground: oklch(0.96 0.03 85);
+  /* Paleta base inspirada no site da Ybera (lida em 19/11/2026): branco, preto esverdeado e cinzas neutros; dourado da marca nos botões de compra */
+  --background: #ffffff;
+  --foreground: #091413;
+  --card: #ffffff;
+  --card-foreground: #091413;
+  --muted: #ecebf0;
+  --muted-foreground: #505052;
+  --border: #e2e1e5;
+  --marquee: #091413;
+  --marquee-foreground: #ffffff;
   --action: oklch(0.8 0.13 85);
   --action-foreground: oklch(0.2 0.012 60);
   --card-image: oklch(0.965 0.016 85);
