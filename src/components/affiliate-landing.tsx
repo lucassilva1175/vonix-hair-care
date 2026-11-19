@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
+import { AffiliateProductProof } from "@/components/affiliate-product-proof";
 import { AffiliateSellingFlow } from "@/components/affiliate-selling-flow";
 import {
   AffiliateCreatorOpportunity,
@@ -328,6 +329,8 @@ export function AffiliateLandingIntro({
       </div>
 
       <AffiliateBrandTrust recruitmentOpen={isOpen} />
+
+      <AffiliateProductProof />
 
       <section
         id="ganhos"
