@@ -144,13 +144,9 @@ export function CartDrawer() {
           )}
 
           <dl className="space-y-2 rounded-xl bg-muted p-4 text-body">
-            <div className="flex justify-between">
-              <dt>Cupom de desconto</dt>
-              <dd className="text-muted-foreground">no checkout</dd>
-            </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-3">
               <dt>Frete</dt>
-              <dd className="text-muted-foreground">grátis para todo o Brasil</dd>
+              <dd className="text-right text-muted-foreground">Grátis · de 3 a 5 dias úteis</dd>
             </div>
             <div className="flex justify-between">
               <dt>Subtotal</dt>
