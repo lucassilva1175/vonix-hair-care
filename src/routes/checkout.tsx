@@ -882,7 +882,7 @@ function Checkout() {
                 )}
                 <div className="flex justify-between">
                   <span>Frete</span>
-                  <span>{chosen ? (chosen.free ? "Grátis" : brl(chosen.price)) : freeShip ? "Grátis" : "A calcular"}</span>
+                  <span className="text-right">{chosen ? (chosen.free ? "Grátis · de 3 a 5 dias úteis" : brl(chosen.price)) : freeShip ? "Grátis · de 3 a 5 dias úteis" : "A calcular"}</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border-t border-[#c9a45c]/50 bg-[#fbf5e6] px-3 py-2.5 text-name font-bold">
                   <span className="min-w-0">
@@ -1429,7 +1429,7 @@ function Checkout() {
           <ul data-testid="checkout-confianca" className="space-y-4 py-2 text-right text-small">
             {[
               [Lock, "Compra segura", "Pagamento processado em ambiente seguro pela Appmax."],
-              [Truck, "Entrega para todo o Brasil", "O prazo e o valor aparecem antes de pagar, conforme o seu CEP."],
+              [Truck, "Entrega para todo o Brasil", "Frete grátis. O prazo aparece antes de pagar, conforme o seu CEP."],
               [ShieldCheck, "7 dias para desistir", "Você pode desistir da compra em até 7 dias após receber."],
             ].map(([Icon, t, d]) => {
               const I = Icon as typeof Lock;
