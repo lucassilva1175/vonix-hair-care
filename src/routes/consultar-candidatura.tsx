@@ -3,6 +3,7 @@ import { z } from "zod";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ClipboardCheck, LockKeyhole, CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { AffiliateShell } from "@/components/affiliate-shell";
+import { AffiliateStatusGuidance } from "@/components/affiliate-status-guidance";
 import { getAffiliateStatusByCode } from "@/lib/affiliate-functions";
 import { affiliateRejectionLabel, affiliateRejectionGuidance } from "@/lib/affiliate-rejection";
 
@@ -181,8 +182,9 @@ export function AffiliateTrackingCodePage() {
             <LockKeyhole className="mx-auto h-9 w-9 text-[#825164]" aria-hidden="true" />
             <h1 className="mt-4 font-display text-4xl">Consulte sua candidatura</h1>
             <p className="mt-3 text-sm leading-relaxed text-[#775d65]">
-              Para inscrições feitas sem e-mail, use o código privado que apareceu na confirmação do
-              cadastro. Não compartilhe este código com outras pessoas.
+              Para todas as candidaturas, inclusive as novas com e-mail, use o código privado
+              exibido na confirmação do cadastro. O e-mail serve para contato, mas não substitui o
+              código. Não o compartilhe.
             </p>
           </div>
           <section className="rounded-[2rem] border border-[#e8d7d3] bg-white p-6 shadow-lg sm:p-10">
@@ -306,6 +308,7 @@ export function AffiliateTrackingCodePage() {
                     A equipe ainda está analisando seu perfil. Volte a consultar mais tarde.
                   </p>
                 )}
+                <AffiliateStatusGuidance status={result.status} />
               </div>
             )}
             <p className="mt-6 text-xs leading-relaxed text-[#826c70]">
