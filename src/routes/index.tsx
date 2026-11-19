@@ -64,40 +64,6 @@ function FaixaMarca() {
   );
 }
 
-/** Banner de destaque: Botox Vonix sem formol + Progressiva Fio de Luz. A arte não tem texto; título e preços vêm do catálogo. */
-const DESTAQUE = "botox-fio-de-luz";
-function BannerDestaque({ priority }: { priority: boolean }) {
-  const botox = getProduct("botox-vonix")!;
-  const fio = getProduct("progressiva-fio-de-luz")!;
-  const menor = Math.min(botox.variants[0]!.price, fio.variants[0]!.price);
-  return (
-    <Link to="/loja" search={{ secao: "mais-vendidos" }} className="group relative block overflow-hidden bg-[#140b14] text-white">
-      <img
-        src={`/images/banners/${DESTAQUE}-home.webp`}
-        alt="Vonix Hair Botox Vonix sem formol e Progressiva Fio de Luz"
-        width={1942}
-        height={809}
-        fetchPriority={priority ? "high" : "auto"}
-        className="block h-auto w-full"
-      />
-      <div className="px-4 pb-12 pt-3 text-center md:absolute md:inset-y-0 md:left-[5%] md:flex md:w-[42%] md:flex-col md:justify-center md:p-0 md:text-left">
-        <span className="text-small font-semibold uppercase tracking-[0.28em] text-[#e3c07a]">Vonix Hair</span>
-        <span className="mt-1 block font-display font-semibold leading-[1.05]" style={{ fontSize: "clamp(1.6rem, 3.4vw, 3.4rem)" }}>
-          Botox Vonix
-          <br />
-          e Fio de Luz
-        </span>
-        <span className="mt-3 block text-body opacity-90">
-          Botox Vonix sem formol e Progressiva Fio de Luz, a partir de <b className="font-semibold">{brl(menor)}</b>
-        </span>
-        <span className="mt-4 inline-flex w-fit items-center gap-2 self-center rounded-full bg-[#e3b04b] px-6 py-2.5 text-body font-semibold text-[#111] md:self-start">
-          Ver produtos <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </span>
-      </div>
-    </Link>
-  );
-}
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -115,7 +81,7 @@ export const Route = createFileRoute("/")({
 });
 
 /** Banners dos kits que têm arte, do que mais vende para o que menos vende (o primeiro é a oferta principal da loja). */
-const BANNERS = [DESTAQUE, "kit-banana-e-mel", "kit-cachos", "kit-coco-nutri", "kit-cronograma-capilar", "kit-desmaia", "kit-whey-protein", "kit-matizador-shampoo-e-mascara"]
+const BANNERS = ["kit-banana-e-mel", "kit-cachos", "kit-coco-nutri", "kit-cronograma-capilar", "kit-desmaia", "kit-whey-protein", "kit-matizador-shampoo-e-mascara"]
   .map((s, i) => [s, i] as const)
   .sort((a, b) => soldFor(b[0]) - soldFor(a[0]) || a[1] - b[1])
   .map(([s]) => s);
@@ -160,7 +126,7 @@ function Home() {
       <h1 className="sr-only">Vonix Hair — Cosméticos Capilares Profissionais</h1>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
-          {BANNERS[i] === DESTAQUE ? <BannerDestaque priority={i === 0} /> : <Banner slug={BANNERS[i]!} priority={i === 0} />}
+          <Banner slug={BANNERS[i]!} priority={i === 0} />
           <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className="absolute left-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2">
             <ChevronLeft className="h-4 w-4" />
           </button>
