@@ -30,8 +30,12 @@ describe("C66 application guidance without submission", () => {
     const steps = screen.getAllByRole("listitem");
     expect(steps).toHaveLength(3);
     expect(steps[0]).toHaveTextContent("Apresente seu perfil gratuitamente.");
-    expect(steps[1]).toHaveTextContent("Se o envio for confirmado, guarde o código de acompanhamento.");
-    expect(steps[2]).toHaveTextContent("Consulte o andamento pelo código, sem prazo ou aprovação garantidos.");
+    expect(steps[1]).toHaveTextContent(
+      "Se o envio for confirmado, guarde o código de acompanhamento.",
+    );
+    expect(steps[2]).toHaveTextContent(
+      "Consulte o andamento pelo código, sem prazo ou aprovação garantidos.",
+    );
     expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
     expect(screen.getByRole("link")).toHaveAttribute("href", "/consultar-candidatura");
     expect(container.querySelector("form, input, video, audio, source, [autoplay]")).toBeNull();
