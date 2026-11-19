@@ -1,5 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
 import { catalogId, metaCatalogId, metaParams } from "@/lib/analytics";
+import { products } from "@/lib/store";
 
 describe("rastreio com os códigos do catálogo da Meta", () => {
   it("preserva os códigos já usados no GA4", () => {
@@ -24,5 +25,17 @@ describe("rastreio com os códigos do catálogo da Meta", () => {
     expect(m.value).toBe(174.9);
     expect(m.num_items).toBe(2);
     expect(m.content_type).toBe("product");
+  });
+});
+
+describe("catálogo da Meta", () => {
+  it("cada produto do feed tem um código único (código repetido faz a Meta recusar as linhas)", () => {
+    const ids = products.map((p) => metaCatalogId(catalogId(p.slug)));
+    const repetidos = ids.filter((id, i) => ids.indexOf(id) !== i);
+    expect(repetidos).toEqual([]);
+  });
+  it("a máscara avulsa Coco Nutri não usa o código da Máscara Efeito Teia", () => {
+    expect(metaCatalogId(catalogId("mascara-coco-nutri"))).toBe("VONIX-AVULSO-MASCARA-COCO-NUTRI");
+    expect(metaCatalogId(catalogId("mascara-efeito-teia-coco-nutri"))).toBe("VONIX-MASCARA-COCO-NUTRI");
   });
 });
