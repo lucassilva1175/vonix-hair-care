@@ -20,12 +20,13 @@ describe("unidades avulsas dos kits", () => {
 
   it("preço da unidade = preço do kit ÷ nº de itens (arredondado em ,90), nunca abaixo do piso de margem", () => {
     const kit = (s: string, label: string) => getProduct(s)!.variants.find((v) => v.label === label)!.price;
-    const near = (price: number, target: number) => expect(Math.abs(price - target)).toBeLessThan(1);
-    near(getProduct("shampoo-banana-e-mel")!.variants[0]!.price, kit("kit-banana-e-mel", "Kit") / 4);
-    near(getProduct("shampoo-cachos")!.variants.find((v) => v.label === "1L")!.price, kit("kit-cachos", "1L") / 3);
-    near(getProduct("shampoo-kera-plus")!.variants[0]!.price, kit("kit-cauterizacao", "500ml") / 4);
-    near(getProduct("mascara-desmaia-cabelo-300g")!.variants[0]!.price, kit("kit-desmaia", "300ml") / 2);
-    near(getProduct("mascara-monovonix")!.variants.find((v) => v.label === "500ml")!.price, kit("kit-monovonix", "500ml") / 2);
+    const AUMENTO = 6; // aumento fixo de R$ 6 em cada peça (19/11/2026)
+    const near = (price: number, target: number) => expect(Math.abs(price - AUMENTO - target)).toBeLessThan(1);
+    near(getProduct("shampoo-banana-e-mel")!.variants[0]!.price, (kit("kit-banana-e-mel", "Kit") - AUMENTO) / 4);
+    near(getProduct("shampoo-cachos")!.variants.find((v) => v.label === "1L")!.price, (kit("kit-cachos", "1L") - AUMENTO) / 3);
+    near(getProduct("shampoo-kera-plus")!.variants[0]!.price, (kit("kit-cauterizacao", "500ml") - AUMENTO) / 4);
+    near(getProduct("mascara-desmaia-cabelo-300g")!.variants[0]!.price, (kit("kit-desmaia", "300ml") - AUMENTO) / 2);
+    near(getProduct("mascara-monovonix")!.variants.find((v) => v.label === "500ml")!.price, (kit("kit-monovonix", "500ml") - AUMENTO) / 2);
   });
 
   it("sugere avulsos só enquanto falta para o frete grátis, sem repetir o que já está no carrinho", () => {

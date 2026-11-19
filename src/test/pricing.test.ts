@@ -18,14 +18,14 @@ describe("ambiente e preços dos cards", () => {
   it("Fio de Luz no salão: preço novo, Pix com 5% de desconto e promoção de kits", () => {
     const p = getProduct("progressiva-fio-de-luz");
     if (!p) throw new Error("Produto obrigatório ausente");
-    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 139.9, pix: 132.91, parcels: { count: 6, value: 23.31, first: 23.35 } });
-    expect(cardPricing(p, "casa").price).toBe(139.9);
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 145.9, pix: 138.61, parcels: { count: 6, value: 24.31, first: 24.35 } });
+    expect(cardPricing(p, "casa").price).toBe(145.9);
   });
   it("kits prontos também têm a promoção de levar 2 ou 3, e o Pix com 5%, no salão e em casa", () => {
     const p = getProduct("kit-banana-e-mel");
     if (!p) throw new Error("Produto obrigatório ausente");
-    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 130.9, pix: 124.36 });
-    expect(cardPricing(p, "casa")).toMatchObject({ professional: true, price: 130.9, pix: 124.36 });
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 136.9, pix: 130.06 });
+    expect(cardPricing(p, "casa")).toMatchObject({ professional: true, price: 136.9, pix: 130.06 });
   });
   it("todo produto do site tem a promoção de levar mais de um, em qualquer área", () => {
     for (const a of ["casa", "salao", null] as const)
@@ -57,13 +57,13 @@ describe("ambiente e preços dos cards", () => {
 describe("regras comerciais", () => {
   it("catálogo tem 74 produtos (42 + 29 avulsos + 4 perfumes separados − perfume antigo; Plex Vonix sem estoque)", () => expect(products.length).toBe(74));
   it("com o teste encerrado (14/11) valem os preços de products.json", () => {
-    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(139.9);
-    expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([64.9, 149.9]);
+    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(145.9);
+    expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([70.9, 155.9]);
   });
   it("depois da data, os preços seguem os de products.json (teste encerrado)", () => {
     vi.setSystemTime(new Date("2026-11-21T00:00:01-03:00"));
-    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(139.9);
-    expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([64.9, 149.9]);
+    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(145.9);
+    expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([70.9, 155.9]);
     vi.setSystemTime(new Date("2026-11-14T12:00:00-03:00"));
   });
   it("frete grátis somente acima de R$ 100 em produtos (protege a margem dos itens baratos)", () => {
