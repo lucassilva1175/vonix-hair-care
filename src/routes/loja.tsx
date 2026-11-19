@@ -31,6 +31,14 @@ export const Route = createFileRoute("/loja")({
 
 const CATS = Array.from(new Map(products.map((p) => [p.category, p.categoryLabel])));
 
+/** Produtos que aparecem também em outra seção (a categoria deles não muda, para o kit e os avulsos continuarem ligados). */
+const ALSO_IN: Record<string, string> = {
+  "kit-monovonix": "crescimento-queda",
+  "shampoo-monovonix": "crescimento-queda",
+  "mascara-monovonix": "crescimento-queda",
+};
+const CAT_LABEL = new Map(CATS);
+
 function Loja() {
   const s = Route.useSearch();
   const { audience } = useAudience();
@@ -39,7 +47,7 @@ function Loja() {
   const set = (patch: Partial<S>) => nav({ search: (old: S) => ({ ...old, ...patch }) });
   let list = products.filter((p) => {
     if (s.secao === "mais-vendidos" && !BEST_SELLERS.includes(p.slug)) return false;
-    if (s.categoria && p.category !== s.categoria) return false;
+    if (s.categoria && p.category !== s.categoria && ALSO_IN[p.slug] !== s.categoria) return false;
     if (s.tiposProduto && TYPES[s.tiposProduto] && !TYPES[s.tiposProduto]!(p)) return false;
     if (s.necessidades && NEEDS[s.necessidades] && !NEEDS[s.necessidades]!.test(p.name + " " + p.description)) return false;
     if (s.q) {
@@ -54,7 +62,13 @@ function Loja() {
   if (!["menor", "maior", "az"].includes(s.ordem ?? "")) list = forAudience(list, uso);
   const browsing = !s.q && !s.categoria && !s.tiposProduto && !s.necessidades && !s.secao && !s.ordem;
   const rows = Array.from(
-    list.reduce((m, p) => m.set(p.categoryLabel, [...(m.get(p.categoryLabel) ?? []), p]), new Map<string, typeof list>()),
+    list.reduce((m, p) => {
+      const labels = [p.categoryLabel];
+      const extra = ALSO_IN[p.slug] ? CAT_LABEL.get(ALSO_IN[p.slug]!) : undefined;
+      if (extra && extra !== p.categoryLabel && (!s.categoria || s.categoria === ALSO_IN[p.slug])) labels.push(extra);
+      for (const l of labels) m.set(l, [...(m.get(l) ?? []), p]);
+      return m;
+    }, new Map<string, typeof list>()),
   );
   const sel = "h-10 rounded-full border border-border bg-background px-4 text-body";
   return (

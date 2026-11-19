@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, FlaskConical, House, Layers, Scissors } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewCard, reviews } from "@/components/reviews";
 import { FaqSection } from "@/components/faq";
 import { FAQ_LOJA } from "@/lib/faq";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
-import { Benefits, Grid, Shell } from "@/components/site";
+import { Grid, Shell } from "@/components/site";
 import { SITE_URL, brl, bySales, discountPct, forAudience, getProduct, homeBestSellers, products, useAudience } from "@/lib/store";
 import { soldFor } from "@/lib/sales";
 
@@ -40,6 +40,62 @@ function Banner({ slug, priority }: { slug: string; priority: boolean }) {
     </Link>
   );
 }
+/** Faixa de valores da marca que passa devagar embaixo do banner (ícone de traço + frase curta). Não repete frete, parcelamento nem Pix. */
+const MARCA = [
+  { Icon: Scissors, text: "Linha profissional" },
+  { Icon: FlaskConical, text: "Botox sem formol" },
+  { Icon: Layers, text: "Kits e rotinas completas" },
+  { Icon: House, text: "Para o salão e para casa" },
+];
+function FaixaMarca() {
+  return (
+    <section aria-label="Diferenciais da Vonix Hair" data-testid="home-faixa-marca" className="mt-3 overflow-hidden bg-[#faf6f1] py-6">
+      <div className="flex w-max animate-marquee items-center gap-16 whitespace-nowrap hover:[animation-play-state:paused] motion-reduce:animate-none">
+        {[...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA].map(({ Icon, text }, k) => (
+          <span key={k} aria-hidden={k >= MARCA.length} className="flex items-center gap-4 text-[1rem] font-bold">
+            <Icon className="h-9 w-9 shrink-0 text-[#6b6f6e]" strokeWidth={1.1} aria-hidden="true" />
+            {text}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Banner de destaque: Botox Vonix sem formol + Progressiva Fio de Luz. A arte não tem texto; título e preços vêm do catálogo. */
+const DESTAQUE = "botox-fio-de-luz";
+function BannerDestaque({ priority }: { priority: boolean }) {
+  const botox = getProduct("botox-vonix")!;
+  const fio = getProduct("progressiva-fio-de-luz")!;
+  const menor = Math.min(botox.variants[0]!.price, fio.variants[0]!.price);
+  return (
+    <Link to="/loja" search={{ secao: "mais-vendidos" }} className="group relative block overflow-hidden bg-[#140b14] text-white">
+      <img
+        src={`/images/banners/${DESTAQUE}-home.webp`}
+        alt="Vonix Hair Botox Vonix sem formol e Progressiva Fio de Luz"
+        width={1942}
+        height={809}
+        fetchPriority={priority ? "high" : "auto"}
+        className="block h-auto w-full"
+      />
+      <div className="px-4 pb-12 pt-3 text-center md:absolute md:inset-y-0 md:left-[5%] md:flex md:w-[42%] md:flex-col md:justify-center md:p-0 md:text-left">
+        <span className="text-small font-semibold uppercase tracking-[0.28em] text-[#e3c07a]">Vonix Hair</span>
+        <span className="mt-1 block font-display font-semibold leading-[1.05]" style={{ fontSize: "clamp(1.6rem, 3.4vw, 3.4rem)" }}>
+          Botox Vonix
+          <br />
+          e Fio de Luz
+        </span>
+        <span className="mt-3 block text-body opacity-90">
+          Botox Vonix sem formol e Progressiva Fio de Luz, a partir de <b className="font-semibold">{brl(menor)}</b>
+        </span>
+        <span className="mt-4 inline-flex w-fit items-center gap-2 self-center rounded-full bg-[#e3b04b] px-6 py-2.5 text-body font-semibold text-[#111] md:self-start">
+          Ver produtos <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -57,7 +113,7 @@ export const Route = createFileRoute("/")({
 });
 
 /** Banners dos kits que têm arte, do que mais vende para o que menos vende (o primeiro é a oferta principal da loja). */
-const BANNERS = ["kit-banana-e-mel", "kit-cachos", "kit-coco-nutri", "kit-cronograma-capilar", "kit-desmaia", "kit-whey-protein", "kit-matizador-shampoo-e-mascara"]
+const BANNERS = [DESTAQUE, "kit-banana-e-mel", "kit-cachos", "kit-coco-nutri", "kit-cronograma-capilar", "kit-desmaia", "kit-whey-protein", "kit-matizador-shampoo-e-mascara"]
   .map((s, i) => [s, i] as const)
   .sort((a, b) => soldFor(b[0]) - soldFor(a[0]) || a[1] - b[1])
   .map(([s]) => s);
@@ -102,22 +158,17 @@ function Home() {
       <h1 className="sr-only">Vonix Hair — Cosméticos Capilares Profissionais</h1>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
-          <Banner slug={BANNERS[i]!} priority={i === 0} />
-          <button aria-label="Anterior" onClick={() => setI((i + 6) % 7)} className="absolute left-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2">
+          {BANNERS[i] === DESTAQUE ? <BannerDestaque priority={i === 0} /> : <Banner slug={BANNERS[i]!} priority={i === 0} />}
+          <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className="absolute left-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button aria-label="Próximo" onClick={() => setI((i + 1) % 7)} className="absolute right-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2">
+          <button aria-label="Próximo" onClick={() => setI((i + 1) % BANNERS.length)} className="absolute right-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2">
             <ChevronRight className="h-4 w-4" />
           </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-4">
-            {BANNERS.map((_, k) => (
-              <button key={k} aria-label={`Banner ${k + 1}`} onClick={() => setI(k)} className={`relative h-4 w-4 rounded-full border border-foreground before:absolute before:-inset-2 before:content-[''] ${k === i ? "bg-foreground" : "bg-background/70"}`} />
-            ))}
-          </div>
         </div>
       </section>
 
-      <Benefits />
+      <FaixaMarca />
 
       {/* 1) O que mais vende, logo abaixo da oferta principal */}
       <section className="mt-12 bg-[#091413] py-10 text-white [&_a.border-foreground]:border-white [&_h2]:text-white" data-testid="home-vitrine-escura">

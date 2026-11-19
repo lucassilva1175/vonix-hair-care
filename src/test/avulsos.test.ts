@@ -63,4 +63,13 @@ describe("vitrine na ordem do curso (mais vendidos primeiro)", () => {
     expect(kits[0]).toBe("kit-banana-e-mel");
     expect(kits[1]).toBe("kit-cronograma-capilar");
   });
+
+  it("'mais desejados' da home: Botox Vonix sem formol e Progressiva Fio de Luz vêm sempre na frente (fora de 'Para mim')", async () => {
+    const { homeBestSellers } = await import("@/lib/store");
+    for (const a of [null, "salao"] as const) {
+      const l = homeBestSellers(a);
+      expect(l[0]!.slug).toBe("botox-vonix");
+      expect(l[1]!.slug).toBe("progressiva-fio-de-luz");
+    }
+  });
 });
