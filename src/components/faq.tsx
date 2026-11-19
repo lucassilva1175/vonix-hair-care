@@ -11,7 +11,7 @@ export function FaqSection({ items, title = "Dúvidas frequentes", testId = "faq
           <details key={it.q} className="group px-4 py-1 md:px-6">
             <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 text-name font-semibold [&::-webkit-details-marker]:hidden">
               {it.q}
-              <ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" />
+              <span aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></span>
             </summary>
             <p className="pb-4 text-body leading-relaxed text-muted-foreground">{it.a}</p>
           </details>

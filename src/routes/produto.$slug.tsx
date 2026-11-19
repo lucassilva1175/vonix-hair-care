@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { Check, Heart, Minus, Plus, Truck } from "lucide-react";
+import { Check, Heart, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ProductGallery } from "@/components/product-gallery";
@@ -353,11 +353,7 @@ function ProductPage() {
         <div className="grid gap-10 lg:grid-cols-2">
           <ProductGallery key={p.slug} images={p.images} name={p.name} />
           <div className="min-w-0">
-            {off > 0 && (
-              <span className="rounded-full bg-foreground px-3 py-1 text-small text-background">
-                {off}% OFF
-              </span>
-            )}
+            <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">5% OFF</span>
             <h1 className="mt-3 font-display text-h1">{p.name}</h1>
             <Stars slug={p.slug} />
             <div className="mt-3">
@@ -628,20 +624,20 @@ function ProductPage() {
       </div>
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:px-[max(1rem,calc((100vw-1400px)/2+2rem))]">
         <div className="min-w-0 leading-tight">
-          <div className="truncate text-small text-muted-foreground">{p.name}</div>
-          <div className="font-semibold">{brl(total)}</div>
-          <div className="truncate text-small text-muted-foreground">
-            ou 6x de {brl(installments(total).value)} sem juros
+          <div className="text-small text-muted-foreground line-through">{brl(total)}</div>
+          <div className="flex flex-wrap items-center gap-x-2">
+            <span className="text-h2 font-bold leading-tight">{brl(pixPrice(total))}</span>
+            <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">-5% PIX</span>
           </div>
         </div>
         <button
-          className="ml-auto shrink-0 rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] px-6 py-3 text-body"
+          className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]"
           onClick={() => {
             add();
-            nav({ to: "/carrinho" });
+            openCartDrawer();
           }}
         >
-          Comprar agora
+          <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
         </button>
       </div>
     </Shell>

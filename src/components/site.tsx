@@ -601,58 +601,60 @@ export function ProductCard({ p }: { p: Product }) {
     track("add_to_cart", { value: v.price, items: [toItem(p, v.label, v.price)] });
     openCartDrawer();
   };
+  // Card no padrão da loja de referência (medido ao vivo): painel de foto cinza de ponta a ponta, título 14/700,
+  // estrelas, selos 12/600, preço 16/700 (Pix), parcelamento 12 cinza e botão preto em pílula de 40 px.
   return (
-    <div className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-border bg-white p-2.5 text-foreground shadow-sm md:p-3">
-      <div className="relative overflow-hidden rounded-xl bg-muted">
+    <div className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-white text-foreground shadow-sm">
+      <div className="relative bg-muted">
         {off > 0 && (
-          <span className="absolute left-2 top-2 z-10 rounded-md bg-[#7a5a2e] px-1.5 py-0.5 text-small font-semibold text-white">
+          <span className="absolute left-2 top-2 z-10 rounded-md bg-[#c3287d] px-1.5 py-0.5 text-[12px] font-semibold text-white">
             -{off}%
           </span>
         )}
         <button
           aria-label="Favoritar"
           onClick={() => fav.toggle(p.slug)}
-          className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-background"
+          className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white"
         >
           <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
         </button>
         <Link to="/produto/$slug" params={{ slug: p.slug }}>
-          <img src={thumb(p.images[0]!)} srcSet={`${thumb(p.images[0]!)} 480w, ${webp(p.images[0]!)} 1080w`} sizes="(min-width: 1024px) 280px, 50vw" width={480} height={480} decoding="async" alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full scale-110 object-contain transition-transform duration-500 group-hover:scale-[1.18]" />
+          <img src={thumb(p.images[0]!)} srcSet={`${thumb(p.images[0]!)} 480w, ${webp(p.images[0]!)} 1080w`} sizes="(min-width: 1024px) 280px, 50vw" width={480} height={480} decoding="async" alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full object-contain mix-blend-multiply" />
         </Link>
       </div>
-      <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-1">
-        {hasFreeShipping(pricing.price) && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-action px-1.5 py-0.5 text-small font-semibold tracking-wide text-action-foreground">
-            <Truck className="h-3 w-3" aria-hidden="true" /> FRETE GRÁTIS
-          </span>
-        )}
-        {pricing.professional && (
-          <span className="rounded-md bg-foreground px-1.5 py-0.5 text-small font-semibold tracking-wide text-background">LEVE 2: 12% · LEVE 3: 15%</span>
-        )}
-        {pricing.pix < pricing.price && (
-          <span className="rounded-md bg-[#e7fbfa] px-1.5 py-0.5 text-small font-semibold tracking-wide text-[#006868]">5% OFF no Pix</span>
-        )}
-      </div>
-      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-2 min-h-[2.4rem] text-name font-semibold leading-tight after:absolute after:inset-0 after:z-[1] after:rounded-2xl after:content-[''] hover:underline md:leading-snug">
-        {p.name}
-      </Link>
-      <div className="mt-1.5"><Stars slug={p.slug} big hideEmpty /></div>
-      <div className="mt-1.5 flex items-end justify-between gap-1.5">
-        <div className="min-w-0 leading-tight">
-          {p.compareBase && p.compareBase > pricing.price && <div className="text-small text-muted-foreground line-through">{brl(p.compareBase)}</div>}
-          <div className="text-price font-semibold">{brl(pricing.price)}</div>
-          <div className="text-small font-medium">{par.count}x {brl(par.value)}<span className="hidden font-normal text-muted-foreground sm:inline"> sem juros</span></div>
+      <div className="flex flex-1 flex-col p-3">
+        <Link to="/produto/$slug" params={{ slug: p.slug }} className="line-clamp-2 min-h-[2.4rem] text-[14px] font-bold leading-tight after:absolute after:inset-0 after:z-[1] after:content-[''] hover:underline">
+          {p.name}
+        </Link>
+        <div className="mt-1"><Stars slug={p.slug} hideEmpty /></div>
+        <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-1">
+          {pricing.professional && (
+            <span className="rounded bg-muted px-1 py-px text-[12px] font-semibold">Leve 2: 12% · Leve 3: 15%</span>
+          )}
+          {pricing.pix < pricing.price && (
+            <span className="rounded bg-[#e7fbfa] px-1 py-px text-[12px] font-semibold text-[#007979]">5% OFF no Pix</span>
+          )}
+          {hasFreeShipping(pricing.price) && (
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1 py-px text-[12px] font-semibold">
+              <Truck className="h-3 w-3" aria-hidden="true" /> Frete grátis
+            </span>
+          )}
         </div>
+        <div className="mt-1.5 leading-tight">
+          {p.compareBase && p.compareBase > pricing.price && <div className="text-[12px] text-[#505052] line-through">{brl(p.compareBase)}</div>}
+          <div className="text-[16px] font-bold">{brl(pricing.pix < pricing.price ? pricing.pix : pricing.price)}</div>
+          <div className="mt-0.5 text-[12px] text-[#505052]">Ou {brl(pricing.price)} em até {par.count}x de {brl(par.value)}</div>
+        </div>
+        <button
+          type="button"
+          onClick={bag}
+          aria-label={`Adicionar ${p.name} à sacola`}
+          className="relative z-10 mt-auto flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#091413] px-4 pt-0 text-[14px] font-semibold text-white transition-transform active:scale-[.98]"
+          style={{ marginTop: "0.75rem" }}
+        >
+          <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={bag}
-        aria-label={`Adicionar ${p.name} à sacola`}
-        className="relative z-10 mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-action text-body font-semibold text-action-foreground shadow-sm transition-transform active:scale-[.98]"
-      >
-        <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
-      </button>
-      {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-small leading-snug text-muted-foreground md:line-clamp-3 md:text-small">{p.short}</p>}
     </div>
   );
 }
