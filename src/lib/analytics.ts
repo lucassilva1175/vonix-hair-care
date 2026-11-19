@@ -18,6 +18,8 @@ export const catalogId = (slug: string) => `VONIX-${slug.replace(/^kit-/, "combo
 
 const META_CATALOG_IDS: Record<string, string> = {
   "VONIX-MASCARA-EFEITO-TEIA-COCO-NUTRI": "VONIX-MASCARA-COCO-NUTRI",
+  // A máscara avulsa do Kit Coco Nutri usava o mesmo código da Máscara Efeito Teia (a Meta recusava as duas linhas do feed).
+  "VONIX-MASCARA-COCO-NUTRI": "VONIX-AVULSO-MASCARA-COCO-NUTRI",
   "VONIX-COMBO-MATIZADOR-SHAMPOO-E-MASCARA": "VONIX-KIT-MATIZADOR",
 };
 
