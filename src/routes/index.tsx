@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronLeft, ChevronRight, FlaskConical, House, Layers, Scissors } from "lucide-react";
+import { ArrowRight, Atom, ChevronLeft, ChevronRight, FlaskConical, ShowerHead, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewCard, reviews } from "@/components/reviews";
 import { FaqSection } from "@/components/faq";
@@ -42,18 +42,20 @@ function Banner({ slug, priority }: { slug: string; priority: boolean }) {
 }
 /** Faixa de valores da marca que passa devagar embaixo do banner (ícone de traço + frase curta). Não repete frete, parcelamento nem Pix. */
 const MARCA = [
-  { Icon: Scissors, text: "Linha profissional" },
-  { Icon: FlaskConical, text: "Botox sem formol" },
-  { Icon: Layers, text: "Kits e rotinas completas" },
-  { Icon: House, text: "Para o salão e para casa" },
+  { Icon: Sparkles, text: "Resultado de salão" },
+  { Icon: FlaskConical, text: "Fórmulas inovadoras" },
+  { Icon: Atom, text: "Alta tecnologia" },
+  { Icon: ShowerHead, text: "Rotina capilar" },
 ];
 function FaixaMarca() {
   return (
     <section aria-label="Diferenciais da Vonix Hair" data-testid="home-faixa-marca" className="mt-3 overflow-hidden bg-[#faf6f1] py-6">
       <div className="flex w-max animate-marquee items-center gap-16 whitespace-nowrap hover:[animation-play-state:paused] motion-reduce:animate-none">
         {[...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA].map(({ Icon, text }, k) => (
-          <span key={k} aria-hidden={k >= MARCA.length} className="flex items-center gap-4 text-[1rem] font-bold">
-            <Icon className="h-9 w-9 shrink-0 text-[#6b6f6e]" strokeWidth={1.1} aria-hidden="true" />
+          <span key={k} aria-hidden={k >= MARCA.length} className="flex items-center gap-3.5 text-[1.05rem] font-bold">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[#e3c07a]/70 bg-white text-[#7a5a2e] shadow-[0_6px_16px_-10px_rgba(122,90,46,0.6)]">
+              <Icon className="h-7 w-7" strokeWidth={1.4} aria-hidden="true" />
+            </span>
             {text}
           </span>
         ))}

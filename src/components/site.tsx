@@ -217,49 +217,14 @@ function SearchBox({ onDone, autoFocus = false }: { onDone?: () => void; autoFoc
   );
 }
 
-function AudienceChoice() {
-  const { audience, set } = useAudience();
-  const nav = useNavigate();
-  const go = (a: Audience) => {
-    set(a);
-    nav({ to: "/loja", search: a ? { uso: a } : {} });
-  };
-  if (audience)
-    return (
-      <section aria-label="Área escolhida" className="mx-auto flex w-fit max-w-full min-w-0 items-center gap-3 rounded-full border border-foreground/25 bg-transparent px-5 py-1.5 text-foreground">
-        <span className="flex min-w-0 items-center gap-2 text-small font-medium uppercase tracking-[0.12em]">
-          {audience === "salao" ? <Scissors className="h-4 w-4 shrink-0" aria-hidden="true" /> : <House className="h-4 w-4 shrink-0" aria-hidden="true" />}
-          <span className="truncate">{audience === "salao" ? "Área para cabeleireiras" : "Para mim · cuidados em casa"}</span>
-        </span>
-        <button type="button" className="shrink-0 text-small underline underline-offset-4 hover:no-underline"
-          onClick={() => { set(null); nav({ to: "/" }); }}>
-          Trocar
-        </button>
-      </section>
-    );
-  return (
-    <section aria-label="Escolha seu ambiente" className="w-full min-w-0">
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
-        {([
-          { value: "casa", label: "PARA MIM", support: "Cuidados em casa", Icon: House },
-          { value: "salao", label: "PARA CABELEIREIRAS", support: "Produtos para salão", Icon: Scissors },
-        ] as const).map(({ value, label, support, Icon }) => (
-          <Button key={value} type="button" variant="outline" aria-pressed={audience === value}
-            onClick={() => go(value)}
-            className={`h-auto min-h-16 min-w-0 gap-2 whitespace-normal border-foreground px-2 py-2 shadow-none ${audience === value ? "bg-foreground text-background hover:bg-foreground hover:text-background" : "bg-background text-foreground hover:bg-muted"}`}>
-            <Icon aria-hidden="true" />
-            <span className="min-w-0 text-left"><span className="block text-small font-semibold sm:text-small">{label}</span><span className="block text-small font-normal">{support}</span></span>
-          </Button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function Shell({ children }: { children: ReactNode }) {
   const { count } = useCart();
-  const { audience } = useAudience();
+  const { audience, set: setAudience } = useAudience();
   const paidVisit = usePaidVisit();
+  // Sem separação entre salão e casa: se alguma escolha antiga ficou salva no navegador, ela é limpa.
+  useEffect(() => {
+    if (audience) setAudience(null);
+  }, [audience, setAudience]);
   const [open, setOpen] = useState(false);
   const path = useLocation().pathname;
   const router = useRouter();
@@ -365,11 +330,6 @@ export function Shell({ children }: { children: ReactNode }) {
             </div>
           )
         )}
-        {!isCheckout && audience && (
-          <div className={`container-site pb-1.5 ${isProduct ? "hidden lg:block" : ""}`}>
-            <AudienceChoice />
-          </div>
-        )}
       </div>
       <header className="border-b border-border bg-background">
         {!isCheckout && (
@@ -385,11 +345,6 @@ export function Shell({ children }: { children: ReactNode }) {
         )}
       </header>
       {!isCheckout && <CartDrawer />}
-      {!isCheckout && !audience && (
-        <div className={`container-site py-2 ${isProduct ? "hidden lg:block" : ""}`}>
-          <AudienceChoice />
-        </div>
-      )}
       {open && (
         <div className="fixed inset-0 z-50 bg-foreground/50" onClick={() => setOpen(false)}>
           <aside
@@ -590,6 +545,8 @@ export function ProductCard({ p }: { p: Product }) {
   const cart = useCart();
   const nav = useNavigate();
   const par = installments(pricing.price);
+  // Peso ou volume de cada apresentação (1Kg, 300ml, 1L...). Variantes sem medida ("Kit", "Unidade") não entram.
+  const sizes = p.variants.map((v) => v.label).filter((l) => /\d/.test(l)).join(" · ");
   // A sacolinha SEMPRE adiciona 1 unidade (tamanho padrão do produto) direto ao carrinho; o resto do card abre a página.
   // Escolher outro tamanho ou as ofertas Leve 2 / Leve 3 continua na página do produto (o aviso diz qual tamanho entrou).
   const bag = () => {
@@ -623,6 +580,7 @@ export function ProductCard({ p }: { p: Product }) {
         <Link to="/produto/$slug" params={{ slug: p.slug }} className="line-clamp-2 min-h-[2.4rem] text-[14px] font-bold leading-tight after:absolute after:inset-0 after:z-[1] after:content-[''] hover:underline">
           {p.name}
         </Link>
+        {sizes && <div className="mt-0.5 text-[12px] text-[#505052]" data-testid="card-peso">{sizes}</div>}
         <div className="mt-1"><Stars slug={p.slug} hideEmpty /></div>
         <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-1">
           {pricing.professional && (
