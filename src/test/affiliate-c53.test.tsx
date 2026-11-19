@@ -28,7 +28,7 @@ afterEach(cleanup);
 describe("C53 recruitment presentation boundaries", () => {
   it("provides real local product pictures, not affiliate testimonials or third-party portraits", () => {
     const { container } = render(<AffiliateLandingIntro recruitmentStatus="closed" />);
-    const sources = [...container.querySelectorAll("source")];
+    const sources = [...container.querySelectorAll("picture source")];
     expect(sources.length).toBeGreaterThanOrEqual(8);
     for (const source of sources)
       expect(source.getAttribute("srcset")).toMatch(/^\/images\/products\/[a-z0-9-]+\.webp$/);
