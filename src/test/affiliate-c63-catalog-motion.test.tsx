@@ -70,7 +70,7 @@ describe("C63 authentic catalogue movie showcase", () => {
     },
   );
 
-  it("preserves the existing proof-before-earnings and selling-flow-before-clips sequence", () => {
+  it("preserves benefits-first and the selling-flow-before-clips sequence", () => {
     render(<AffiliateLandingIntro recruitmentStatus="closed" />);
     const reviews = screen.getByTestId("vonix-c53-real-product-reviews");
     const earnings = screen.getByTestId("vonix-affiliate-earnings");
@@ -79,7 +79,7 @@ describe("C63 authentic catalogue movie showcase", () => {
     const criteria = document.getElementById("criterios");
     if (!criteria) throw new Error("Missing public eligibility section");
     expect(
-      reviews.compareDocumentPosition(earnings) & Node.DOCUMENT_POSITION_FOLLOWING,
+      earnings.compareDocumentPosition(reviews) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
       earnings.compareDocumentPosition(selling) & Node.DOCUMENT_POSITION_FOLLOWING,

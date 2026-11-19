@@ -203,7 +203,12 @@ function ProductImage({
   );
 }
 
-export function AffiliateLandingIntro({
+/**
+ * First impression: the actual program terms immediately after the hero,
+ * before any extended stories, galleries, or video demonstrations.
+ * The recruitment-status signal remains the only source of availability.
+ */
+export function AffiliateLandingOffer({
   recruitmentStatus,
 }: {
   recruitmentStatus: RecruitmentStatus;
@@ -211,7 +216,7 @@ export function AffiliateLandingIntro({
   const isOpen = recruitmentStatus === "open";
 
   return (
-    <div data-testid="vonix-affiliate-editorial" className="min-w-0">
+    <div data-testid="vonix-c64-early-offer" className="min-w-0">
       <AffiliateEditorialHero recruitmentStatus={recruitmentStatus} />
 
       <div
@@ -226,10 +231,6 @@ export function AffiliateLandingIntro({
           <span>TikTok opcional</span>
         </div>
       </div>
-
-      <AffiliateBrandTrust recruitmentOpen={isOpen} />
-
-      <AffiliateProductProof />
 
       <section
         id="ganhos"
@@ -286,8 +287,62 @@ export function AffiliateLandingIntro({
             equipe com cada afiliada aprovada. Bônus e supervisão dependem de elegibilidade.
           </p>
           <AffiliateEarningsSimulator />
+          <div
+            data-testid="vonix-c64-immediate-signup"
+            className="mt-8 flex flex-col gap-4 rounded-2xl border border-[#dec8cd] bg-[#fbf2f0] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8"
+          >
+            <div className="min-w-0">
+              <p className="font-display text-xl text-[#51303e] sm:text-2xl">
+                Gostou da proposta? Seu próximo passo é a candidatura.
+              </p>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#70505e]">
+                Gratuita e sujeita à análise individual. Antes de enviar, você pode conferir{" "}
+                <a href="#como-funciona" className="font-semibold underline underline-offset-4">
+                  como funciona a seleção
+                </a>{" "}
+                e{" "}
+                <a
+                  href="#avaliacoes-produtos"
+                  className="font-semibold underline underline-offset-4"
+                >
+                  avaliações de produtos
+                </a>
+                .
+              </p>
+            </div>
+            <Button
+              asChild
+              className="h-auto min-h-12 shrink-0 rounded-lg px-6 py-3 text-sm font-bold"
+            >
+              <a href="#inscricao">
+                {isOpen ? "Quero me candidatar" : "Ver a inscrição"}
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Optional editorial exploration, AFTER the actual candidate form on the
+ * public page. All media stays attached to its official PRODUCT source;
+ * do not claim these are proven affiliate participants or sales.
+ */
+export function AffiliateLandingDiscovery({
+  recruitmentStatus,
+}: {
+  recruitmentStatus: RecruitmentStatus;
+}) {
+  const isOpen = recruitmentStatus === "open";
+
+  return (
+    <div data-testid="vonix-c64-discovery" className="min-w-0">
+      <AffiliateBrandTrust recruitmentOpen={isOpen} />
+
+      <AffiliateProductProof />
 
       <AffiliateSellingFlow recruitmentOpen={isOpen} />
 
@@ -536,6 +591,20 @@ export function AffiliateLandingIntro({
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+/** Backward-compatible complete editorial composition for embedded uses. */
+export function AffiliateLandingIntro({
+  recruitmentStatus,
+}: {
+  recruitmentStatus: RecruitmentStatus;
+}) {
+  return (
+    <div data-testid="vonix-affiliate-editorial" className="min-w-0">
+      <AffiliateLandingOffer recruitmentStatus={recruitmentStatus} />
+      <AffiliateLandingDiscovery recruitmentStatus={recruitmentStatus} />
     </div>
   );
 }

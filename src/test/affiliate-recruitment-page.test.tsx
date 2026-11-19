@@ -310,4 +310,43 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
     );
     expect(screen.queryByText("Inscrições em preparação")).not.toBeInTheDocument();
   });
+  it("C64 keeps the real application before optional brand and video exploration", async () => {
+    server.status.mockResolvedValue({ open: false });
+    render(<Page />);
+    expect(await screen.findByText("Inscrições em preparação")).toBeInTheDocument();
+
+    const hero = screen.getByTestId("vonix-affiliate-hero");
+    const earnings = screen.getByTestId("vonix-affiliate-earnings");
+    const app = document.getElementById("inscricao");
+    const brand = screen.getByTestId("affiliate-c58-brand-trust");
+    const reviews = screen.getByTestId("vonix-c53-real-product-reviews");
+    const selling = screen.getByTestId("vonix-c57-selling-flow");
+    const clips = screen.getByTestId("vonix-c63-catalog-motion");
+
+    if (!app) throw new Error("Missing real application section");
+    for (const [before, after] of [
+      [hero, earnings],
+      [earnings, app],
+      [app, brand],
+      [brand, reviews],
+      [reviews, selling],
+      [selling, clips],
+    ] as const) {
+      expect(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+
+    const bridge = screen.getByTestId("vonix-c64-immediate-signup");
+    expect(bridge.querySelector('a[href="#inscricao"]')).not.toBeNull();
+    expect(bridge).toHaveTextContent("Gratuita e sujeita à análise individual");
+    const prep = screen.getByTestId("vonix-c64-preparation-details");
+    expect(prep.tagName.toLowerCase()).toBe("details");
+    expect(prep).not.toHaveAttribute("open");
+    fireEvent.click(prep.querySelector("summary")!);
+    expect(prep).toHaveAttribute("open");
+    expect(document.querySelectorAll("#ganhos")).toHaveLength(1);
+    expect(document.querySelectorAll("#avaliacoes-produtos")).toHaveLength(1);
+    expect(document.querySelectorAll("#catalogo-em-video")).toHaveLength(1);
+    expect(document.querySelectorAll("#inscricao")).toHaveLength(1);
+    expect(screen.getByTestId("vonix-affiliate-editorial")).toContainElement(app);
+  });
 });

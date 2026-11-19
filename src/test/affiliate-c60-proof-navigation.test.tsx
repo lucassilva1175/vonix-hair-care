@@ -16,15 +16,13 @@ import { AffiliateShell } from "@/components/affiliate-shell";
 afterEach(cleanup);
 
 describe("C60 editorial product evidence and recruitment navigation", () => {
-  it("places authentic product reviews between brand trust and earnings, without duplication", () => {
+  it("places authentic product reviews after brand trust and early earnings, without duplication", () => {
     const { container } = render(<AffiliateLandingIntro recruitmentStatus="open" />);
     const brand = screen.getByTestId("affiliate-c58-brand-trust");
     const evidence = screen.getByTestId("vonix-c53-real-product-reviews");
     const earnings = screen.getByTestId("vonix-affiliate-earnings");
     expect(brand.compareDocumentPosition(evidence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      evidence.compareDocumentPosition(earnings) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(earnings.compareDocumentPosition(brand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(container.querySelectorAll("#avaliacoes-produtos")).toHaveLength(1);
     expect(
       container.querySelectorAll('[data-testid="vonix-c53-real-product-reviews"]'),

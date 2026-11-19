@@ -6,7 +6,11 @@ import { getAffiliateRecruitmentStatus } from "@/lib/affiliate-functions";
 import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
 import { AffiliateApplicationPrep } from "@/components/affiliate-application-prep";
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
-import { AffiliateLandingIntro, AffiliateLandingFAQ } from "@/components/affiliate-landing";
+import {
+  AffiliateLandingOffer,
+  AffiliateLandingDiscovery,
+  AffiliateLandingFAQ,
+} from "@/components/affiliate-landing";
 import { Button } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/store";
 
@@ -136,11 +140,22 @@ export function AffiliateApplicationPage() {
 
   return (
     <AffiliateShell recruitmentStatus={recruitment}>
-      <div className="bg-background text-foreground">
-        <AffiliateLandingIntro recruitmentStatus={recruitment} />
+      <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
+        <AffiliateLandingOffer recruitmentStatus={recruitment} />
 
-        <div className="bg-card px-5 pt-14 sm:pt-20">
-          <AffiliateApplicationPrep />
+        <div className="bg-card px-5 pt-8 sm:pt-10">
+          <details
+            data-testid="vonix-c64-preparation-details"
+            className="mx-auto max-w-5xl rounded-2xl border border-[#e5d5d2] bg-[#fcf7f4]"
+          >
+            <summary className="min-h-14 cursor-pointer px-5 py-5 text-sm font-semibold text-[#603746] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#744452] sm:px-8">
+              O que preciso para me candidatar? Nome, contato, endereço e Instagram. TikTok é
+              opcional.
+            </summary>
+            <div className="border-t border-[#e5d5d2] px-3 pt-5 sm:px-6">
+              <AffiliateApplicationPrep />
+            </div>
+          </details>
         </div>
 
         <section
@@ -287,6 +302,7 @@ export function AffiliateApplicationPage() {
           )}
         </section>
         <AffiliateNextSteps recruitmentOpen={recruitment === "open" && !preview} />
+        <AffiliateLandingDiscovery recruitmentStatus={recruitment} />
         <AffiliateLandingFAQ />
       </div>
     </AffiliateShell>
