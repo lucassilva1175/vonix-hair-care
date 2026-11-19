@@ -23,7 +23,7 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
             </>
           ) : (
             <span>
-              Faltam <b className="text-emerald-700">{brl(missingForFreeShipping(subtotal))}</b> para ganhar frete grátis.
+              SP e MG já têm frete grátis. Nos demais estados, faltam <b className="text-emerald-700">{brl(missingForFreeShipping(subtotal))}</b> para ganhar frete grátis.
             </span>
           )}
         </div>
@@ -42,7 +42,7 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
         />
       </div>
       <p className="mt-2.5 text-small text-muted-foreground">
-        Frete grátis acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos. Seu cupom mantém esse benefício.
+        Frete grátis em qualquer pedido para SP e MG. Nos demais estados, acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos. Seu cupom mantém esse benefício.
       </p>
     </div>
   );
