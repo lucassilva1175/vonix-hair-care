@@ -151,7 +151,7 @@ export function AffiliateApplicationPage() {
           data-ingress-check={backendDiagnostics.ingress ? "ok" : "unavailable"}
           data-encryption-check={backendDiagnostics.encryption ? "ok" : "unavailable"}
           data-email-provider={backendDiagnostics.emailConfigured ? "configured" : "unavailable"}
-          className="mx-auto max-w-5xl scroll-mt-24 px-5 py-14 sm:py-20"
+          className="mx-auto max-w-5xl scroll-mt-36 px-5 py-14 sm:py-20"
         >
           <div className="mb-10 text-center">
             <p className="text-xs font-bold uppercase tracking-normal text-muted-foreground">
