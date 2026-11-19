@@ -1,29 +1,28 @@
 import {
-  ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
   Camera,
-  Check,
   ChevronDown,
   ClipboardList,
   Heart,
   MessageCircleHeart,
   PenLine,
   ShieldCheck,
-  Sparkles,
   UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
 import { AffiliateProductProof } from "@/components/affiliate-product-proof";
+import {
+  AffiliateEditorialHero,
+  type RecruitmentStatus,
+} from "@/components/affiliate-editorial-hero";
 import { AffiliateSellingFlow } from "@/components/affiliate-selling-flow";
 import {
   AffiliateCreatorOpportunity,
   AffiliateEarningsSimulator,
 } from "@/components/affiliate-creator-opportunity";
-
-type RecruitmentStatus = "loading" | "open" | "limited" | "closed";
 
 const experiences = [
   {
@@ -212,119 +211,18 @@ export function AffiliateLandingIntro({
 
   return (
     <div data-testid="vonix-affiliate-editorial" className="min-w-0">
-      <section
-        data-testid="vonix-affiliate-hero"
-        aria-labelledby="vonix-affiliate-title"
-        className="relative isolate min-h-[650px] overflow-hidden bg-gradient-to-br from-[#fffaf7] via-[#f8efeb] to-[#f0e0e3] px-5 py-9 sm:min-h-[41rem] sm:py-14"
-      >
-        <picture className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 block h-[230px] bg-card sm:inset-0 sm:h-full">
-          <source srcSet="/images/products/kit-banana-e-mel.webp" type="image/webp" />
-          <img
-            src="/images/products/kit-banana-e-mel.jpg"
-            alt="Kit Banana e Mel original comercializado na loja Vonix Hair"
-            width={768}
-            height={768}
-            fetchPriority="high"
-            loading="eager"
-            decoding="async"
-            className="h-full w-full object-contain object-right opacity-30 sm:opacity-20 lg:opacity-100"
-          />
-        </picture>
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-xl lg:max-w-[36rem]">
-            <p className="inline-flex flex-wrap items-center gap-2 text-xs font-semibold uppercase text-primary">
-              <Sparkles aria-hidden="true" className="size-4" /> Inscrição gratuita · seleção
-              individual
-            </p>
-            <p className="mt-7 text-sm font-semibold text-primary">
-              Vonix Hair · Programa de afiliadas
-            </p>
-            <h1
-              id="vonix-affiliate-title"
-              className="mt-3 font-display text-4xl leading-tight sm:text-5xl lg:text-5xl"
-            >
-              Seu jeito de <span className="italic text-primary">criar.</span>
-              <span className="block">Nossa paixão por cabelos.</span>
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-foreground">
-              Você tem uma história para compartilhar. Apresente seu perfil à Vonix Hair e explore
-              uma possível parceria no universo dos cuidados capilares.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button asChild className="h-auto min-h-12 whitespace-normal px-6 py-3">
-                <a href="#inscricao">
-                  {isOpen ? "Quero ser afiliada Vonix" : "Conhecer a inscrição"}
-                  <ArrowUpRight aria-hidden="true" />
-                </a>
-              </Button>
-              <Button asChild variant="link" className="h-auto min-h-11 whitespace-normal">
-                <a href="#ganhos">
-                  Conhecer as condições <ArrowDownRight aria-hidden="true" />
-                </a>
-              </Button>
-            </div>
-            <ul
-              className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs text-foreground"
-              aria-label="Informações da candidatura"
-            >
-              {["8% sobre vendas após aprovação", "Sem estoque próprio", "Inscrição gratuita"].map(
-                (text) => (
-                  <li key={text} className="inline-flex items-center gap-2">
-                    <Check aria-hidden="true" className="size-4 text-primary" />
-                    {text}
-                  </li>
-                ),
-              )}
-            </ul>
-            <div
-              role="status"
-              className="mt-5 inline-flex max-w-lg flex-wrap items-center gap-2 rounded-full border border-border bg-background/85 px-4 py-2 text-xs font-semibold text-foreground"
-            >
-              <span
-                aria-hidden="true"
-                className={
-                  "h-2 w-2 shrink-0 rounded-full " +
-                  (isOpen
-                    ? "bg-emerald-600"
-                    : recruitmentStatus === "loading"
-                      ? "bg-amber-600"
-                      : "bg-primary")
-                }
-              />
-              {isOpen
-                ? "Candidaturas abertas para análise"
-                : recruitmentStatus === "loading"
-                  ? "Consultando disponibilidade de inscrição"
-                  : recruitmentStatus === "limited"
-                    ? "Inscrição temporariamente limitada nesta conexão"
-                    : "Conheça o formulário enquanto as inscrições estão em preparação"}
-            </div>
-            <p className="mt-4 max-w-lg text-xs leading-relaxed text-muted-foreground">
-              A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige
-              estoque nem compra de produtos para se candidatar.
-            </p>
-          </div>
-        </div>
-      </section>
+      <AffiliateEditorialHero recruitmentStatus={recruitmentStatus} />
 
       <div
-        aria-label="Universo criativo Vonix Hair"
-        className="overflow-hidden bg-primary py-4 text-primary-foreground"
+        data-testid="affiliate-c61-eligibility-facts"
+        aria-label="Informações essenciais da candidatura Vonix Hair"
+        className="border-b border-[#754558] bg-[#663448] px-5 py-5 text-[#fff9f6]"
       >
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 px-5 text-[10px] font-extrabold uppercase tracking-normal sm:gap-x-9 sm:text-xs">
-          <span>Beleza capilar</span>
-          <span aria-hidden="true" className="text-primary-foreground">
-            ✦
-          </span>
-          <span>Conteúdo original</span>
-          <span aria-hidden="true" className="text-primary-foreground">
-            ✦
-          </span>
-          <span>Histórias reais</span>
-          <span aria-hidden="true" className="text-primary-foreground">
-            ✦
-          </span>
-          <span>Vonix Hair</span>
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 text-xs font-medium sm:grid-cols-4 sm:gap-8 sm:text-sm">
+          <span>Candidatura gratuita</span>
+          <span>Seleção individual</span>
+          <span>Maiores de 18 anos</span>
+          <span>TikTok opcional</span>
         </div>
       </div>
 
