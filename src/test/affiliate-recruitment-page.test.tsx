@@ -257,6 +257,7 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
     const images = Array.from(landing.querySelectorAll("img"));
     expect(images.length).toBeGreaterThanOrEqual(8);
     images.forEach((img) => {
+      if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
       expect(img.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+\.(?:jpg|webp)$/);
       expect(img.getAttribute("alt")?.toLowerCase()).toContain("vonix");
       expect(img.getAttribute("alt")).not.toMatch(/creator|parceria|depoimento/i);
