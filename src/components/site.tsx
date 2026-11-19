@@ -687,11 +687,9 @@ function ProductCarousel({ items }: { items: Product[] }) {
   }, [measure, items.length]);
 
   const go = (dir: number) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.9, behavior: "smooth" });
-  const goTo = (i: number) => ref.current?.scrollTo({ left: i * ref.current.clientWidth, behavior: "smooth" });
-  const btn = "grid h-9 w-9 place-items-center rounded-lg border border-[#7a5a2e] bg-white text-[#7a5a2e] transition-opacity disabled:opacity-30";
 
   return (
-    <div>
+    <div className="relative">
       <div
         ref={ref}
         className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] md:gap-4 [&::-webkit-scrollbar]:hidden"
@@ -703,27 +701,26 @@ function ProductCarousel({ items }: { items: Product[] }) {
         ))}
       </div>
       {pages > 1 && (
-        <div className="mt-3 flex items-center justify-center gap-3">
-          <button type="button" aria-label="Anterior" disabled={page === 0} onClick={() => go(-1)} className={btn}>
-            <ChevronLeft className="h-4 w-4" />
+        <>
+          <button
+            type="button"
+            aria-label="Anterior"
+            disabled={page === 0}
+            onClick={() => go(-1)}
+            className="absolute left-1 top-1/3 z-10 hidden h-10 w-10 place-items-center rounded-full bg-white text-foreground shadow-md disabled:hidden md:grid"
+          >
+            <ChevronLeft className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-4" role="tablist" aria-label="Páginas">
-            {Array.from({ length: pages }, (_, i) => (
-              <button
-                key={i}
-                type="button"
-                role="tab"
-                aria-selected={i === page}
-                aria-label={`Página ${i + 1}`}
-                onClick={() => goTo(i)}
-                className={`relative h-2 rounded-full transition-all before:absolute before:-inset-2 before:content-[''] ${i === page ? "w-6 bg-[#7a5a2e]" : "w-2 bg-[oklch(0.8_0.01_85)]"}`}
-              />
-            ))}
-          </div>
-          <button type="button" aria-label="Próximo" disabled={page === pages - 1} onClick={() => go(1)} className={btn}>
-            <ChevronRight className="h-4 w-4" />
+          <button
+            type="button"
+            aria-label="Próximo"
+            disabled={page === pages - 1}
+            onClick={() => go(1)}
+            className="absolute right-1 top-1/3 z-10 hidden h-10 w-10 place-items-center rounded-full bg-white text-foreground shadow-md disabled:hidden md:grid"
+          >
+            <ChevronRight className="h-5 w-5" />
           </button>
-        </div>
+        </>
       )}
     </div>
   );
