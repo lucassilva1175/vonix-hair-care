@@ -4,6 +4,7 @@ import { ArrowRight, CreditCard, Lock, ShieldCheck, Truck } from "lucide-react";
 import heroLogo from "@/assets/vonix-logo.webp";
 import { SecuritySeal, Shell } from "@/components/site";
 import { OrderBump } from "@/components/order-bump";
+import { PrazoFrete } from "@/components/prazo-frete";
 import { useCepAddress } from "@/hooks/use-cep-address";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
@@ -932,6 +933,8 @@ function Checkout() {
             </div>
 
 
+
+            <PrazoFrete className="order-4" />
 
             <fieldset className="order-3 space-y-2">
               <StepTitle n={3}>Pagamento</StepTitle>

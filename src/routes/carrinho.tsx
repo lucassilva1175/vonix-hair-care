@@ -20,6 +20,7 @@ import {
 } from "@/lib/store";
 import { quoteShipping } from "@/lib/checkout.functions";
 import { Summary } from "@/components/cart-summary";
+import { PrazoFrete } from "@/components/prazo-frete";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 
 export const Route = createFileRoute("/carrinho")({
@@ -320,6 +321,7 @@ function Cart() {
               </section>
             </div>
             <aside className="space-y-4">
+              <PrazoFrete className="rounded-xl border border-border bg-card p-4" />
               <FreeShippingFillers />
               <CartShipping
                 items={c.lines.map((l) => ({
