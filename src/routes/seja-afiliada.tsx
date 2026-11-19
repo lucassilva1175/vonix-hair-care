@@ -6,6 +6,7 @@ import { getAffiliateRecruitmentStatus } from "@/lib/affiliate-functions";
 import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
 import { AffiliateApplicationPrep } from "@/components/affiliate-application-prep";
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
+import { AffiliateVerifiedReviewPreview } from "@/components/affiliate-verified-review-preview";
 import {
   AffiliateLandingOffer,
   AffiliateLandingDiscovery,
@@ -142,6 +143,7 @@ export function AffiliateApplicationPage() {
     <AffiliateShell recruitmentStatus={recruitment}>
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
         <AffiliateLandingOffer recruitmentStatus={recruitment} />
+        <AffiliateVerifiedReviewPreview />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
           <details
