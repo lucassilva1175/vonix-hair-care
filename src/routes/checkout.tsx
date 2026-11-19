@@ -943,7 +943,7 @@ function Checkout() {
 
             <fieldset className="order-3 space-y-2">
               <StepTitle n={3}>Pagamento</StepTitle>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <label data-testid="pay-option-pix" className={payTile(pay === "pix")}>
                   <span className="flex min-w-0 items-center justify-between gap-2 text-body font-semibold">
                     <span className="flex min-w-0 items-center gap-2">

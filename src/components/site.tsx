@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import logoUrl from "@/assets/vonix-logo.webp";
 import { usePaidVisit } from "@/lib/paid-visit";
 import { BfPopup } from "@/components/bf-popup";
+import { CartDrawer, openCartDrawer } from "@/components/cart-drawer";
 import { reviewsFor } from "@/components/reviews";
 import { soldFor } from "@/lib/sales";
 import { useVisitorSummary } from "@/lib/review-summary";
@@ -386,6 +387,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
         )}
       </header>
+      {!isCheckout && <CartDrawer />}
       {!isCheckout && !audience && (
         <div className={`container-site py-2 ${isProduct ? "hidden lg:block" : ""}`}>
           <AudienceChoice />
@@ -597,12 +599,10 @@ export function ProductCard({ p }: { p: Product }) {
     const v = p.variants[0];
     cart.add(p.slug, v.label, 1);
     track("add_to_cart", { value: v.price, items: [toItem(p, v.label, v.price)] });
-    toast.success(`${p.name}${p.variants.length > 1 ? ` (${v.label})` : ""} adicionado à sacola`, {
-      action: { label: "Ver sacola", onClick: () => nav({ to: "/carrinho" }) },
-    });
+    openCartDrawer();
   };
   return (
-    <div className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-border bg-white p-2.5 shadow-sm md:p-3">
+    <div className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-border bg-white p-2.5 text-foreground shadow-sm md:p-3">
       <div className="relative overflow-hidden rounded-xl bg-muted">
         {off > 0 && (
           <span className="absolute left-2 top-2 z-10 rounded-md bg-[#7a5a2e] px-1.5 py-0.5 text-small font-semibold text-white">

@@ -12,6 +12,7 @@ import { ShareButton } from "@/components/share-button";
 import { Grid, PaymentMethods, SecuritySeal, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
 import { FaqSection } from "@/components/faq";
+import { openCartDrawer } from "@/components/cart-drawer";
 import { FAQ_LOJA } from "@/lib/faq";
 import { useServerFn } from "@tanstack/react-start";
 import { lookupAddress } from "@/lib/address.functions";
@@ -551,7 +552,7 @@ function ProductPage() {
                 className="rounded-md border-2 border-foreground py-3.5 font-medium"
                 onClick={() => {
                   add();
-                  toast.success("Adicionado ao carrinho");
+                  openCartDrawer();
                 }}
               >
                 Adicionar ao carrinho

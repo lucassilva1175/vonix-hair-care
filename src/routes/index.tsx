@@ -120,9 +120,11 @@ function Home() {
       <Benefits />
 
       {/* 1) O que mais vende, logo abaixo da oferta principal */}
-      <section className="container-site mt-12">
-        <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
-        <Grid carousel items={bestSellers} />
+      <section className="mt-12 bg-[#091413] py-10 text-white [&_a.border-foreground]:border-white [&_h2]:text-white" data-testid="home-vitrine-escura">
+        <div className="container-site">
+          <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
+          <Grid carousel items={bestSellers} />
+        </div>
       </section>
 
       {/* O que o cabelo precisa hoje: atalhos por necessidade */}
