@@ -147,7 +147,7 @@ export function CartDrawer() {
             <div className="flex justify-between gap-3">
               <dt>Frete</dt>
               <dd className="text-right text-muted-foreground">
-                {hasFreeShipping(c.subtotal) ? "Grátis · de 3 a 5 dias úteis" : `Grátis acima de ${brl(FREE_SHIPPING_ABOVE)}`}
+                {hasFreeShipping(c.subtotal) ? "Grátis" : `Grátis acima de ${brl(FREE_SHIPPING_ABOVE)}`}
               </dd>
             </div>
             <div className="flex justify-between">
