@@ -69,11 +69,11 @@ describe("C58 genuine Vonix credibility before applying", () => {
     expect(within(section).queryByRole("link", { name: /Ver como se candidatar/ })).toBeNull();
   });
 
-  it("puts verified store content before earnings and keeps product reviews reachable", () => {
+  it("keeps verified store content after clear earnings and product reviews reachable", () => {
     const { container } = render(<AffiliateLandingIntro recruitmentStatus="closed" />);
     const brand = screen.getByTestId("affiliate-c58-brand-trust");
     const earnings = screen.getByTestId("vonix-affiliate-earnings");
-    expect(brand.compareDocumentPosition(earnings) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(earnings.compareDocumentPosition(brand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const productReviews = screen.getByTestId("vonix-c53-real-product-reviews");
     expect(productReviews).toHaveAttribute("id", "avaliacoes-produtos");
     expect(container.querySelectorAll("#avaliacoes-produtos")).toHaveLength(1);

@@ -71,7 +71,7 @@ describe("C61 public recruitment hero with real Vonix catalogue", () => {
     expect(hero).toHaveTextContent("A candidatura não garante aprovação");
   });
 
-  it("shows real entry facts and keeps C60 proof after brand, before commissions", () => {
+  it("shows real entry facts, early conditions, then brand and product reviews", () => {
     const { container } = render(<AffiliateLandingIntro recruitmentStatus="closed" />);
     const hero = screen.getByTestId("vonix-affiliate-hero");
     const facts = screen.getByTestId("affiliate-c61-eligibility-facts");
@@ -79,11 +79,9 @@ describe("C61 public recruitment hero with real Vonix catalogue", () => {
     const reviews = screen.getByTestId("vonix-c53-real-product-reviews");
     const earnings = screen.getByTestId("vonix-affiliate-earnings");
     expect(hero.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(facts.compareDocumentPosition(brand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(facts.compareDocumentPosition(earnings) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(earnings.compareDocumentPosition(brand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(brand.compareDocumentPosition(reviews) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      reviews.compareDocumentPosition(earnings) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
     for (const fact of [
       "Candidatura gratuita",
       "Seleção individual",
