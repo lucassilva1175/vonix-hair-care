@@ -24,6 +24,7 @@ vi.mock("@/components/site", () => ({
 vi.mock("@/components/cart-summary", () => ({ ShippingBar: () => null, Summary: () => null }));
 vi.mock("@/components/reviews", () => ({ ProductReviews: () => null, reviewsFor: () => [] }));
 vi.mock("@/lib/address.functions", () => ({ lookupAddress: mocks.address }));
+vi.mock("@/lib/leads.functions", () => ({ registerCartLead: vi.fn(() => Promise.resolve({ ok: true, saved: false })) }));
 vi.mock("@/lib/checkout.functions", () => ({
   quoteShipping: mocks.quote,
   getPaymentConfig: mocks.config,

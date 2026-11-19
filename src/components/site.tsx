@@ -296,18 +296,34 @@ export function Shell({ children }: { children: ReactNode }) {
             <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-8 w-auto sm:h-11" />
           </Link>
           {!isCheckout && (
-            <div className="mx-auto hidden w-full max-w-xl min-w-0 lg:block">
-              <SearchBox />
-            </div>
+            <nav aria-label="Menu principal" className="mx-4 hidden min-w-0 flex-1 items-center justify-center gap-x-6 text-small font-medium uppercase tracking-[0.12em] lg:flex xl:gap-x-8">
+              {NAV.map((n) => (
+                <Link key={n.label} to="/loja" search={n.search} className="shrink-0 whitespace-nowrap border-b border-transparent py-2 transition-colors hover:border-foreground">
+                  {n.label}
+                </Link>
+              ))}
+              <div className="group relative shrink-0">
+                <button type="button" className="flex items-center gap-1 whitespace-nowrap border-b border-transparent py-2 uppercase tracking-[0.12em] group-hover:border-foreground" aria-haspopup="true">
+                  Por necessidade <span aria-hidden="true">▾</span>
+                </button>
+                <div className="invisible absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-xl border border-border bg-background p-2 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                  {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
+                    <Link key={n} to="/loja" search={{ necessidades: n }} className="block rounded-lg px-3 py-2 text-body normal-case tracking-normal hover:bg-muted">
+                      {n}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </nav>
           )}
           <div className="ml-auto flex items-center justify-self-end gap-2 text-body sm:gap-4">
-            {isProduct && (
+            {!isCheckout && (
               <button
                 type="button"
                 aria-label="Buscar"
                 aria-expanded={searchOpen}
                 onClick={() => setSearchOpen((v) => !v)}
-                className="-m-2 p-2 lg:hidden"
+                className={`-m-2 p-2 ${isProduct ? "" : "max-lg:hidden"}`}
               >
                 <Search className="h-5 w-5" />
               </button>
@@ -332,6 +348,11 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </div>
+        {!isCheckout && searchOpen && !isProduct && (
+          <div className="container-site hidden pb-2 lg:block">
+            <SearchBox autoFocus onDone={() => setSearchOpen(false)} />
+          </div>
+        )}
         {isProduct ? (
           // Página de produto no celular: só a busca, e só depois de tocar na lupa.
           searchOpen && (
@@ -354,7 +375,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
       <header className="border-b border-border bg-background">
         {!isCheckout && (
-          <nav aria-label="Categorias" className="hidden border-t border-border lg:block">
+          <nav aria-label="Categorias" className="hidden">
             <div className="container-site flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-3 text-small font-medium uppercase tracking-[0.15em] xl:gap-x-9">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="shrink-0 whitespace-nowrap border-b border-transparent pb-0.5 transition-colors hover:border-foreground">

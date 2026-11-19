@@ -27,6 +27,7 @@ import {
   getSavedCep,
   hasFreeShipping,
   installments,
+  pixPrice,
   kitItems,
   lineTotals,
   maskCep,
@@ -367,8 +368,23 @@ function ProductPage() {
                 label="Compartilhar"
               />
             </div>
-            {p.short && <p className="mt-3 text-muted-foreground">{p.short}</p>}
+            {p.short && (
+              <div className="mt-3 flex items-center gap-3 rounded-xl bg-muted p-3 text-small" data-testid="product-benefit">
+                <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-action font-display text-name font-bold text-action-foreground">V</span>
+                <span className="leading-snug">{p.short}</span>
+              </div>
+            )}
             <ReviewStrip slug={p.slug} />
+            <div className="mt-4" data-testid="product-price-block">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
+                <span className="text-body">no Pix</span>
+                <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
+              </div>
+              <p className="mt-1 text-small text-muted-foreground">
+                Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros
+              </p>
+            </div>
             {
               <div className="mt-6">
                 <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
@@ -576,7 +592,16 @@ function ProductPage() {
           </div>
         </div>
         <KitCross p={p} />
-        {p.description && <ProductDetails p={p} />}
+        {p.description && (
+          <section className="mt-16 grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-2" data-testid="product-description-block">
+            <div className="hidden bg-muted lg:block">
+              <img src={p.images[1] ?? p.images[0]} alt={p.name} loading="lazy" className="sticky top-24 h-auto max-h-[560px] w-full object-contain" />
+            </div>
+            <div className="p-4 md:p-8">
+              <ProductDetails p={p} />
+            </div>
+          </section>
+        )}
         <FaqSection items={FAQ_LOJA} nested testId="product-faq" />
         <ProductReviews slug={p.slug} />
         <section className="mt-16" data-testid="product-qa" aria-label="Perguntas e respostas">
@@ -600,7 +625,7 @@ function ProductPage() {
           </section>
         )}
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:px-[max(1rem,calc((100vw-1400px)/2+2rem))]">
         <div className="min-w-0 leading-tight">
           <div className="truncate text-small text-muted-foreground">{p.name}</div>
           <div className="font-semibold">{brl(total)}</div>

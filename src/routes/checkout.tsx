@@ -9,6 +9,7 @@ import { useCepAddress } from "@/hooks/use-cep-address";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
 import { clearRef, getRef } from "@/lib/affiliate-ref";
+import { registerCartLead } from "@/lib/leads.functions";
 import {
   createPayment,
   getOrderStatus,
@@ -571,6 +572,31 @@ function Checkout() {
   const shipping = chosen ? chosen.price : 0;
   const total = t.net + shipping;
 
+  // Carrinho abandonado: guarda nome + WhatsApp assim que preenchidos (antes do pagamento) para o Lucas poder chamar a pessoa.
+  const lastLead = useRef("");
+  const leadPayload = () => ({
+    nome: f.nome.trim(),
+    whatsapp: f.whatsapp,
+    ...(f.email.includes("@") ? { email: f.email.trim() } : {}),
+    itens: c.lines.map((l) => `${l.qty}x ${l.slug}${l.variant ? ` (${l.variant})` : ""}`).join(", ").slice(0, 400),
+    total: Math.round(total * 100) / 100,
+    ...(chosen ? { frete: `${chosen.company} ${chosen.name} R$ ${chosen.price.toFixed(2)}`.slice(0, 120) } : {}),
+    ...(f.cidade ? { cidade: f.cidade.slice(0, 80) } : {}),
+    ...(f.uf ? { uf: f.uf.slice(0, 2) } : {}),
+  });
+  useEffect(() => {
+    if (pix || cardDone || !hasLines) return;
+    if (f.nome.trim().length < 2 || f.whatsapp.replace(/\D/g, "").length < 10) return;
+    const body = { ...leadPayload(), status: "preencheu" as const };
+    const key = JSON.stringify(body);
+    if (key === lastLead.current) return;
+    const timer = setTimeout(() => {
+      lastLead.current = key;
+      registerCartLead({ data: body }).catch(() => {});
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [f.nome, f.whatsapp, f.email, f.cidade, f.uf, chosen?.id, total, itemsKey, pix, cardDone, hasLines]);
+
   const applyCoupon = async () => {
     if (!coupon.trim()) return setCouponMsg("Digite um código de cupom.");
     let found = findCoupon(coupon);
@@ -592,6 +618,7 @@ function Checkout() {
       shipping,
       items: c.lines.map((l) => toItem(l.product, l.variant, l.net / l.units, l.units)),
     });
+    if (f.nome.trim().length >= 2) registerCartLead({ data: { ...leadPayload(), status: "comprou" } }).catch(() => {});
     c.clear();
     clearRef(); // o link da afiliada vale para uma compra só: depois de paga, as próximas são vendas normais
   };
@@ -883,7 +910,7 @@ function Checkout() {
   const body = (
       <div className={lateral ? "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-3" : "container-site mx-auto grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 pb-28 pt-0 sm:pt-4"} style={lateral ? undefined : { maxWidth: "42rem" }}>
         <div className="min-w-0 space-y-3">
-          <form id="checkout-form" className="min-w-0 space-y-3" onSubmit={onSubmit}>
+          <form id="checkout-form" className="flex min-w-0 flex-col gap-3" onSubmit={onSubmit}>
             {!lateral && (
               <div data-testid="checkout-hero" className="relative -mx-4 flex min-h-[176px] items-center overflow-hidden bg-[#1a1209] sm:mx-0 sm:rounded-2xl">
                 <img src="/images/categorias/hidratacao.jpg" alt="" width={480} height={480} className="absolute inset-y-0 right-0 h-full w-[62%] object-cover object-[50%_38%]" />
@@ -905,73 +932,17 @@ function Checkout() {
               <h1 className={lateral ? "sr-only" : "font-display text-h1 leading-tight"}>Sua compra, sem surpresas</h1>
             </div>
 
-            <section aria-label="Revise seu pedido" data-testid="checkout-review" className={`${panel} space-y-3`}>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-name">Revise seu pedido</h2>
-                <Link to="/carrinho" className="shrink-0 text-small font-medium text-[#8a6a1c] underline">
-                  Editar pedido
-                </Link>
-              </div>
-              <ul className="divide-y divide-border">
-                {c.lines.map((l) => (
-                  <li
-                    key={l.slug + l.variant + (l.offer ?? "")}
-                    className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-4 py-3 first:pt-0 last:pb-0"
-                  >
-                    <img
-                      src={l.product.images[0]}
-                      alt={l.product.name}
-                      width={104}
-                      height={104}
-                      className="h-[92px] w-[92px] rounded-2xl bg-card-image object-contain p-2 shadow-[inset_0_0_0_1px_rgba(201,164,92,0.28)]"
-                    />
-                    <div className="min-w-0 space-y-3">
-                      <b className="block break-words text-name font-semibold leading-snug">
-                        {l.product.name} <span className="font-medium text-muted-foreground">• {l.variant}</span>
-                      </b>
-                      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                        <div className="inline-flex items-center rounded-lg border border-border bg-white" role="group" aria-label={`Quantidade de ${l.product.name}`}>
-                          <button
-                            type="button"
-                            aria-label="Diminuir quantidade"
-                            disabled={l.qty <= 1}
-                            onClick={() => c.setQty(l.slug, l.variant, l.qty - 1, l.offer)}
-                            className="grid h-9 w-9 place-items-center text-name disabled:opacity-35"
-                          >
-                            −
-                          </button>
-                          <span className="min-w-8 text-center text-body font-semibold" aria-live="polite">
-                            {l.qty}
-                          </span>
-                          <button
-                            type="button"
-                            aria-label="Aumentar quantidade"
-                            onClick={() => c.setQty(l.slug, l.variant, l.qty + 1, l.offer)}
-                            className="grid h-9 w-9 place-items-center text-name"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <span className="money whitespace-nowrap text-name font-bold">{brl(l.net)}</span>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <OrderBump />
 
 
-            <p className="flex cursor-default select-none items-center gap-2 text-small font-medium text-[#2c6e55]">
+            <p className="order-4 flex cursor-default select-none items-center gap-2 text-small font-medium text-[#2c6e55]">
               <Truck className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
               {missingForFreeShipping(gross) > 0
                 ? `Frete grátis em SP e MG. Nos demais estados, faltam ${brl(missingForFreeShipping(gross))}`
                 : "Você ganhou frete grátis"}
             </p>
 
-            <fieldset className="space-y-2">
-              <StepTitle n={1}>Como você quer pagar?</StepTitle>
+            <fieldset className="order-3 space-y-2">
+              <StepTitle n={3}>Pagamento</StepTitle>
               <div className="grid grid-cols-2 gap-2">
                 <label data-testid="pay-option-pix" className={payTile(pay === "pix")}>
                   <span className="flex min-w-0 items-center justify-between gap-2 text-body font-semibold">
@@ -1028,8 +999,8 @@ function Checkout() {
               </div>
             </fieldset>
 
-            <fieldset className={panel}>
-              <StepTitle n={2}>Onde vamos entregar?</StepTitle>
+            <fieldset className={`${panel} order-2`}>
+              <StepTitle n={2}>Entrega</StepTitle>
                             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                 <input
                   required
@@ -1198,8 +1169,8 @@ function Checkout() {
               </div>
             </fieldset>
 
-            <fieldset className={panel}>
-              <StepTitle n={3}>Seus dados</StepTitle>
+            <fieldset className={`${panel} order-1`}>
+              <StepTitle n={1}>Seus dados</StepTitle>
               <input
                 required
                 aria-label="Nome completo"
@@ -1248,7 +1219,6 @@ function Checkout() {
               </p>
               </fieldset>
 
-            {totalsCard}
 
 
           </form>
@@ -1401,6 +1371,84 @@ function Checkout() {
               </div>
             )}
           </div>
+
+          <h2 className="font-display text-h2">Seu pedido</h2>
+          <section aria-label="Revise seu pedido" data-testid="checkout-review" className={`${panel} space-y-3`}>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-display text-name">Itens do pedido</h2>
+                <Link to="/carrinho" className="shrink-0 text-small font-medium text-[#8a6a1c] underline">
+                  Editar pedido
+                </Link>
+              </div>
+              <ul className="divide-y divide-border">
+                {c.lines.map((l) => (
+                  <li
+                    key={l.slug + l.variant + (l.offer ?? "")}
+                    className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-4 py-3 first:pt-0 last:pb-0"
+                  >
+                    <img
+                      src={l.product.images[0]}
+                      alt={l.product.name}
+                      width={104}
+                      height={104}
+                      className="h-[92px] w-[92px] rounded-2xl bg-card-image object-contain p-2 shadow-[inset_0_0_0_1px_rgba(201,164,92,0.28)]"
+                    />
+                    <div className="min-w-0 space-y-3">
+                      <b className="block break-words text-name font-semibold leading-snug">
+                        {l.product.name} <span className="font-medium text-muted-foreground">• {l.variant}</span>
+                      </b>
+                      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                        <div className="inline-flex items-center rounded-lg border border-border bg-white" role="group" aria-label={`Quantidade de ${l.product.name}`}>
+                          <button
+                            type="button"
+                            aria-label="Diminuir quantidade"
+                            disabled={l.qty <= 1}
+                            onClick={() => c.setQty(l.slug, l.variant, l.qty - 1, l.offer)}
+                            className="grid h-9 w-9 place-items-center text-name disabled:opacity-35"
+                          >
+                            −
+                          </button>
+                          <span className="min-w-8 text-center text-body font-semibold" aria-live="polite">
+                            {l.qty}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Aumentar quantidade"
+                            onClick={() => c.setQty(l.slug, l.variant, l.qty + 1, l.offer)}
+                            className="grid h-9 w-9 place-items-center text-name"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="money whitespace-nowrap text-name font-bold">{brl(l.net)}</span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <OrderBump />
+          {totalsCard}
+
+          <ul data-testid="checkout-confianca" className="space-y-4 py-2 text-right text-small">
+            {[
+              [Lock, "Compra segura", "Pagamento processado em ambiente seguro pela Appmax."],
+              [Truck, "Entrega para todo o Brasil", "O prazo e o valor aparecem antes de pagar, conforme o seu CEP."],
+              [ShieldCheck, "7 dias para desistir", "Você pode desistir da compra em até 7 dias após receber."],
+            ].map(([Icon, t, d]) => {
+              const I = Icon as typeof Lock;
+              return (
+                <li key={t as string} className="flex items-start justify-end gap-3">
+                  <div>
+                    <b className="block uppercase tracking-[0.12em]">{t as string}</b>
+                    <span className="text-muted-foreground">{d as string}</span>
+                  </div>
+                  <I className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                </li>
+              );
+            })}
+          </ul>
         </div>
         <div className="min-w-0 space-y-4">
           <div
