@@ -229,3 +229,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Meta: campanha Power ativa, 0 compras, gasto acumulado maior que ontem; orçamento aparece como R$ 250/dia (acima do teto de R$ 100): aguardando confirmação do dono. Nada alterado.
 - Pix 5% (16/11) reduz a margem de venda por anúncio; decisão pendente do dono.
 - Como desfazer: nada alterado além deste diário.
+
+## 19/11/2026 (fim da tarde) — relatório diário e compra teste segura (só observação, sem mudança no site)
+- Compra teste sem pagar: Botox → checkout, CEP 01310-100: "Frete grátis" e total no Pix aparecem, sem erro. Botão "Gerar Pix" exige CPF (não digitado, por regra); liberação do botão não confirmada hoje.
+- Frete grátis em qualquer pedido: em SP/Sudeste a margem estimada segue acima de 30%; em Nordeste/Sul fica abaixo para os itens com custo conhecido. Decisão do dono pendente.
+- Meta/pixel não abertos por ordem do dono (18/11). Nada alterado além deste diário.
+- Como desfazer: git revert desta PR.
