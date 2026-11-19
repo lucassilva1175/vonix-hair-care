@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewCard, reviews } from "@/components/reviews";
-import { AffiliateHomeInvite } from "@/components/affiliate-home-invite";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { Benefits, Grid, Shell } from "@/components/site";
@@ -199,7 +198,6 @@ function Home() {
         </div>
       </section>
 
-      <AffiliateHomeInvite />
     </Shell>
   );
 }
