@@ -44,7 +44,7 @@ export const products = (raw as unknown as Product[])
   .map(comPrecoDeTeste);
 export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
 
-export const FREE_SHIPPING_ABOVE = 100; // frete grátis acima deste valor em produtos (19/11/2026). 0 = frete grátis em qualquer pedido
+export const FREE_SHIPPING_ABOVE = 0; // 0 = frete grátis em todos os produtos e em qualquer valor de pedido (ordem do Lucas, 19/11/2026). Para exigir um mínimo, ponha o valor aqui
 export const MAX_INSTALLMENTS = 6;
 /** Desconto no Pix: 5% (volta em 16/11/2026), só em itens sem outra oferta e sem cupom por cima. */
 export const PIX_DISCOUNT = 0.05;

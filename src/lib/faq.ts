@@ -7,7 +7,7 @@ export type FaqItem = { q: string; a: string };
 export const FAQ_LOJA: FaqItem[] = [
   {
     q: "Como funciona o frete?",
-    a: "O frete é grátis nas compras acima de R$ 100 em produtos, antes dos descontos. Abaixo disso, o valor e o prazo aparecem na página do produto e no checkout, conforme o seu CEP.",
+    a: "O frete é grátis em todos os produtos, em qualquer pedido. O prazo aparece na página do produto e no checkout, conforme o seu CEP.",
   },
   {
     q: "Quais são as formas de pagamento?",
