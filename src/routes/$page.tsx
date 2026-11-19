@@ -19,7 +19,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "politica-de-privacidade": "Como a Vonix Hair coleta, usa e protege seus dados pessoais, conforme a LGPD.",
   "termos-de-uso": "Termos de uso da loja Vonix Hair: regras de compra, preços, pagamento e entrega.",
   "politica-de-trocas-e-devolucoes": "Direito de arrependimento em 7 dias, produto com defeito, errado ou avariado: como pedir troca ou devolução na Vonix Hair.",
-  "politica-de-frete": "Prazos, valores e frete grátis (SP e MG em qualquer pedido; demais estados acima de R$ 150): como funciona a entrega da Vonix Hair.",
+  "politica-de-frete": "Prazos e frete grátis para todo o Brasil, em qualquer pedido: como funciona a entrega da Vonix Hair.",
 };
 
 export const Route = createFileRoute("/$page")({

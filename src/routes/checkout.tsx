@@ -937,7 +937,7 @@ function Checkout() {
             <p className="order-4 flex cursor-default select-none items-center gap-2 text-small font-medium text-[#2c6e55]">
               <Truck className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
               {missingForFreeShipping(gross) > 0
-                ? `Frete grátis em SP e MG. Nos demais estados, faltam ${brl(missingForFreeShipping(gross))}`
+                ? `Faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
                 : "Você ganhou frete grátis"}
             </p>
 

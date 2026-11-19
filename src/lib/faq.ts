@@ -7,7 +7,7 @@ export type FaqItem = { q: string; a: string };
 export const FAQ_LOJA: FaqItem[] = [
   {
     q: "Como funciona o frete?",
-    a: "Para São Paulo e Minas Gerais o frete é grátis em qualquer pedido. Nos demais estados, o frete é grátis acima de R$ 150 em produtos, antes dos descontos. O valor e o prazo aparecem na página do produto e no checkout, conforme o seu CEP.",
+    a: "O frete é grátis para todo o Brasil, em qualquer pedido. O prazo aparece na página do produto e no checkout, conforme o seu CEP.",
   },
   {
     q: "Quais são as formas de pagamento?",

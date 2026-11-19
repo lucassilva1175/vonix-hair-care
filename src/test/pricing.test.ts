@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { USAGE, cardPricing, forAudience, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, isProOnly, lineHasOffer, lineTotals, migrateCart, pixPrice, products, volumePct } from "@/lib/store";
+import { USAGE, cardPricing, forAudience, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, missingForFreeShipping, isProOnly, lineHasOffer, lineTotals, migrateCart, pixPrice, products, volumePct } from "@/lib/store";
 
 // O teste de preços (13/11 a 20/11/2026) lê a data na hora: fixamos "hoje" dentro do prazo para os números ficarem estáveis.
 beforeAll(() => {
@@ -66,9 +66,11 @@ describe("regras comerciais", () => {
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([64.9, 149.9]);
     vi.setSystemTime(new Date("2026-11-14T12:00:00-03:00"));
   });
-  it("frete grátis somente acima de 150", () => {
-    expect(hasFreeShipping(150)).toBe(false);
-    expect(hasFreeShipping(150.01)).toBe(true);
+  it("frete grátis em qualquer valor de pedido, para todo o Brasil", () => {
+    expect(hasFreeShipping(0.01)).toBe(true);
+    expect(hasFreeShipping(29.9)).toBe(true);
+    expect(hasFreeShipping(150)).toBe(true);
+    expect(missingForFreeShipping(29.9)).toBe(0);
   });
   it("6x sem juros soma o total exato", () => {
     const i = installments(174.9);
@@ -162,8 +164,9 @@ describe("checkout", () => {
   it("cupom de 10%: 139,41 e mantém o frete grátis", () => {
     expect(checkoutTotals([line(154.9)], "card", 0.1)).toMatchObject({ net: 139.41, couponDiscount: 15.49, freeShipping: true });
   });
-  it("frete grátis some se a base cair para 150 ou menos", () => {
-    expect(checkoutTotals([line(150)], "pix").freeShipping).toBe(false);
+  it("frete grátis vale para qualquer valor de pedido", () => {
+    expect(checkoutTotals([line(30)], "pix").freeShipping).toBe(true);
+    expect(checkoutTotals([line(150)], "pix").freeShipping).toBe(true);
     expect(checkoutTotals([line(150.01)], "pix").freeShipping).toBe(true);
   });
   it("pedido misto: 2 Banana e Mel + 1 Café Verde = 424,70 no cartão; Sérum com 5% soma 80,66 → 505,36", () => {

@@ -60,7 +60,7 @@ export const Route = createFileRoute("/produto/$slug")({
     // Prévia no WhatsApp/Facebook e Google exigem endereço completo da imagem.
     const images = p.images.map((src) => (src.startsWith("http") ? src : `${SITE_URL}${src}`));
     const url = `${SITE_URL}/produto/${p.slug}`;
-    const description = `${p.short || p.name} Até 6x sem juros e frete grátis para SP e MG (demais estados acima de R$ ${FREE_SHIPPING_ABOVE.toFixed(0)}). Vonix Hair.`;
+    const description = `${p.short || p.name} Até 6x sem juros e frete grátis para todo o Brasil. Vonix Hair.`;
     const rated = reviewsFor(p.slug);
     return {
       meta: [
@@ -240,7 +240,7 @@ export function ShippingCalc({
           </p>
           {hasFreeShipping(subtotal) ? (
             <p className="mt-1 font-medium">
-              Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após
+              Frete Grátis para todo o Brasil, em qualquer pedido (vale mesmo após
               o desconto do Pix).
             </p>
           ) : (
@@ -563,8 +563,7 @@ function ProductPage() {
             <ShippingCalc subtotal={total} slug={p.slug} variant={v.label} qty={qty} />
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
-                Frete grátis para SP e MG em qualquer pedido; nos demais estados, acima de{" "}
-                {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos
+                Frete grátis para todo o Brasil, em qualquer pedido
               </li>
               <li>
                 <Link

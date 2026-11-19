@@ -150,7 +150,7 @@ export function CartDrawer() {
             </div>
             <div className="flex justify-between">
               <dt>Frete</dt>
-              <dd className="text-muted-foreground">grátis em SP e MG</dd>
+              <dd className="text-muted-foreground">grátis para todo o Brasil</dd>
             </div>
             <div className="flex justify-between">
               <dt>Subtotal</dt>

@@ -59,7 +59,7 @@ function GoldLogo({ className = "h-12" }: { className?: string }) {
 
 const MARQUEE = [
   "LEVE 2 UNIDADES: 12% OFF · LEVE 3: 15% OFF",
-  "FRETE GRÁTIS PARA SP E MG · DEMAIS ESTADOS ACIMA DE R$ 150",
+  "FRETE GRÁTIS PARA TODO O BRASIL · EM QUALQUER PEDIDO",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
   "PIX COM 5% OFF NOS ITENS SEM OUTRA OFERTA",
 ];
@@ -155,7 +155,7 @@ export function SecuritySeal({ dark = false }: { dark?: boolean }) {
 /** Reassurance strip: only conditions the store already advertises. */
 export function Benefits() {
   const items = [
-    { Icon: Truck, title: "Frete grátis", text: `para SP e MG; demais estados acima de R$ ${FREE_SHIPPING_ABOVE}` },
+    { Icon: Truck, title: "Frete grátis", text: "para todo o Brasil, em qualquer pedido" },
     { Icon: CreditCard, title: "Até 6x sem juros", text: "no cartão de crédito" },
     { Icon: QrCode, title: "Pix com 5% OFF", text: "nos itens sem outra oferta" },
     { Icon: ShieldCheck, title: "Compra segura", text: "seus dados protegidos" },
@@ -464,7 +464,7 @@ function Footer() {
         <span>Entrega para todo o Brasil</span>
         <span>Compra 100% segura</span>
         <span>Até 6x sem juros no cartão</span>
-        <span>Frete grátis para SP e MG</span>
+        <span>Frete grátis para todo o Brasil</span>
       </div>
       <div className="container-site grid gap-8 py-8 text-body sm:grid-cols-4">
         <div>

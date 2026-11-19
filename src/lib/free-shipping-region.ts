@@ -1,7 +1,7 @@
 /**
- * Frete grátis em qualquer valor de pedido para São Paulo e Minas Gerais (decisão do Lucas, 18/11/2026).
+ * Frete grátis em qualquer valor de pedido para TODO o Brasil (decisão do Lucas, 19/11/2026; antes valia só para SP e MG).
  * O estado vem da faixa do CEP: SP 01000-000 a 19999-999 e MG 30000-000 a 39999-999.
- * Fora dessas faixas vale a regra de sempre (grátis acima de FREE_SHIPPING_ABOVE em produtos).
+ * Mantido por compatibilidade: a regra geral agora está em FREE_SHIPPING_ABOVE = 0 (store.ts).
  */
 export const FREE_SHIPPING_STATES_LABEL = "SP e MG";
 
