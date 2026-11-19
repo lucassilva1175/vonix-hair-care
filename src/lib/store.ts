@@ -44,7 +44,7 @@ export const products = (raw as unknown as Product[])
   .map(comPrecoDeTeste);
 export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
 
-export const FREE_SHIPPING_ABOVE = 150;
+export const FREE_SHIPPING_ABOVE = 0; // 0 = frete grátis em todos os produtos e em qualquer valor de pedido (ordem do Lucas, 19/11/2026). Para exigir um mínimo, ponha o valor aqui
 export const MAX_INSTALLMENTS = 6;
 /** Desconto no Pix: 5% (volta em 16/11/2026), só em itens sem outra oferta e sem cupom por cima. */
 export const PIX_DISCOUNT = 0.05;
@@ -382,8 +382,14 @@ export const bySales = <T extends Product>(items: T[]): T[] =>
   items.map((p, i) => [p, i] as const).sort((a, b) => saleRank(b[0]) - saleRank(a[0]) || a[1] - b[1]).map(([p]) => p);
 
 /** "Mais desejados" da home: o que mais vende (sem as unidades avulsas), já na ordem da área escolhida. */
-export const homeBestSellers = (audience: Audience, max = 8): Product[] =>
-  forAudience(bySales(products.filter((p) => p.category !== "avulsos")), audience).slice(0, max);
+export const HOME_FIRST = ["botox-vonix", "progressiva-fio-de-luz"]; // sempre os dois primeiros em "Mais desejados" (ordem do Lucas, 19/11/2026)
+export const homeBestSellers = (audience: Audience, max = 8): Product[] => {
+  const list = forAudience(bySales(products.filter((p) => p.category !== "avulsos")), audience);
+  // Em "Para mim" (casa) a regra antiga continua: química por último; nas demais telas os dois entram na frente.
+  const pins = audience === "casa" ? [] : HOME_FIRST;
+  const first = pins.map((slug) => list.find((p) => p.slug === slug)).filter((p): p is Product => !!p);
+  return [...first, ...list.filter((p) => !pins.includes(p.slug))].slice(0, max);
+};
 
 export function useAudience() {
   const audience = useSyncExternalStore(audienceStore.sub, audienceStore.get, audienceStore.server);

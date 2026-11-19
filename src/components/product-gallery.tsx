@@ -71,8 +71,26 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
     setPos({ x, y });
   };
 
+  const gridSlides = slides.map((sl, k) => ({ sl, k })).filter((x) => x.sl.kind === "img" && !(x.sl as { detail?: boolean }).detail).slice(0, 4);
   return (
     <div className="min-w-0">
+      {/* Computador: fotos em grade 2x2 (cada uma abre o visualizador com lupa). Celular: carrossel abaixo. */}
+      {gridSlides.length >= 2 && (
+        <div className="hidden grid-cols-2 gap-3 lg:grid" data-testid="gallery-grid">
+          {gridSlides.map(({ sl, k }) => (
+            <button
+              key={k}
+              type="button"
+              aria-label={`Ampliar imagem ${k + 1} de ${name}`}
+              onClick={() => { setI(k); setBig(false); setOpen(true); }}
+              className="aspect-square cursor-zoom-in overflow-hidden rounded-2xl border border-border bg-muted"
+            >
+              <img src={(sl as { src: string }).src} alt={name} width={640} height={640} loading={k === 0 ? "eager" : "lazy"} decoding="async" className="h-full w-full object-contain" />
+            </button>
+          ))}
+        </div>
+      )}
+      <div className={gridSlides.length >= 2 ? "lg:hidden" : ""}>
       <div
         role="button"
         tabIndex={0}
@@ -122,6 +140,7 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
             )}
           </button>
         ))}
+      </div>
       </div>
 
       {open && (

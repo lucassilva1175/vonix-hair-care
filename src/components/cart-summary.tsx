@@ -23,7 +23,7 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
             </>
           ) : (
             <span>
-              SP e MG já têm frete grátis. Nos demais estados, faltam <b className="text-emerald-700">{brl(missingForFreeShipping(subtotal))}</b> para ganhar frete grátis.
+              Faltam <b className="text-emerald-700">{brl(missingForFreeShipping(subtotal))}</b> para ganhar frete grátis.
             </span>
           )}
         </div>
@@ -42,7 +42,7 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
         />
       </div>
       <p className="mt-2.5 text-small text-muted-foreground">
-        Frete grátis em qualquer pedido para SP e MG. Nos demais estados, acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos. Seu cupom mantém esse benefício.
+        Frete grátis em todos os produtos, em qualquer pedido. Seu cupom mantém esse benefício.
       </p>
     </div>
   );
@@ -56,7 +56,7 @@ export function Summary({ lines }: { lines: { gross: number; net: number; offer?
     <div className="space-y-2 text-body">
       <div className="flex justify-between"><span>Subtotal dos produtos</span><span>{brl(t.gross)}</span></div>
       {t.offerDiscount > 0 && <div className="flex justify-between"><span>Economia das ofertas (5/12/15%)</span><span>− {brl(t.offerDiscount)}</span></div>}
-      <div className="flex justify-between"><span>Frete</span><span>{t.freeShipping ? "Grátis" : "Calculado pelo CEP no checkout"}</span></div>
+      <div className="flex justify-between"><span>Frete</span><span className="text-right">{t.freeShipping ? "Grátis · de 3 a 5 dias úteis" : "Calculado pelo CEP no checkout"}</span></div>
       <div className="flex justify-between border-t border-border pt-2 text-body font-semibold"><span>Total{t.freeShipping ? "" : " (sem frete)"}</span><span>{brl(t.net)}</span></div>
       {tPix.pixDiscount > 0 && <div className="flex justify-between font-semibold text-emerald-700"><span>Total no Pix (5% OFF)</span><span>{brl(tPix.net)}</span></div>}
       <div className="text-muted-foreground">{tPix.pixDiscount > 0 ? "Pix: 5% OFF nos itens sem outra oferta, sem cupom. " : "Pix ou cartão: o mesmo valor. "}No cartão, até 6x de {brl(i.value)} sem juros{i.first !== i.value ? ` (1ª de ${brl(i.first)})` : ""}</div>

@@ -155,23 +155,28 @@ export function ProductReviews({ slug }: { slug: string }) {
   const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
   return (
     <section id="avaliacoes" className="mt-16 scroll-mt-32" aria-label="Avaliações">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-h2">Avaliações e <em>comentários</em></h2>
-          <p className="mt-1 text-body text-muted-foreground">
-            {list.length ? (
-              <>
-                <span className="text-star">★</span> {avg.toFixed(1).replace(".", ",")} · {list.length} {list.length === 1 ? "avaliação" : "avaliações"}
-              </>
-            ) : (
-              "Ainda sem avaliações. Seja a primeira pessoa a avaliar este produto."
-            )}
-          </p>
+      <h2 className="text-center font-display text-h2">Avaliações</h2>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {list.length > 0 && <b className="text-[2rem] font-semibold leading-none">{avg.toFixed(1).replace(".", ",")}</b>}
+          <span className="text-star text-[1.4rem] tracking-tight" aria-hidden="true">★★★★★</span>
         </div>
-        {product && (
-          <ShareButton url={`${SITE_URL}/produto/${slug}`} title={`${product.name} — Vonix Hair`} text={`Olha esse produto da Vonix Hair: ${product.name}.`} label="Compartilhar este produto" />
-        )}
+        <button
+          type="button"
+          onClick={() => document.getElementById("avaliar")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+          className="h-11 rounded-xl bg-[#1a1a1a] px-6 text-body font-medium uppercase tracking-wide text-white"
+        >
+          Quero avaliar
+        </button>
       </div>
+      <p className="mt-3 text-name font-semibold">
+        {list.length ? `${list.length} ${list.length === 1 ? "avaliação" : "avaliações"}` : "Ainda sem avaliações. Seja a primeira pessoa a avaliar este produto."}
+      </p>
+      {product && (
+        <div className="mt-2">
+          <ShareButton url={`${SITE_URL}/produto/${slug}`} title={`${product.name} — Vonix Hair`} text={`Olha esse produto da Vonix Hair: ${product.name}.`} label="Compartilhar este produto" />
+        </div>
+      )}
       {list.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           {list.map((r, i) => <ReviewCard key={`${r.author}|${r.date}|${i}`} r={r} />)}

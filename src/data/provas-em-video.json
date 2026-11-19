@@ -1,110 +1,294 @@
 [
-  {
-    "id": "banana-mel",
-    "src": "/provas/banana-mel.mp4",
-    "poster": "/provas/banana-mel.jpg",
-    "slugs": [
-      "kit-banana-e-mel"
-    ]
-  },
-  {
-    "id": "botox-1",
-    "src": "/provas/botox-1.mp4",
-    "poster": "/provas/botox-1.jpg",
-    "slugs": [
-      "botox-vonix",
-      "botox-vonix-matizador",
-      "botox-line",
-      "botox-line-matizador"
-    ]
-  },
-  {
-    "id": "botox-2",
-    "src": "/provas/botox-2.mp4",
-    "poster": "/provas/botox-2.jpg",
-    "slugs": [
-      "botox-vonix",
-      "botox-vonix-matizador",
-      "botox-line",
-      "botox-line-matizador"
-    ]
-  },
-  {
-    "id": "fio-1",
-    "src": "/provas/fio-1.mp4",
-    "poster": "/provas/fio-1.jpg",
-    "slugs": [
-      "progressiva-fio-de-luz",
-      "shampoo-fio-de-luz-anti-residuo"
-    ]
-  },
-  {
-    "id": "fio-2",
-    "src": "/provas/fio-2.mp4",
-    "poster": "/provas/fio-2.jpg",
-    "slugs": [
-      "progressiva-fio-de-luz",
-      "shampoo-fio-de-luz-anti-residuo"
-    ]
-  },
-  {
-    "id": "fio-3",
-    "src": "/provas/fio-3.mp4",
-    "poster": "/provas/fio-3.jpg",
-    "slugs": [
-      "progressiva-fio-de-luz",
-      "shampoo-fio-de-luz-anti-residuo"
-    ]
-  },
-  {
-    "id": "fio-4",
-    "src": "/provas/fio-4.mp4",
-    "poster": "/provas/fio-4.jpg",
-    "slugs": [
-      "progressiva-fio-de-luz",
-      "shampoo-fio-de-luz-anti-residuo"
-    ]
-  },
-  {
-    "id": "plex",
-    "src": "/provas/plex.mp4",
-    "poster": "/provas/plex.jpg",
-    "slugs": [
-      "plex-vonix"
-    ]
-  },
-  {
-    "id": "desmaia",
-    "src": "/provas/desmaia.mp4",
-    "poster": "/provas/desmaia.jpg",
-    "slugs": [
-      "mascara-efeito-teia-desmaia-cabelo",
-      "kit-desmaia",
-      "shampoo-hidratante-desmaia-cabelo"
-    ]
-  },
-  {
-    "id": "cabelo-1",
-    "src": "/provas/cabelo-1.mp4",
-    "poster": "/provas/cabelo-1.jpg",
-    "slugs": []
-  },
-  {
-    "id": "cabelo-2",
-    "src": "/provas/cabelo-2.mp4",
-    "poster": "/provas/cabelo-2.jpg",
-    "slugs": []
-  },
-  {
-    "id": "cabelo-3",
-    "src": "/provas/cabelo-3.mp4",
-    "poster": "/provas/cabelo-3.jpg",
-    "slugs": []
-  },
-  {
-    "id": "bia-moraes",
-    "src": "/provas/bia-moraes.mp4",
-    "poster": "/provas/bia-moraes.jpg",
-    "slugs": []
-  }
+ {
+  "id": "banana-mel",
+  "src": "/provas/banana-mel.mp4",
+  "poster": "/provas/banana-mel.jpg",
+  "slugs": [
+   "kit-banana-e-mel"
+  ]
+ },
+ {
+  "id": "botox-1",
+  "src": "/provas/botox-1.mp4",
+  "poster": "/provas/botox-1.jpg",
+  "slugs": [
+   "botox-vonix",
+   "botox-vonix-matizador",
+   "botox-line",
+   "botox-line-matizador"
+  ]
+ },
+ {
+  "id": "botox-2",
+  "src": "/provas/botox-2.mp4",
+  "poster": "/provas/botox-2.jpg",
+  "slugs": [
+   "botox-vonix",
+   "botox-vonix-matizador",
+   "botox-line",
+   "botox-line-matizador"
+  ]
+ },
+ {
+  "id": "fio-1",
+  "src": "/provas/fio-1.mp4",
+  "poster": "/provas/fio-1.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz",
+   "shampoo-fio-de-luz-anti-residuo"
+  ]
+ },
+ {
+  "id": "fio-2",
+  "src": "/provas/fio-2.mp4",
+  "poster": "/provas/fio-2.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz",
+   "shampoo-fio-de-luz-anti-residuo"
+  ]
+ },
+ {
+  "id": "fio-3",
+  "src": "/provas/fio-3.mp4",
+  "poster": "/provas/fio-3.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz",
+   "shampoo-fio-de-luz-anti-residuo"
+  ]
+ },
+ {
+  "id": "fio-4",
+  "src": "/provas/fio-4.mp4",
+  "poster": "/provas/fio-4.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz",
+   "shampoo-fio-de-luz-anti-residuo"
+  ]
+ },
+ {
+  "id": "plex",
+  "src": "/provas/plex.mp4",
+  "poster": "/provas/plex.jpg",
+  "slugs": [
+   "plex-vonix"
+  ]
+ },
+ {
+  "id": "desmaia",
+  "src": "/provas/desmaia.mp4",
+  "poster": "/provas/desmaia.jpg",
+  "slugs": [
+   "mascara-efeito-teia-desmaia-cabelo",
+   "kit-desmaia",
+   "shampoo-hidratante-desmaia-cabelo"
+  ]
+ },
+ {
+  "id": "cabelo-1",
+  "src": "/provas/cabelo-1.mp4",
+  "poster": "/provas/cabelo-1.jpg",
+  "slugs": []
+ },
+ {
+  "id": "cabelo-2",
+  "src": "/provas/cabelo-2.mp4",
+  "poster": "/provas/cabelo-2.jpg",
+  "slugs": []
+ },
+ {
+  "id": "cabelo-3",
+  "src": "/provas/cabelo-3.mp4",
+  "poster": "/provas/cabelo-3.jpg",
+  "slugs": []
+ },
+ {
+  "id": "bia-moraes",
+  "src": "/provas/bia-moraes.mp4",
+  "poster": "/provas/bia-moraes.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-01",
+  "src": "/provas/ig-01.mp4",
+  "poster": "/provas/ig-01.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-02",
+  "src": "/provas/ig-02.mp4",
+  "poster": "/provas/ig-02.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-03",
+  "src": "/provas/ig-03.mp4",
+  "poster": "/provas/ig-03.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz"
+  ]
+ },
+ {
+  "id": "ig-04",
+  "src": "/provas/ig-04.mp4",
+  "poster": "/provas/ig-04.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-05",
+  "src": "/provas/ig-05.mp4",
+  "poster": "/provas/ig-05.jpg",
+  "slugs": [
+   "kit-cachos"
+  ]
+ },
+ {
+  "id": "ig-06",
+  "src": "/provas/ig-06.mp4",
+  "poster": "/provas/ig-06.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-07",
+  "src": "/provas/ig-07.mp4",
+  "poster": "/provas/ig-07.jpg",
+  "slugs": [
+   "kit-monovonix",
+   "shampoo-monovonix",
+   "mascara-monovonix"
+  ]
+ },
+ {
+  "id": "ig-08",
+  "src": "/provas/ig-08.mp4",
+  "poster": "/provas/ig-08.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-09",
+  "src": "/provas/ig-09.mp4",
+  "poster": "/provas/ig-09.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-10",
+  "src": "/provas/ig-10.mp4",
+  "poster": "/provas/ig-10.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-11",
+  "src": "/provas/ig-11.mp4",
+  "poster": "/provas/ig-11.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-12",
+  "src": "/provas/ig-12.mp4",
+  "poster": "/provas/ig-12.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-13",
+  "src": "/provas/ig-13.mp4",
+  "poster": "/provas/ig-13.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-14",
+  "src": "/provas/ig-14.mp4",
+  "poster": "/provas/ig-14.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-15",
+  "src": "/provas/ig-15.mp4",
+  "poster": "/provas/ig-15.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-16",
+  "src": "/provas/ig-16.mp4",
+  "poster": "/provas/ig-16.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz"
+  ]
+ },
+ {
+  "id": "ig-17",
+  "src": "/provas/ig-17.mp4",
+  "poster": "/provas/ig-17.jpg",
+  "slugs": [
+   "kit-cachos"
+  ]
+ },
+ {
+  "id": "ig-18",
+  "src": "/provas/ig-18.mp4",
+  "poster": "/provas/ig-18.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-19",
+  "src": "/provas/ig-19.mp4",
+  "poster": "/provas/ig-19.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz"
+  ]
+ },
+ {
+  "id": "ig-20",
+  "src": "/provas/ig-20.mp4",
+  "poster": "/provas/ig-20.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-21",
+  "src": "/provas/ig-21.mp4",
+  "poster": "/provas/ig-21.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-22",
+  "src": "/provas/ig-22.mp4",
+  "poster": "/provas/ig-22.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-23",
+  "src": "/provas/ig-23.mp4",
+  "poster": "/provas/ig-23.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-24",
+  "src": "/provas/ig-24.mp4",
+  "poster": "/provas/ig-24.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-25",
+  "src": "/provas/ig-25.mp4",
+  "poster": "/provas/ig-25.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-26",
+  "src": "/provas/ig-26.mp4",
+  "poster": "/provas/ig-26.jpg",
+  "slugs": [
+   "progressiva-fio-de-luz"
+  ]
+ },
+ {
+  "id": "ig-27",
+  "src": "/provas/ig-27.mp4",
+  "poster": "/provas/ig-27.jpg",
+  "slugs": []
+ },
+ {
+  "id": "ig-28",
+  "src": "/provas/ig-28.mp4",
+  "poster": "/provas/ig-28.jpg",
+  "slugs": []
+ }
 ]

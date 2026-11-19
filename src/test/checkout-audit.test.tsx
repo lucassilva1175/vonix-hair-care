@@ -24,6 +24,7 @@ vi.mock("@/components/site", () => ({
 vi.mock("@/components/cart-summary", () => ({ ShippingBar: () => null, Summary: () => null }));
 vi.mock("@/components/reviews", () => ({ ProductReviews: () => null, reviewsFor: () => [] }));
 vi.mock("@/lib/address.functions", () => ({ lookupAddress: mocks.address }));
+vi.mock("@/lib/leads.functions", () => ({ registerCartLead: vi.fn(() => Promise.resolve({ ok: true, saved: false })) }));
 vi.mock("@/lib/checkout.functions", () => ({
   quoteShipping: mocks.quote,
   getPaymentConfig: mocks.config,
@@ -304,7 +305,7 @@ describe("checkout auditado sem chamadas reais", () => {
 });
 
 describe("C86 — parcela em destaque e total informado no cartão do checkout", () => {
-  it("destaca o 6x primeiro, informa o total embaixo e Pix e Cartão lado a lado", () => {
+  it("destaca o 6x primeiro, informa o total embaixo e Pix e Cartão em lista, um por linha", () => {
     render(<Checkout />);
     const tile = screen.getByTestId("pay-option-card");
     const text = (tile.textContent ?? "").replace(/\u00a0/g, " ");
@@ -316,7 +317,7 @@ describe("C86 — parcela em destaque e total informado no cartão do checkout",
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
         .format(v)
         .replace(/\u00a0/g, " ");
-    expect(tile.parentElement?.className).toContain("grid-cols-2");
+    expect(tile.parentElement?.className).toContain("grid-cols-1");
     expect(screen.getByTestId("pay-option-pix").parentElement).toBe(tile.parentElement);
     expect(text.indexOf("6x de")).toBeLessThan(text.indexOf(money(price)));
     expect(text).toContain("Valor total");

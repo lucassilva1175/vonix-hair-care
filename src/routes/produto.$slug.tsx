@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { Check, Heart, Minus, Plus, Truck } from "lucide-react";
+import { Check, Heart, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ProductGallery } from "@/components/product-gallery";
@@ -11,6 +11,9 @@ import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { ShareButton } from "@/components/share-button";
 import { Grid, PaymentMethods, SecuritySeal, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
+import { FaqSection } from "@/components/faq";
+import { openCartDrawer } from "@/components/cart-drawer";
+import { FAQ_LOJA } from "@/lib/faq";
 import { useServerFn } from "@tanstack/react-start";
 import { lookupAddress } from "@/lib/address.functions";
 import { quoteShipping } from "@/lib/checkout.functions";
@@ -25,6 +28,7 @@ import {
   getSavedCep,
   hasFreeShipping,
   installments,
+  pixPrice,
   kitItems,
   lineTotals,
   maskCep,
@@ -56,7 +60,7 @@ export const Route = createFileRoute("/produto/$slug")({
     // Prévia no WhatsApp/Facebook e Google exigem endereço completo da imagem.
     const images = p.images.map((src) => (src.startsWith("http") ? src : `${SITE_URL}${src}`));
     const url = `${SITE_URL}/produto/${p.slug}`;
-    const description = `${p.short || p.name} Até 6x sem juros e frete grátis para SP e MG (demais estados acima de R$ ${FREE_SHIPPING_ABOVE.toFixed(0)}). Vonix Hair.`;
+    const description = `${p.short || p.name} Até 6x sem juros e frete grátis em todos os produtos. Vonix Hair.`;
     const rated = reviewsFor(p.slug);
     return {
       meta: [
@@ -236,7 +240,7 @@ export function ShippingCalc({
           </p>
           {hasFreeShipping(subtotal) ? (
             <p className="mt-1 font-medium">
-              Frete Grátis — pedido acima de {brl(FREE_SHIPPING_ABOVE)} em produtos (vale mesmo após
+              Frete Grátis em todos os produtos, em qualquer pedido (vale mesmo após
               o desconto do Pix).
             </p>
           ) : (
@@ -349,11 +353,7 @@ function ProductPage() {
         <div className="grid gap-10 lg:grid-cols-2">
           <ProductGallery key={p.slug} images={p.images} name={p.name} />
           <div className="min-w-0">
-            {off > 0 && (
-              <span className="rounded-full bg-foreground px-3 py-1 text-small text-background">
-                {off}% OFF
-              </span>
-            )}
+            <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">5% OFF</span>
             <h1 className="mt-3 font-display text-h1">{p.name}</h1>
             <Stars slug={p.slug} />
             <div className="mt-3">
@@ -365,8 +365,23 @@ function ProductPage() {
                 label="Compartilhar"
               />
             </div>
-            {p.short && <p className="mt-3 text-muted-foreground">{p.short}</p>}
+            {p.short && (
+              <div className="mt-3 flex items-center gap-3 rounded-xl bg-muted p-3 text-small" data-testid="product-benefit">
+                <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-action font-display text-name font-bold text-action-foreground">V</span>
+                <span className="leading-snug">{p.short}</span>
+              </div>
+            )}
             <ReviewStrip slug={p.slug} />
+            <div className="mt-4" data-testid="product-price-block">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
+                <span className="text-body">no Pix</span>
+                <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
+              </div>
+              <p className="mt-1 text-small text-muted-foreground">
+                Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros
+              </p>
+            </div>
             {
               <div className="mt-6">
                 <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
@@ -533,7 +548,7 @@ function ProductPage() {
                 className="rounded-md border-2 border-foreground py-3.5 font-medium"
                 onClick={() => {
                   add();
-                  toast.success("Adicionado ao carrinho");
+                  openCartDrawer();
                 }}
               >
                 Adicionar ao carrinho
@@ -548,8 +563,7 @@ function ProductPage() {
             <ShippingCalc subtotal={total} slug={p.slug} variant={v.label} qty={qty} />
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
-                Frete grátis para SP e MG em qualquer pedido; nos demais estados, acima de{" "}
-                {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos
+                Frete grátis em todos os produtos, em qualquer pedido · entrega de 3 a 5 dias úteis
               </li>
               <li>
                 <Link
@@ -574,8 +588,30 @@ function ProductPage() {
           </div>
         </div>
         <KitCross p={p} />
-        {p.description && <ProductDetails p={p} />}
+        {p.description && (
+          <section className="mt-16 grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-2" data-testid="product-description-block">
+            <div className="hidden bg-muted lg:block">
+              <img src={p.images[1] ?? p.images[0]} alt={p.name} loading="lazy" className="sticky top-24 h-auto max-h-[560px] w-full object-contain" />
+            </div>
+            <div className="p-4 md:p-8">
+              <ProductDetails p={p} />
+            </div>
+          </section>
+        )}
+        <FaqSection items={FAQ_LOJA} nested testId="product-faq" />
         <ProductReviews slug={p.slug} />
+        <section className="mt-16" data-testid="product-qa" aria-label="Perguntas e respostas">
+          <h2 className="mb-3">Perguntas &amp; respostas</h2>
+          <p className="mb-4 text-body text-muted-foreground">Ficou com alguma dúvida sobre este produto? Pergunte para a nossa equipe.</p>
+          <a
+            href={`${WHATSAPP.split("?")[0]}?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre o produto ${p.name}.`)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-11 items-center rounded-lg border border-foreground px-5 text-body font-semibold"
+          >
+            Perguntar no WhatsApp
+          </a>
+        </section>
         {related.length > 0 && (
           <section className="mt-20">
             <h2 className="mb-6 [&_em]:not-italic">
@@ -585,22 +621,22 @@ function ProductPage() {
           </section>
         )}
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:px-[max(1rem,calc((100vw-1400px)/2+2rem))]">
         <div className="min-w-0 leading-tight">
-          <div className="truncate text-small text-muted-foreground">{p.name}</div>
-          <div className="font-semibold">{brl(total)}</div>
-          <div className="truncate text-small text-muted-foreground">
-            ou 6x de {brl(installments(total).value)} sem juros
+          <div className="text-small text-muted-foreground line-through">{brl(total)}</div>
+          <div className="flex flex-wrap items-center gap-x-2">
+            <span className="text-h2 font-bold leading-tight">{brl(pixPrice(total))}</span>
+            <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">-5% PIX</span>
           </div>
         </div>
         <button
-          className="ml-auto shrink-0 rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] px-6 py-3 text-body"
+          className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]"
           onClick={() => {
             add();
-            nav({ to: "/carrinho" });
+            openCartDrawer();
           }}
         >
-          Comprar agora
+          <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
         </button>
       </div>
     </Shell>

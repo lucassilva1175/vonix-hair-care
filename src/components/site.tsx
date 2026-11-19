@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import logoUrl from "@/assets/vonix-logo.webp";
 import { usePaidVisit } from "@/lib/paid-visit";
 import { BfPopup } from "@/components/bf-popup";
-import { AffiliatePopup } from "@/components/affiliate-popup";
+import { CartDrawer, openCartDrawer } from "@/components/cart-drawer";
 import { reviewsFor } from "@/components/reviews";
 import { soldFor } from "@/lib/sales";
 import { useVisitorSummary } from "@/lib/review-summary";
@@ -59,7 +59,7 @@ function GoldLogo({ className = "h-12" }: { className?: string }) {
 
 const MARQUEE = [
   "LEVE 2 UNIDADES: 12% OFF · LEVE 3: 15% OFF",
-  "FRETE GRÁTIS PARA SP E MG · DEMAIS ESTADOS ACIMA DE R$ 150",
+  "FRETE GRÁTIS EM TODOS OS PRODUTOS · ENTREGA DE 3 A 5 DIAS ÚTEIS",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
   "PIX COM 5% OFF NOS ITENS SEM OUTRA OFERTA",
 ];
@@ -155,7 +155,7 @@ export function SecuritySeal({ dark = false }: { dark?: boolean }) {
 /** Reassurance strip: only conditions the store already advertises. */
 export function Benefits() {
   const items = [
-    { Icon: Truck, title: "Frete grátis", text: `para SP e MG; demais estados acima de R$ ${FREE_SHIPPING_ABOVE}` },
+    { Icon: Truck, title: "Frete grátis", text: "em todos os produtos · entrega de 3 a 5 dias úteis" },
     { Icon: CreditCard, title: "Até 6x sem juros", text: "no cartão de crédito" },
     { Icon: QrCode, title: "Pix com 5% OFF", text: "nos itens sem outra oferta" },
     { Icon: ShieldCheck, title: "Compra segura", text: "seus dados protegidos" },
@@ -217,49 +217,14 @@ function SearchBox({ onDone, autoFocus = false }: { onDone?: () => void; autoFoc
   );
 }
 
-function AudienceChoice() {
-  const { audience, set } = useAudience();
-  const nav = useNavigate();
-  const go = (a: Audience) => {
-    set(a);
-    nav({ to: "/loja", search: a ? { uso: a } : {} });
-  };
-  if (audience)
-    return (
-      <section aria-label="Área escolhida" className="mx-auto flex w-fit max-w-full min-w-0 items-center gap-3 rounded-full border border-foreground/25 bg-transparent px-5 py-1.5 text-foreground">
-        <span className="flex min-w-0 items-center gap-2 text-small font-medium uppercase tracking-[0.12em]">
-          {audience === "salao" ? <Scissors className="h-4 w-4 shrink-0" aria-hidden="true" /> : <House className="h-4 w-4 shrink-0" aria-hidden="true" />}
-          <span className="truncate">{audience === "salao" ? "Área para cabeleireiras" : "Para mim · cuidados em casa"}</span>
-        </span>
-        <button type="button" className="shrink-0 text-small underline underline-offset-4 hover:no-underline"
-          onClick={() => { set(null); nav({ to: "/" }); }}>
-          Trocar
-        </button>
-      </section>
-    );
-  return (
-    <section aria-label="Escolha seu ambiente" className="w-full min-w-0">
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
-        {([
-          { value: "casa", label: "PARA MIM", support: "Cuidados em casa", Icon: House },
-          { value: "salao", label: "PARA CABELEIREIRAS", support: "Produtos para salão", Icon: Scissors },
-        ] as const).map(({ value, label, support, Icon }) => (
-          <Button key={value} type="button" variant="outline" aria-pressed={audience === value}
-            onClick={() => go(value)}
-            className={`h-auto min-h-16 min-w-0 gap-2 whitespace-normal border-foreground px-2 py-2 shadow-none ${audience === value ? "bg-foreground text-background hover:bg-foreground hover:text-background" : "bg-background text-foreground hover:bg-muted"}`}>
-            <Icon aria-hidden="true" />
-            <span className="min-w-0 text-left"><span className="block text-small font-semibold sm:text-small">{label}</span><span className="block text-small font-normal">{support}</span></span>
-          </Button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function Shell({ children }: { children: ReactNode }) {
   const { count } = useCart();
-  const { audience } = useAudience();
+  const { audience, set: setAudience } = useAudience();
   const paidVisit = usePaidVisit();
+  // Sem separação entre salão e casa: se alguma escolha antiga ficou salva no navegador, ela é limpa.
+  useEffect(() => {
+    if (audience) setAudience(null);
+  }, [audience, setAudience]);
   const [open, setOpen] = useState(false);
   const path = useLocation().pathname;
   const router = useRouter();
@@ -280,9 +245,6 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
       <TesteRelogio />
       {/* Acompanham a rolagem: logo (com menu, entrar e carrinho), a busca e a escolha "Para mim / Cabeleireiras". O resto rola com a página. */}
-      {!isCheckout && !isProduct && (
-        <p className="whitespace-nowrap bg-background pt-2 text-center text-body italic">“Até aqui nos ajudou o Senhor”</p>
-      )}
       <div className="sticky top-0 z-40 border-b border-border bg-background">
         <div className="container-site grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 py-2 lg:flex lg:gap-4">
           {isCheckout ? (
@@ -297,18 +259,34 @@ export function Shell({ children }: { children: ReactNode }) {
             <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-8 w-auto sm:h-11" />
           </Link>
           {!isCheckout && (
-            <div className="mx-auto hidden w-full max-w-xl min-w-0 lg:block">
-              <SearchBox />
-            </div>
+            <nav aria-label="Menu principal" className="mx-4 hidden min-w-0 flex-1 items-center justify-center gap-x-6 text-small font-medium uppercase tracking-[0.12em] lg:flex xl:gap-x-8">
+              {NAV.map((n) => (
+                <Link key={n.label} to="/loja" search={n.search} className="shrink-0 whitespace-nowrap border-b border-transparent py-2 transition-colors hover:border-foreground">
+                  {n.label}
+                </Link>
+              ))}
+              <div className="group relative shrink-0">
+                <button type="button" className="flex items-center gap-1 whitespace-nowrap border-b border-transparent py-2 uppercase tracking-[0.12em] group-hover:border-foreground" aria-haspopup="true">
+                  Por necessidade <span aria-hidden="true">▾</span>
+                </button>
+                <div className="invisible absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-xl border border-border bg-background p-2 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                  {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
+                    <Link key={n} to="/loja" search={{ necessidades: n }} className="block rounded-lg px-3 py-2 text-body normal-case tracking-normal hover:bg-muted">
+                      {n}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </nav>
           )}
           <div className="ml-auto flex items-center justify-self-end gap-2 text-body sm:gap-4">
-            {isProduct && (
+            {!isCheckout && (
               <button
                 type="button"
                 aria-label="Buscar"
                 aria-expanded={searchOpen}
                 onClick={() => setSearchOpen((v) => !v)}
-                className="-m-2 p-2 lg:hidden"
+                className={`-m-2 p-2 ${isProduct ? "" : "max-lg:hidden"}`}
               >
                 <Search className="h-5 w-5" />
               </button>
@@ -333,6 +311,11 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </div>
+        {!isCheckout && searchOpen && !isProduct && (
+          <div className="container-site hidden pb-2 lg:block">
+            <SearchBox autoFocus onDone={() => setSearchOpen(false)} />
+          </div>
+        )}
         {isProduct ? (
           // Página de produto no celular: só a busca, e só depois de tocar na lupa.
           searchOpen && (
@@ -347,36 +330,21 @@ export function Shell({ children }: { children: ReactNode }) {
             </div>
           )
         )}
-        {!isCheckout && audience && (
-          <div className={`container-site pb-1.5 ${isProduct ? "hidden lg:block" : ""}`}>
-            <AudienceChoice />
-          </div>
-        )}
       </div>
       <header className="border-b border-border bg-background">
         {!isCheckout && (
-          <nav aria-label="Categorias" className="hidden border-t border-border lg:block">
+          <nav aria-label="Categorias" className="hidden">
             <div className="container-site flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-3 text-small font-medium uppercase tracking-[0.15em] xl:gap-x-9">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="shrink-0 whitespace-nowrap border-b border-transparent pb-0.5 transition-colors hover:border-foreground">
                   {n.label}
                 </Link>
               ))}
-              {!paidVisit && (
-              <Link to="/seja-afiliada" className="inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[#a27b62]/35 bg-[#f8ede5] px-3 text-[11px] font-bold tracking-[.1em] text-[#684639] transition hover:bg-[#f1ddcb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#725345]">
-                <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
-                Seja afiliada
-              </Link>
-              )}
             </div>
           </nav>
         )}
       </header>
-      {!isCheckout && !audience && (
-        <div className={`container-site py-2 ${isProduct ? "hidden lg:block" : ""}`}>
-          <AudienceChoice />
-        </div>
-      )}
+      {!isCheckout && <CartDrawer />}
       {open && (
         <div className="fixed inset-0 z-50 bg-foreground/50" onClick={() => setOpen(false)}>
           <aside
@@ -400,18 +368,6 @@ export function Shell({ children }: { children: ReactNode }) {
                 </Link>
               ))}
             </nav>
-            {!paidVisit && (
-<Link
-              to="/seja-afiliada"
-              onClick={() => setOpen(false)}
-              className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-[#e7d5cc] bg-[#fbf1eb] px-4 py-3 text-[#623b45] hover:bg-[#f4e4dc]"
-            >
-              <span className="flex items-center gap-2 font-semibold">
-                <Sparkles aria-hidden="true" className="h-4 w-4" /> Seja afiliada
-              </span>
-              <ArrowLeft aria-hidden="true" className="h-4 w-4 rotate-180" />
-            </Link>
-)}
             <h3 className="mb-3 mt-8 text-small font-semibold uppercase tracking-[0.18em] text-muted-foreground">Por necessidade</h3>
             <nav className="flex flex-col text-body [&_a]:border-b [&_a]:border-border [&_a]:py-3">
               {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
@@ -438,7 +394,6 @@ export function Shell({ children }: { children: ReactNode }) {
       <main>{children}</main>
       <Footer />
       {!paidVisit && <BfPopup />}
-      {!paidVisit && <AffiliatePopup />}
       {!hideWhatsApp && (
         <a
           href={WHATSAPP}
@@ -461,7 +416,7 @@ function Footer() {
         <span>Entrega para todo o Brasil</span>
         <span>Compra 100% segura</span>
         <span>Até 6x sem juros no cartão</span>
-        <span>Frete grátis para SP e MG</span>
+        <span>Frete grátis · entrega de 3 a 5 dias úteis</span>
       </div>
       <div className="container-site grid gap-8 py-8 text-body sm:grid-cols-4">
         <div>
@@ -590,65 +545,71 @@ export function ProductCard({ p }: { p: Product }) {
   const cart = useCart();
   const nav = useNavigate();
   const par = installments(pricing.price);
+  // Peso ou volume de cada apresentação (1Kg, 300ml, 1L...). Variantes sem medida ("Kit", "Unidade") não entram.
+  const sizes = p.variants.map((v) => v.label).filter((l) => /\d/.test(l)).join(" · ");
   // A sacolinha SEMPRE adiciona 1 unidade (tamanho padrão do produto) direto ao carrinho; o resto do card abre a página.
   // Escolher outro tamanho ou as ofertas Leve 2 / Leve 3 continua na página do produto (o aviso diz qual tamanho entrou).
   const bag = () => {
     const v = p.variants[0];
     cart.add(p.slug, v.label, 1);
     track("add_to_cart", { value: v.price, items: [toItem(p, v.label, v.price)] });
-    toast.success(`${p.name}${p.variants.length > 1 ? ` (${v.label})` : ""} adicionado à sacola`, {
-      action: { label: "Ver sacola", onClick: () => nav({ to: "/carrinho" }) },
-    });
+    openCartDrawer();
   };
+  // Card no padrão da loja de referência (medido ao vivo): painel de foto cinza de ponta a ponta, título 14/700,
+  // estrelas, selos 12/600, preço 16/700 (Pix), parcelamento 12 cinza e botão preto em pílula de 40 px.
   return (
-    <div className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-border bg-white p-2.5 shadow-sm md:p-3">
-      <div className="relative overflow-hidden rounded-xl bg-white">
+    <div className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-white text-foreground shadow-sm">
+      <div className="relative bg-muted">
         {off > 0 && (
-          <span className="absolute left-2 top-2 z-10 rounded-md bg-[#7a5a2e] px-1.5 py-0.5 text-small font-semibold text-white">
+          <span className="absolute left-2 top-2 z-10 rounded-md bg-[#c3287d] px-1.5 py-0.5 text-[12px] font-semibold text-white">
             -{off}%
           </span>
         )}
         <button
           aria-label="Favoritar"
           onClick={() => fav.toggle(p.slug)}
-          className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-background"
+          className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white"
         >
           <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
         </button>
         <Link to="/produto/$slug" params={{ slug: p.slug }}>
-          <img src={thumb(p.images[0]!)} srcSet={`${thumb(p.images[0]!)} 480w, ${webp(p.images[0]!)} 1080w`} sizes="(min-width: 1024px) 280px, 50vw" width={480} height={480} decoding="async" alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full scale-110 object-contain transition-transform duration-500 group-hover:scale-[1.18]" />
+          <img src={thumb(p.images[0]!)} srcSet={`${thumb(p.images[0]!)} 480w, ${webp(p.images[0]!)} 1080w`} sizes="(min-width: 1024px) 280px, 50vw" width={480} height={480} decoding="async" alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full object-contain mix-blend-multiply" />
         </Link>
       </div>
-      <div className="mt-2 flex min-h-[22px] flex-wrap items-center gap-1">
-        {hasFreeShipping(pricing.price) && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-action px-1.5 py-0.5 text-small font-semibold tracking-wide text-action-foreground">
-            <Truck className="h-3 w-3" aria-hidden="true" /> FRETE GRÁTIS
-          </span>
-        )}
-        {pricing.professional && (
-          <span className="rounded-md bg-foreground px-1.5 py-0.5 text-small font-semibold tracking-wide text-background">LEVE 2: 12% · LEVE 3: 15%</span>
-        )}
-      </div>
-      <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-2 min-h-[2.4rem] text-name font-semibold leading-tight after:absolute after:inset-0 after:z-[1] after:rounded-2xl after:content-[''] hover:underline md:leading-snug">
-        {p.name}
-      </Link>
-      <div className="mt-1.5"><Stars slug={p.slug} big hideEmpty /></div>
-      <div className="mt-1.5 flex items-end justify-between gap-1.5">
-        <div className="min-w-0 leading-tight">
-          {p.compareBase && p.compareBase > pricing.price && <div className="text-small text-muted-foreground line-through">{brl(p.compareBase)}</div>}
-          <div className="text-price font-semibold">{brl(pricing.price)}</div>
-          <div className="text-small font-medium">{par.count}x {brl(par.value)}<span className="hidden font-normal text-muted-foreground sm:inline"> sem juros</span></div>
+      <div className="flex flex-1 flex-col p-3">
+        <Link to="/produto/$slug" params={{ slug: p.slug }} className="line-clamp-2 min-h-[2.4rem] text-[14px] font-bold leading-tight after:absolute after:inset-0 after:z-[1] after:content-[''] hover:underline">
+          {p.name}
+        </Link>
+        {sizes && <div className="mt-0.5 text-[12px] text-[#505052]" data-testid="card-peso">{sizes}</div>}
+        <div className="mt-1"><Stars slug={p.slug} hideEmpty /></div>
+        <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-1">
+          {pricing.professional && (
+            <span className="rounded bg-muted px-1 py-px text-[12px] font-semibold">Leve 2: 12% · Leve 3: 15%</span>
+          )}
+          {pricing.pix < pricing.price && (
+            <span className="rounded bg-[#e7fbfa] px-1 py-px text-[12px] font-semibold text-[#007979]">5% OFF no Pix</span>
+          )}
+          {hasFreeShipping(pricing.price) && (
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-1 py-px text-[12px] font-semibold">
+              <Truck className="h-3 w-3" aria-hidden="true" /> Frete grátis
+            </span>
+          )}
+        </div>
+        <div className="mt-1.5 leading-tight">
+          {p.compareBase && p.compareBase > pricing.price && <div className="text-[12px] text-[#505052] line-through">{brl(p.compareBase)}</div>}
+          <div className="text-[16px] font-bold">{brl(pricing.pix < pricing.price ? pricing.pix : pricing.price)}</div>
+          <div className="mt-0.5 text-[12px] text-[#505052]">Ou {brl(pricing.price)} em até {par.count}x de {brl(par.value)}</div>
         </div>
         <button
           type="button"
           onClick={bag}
           aria-label={`Adicionar ${p.name} à sacola`}
-          className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-action text-action-foreground shadow-sm transition-transform active:scale-95 md:h-11 md:w-11"
+          className="relative z-10 mt-auto flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#091413] px-4 pt-0 text-[14px] font-semibold text-white transition-transform active:scale-[.98]"
+          style={{ marginTop: "0.75rem" }}
         >
-          <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
+          <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
         </button>
       </div>
-      {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-small leading-snug text-muted-foreground md:line-clamp-3 md:text-small">{p.short}</p>}
     </div>
   );
 }
@@ -683,11 +644,9 @@ function ProductCarousel({ items }: { items: Product[] }) {
   }, [measure, items.length]);
 
   const go = (dir: number) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.9, behavior: "smooth" });
-  const goTo = (i: number) => ref.current?.scrollTo({ left: i * ref.current.clientWidth, behavior: "smooth" });
-  const btn = "grid h-9 w-9 place-items-center rounded-lg border border-[#7a5a2e] bg-white text-[#7a5a2e] transition-opacity disabled:opacity-30";
 
   return (
-    <div>
+    <div className="relative">
       <div
         ref={ref}
         className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] md:gap-4 [&::-webkit-scrollbar]:hidden"
@@ -699,27 +658,26 @@ function ProductCarousel({ items }: { items: Product[] }) {
         ))}
       </div>
       {pages > 1 && (
-        <div className="mt-3 flex items-center justify-center gap-3">
-          <button type="button" aria-label="Anterior" disabled={page === 0} onClick={() => go(-1)} className={btn}>
-            <ChevronLeft className="h-4 w-4" />
+        <>
+          <button
+            type="button"
+            aria-label="Anterior"
+            disabled={page === 0}
+            onClick={() => go(-1)}
+            className="absolute left-1 top-1/3 z-10 hidden h-10 w-10 place-items-center rounded-full bg-white text-foreground shadow-md disabled:hidden md:grid"
+          >
+            <ChevronLeft className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-4" role="tablist" aria-label="Páginas">
-            {Array.from({ length: pages }, (_, i) => (
-              <button
-                key={i}
-                type="button"
-                role="tab"
-                aria-selected={i === page}
-                aria-label={`Página ${i + 1}`}
-                onClick={() => goTo(i)}
-                className={`relative h-2 rounded-full transition-all before:absolute before:-inset-2 before:content-[''] ${i === page ? "w-6 bg-[#7a5a2e]" : "w-2 bg-[oklch(0.8_0.01_85)]"}`}
-              />
-            ))}
-          </div>
-          <button type="button" aria-label="Próximo" disabled={page === pages - 1} onClick={() => go(1)} className={btn}>
-            <ChevronRight className="h-4 w-4" />
+          <button
+            type="button"
+            aria-label="Próximo"
+            disabled={page === pages - 1}
+            onClick={() => go(1)}
+            className="absolute right-1 top-1/3 z-10 hidden h-10 w-10 place-items-center rounded-full bg-white text-foreground shadow-md disabled:hidden md:grid"
+          >
+            <ChevronRight className="h-5 w-5" />
           </button>
-        </div>
+        </>
       )}
     </div>
   );

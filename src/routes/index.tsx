@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Atom, ChevronLeft, ChevronRight, FlaskConical, ShowerHead, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewCard, reviews } from "@/components/reviews";
-import { AffiliateHomeInvite } from "@/components/affiliate-home-invite";
+import { FaqSection } from "@/components/faq";
+import { FAQ_LOJA } from "@/lib/faq";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
-import { Benefits, Grid, Shell } from "@/components/site";
+import { Grid, Shell } from "@/components/site";
 import { SITE_URL, brl, bySales, discountPct, forAudience, getProduct, homeBestSellers, products, useAudience } from "@/lib/store";
 import { soldFor } from "@/lib/sales";
 
@@ -39,13 +40,37 @@ function Banner({ slug, priority }: { slug: string; priority: boolean }) {
     </Link>
   );
 }
+/** Faixa de valores da marca que passa devagar embaixo do banner (ícone de traço + frase curta). Não repete frete, parcelamento nem Pix. */
+const MARCA = [
+  { Icon: Sparkles, text: "Resultado de salão" },
+  { Icon: FlaskConical, text: "Fórmulas inovadoras" },
+  { Icon: Atom, text: "Alta tecnologia" },
+  { Icon: ShowerHead, text: "Rotina capilar" },
+];
+function FaixaMarca() {
+  return (
+    <section aria-label="Diferenciais da Vonix Hair" data-testid="home-faixa-marca" className="mt-3 overflow-hidden bg-[#faf6f1] py-6">
+      <div className="flex w-max animate-marquee items-center gap-16 whitespace-nowrap hover:[animation-play-state:paused] motion-reduce:animate-none">
+        {[...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA].map(({ Icon, text }, k) => (
+          <span key={k} aria-hidden={k >= MARCA.length} className="flex items-center gap-3.5 text-[1.05rem] font-bold">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[#e3c07a]/70 bg-white text-[#7a5a2e] shadow-[0_6px_16px_-10px_rgba(122,90,46,0.6)]">
+              <Icon className="h-7 w-7" strokeWidth={1.4} aria-hidden="true" />
+            </span>
+            {text}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { name: "description", content: "Progressivas, botox, máscaras e kits Vonix Hair. Até 6x sem juros e frete grátis para SP e MG (demais estados acima de R$ 150,00)." },
+      { name: "description", content: "Progressivas, botox, máscaras e kits Vonix Hair. Até 6x sem juros e frete grátis em todos os produtos." },
       { property: "og:title", content: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { property: "og:description", content: "Até 6x sem juros e frete grátis para SP e MG (demais estados acima de R$ 150,00)." },
+      { property: "og:description", content: "Até 6x sem juros e frete grátis em todos os produtos." },
       { property: "og:url", content: SITE_URL },
       { property: "og:image", content: `${SITE_URL}/og-vonix.jpg` },
       { name: "twitter:image", content: `${SITE_URL}/og-vonix.jpg` },
@@ -102,26 +127,47 @@ function Home() {
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
           <Banner slug={BANNERS[i]!} priority={i === 0} />
-          <button aria-label="Anterior" onClick={() => setI((i + 6) % 7)} className="absolute left-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2">
+          <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className="absolute left-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button aria-label="Próximo" onClick={() => setI((i + 1) % 7)} className="absolute right-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2">
+          <button aria-label="Próximo" onClick={() => setI((i + 1) % BANNERS.length)} className="absolute right-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2">
             <ChevronRight className="h-4 w-4" />
           </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-4">
-            {BANNERS.map((_, k) => (
-              <button key={k} aria-label={`Banner ${k + 1}`} onClick={() => setI(k)} className={`relative h-4 w-4 rounded-full border border-foreground before:absolute before:-inset-2 before:content-[''] ${k === i ? "bg-foreground" : "bg-background/70"}`} />
-            ))}
-          </div>
         </div>
       </section>
 
-      <Benefits />
+      <FaixaMarca />
 
       {/* 1) O que mais vende, logo abaixo da oferta principal */}
-      <section className="container-site mt-12">
-        <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
-        <Grid carousel items={bestSellers} />
+      <section className="mt-12 bg-[#091413] py-10 text-white [&_a.border-foreground]:border-white [&_h2]:text-white" data-testid="home-vitrine-escura">
+        <div className="container-site">
+          <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
+          <Grid carousel items={bestSellers} />
+        </div>
+      </section>
+
+      {/* O que o cabelo precisa hoje: atalhos por necessidade */}
+      <section className="container-site mt-14" data-testid="home-necessidades" aria-label="O que seu cabelo precisa hoje?">
+        <h2 className="mb-8 text-center">O que seu cabelo precisa hoje?</h2>
+        <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:grid md:grid-cols-6 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
+          {(
+            [
+              ["Hidratação", "hidratacao"],
+              ["Reconstrução", "reconstrucao"],
+              ["Controle de Frizz", "frizz"],
+              ["Definição de Cachos", "cachos"],
+              ["Cabelos com Química", "quimica"],
+              ["Nutrição", "nutricao"],
+            ] as const
+          ).map(([n, img]) => (
+            <Link key={n} to="/loja" search={{ necessidades: n }} className="group flex w-[132px] shrink-0 flex-col items-center gap-3 text-center md:w-auto">
+              <span className="block aspect-square w-[132px] overflow-hidden rounded-full bg-muted md:w-full md:max-w-[168px]">
+                <img src={`/images/categorias/${img}.jpg`} alt="" width={336} height={336} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              </span>
+              <span className="text-body leading-snug">{n}</span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* 2) Kits: a rotina completa aumenta o valor do pedido */}
@@ -175,7 +221,7 @@ function Home() {
       <section className="container-site mt-20" data-testid="home-prova-social">
         <Title a="Quem usa" b="Aprova" to={{ q: "botox vonix" }} />
         <p className="-mt-4 mb-4 text-body text-muted-foreground">Veja quem usa os produtos da Vonix Hair. Toque para assistir.</p>
-        <ProvasEmVideo all seed="home" />
+        <ProvasEmVideo all seed="home" max={16} />
         <h3 className="mb-3 mt-10 font-display text-h2">Resultados que falam por si</h3>
         <p className="mb-4 text-body text-muted-foreground">Depoimentos reais de cabeleireiras que usam o Botox Vonix.</p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -199,7 +245,8 @@ function Home() {
         </div>
       </section>
 
-      <AffiliateHomeInvite />
+      <FaqSection items={FAQ_LOJA} />
+
     </Shell>
   );
 }

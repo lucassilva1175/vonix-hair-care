@@ -88,7 +88,7 @@ export function ReviewForm({ slug, productName, onPublished }: { slug: string; p
   }
 
   return (
-    <form onSubmit={submit} noValidate className="mt-6 rounded-2xl border border-border bg-white p-5 md:p-6" aria-label={`Avaliar ${productName}`}>
+    <form id="avaliar" onSubmit={submit} noValidate className="mt-6 scroll-mt-32 rounded-2xl border border-border bg-white p-5 md:p-6" aria-label={`Avaliar ${productName}`}>
       <h3 className="font-display text-h2 leading-tight">Avalie este produto</h3>
       <p className="mt-1 text-body text-muted-foreground">Qualquer pessoa pode avaliar, mesmo sem ter comprado no site. Sua opinião ajuda outras pessoas.</p>
 

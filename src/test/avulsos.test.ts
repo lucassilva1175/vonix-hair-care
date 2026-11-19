@@ -20,26 +20,19 @@ describe("unidades avulsas dos kits", () => {
 
   it("preço da unidade = preço do kit ÷ nº de itens (arredondado em ,90), nunca abaixo do piso de margem", () => {
     const kit = (s: string, label: string) => getProduct(s)!.variants.find((v) => v.label === label)!.price;
-    const near = (price: number, target: number) => expect(Math.abs(price - target)).toBeLessThan(1);
-    near(getProduct("shampoo-banana-e-mel")!.variants[0]!.price, kit("kit-banana-e-mel", "Kit") / 4);
-    near(getProduct("shampoo-cachos")!.variants.find((v) => v.label === "1L")!.price, kit("kit-cachos", "1L") / 3);
-    near(getProduct("shampoo-kera-plus")!.variants[0]!.price, kit("kit-cauterizacao", "500ml") / 4);
-    near(getProduct("mascara-desmaia-cabelo-300g")!.variants[0]!.price, kit("kit-desmaia", "300ml") / 2);
-    near(getProduct("mascara-monovonix")!.variants.find((v) => v.label === "500ml")!.price, kit("kit-monovonix", "500ml") / 2);
+    const AUMENTO = 6; // aumento fixo de R$ 6 em cada peça (19/11/2026)
+    const near = (price: number, target: number) => expect(Math.abs(price - AUMENTO - target)).toBeLessThan(1);
+    near(getProduct("shampoo-banana-e-mel")!.variants[0]!.price, (kit("kit-banana-e-mel", "Kit") - AUMENTO) / 4);
+    near(getProduct("shampoo-cachos")!.variants.find((v) => v.label === "1L")!.price, (kit("kit-cachos", "1L") - AUMENTO) / 3);
+    near(getProduct("shampoo-kera-plus")!.variants[0]!.price, (kit("kit-cauterizacao", "500ml") - AUMENTO) / 4);
+    near(getProduct("mascara-desmaia-cabelo-300g")!.variants[0]!.price, (kit("kit-desmaia", "300ml") - AUMENTO) / 2);
+    near(getProduct("mascara-monovonix")!.variants.find((v) => v.label === "500ml")!.price, (kit("kit-monovonix", "500ml") - AUMENTO) / 2);
   });
 
-  it("sugere avulsos só enquanto falta para o frete grátis, sem repetir o que já está no carrinho", () => {
-    expect(fillersForFreeShipping([], 151)).toEqual([]);
-    const list = fillersForFreeShipping(["shampoo-banana-e-mel"], 100);
-    expect(list.length).toBeGreaterThan(0);
-    expect(list.length).toBeLessThanOrEqual(3);
-    for (const f of list) {
-      expect(f.product.category).toBe("avulsos");
-      expect(f.product.slug).not.toBe("shampoo-banana-e-mel");
-    }
-    const missing = missingForFreeShipping(100);
-    // quando algum avulso sozinho completa o que falta, ele vem primeiro
-    expect(list[0]!.variant.price).toBeGreaterThanOrEqual(Math.min(missing, ...avulsos.flatMap((p) => p.variants.map((v) => v.price)).filter((x) => x >= missing)));
+  it("com frete grátis em qualquer pedido, não há avulsos para completar o valor do frete", () => {
+    expect(fillersForFreeShipping([], 101)).toEqual([]);
+    expect(missingForFreeShipping(60)).toBe(0);
+    expect(fillersForFreeShipping(["shampoo-banana-e-mel"], 60)).toEqual([]);
   });
 });
 
@@ -62,5 +55,14 @@ describe("vitrine na ordem do curso (mais vendidos primeiro)", () => {
     const kits = bySales(products.filter((p) => p.category === "kits")).map((p) => p.slug);
     expect(kits[0]).toBe("kit-banana-e-mel");
     expect(kits[1]).toBe("kit-cronograma-capilar");
+  });
+
+  it("'mais desejados' da home: Botox Vonix sem formol e Progressiva Fio de Luz vêm sempre na frente (fora de 'Para mim')", async () => {
+    const { homeBestSellers } = await import("@/lib/store");
+    for (const a of [null, "salao"] as const) {
+      const l = homeBestSellers(a);
+      expect(l[0]!.slug).toBe("botox-vonix");
+      expect(l[1]!.slug).toBe("progressiva-fio-de-luz");
+    }
   });
 });
