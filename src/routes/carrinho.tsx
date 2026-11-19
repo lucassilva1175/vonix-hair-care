@@ -19,7 +19,7 @@ import {
   useHydrated,
 } from "@/lib/store";
 import { quoteShipping } from "@/lib/checkout.functions";
-import { ShippingBar, Summary } from "@/components/cart-summary";
+import { Summary } from "@/components/cart-summary";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 
 export const Route = createFileRoute("/carrinho")({
@@ -320,7 +320,6 @@ function Cart() {
               </section>
             </div>
             <aside className="space-y-4">
-              <ShippingBar subtotal={c.subtotal} />
               <FreeShippingFillers />
               <CartShipping
                 items={c.lines.map((l) => ({
