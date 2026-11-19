@@ -42,7 +42,7 @@ export function ShippingBar({ subtotal }: { subtotal: number }) {
         />
       </div>
       <p className="mt-2.5 text-small text-muted-foreground">
-        Frete grátis para todo o Brasil, em qualquer pedido. Seu cupom mantém esse benefício.
+        Frete grátis acima de {brl(FREE_SHIPPING_ABOVE)} em produtos, antes dos descontos. Seu cupom mantém esse benefício.
       </p>
     </div>
   );

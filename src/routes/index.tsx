@@ -44,9 +44,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { name: "description", content: "Progressivas, botox, máscaras e kits Vonix Hair. Até 6x sem juros e frete grátis para todo o Brasil." },
+      { name: "description", content: "Progressivas, botox, máscaras e kits Vonix Hair. Até 6x sem juros e frete grátis acima de R$ 100." },
       { property: "og:title", content: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { property: "og:description", content: "Até 6x sem juros e frete grátis para todo o Brasil." },
+      { property: "og:description", content: "Até 6x sem juros e frete grátis acima de R$ 100." },
       { property: "og:url", content: SITE_URL },
       { property: "og:image", content: `${SITE_URL}/og-vonix.jpg` },
       { name: "twitter:image", content: `${SITE_URL}/og-vonix.jpg` },

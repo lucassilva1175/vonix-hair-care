@@ -28,10 +28,17 @@ describe("unidades avulsas dos kits", () => {
     near(getProduct("mascara-monovonix")!.variants.find((v) => v.label === "500ml")!.price, kit("kit-monovonix", "500ml") / 2);
   });
 
-  it("com frete grátis em qualquer pedido, não há avulsos para completar o valor do frete", () => {
-    expect(fillersForFreeShipping([], 151)).toEqual([]);
-    expect(missingForFreeShipping(100)).toBe(0);
-    expect(fillersForFreeShipping(["shampoo-banana-e-mel"], 100)).toEqual([]);
+  it("sugere avulsos só enquanto falta para o frete grátis, sem repetir o que já está no carrinho", () => {
+    expect(fillersForFreeShipping([], 101)).toEqual([]);
+    const list = fillersForFreeShipping(["shampoo-banana-e-mel"], 60);
+    expect(list.length).toBeGreaterThan(0);
+    expect(list.length).toBeLessThanOrEqual(3);
+    for (const f of list) {
+      expect(f.product.category).toBe("avulsos");
+      expect(f.product.slug).not.toBe("shampoo-banana-e-mel");
+    }
+    const missing = missingForFreeShipping(60);
+    expect(missing).toBeGreaterThan(0);
   });
 });
 

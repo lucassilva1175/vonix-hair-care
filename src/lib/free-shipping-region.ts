@@ -1,5 +1,5 @@
 /**
- * Frete grátis em qualquer valor de pedido para TODO o Brasil (decisão do Lucas, 19/11/2026; antes valia só para SP e MG).
+ * Legado (frete grátis só em SP e MG). A regra geral hoje é FREE_SHIPPING_ABOVE em store.ts.
  * O estado vem da faixa do CEP: SP 01000-000 a 19999-999 e MG 30000-000 a 39999-999.
  * Mantido por compatibilidade: a regra geral agora está em FREE_SHIPPING_ABOVE = 0 (store.ts).
  */

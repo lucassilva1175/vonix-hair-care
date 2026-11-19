@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Minus, Plus, Trash2, X } from "lucide-react";
 import { toItem, track } from "@/lib/analytics";
 import { thumb, webp } from "@/lib/images";
-import { brl, useCart } from "@/lib/store";
+import { FREE_SHIPPING_ABOVE, brl, hasFreeShipping, useCart } from "@/lib/store";
 import { upsellPlan } from "@/lib/upsell";
 
 /** Gaveta da sacola: abre do lado direito quando a pessoa adiciona um produto. */
@@ -146,7 +146,9 @@ export function CartDrawer() {
           <dl className="space-y-2 rounded-xl bg-muted p-4 text-body">
             <div className="flex justify-between gap-3">
               <dt>Frete</dt>
-              <dd className="text-right text-muted-foreground">Grátis · de 3 a 5 dias úteis</dd>
+              <dd className="text-right text-muted-foreground">
+                {hasFreeShipping(c.subtotal) ? "Grátis · de 3 a 5 dias úteis" : `Grátis acima de ${brl(FREE_SHIPPING_ABOVE)}`}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt>Subtotal</dt>
