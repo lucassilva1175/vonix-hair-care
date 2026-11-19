@@ -5,6 +5,7 @@ import { ShippingBar } from "@/components/cart-summary";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
 import { getRef } from "@/lib/affiliate-ref";
+import { registerCartLead } from "@/lib/leads.functions";
 import { createPayment, getOrderStatus, getPaymentConfig, quoteShipping } from "@/lib/checkout.functions";
 import { OFFER_LABEL, WHATSAPP, brl, checkoutTotals, getSavedCep, installments, maskCep, saveCep, useCart, useHydrated } from "@/lib/store";
 import { couponCheck, couponPercent, findCoupon, getPrize, type Coupon } from "@/lib/coupons";
@@ -175,6 +176,31 @@ function Checkout() {
   const shipping = chosen ? chosen.price : 0;
   const total = t.net + shipping;
 
+  // Carrinho abandonado: guarda nome + WhatsApp assim que preenchidos (antes do pagamento) para o Lucas poder chamar a pessoa.
+  const lastLead = useRef("");
+  const leadPayload = () => ({
+    nome: f.nome.trim(),
+    whatsapp: f.whatsapp,
+    ...(f.email.includes("@") ? { email: f.email.trim() } : {}),
+    itens: c.lines.map((l) => `${l.qty}x ${l.slug}${l.variant ? ` (${l.variant})` : ""}`).join(", ").slice(0, 400),
+    total: Math.round(total * 100) / 100,
+    ...(chosen ? { frete: `${chosen.company} ${chosen.name} R$ ${chosen.price.toFixed(2)}`.slice(0, 120) } : {}),
+    ...(f.cidade ? { cidade: f.cidade.slice(0, 80) } : {}),
+    ...(f.uf ? { uf: f.uf.slice(0, 2) } : {}),
+  });
+  useEffect(() => {
+    if (pix || cardDone || !hasLines) return;
+    if (f.nome.trim().length < 2 || f.whatsapp.replace(/\D/g, "").length < 10) return;
+    const body = { ...leadPayload(), status: "preencheu" as const };
+    const key = JSON.stringify(body);
+    if (key === lastLead.current) return;
+    const timer = setTimeout(() => {
+      lastLead.current = key;
+      registerCartLead({ data: body }).catch(() => {});
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [f.nome, f.whatsapp, f.email, f.cidade, f.uf, chosen?.id, total, itemsKey, pix, cardDone, hasLines]);
+
   const lookup = async (v: string) => {
     const d = v.replace(/\D/g, "");
     if (d.length !== 8 || d === lastCep.current) return;
@@ -213,6 +239,7 @@ function Checkout() {
 
   const finish = (orderId: number, value: number) => {
     track("purchase", { transaction_id: String(orderId), value, shipping, items: c.lines.map((l) => toItem(l.product, l.variant, l.net / l.units, l.units)) });
+    if (f.nome.trim().length >= 2) registerCartLead({ data: { ...leadPayload(), status: "comprou" } }).catch(() => {});
     c.clear();
   };
   const finishRef = useRef(finish);
