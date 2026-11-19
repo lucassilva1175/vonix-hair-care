@@ -86,9 +86,7 @@ describe("C65 — compact published product reviews", () => {
     sequence.slice(0, -1).forEach((before, index) => {
       const after = sequence[index + 1];
       if (!after) throw new Error("Missing next section");
-      expect(
-        before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
+      expect(before.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
     expect(document.querySelectorAll("#avaliacoes-produtos")).toHaveLength(1);
     expect(document.querySelectorAll("#inscricao")).toHaveLength(1);
