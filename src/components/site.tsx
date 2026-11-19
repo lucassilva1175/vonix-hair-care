@@ -602,7 +602,7 @@ export function ProductCard({ p }: { p: Product }) {
   };
   return (
     <div className="group relative flex h-full cursor-pointer flex-col rounded-2xl border border-border bg-white p-2.5 shadow-sm md:p-3">
-      <div className="relative overflow-hidden rounded-xl bg-white">
+      <div className="relative overflow-hidden rounded-xl bg-muted">
         {off > 0 && (
           <span className="absolute left-2 top-2 z-10 rounded-md bg-[#7a5a2e] px-1.5 py-0.5 text-small font-semibold text-white">
             -{off}%
@@ -628,6 +628,9 @@ export function ProductCard({ p }: { p: Product }) {
         {pricing.professional && (
           <span className="rounded-md bg-foreground px-1.5 py-0.5 text-small font-semibold tracking-wide text-background">LEVE 2: 12% · LEVE 3: 15%</span>
         )}
+        {pricing.pix < pricing.price && (
+          <span className="rounded-md bg-[#e7fbfa] px-1.5 py-0.5 text-small font-semibold tracking-wide text-[#006868]">5% OFF no Pix</span>
+        )}
       </div>
       <Link to="/produto/$slug" params={{ slug: p.slug }} className="mt-0.5 line-clamp-2 min-h-[2.4rem] text-name font-semibold leading-tight after:absolute after:inset-0 after:z-[1] after:rounded-2xl after:content-[''] hover:underline md:leading-snug">
         {p.name}
@@ -639,15 +642,15 @@ export function ProductCard({ p }: { p: Product }) {
           <div className="text-price font-semibold">{brl(pricing.price)}</div>
           <div className="text-small font-medium">{par.count}x {brl(par.value)}<span className="hidden font-normal text-muted-foreground sm:inline"> sem juros</span></div>
         </div>
-        <button
-          type="button"
-          onClick={bag}
-          aria-label={`Adicionar ${p.name} à sacola`}
-          className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-action text-action-foreground shadow-sm transition-transform active:scale-95 md:h-11 md:w-11"
-        >
-          <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
-        </button>
       </div>
+      <button
+        type="button"
+        onClick={bag}
+        aria-label={`Adicionar ${p.name} à sacola`}
+        className="relative z-10 mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-action text-body font-semibold text-action-foreground shadow-sm transition-transform active:scale-[.98]"
+      >
+        <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
+      </button>
       {p.short && <p className="mt-1.5 line-clamp-2 flex-1 text-small leading-snug text-muted-foreground md:line-clamp-3 md:text-small">{p.short}</p>}
     </div>
   );
