@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import logoUrl from "@/assets/vonix-logo.webp";
 import { usePaidVisit } from "@/lib/paid-visit";
 import { BfPopup } from "@/components/bf-popup";
-import { AffiliatePopup } from "@/components/affiliate-popup";
 import { reviewsFor } from "@/components/reviews";
 import { soldFor } from "@/lib/sales";
 import { useVisitorSummary } from "@/lib/review-summary";
@@ -362,12 +361,6 @@ export function Shell({ children }: { children: ReactNode }) {
                   {n.label}
                 </Link>
               ))}
-              {!paidVisit && (
-              <Link to="/seja-afiliada" className="inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[#a27b62]/35 bg-[#f8ede5] px-3 text-[11px] font-bold tracking-[.1em] text-[#684639] transition hover:bg-[#f1ddcb] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#725345]">
-                <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
-                Seja afiliada
-              </Link>
-              )}
             </div>
           </nav>
         )}
@@ -400,18 +393,6 @@ export function Shell({ children }: { children: ReactNode }) {
                 </Link>
               ))}
             </nav>
-            {!paidVisit && (
-<Link
-              to="/seja-afiliada"
-              onClick={() => setOpen(false)}
-              className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-[#e7d5cc] bg-[#fbf1eb] px-4 py-3 text-[#623b45] hover:bg-[#f4e4dc]"
-            >
-              <span className="flex items-center gap-2 font-semibold">
-                <Sparkles aria-hidden="true" className="h-4 w-4" /> Seja afiliada
-              </span>
-              <ArrowLeft aria-hidden="true" className="h-4 w-4 rotate-180" />
-            </Link>
-)}
             <h3 className="mb-3 mt-8 text-small font-semibold uppercase tracking-[0.18em] text-muted-foreground">Por necessidade</h3>
             <nav className="flex flex-col text-body [&_a]:border-b [&_a]:border-border [&_a]:py-3">
               {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
@@ -438,7 +419,6 @@ export function Shell({ children }: { children: ReactNode }) {
       <main>{children}</main>
       <Footer />
       {!paidVisit && <BfPopup />}
-      {!paidVisit && <AffiliatePopup />}
       {!hideWhatsApp && (
         <a
           href={WHATSAPP}

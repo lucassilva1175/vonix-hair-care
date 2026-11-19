@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewCard, reviews } from "@/components/reviews";
-import { AffiliateHomeInvite } from "@/components/affiliate-home-invite";
 import { FaqSection } from "@/components/faq";
 import { FAQ_LOJA } from "@/lib/faq";
 import { ProvasEmVideo } from "@/components/provas-em-video";
@@ -221,7 +220,6 @@ function Home() {
 
       <FaqSection items={FAQ_LOJA} />
 
-      <AffiliateHomeInvite />
     </Shell>
   );
 }
