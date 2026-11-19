@@ -4,7 +4,6 @@ import { ArrowRight, CreditCard, Lock, ShieldCheck, Truck } from "lucide-react";
 import heroLogo from "@/assets/vonix-logo.webp";
 import { SecuritySeal, Shell } from "@/components/site";
 import { OrderBump } from "@/components/order-bump";
-import { PrazoFrete } from "@/components/prazo-frete";
 import { useCepAddress } from "@/hooks/use-cep-address";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
@@ -882,7 +881,7 @@ function Checkout() {
                 )}
                 <div className="flex justify-between">
                   <span>Frete</span>
-                  <span className="text-right">{chosen ? (chosen.free ? "Grátis · de 3 a 5 dias úteis" : brl(chosen.price)) : freeShip ? "Grátis · de 3 a 5 dias úteis" : "A calcular"}</span>
+                  <span className="text-right">{chosen ? (chosen.free ? "Grátis" : brl(chosen.price)) : freeShip ? "Grátis" : "A calcular"}</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border-t border-[#c9a45c]/50 bg-[#fbf5e6] px-3 py-2.5 text-name font-bold">
                   <span className="min-w-0">
@@ -933,8 +932,6 @@ function Checkout() {
             </div>
 
 
-
-            <PrazoFrete className="order-4" />
 
             <fieldset className="order-3 space-y-2">
               <StepTitle n={3}>Pagamento</StepTitle>
