@@ -1,24 +1,31 @@
 import { ArrowUpRight, MessageSquareQuote } from "lucide-react";
+import storeReviews from "@/data/reviews.json";
 
 /**
- * Quotes published on the official Vonix Botox product page.
- * These are PRODUCT reviews by store visitors, not affiliate-program
- * testimonials, verified purchases, performance statistics or earnings.
- * Source: /produto/botox-vonix (reviewed on 2026-11-18).
+ * Single source of truth is the public store review dataset. Never invent
+ * a reviewer, pair an unrelated video with a quote, or claim that these
+ * product comments prove affiliate-program participation or earnings.
  */
-const customerComments = [
-  { name: "Fernanda Assis", month: "setembro de 2026", quote: "Adoreeeeeiii" },
-  {
-    name: "Ayla Muniz",
-    month: "agosto de 2026",
-    quote: "Já peguei logo o combo kkkkkkk minhas cliente amou",
-  },
-  {
-    name: "Mariana Andrade",
-    month: "julho de 2026",
-    quote: "Produto maravilhoso ❤️ eu amei trabalhar com ele",
-  },
-] as const;
+const monthFormatter = new Intl.DateTimeFormat("pt-BR", {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+const customerComments = storeReviews
+  .filter((review) => review.slug === "botox-vonix" && review.media.type === "video")
+  .map((review) => {
+    const media = review.media;
+    if (!("poster" in media) || typeof media.poster !== "string") return null;
+    return {
+      name: review.author,
+      month: monthFormatter.format(new Date(review.date + "T12:00:00Z")),
+      quote: review.comment,
+      video: media.src,
+      poster: media.poster,
+    };
+  })
+  .filter((review): review is NonNullable<typeof review> => review !== null);
 
 /** Factual product proof close to the opening, without inventing creator proof. */
 export function AffiliateProductProof() {
@@ -80,33 +87,51 @@ export function AffiliateProductProof() {
           </figure>
 
           <div className="grid min-w-0 gap-3">
-            {customerComments.map(({ name, month, quote }) => (
+            {customerComments.map(({ name, month, quote, video, poster }) => (
               <blockquote
                 key={name}
-                className="flex min-w-0 flex-col justify-between rounded-[1.3rem] border border-[#e0cecb] bg-white px-6 py-5 sm:px-7"
+                className="grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] gap-4 rounded-[1.3rem] border border-[#e0cecb] bg-white px-4 py-5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:px-6"
               >
-                <div>
-                  <p className="inline-flex items-center gap-2 text-xs font-semibold text-[#855267]">
-                    <MessageSquareQuote aria-hidden="true" className="size-4" />
-                    Comentário publicado no produto
-                  </p>
-                  <p className="mt-3 font-display text-xl leading-snug text-[#482e39] sm:text-2xl">
-                    “{quote}”
-                  </p>
+                <video
+                  data-testid="affiliate-c62-customer-video"
+                  className="aspect-[3/4] w-full min-w-0 self-start rounded-xl bg-[#382b31] object-contain"
+                  controls
+                  preload="none"
+                  playsInline
+                  poster={poster}
+                  aria-label={
+                    "Vídeo publicado na loja junto à avaliação sobre Botox Vonix de " + name
+                  }
+                >
+                  <source src={video} type="video/mp4" />
+                  Seu navegador não reproduz este vídeo. Consulte o link da avaliação na loja.
+                </video>
+                <div className="flex min-w-0 flex-col justify-between">
+                  <div>
+                    <p className="inline-flex items-start gap-2 text-xs font-semibold leading-relaxed text-[#855267]">
+                      <MessageSquareQuote aria-hidden="true" className="mt-px size-4 shrink-0" />
+                      Comentário publicado no produto
+                    </p>
+                    <p className="mt-3 font-display text-lg leading-snug text-[#482e39] sm:text-2xl">
+                      “{quote}”
+                    </p>
+                  </div>
+                  <footer className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#eee0dd] pt-3">
+                    <span className="text-sm font-semibold text-[#482e39]">{name}</span>
+                    <span className="text-xs text-[#725e64]">Cliente · {month}</span>
+                  </footer>
                 </div>
-                <footer className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#eee0dd] pt-3">
-                  <span className="text-sm font-semibold text-[#482e39]">{name}</span>
-                  <span className="text-xs text-[#725e64]">Cliente · {month}</span>
-                </footer>
               </blockquote>
             ))}
           </div>
         </div>
 
         <p className="mt-6 max-w-4xl text-xs leading-6 text-[#705962]">
-          Estes comentários documentam experiências com produtos da Vonix Hair. Eles não representam
-          renda, vendas, comissões ou participação no programa de afiliadas. A candidatura é
-          gratuita, passa por seleção e não garante parceria.
+          Os vídeos e comentários escritos estão associados às avaliações de produto publicadas na
+          loja. O comentário não é uma transcrição integral do áudio. Estes comentários documentam
+          experiências com produtos da Vonix Hair. Eles não representam renda, vendas, comissões ou
+          participação no programa de afiliadas. A candidatura é gratuita, passa por seleção e não
+          garante parceria.
         </p>
       </div>
     </section>
