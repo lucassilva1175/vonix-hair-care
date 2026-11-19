@@ -21,7 +21,16 @@ afterEach(() => {
   window.sessionStorage.removeItem("vonix-affiliate-once-code");
 });
 
-describe("Private Vonix email-less applicant status portal", () => {
+describe("Private Vonix applicant status portal", () => {
+  it("clarifies that e-mail does not replace the private tracking code", () => {
+    render(<AffiliateTrackingCodePage />);
+    expect(
+      screen.getByText(/todas as candidaturas, inclusive as novas com e-mail/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/O e-mail serve para contato, mas não substitui o código/i),
+    ).toBeInTheDocument();
+  });
   it("masks the private receipt by default and only reveals it on explicit request", () => {
     render(<AffiliateTrackingCodePage />);
     const field = screen.getByLabelText("Código privado de acompanhamento");
