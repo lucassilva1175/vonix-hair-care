@@ -128,18 +128,24 @@ function Home() {
       </section>
 
       {/* O que o cabelo precisa hoje: atalhos por necessidade */}
-      <section className="container-site mt-12" data-testid="home-necessidades" aria-label="O que seu cabelo precisa hoje?">
-        <h2 className="mb-6">O que seu cabelo precisa hoje?</h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-          {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
-            <Link
-              key={n}
-              to="/loja"
-              search={{ necessidades: n }}
-              className="flex min-h-20 items-center justify-between gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-name font-semibold leading-snug transition-colors hover:border-foreground"
-            >
-              {n}
-              <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
+      <section className="container-site mt-14" data-testid="home-necessidades" aria-label="O que seu cabelo precisa hoje?">
+        <h2 className="mb-8 text-center">O que seu cabelo precisa hoje?</h2>
+        <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:grid md:grid-cols-6 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
+          {(
+            [
+              ["Hidratação", "hidratacao"],
+              ["Reconstrução", "reconstrucao"],
+              ["Controle de Frizz", "frizz"],
+              ["Definição de Cachos", "cachos"],
+              ["Cabelos com Química", "quimica"],
+              ["Nutrição", "nutricao"],
+            ] as const
+          ).map(([n, img]) => (
+            <Link key={n} to="/loja" search={{ necessidades: n }} className="group flex w-[132px] shrink-0 flex-col items-center gap-3 text-center md:w-auto">
+              <span className="block aspect-square w-[132px] overflow-hidden rounded-full bg-muted md:w-full md:max-w-[168px]">
+                <img src={`/images/categorias/${img}.jpg`} alt="" width={336} height={336} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              </span>
+              <span className="text-body leading-snug">{n}</span>
             </Link>
           ))}
         </div>
