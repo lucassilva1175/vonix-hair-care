@@ -109,10 +109,10 @@ export function AffiliateShell({
                 Como funciona
               </a>
               <a
-                href="#formatos"
+                href="#avaliacoes-produtos"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
               >
-                Inspirações
+                Avaliações
               </a>
               <a
                 href="#duvidas"
@@ -148,20 +148,39 @@ export function AffiliateShell({
         {mode === "landing" && (
           <nav
             aria-label="Acesso rápido ao programa"
-            className="flex min-h-11 items-center justify-center gap-7 border-t border-border px-4 text-xs xl:hidden"
+            className="flex w-full max-w-full snap-x snap-proximity items-center justify-start gap-5 overflow-x-auto overscroll-x-contain border-t border-border px-4 text-xs xl:hidden"
+            tabIndex={0}
           >
-            <a href="#ganhos" className="inline-flex min-h-11 items-center text-primary">
+            <a
+              href="#ganhos"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+            >
               Ganhos
+            </a>
+            <a
+              href="#como-funciona"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+            >
+              Como funciona
+            </a>
+            <a
+              href="#avaliacoes-produtos"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+            >
+              Avaliações
+            </a>
+            <a
+              href="#duvidas"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+            >
+              Dúvidas
             </a>
             <Link
               to="/consultar-candidatura"
-              className="inline-flex min-h-11 items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center pr-2 text-primary"
             >
               Status da candidatura
             </Link>
-            <a href="#duvidas" className="inline-flex min-h-11 items-center text-primary">
-              Dúvidas
-            </a>
           </nav>
         )}
       </header>
