@@ -11,6 +11,8 @@ import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { ShareButton } from "@/components/share-button";
 import { Grid, PaymentMethods, SecuritySeal, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
+import { FaqSection } from "@/components/faq";
+import { FAQ_LOJA } from "@/lib/faq";
 import { useServerFn } from "@tanstack/react-start";
 import { lookupAddress } from "@/lib/address.functions";
 import { quoteShipping } from "@/lib/checkout.functions";
@@ -575,7 +577,20 @@ function ProductPage() {
         </div>
         <KitCross p={p} />
         {p.description && <ProductDetails p={p} />}
+        <FaqSection items={FAQ_LOJA} nested testId="product-faq" />
         <ProductReviews slug={p.slug} />
+        <section className="mt-16" data-testid="product-qa" aria-label="Perguntas e respostas">
+          <h2 className="mb-3">Perguntas &amp; respostas</h2>
+          <p className="mb-4 text-body text-muted-foreground">Ficou com alguma dúvida sobre este produto? Pergunte para a nossa equipe.</p>
+          <a
+            href={`${WHATSAPP.split("?")[0]}?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre o produto ${p.name}.`)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-11 items-center rounded-lg border border-foreground px-5 text-body font-semibold"
+          >
+            Perguntar no WhatsApp
+          </a>
+        </section>
         {related.length > 0 && (
           <section className="mt-20">
             <h2 className="mb-6 [&_em]:not-italic">

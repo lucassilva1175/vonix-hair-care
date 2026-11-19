@@ -3,6 +3,8 @@ import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewCard, reviews } from "@/components/reviews";
 import { AffiliateHomeInvite } from "@/components/affiliate-home-invite";
+import { FaqSection } from "@/components/faq";
+import { FAQ_LOJA } from "@/lib/faq";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { Benefits, Grid, Shell } from "@/components/site";
@@ -124,6 +126,24 @@ function Home() {
         <Grid carousel items={bestSellers} />
       </section>
 
+      {/* O que o cabelo precisa hoje: atalhos por necessidade */}
+      <section className="container-site mt-12" data-testid="home-necessidades" aria-label="O que seu cabelo precisa hoje?">
+        <h2 className="mb-6">O que seu cabelo precisa hoje?</h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
+            <Link
+              key={n}
+              to="/loja"
+              search={{ necessidades: n }}
+              className="flex min-h-20 items-center justify-between gap-2 rounded-2xl border border-border bg-muted px-4 py-3 text-name font-semibold leading-snug transition-colors hover:border-foreground"
+            >
+              {n}
+              <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* 2) Kits: a rotina completa aumenta o valor do pedido */}
       {kits.length > 0 && (
         <section className="container-site mt-16" data-testid="home-kits">
@@ -198,6 +218,8 @@ function Home() {
           </div>
         </div>
       </section>
+
+      <FaqSection items={FAQ_LOJA} />
 
       <AffiliateHomeInvite />
     </Shell>

@@ -4,6 +4,7 @@ import { ArrowRight, CreditCard, Lock, ShieldCheck, Truck } from "lucide-react";
 import heroLogo from "@/assets/vonix-logo.webp";
 import { SecuritySeal, Shell } from "@/components/site";
 import { ShippingBar } from "@/components/cart-summary";
+import { OrderBump } from "@/components/order-bump";
 import { useCepAddress } from "@/hooks/use-cep-address";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
@@ -959,11 +960,13 @@ function Checkout() {
               </ul>
             </section>
 
+            <OrderBump />
+
 
             <p className="flex cursor-default select-none items-center gap-2 text-small font-medium text-[#2c6e55]">
               <Truck className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
               {missingForFreeShipping(gross) > 0
-                ? `Faltam ${brl(missingForFreeShipping(gross))} para ganhar frete grátis`
+                ? `Frete grátis em SP e MG. Nos demais estados, faltam ${brl(missingForFreeShipping(gross))}`
                 : "Você ganhou frete grátis"}
             </p>
 
