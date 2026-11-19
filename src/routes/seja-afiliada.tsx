@@ -7,6 +7,7 @@ import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
 import { AffiliateApplicationPrep } from "@/components/affiliate-application-prep";
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
 import { AffiliateVerifiedReviewPreview } from "@/components/affiliate-verified-review-preview";
+import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
 import {
   AffiliateLandingOffer,
   AffiliateLandingDiscovery,
@@ -144,6 +145,7 @@ export function AffiliateApplicationPage() {
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
         <AffiliateLandingOffer recruitmentStatus={recruitment} />
         <AffiliateVerifiedReviewPreview />
+        <AffiliateApplicationStepsPreview />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
           <details

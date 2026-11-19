@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const deps = vi.hoisted(() => ({ config: vi.fn() }));
+const deps = vi.hoisted(() => ({ config: vi.fn(), mailReady: vi.fn(), sendMail: vi.fn() }));
+vi.mock("@/lib/affiliate-auth-delivery.server", () => ({
+  affiliateCustomAuthEmailReady: deps.mailReady,
+  sendAffiliateAuthEmailWithResend: deps.sendMail,
+}));
 vi.mock("@/lib/affiliate-database.server", () => ({
   affiliateDatabaseConfig: deps.config,
 }));
@@ -10,11 +14,18 @@ import { invitePersistedAffiliateApplicant } from "@/lib/affiliate-invites.serve
 describe("Vonix affiliate account invitation after durable registration", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    deps.mailReady.mockReset().mockReturnValue(false);
+    deps.sendMail.mockReset();
     deps.config.mockReset();
     deps.config.mockReturnValue({
       url: "https://synthetic-reference-123.supabase.co",
       headers: { apikey: "test-secret-never-real", authorization: "Bearer test-secret" },
     });
+  });
+
+  afterEach(() => {
+    expect(deps.sendMail).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it("invites a valid applicant through server-only Auth Admin API", async () => {
