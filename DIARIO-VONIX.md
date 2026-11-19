@@ -229,3 +229,8 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Meta: campanha Power ativa, 0 compras, gasto acumulado maior que ontem; orçamento aparece como R$ 250/dia (acima do teto de R$ 100): aguardando confirmação do dono. Nada alterado.
 - Pix 5% (16/11) reduz a margem de venda por anúncio; decisão pendente do dono.
 - Como desfazer: nada alterado além deste diário.
+
+## 19/11/2026 — dono do resultado (só diagnóstico, sem mudança no site)
+- Clarity 3 dias: 197 sessões (54 bots excluídos); produto 135, carrinho 9 (6,7% de quem viu produto), checkout 5. Origem: Instagram/Facebook (~80 sessões). Desempenho: LCP 2,9 s, INP 540 ms (ruim, concentrado no app do Instagram), erro de JavaScript do webview do Instagram em 11,7% das sessões.
+- Maior gargalo: produto → carrinho. Hipótese para a próxima rodada: a página do produto tem dois controles de quantidade (cartões de promoção e o contador +/−), o que pode confundir antes do botão; assistir gravações do celular antes de mexer. Meta não lida (ordem do dono).
+- Como desfazer: nada alterado além deste diário.
