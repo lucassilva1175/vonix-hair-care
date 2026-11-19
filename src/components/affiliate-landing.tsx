@@ -19,6 +19,7 @@ import {
   type RecruitmentStatus,
 } from "@/components/affiliate-editorial-hero";
 import { AffiliateSellingFlow } from "@/components/affiliate-selling-flow";
+import { AffiliateCatalogInMotion } from "@/components/affiliate-catalog-in-motion";
 import {
   AffiliateCreatorOpportunity,
   AffiliateEarningsSimulator,
@@ -289,6 +290,8 @@ export function AffiliateLandingIntro({
       </section>
 
       <AffiliateSellingFlow recruitmentOpen={isOpen} />
+
+      <AffiliateCatalogInMotion recruitmentOpen={isOpen} />
 
       <section id="criterios" className="scroll-mt-24 bg-card px-5 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl">
