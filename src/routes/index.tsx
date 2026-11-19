@@ -255,7 +255,7 @@ function Home() {
       <section className="container-site mt-20" data-testid="home-prova-social">
         <Title a="Quem usa" b="Aprova" to={{ q: "botox vonix" }} />
         <p className="-mt-4 mb-4 text-body text-muted-foreground">Veja quem usa os produtos da Vonix Hair. Toque para assistir.</p>
-        <ProvasEmVideo all seed="home" />
+        <ProvasEmVideo all seed="home" max={16} />
         <h3 className="mb-3 mt-10 font-display text-h2">Resultados que falam por si</h3>
         <p className="mb-4 text-body text-muted-foreground">Depoimentos reais de cabeleireiras que usam o Botox Vonix.</p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
