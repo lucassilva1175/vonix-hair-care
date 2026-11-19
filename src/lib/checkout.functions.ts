@@ -6,6 +6,7 @@ import { isValidCpf } from "./cpf";
 import { env } from "./env.server";
 import { calculateShipping, unitWeightKg } from "./melhorenvio.server";
 import { pickFreeShipping, pickThreeShipping } from "./shipping-pick";
+import { isFreeShippingCep } from "./free-shipping-region";
 import { normalizeRef, refCampaign } from "./affiliate-ref";
 import { notifyAffiliateSale } from "./affiliate-notify.server";
 import { checkoutTotals, getProduct, lineTotals, type Offer } from "./store";
@@ -52,7 +53,7 @@ async function shippingOptions(cep: string, lines: ReturnType<typeof buildLines>
     lines.map((l) => ({ id: l.product.slug, unitPrice: l.net / l.units, quantity: l.units, weightKg: unitWeightKg(l.variant) })),
   );
   const t = checkoutTotals(lines, "pix");
-  const free = t.freeShipping || couponFreeShipping(findCoupon(couponCode), t.gross);
+  const free = t.freeShipping || isFreeShippingCep(cep) || couponFreeShipping(findCoupon(couponCode), t.gross);
   if (free) {
     // Frete grátis: só a opção grátis aparece, de preferência a que entrega em até 3 dias úteis.
     const chosen = pickFreeShipping(quotes);
