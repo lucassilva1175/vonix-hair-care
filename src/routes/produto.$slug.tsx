@@ -563,7 +563,7 @@ function ProductPage() {
             <ShippingCalc subtotal={total} slug={p.slug} variant={v.label} qty={qty} />
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
-                Frete grátis em todos os produtos, em qualquer pedido · entrega de 3 a 5 dias úteis
+                Frete grátis em todos os produtos, em qualquer pedido
               </li>
               <li>
                 <Link
