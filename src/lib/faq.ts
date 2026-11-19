@@ -7,7 +7,7 @@ export type FaqItem = { q: string; a: string };
 export const FAQ_LOJA: FaqItem[] = [
   {
     q: "Como funciona o frete?",
-    a: "O frete é grátis em todos os produtos, em qualquer pedido. O prazo aparece na página do produto e no checkout, conforme o seu CEP.",
+    a: "O frete é grátis em todos os produtos, em qualquer pedido, e a entrega é de 3 a 5 dias úteis. O prazo exato aparece na página do produto e no checkout, conforme o seu CEP.",
   },
   {
     q: "Quais são as formas de pagamento?",
@@ -15,7 +15,7 @@ export const FAQ_LOJA: FaqItem[] = [
   },
   {
     q: "Em quanto tempo o meu pedido chega?",
-    a: "O prazo estimado aparece conforme o CEP e a entrega escolhida no checkout. Ele considera a aprovação do pagamento, a preparação do pedido e o transporte.",
+    a: "A entrega é de 3 a 5 dias úteis. O prazo exato aparece conforme o CEP e a entrega escolhida no checkout, e considera a aprovação do pagamento, a preparação do pedido e o transporte.",
   },
   {
     q: "Como acompanho o meu pedido?",
