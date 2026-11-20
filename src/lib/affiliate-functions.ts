@@ -6,7 +6,7 @@ import { affiliateDatabaseConfig } from "./affiliate-database.server";
 import { VONIX_AFFILIATE_AUTH_URL, VONIX_AFFILIATE_PUBLIC_KEY } from "./vonix-affiliate-auth";
 import { affiliateQuestionnaireEncryptionReady } from "./affiliate-wizard-crypto.server";
 import { affiliateApplicationSchema, affiliateAdminSchema } from "./affiliate-application";
-import { affiliateSimpleSchema } from "./affiliate-simple";
+import { affiliateSimpleSchema, affiliateManualSchema } from "./affiliate-simple";
 import { affiliateRejectionReasonSchema } from "./affiliate-rejection";
 import { attemptAffiliateAdminLogin } from "./affiliate-admin-auth.server";
 import { loginAffiliateTeamWithPassword } from "./affiliate-member-auth.server";
@@ -41,6 +41,7 @@ import {
   eraseAffiliateApplication,
   previewAffiliateRetention,
   createSimpleAffiliateApplication,
+  createManualAffiliateApplication,
   getAffiliateStatusWithCode,
   readAffiliateApplicantEmailForAccessRecovery,
   decideAffiliateApplication,
@@ -223,6 +224,28 @@ export const submitSimpleAffiliateApplication = createServerFn({ method: "POST" 
       return {
         ok: false as const,
         reason: "Não foi possível receber a inscrição agora. Tente novamente mais tarde.",
+      };
+    }
+  });
+
+/** Team-only manual registration. Never uses the public intake switch, and
+ * never sends invitations or creates Auth users on behalf of an applicant. */
+export const createManualAffiliateAdmin = createServerFn({ method: "POST" })
+  .validator(affiliateManualSchema)
+  .handler(async ({ data }) => {
+    privateAffiliateAuthResponse();
+    if (!affiliateAdminSameOrigin() || !(await affiliateAdminSessionAuthorized())) {
+      return { ok: false as const, reason: "Acesso negado. Faça login novamente." };
+    }
+    if (!(await consumeAffiliateRateLimit("admin"))) {
+      return { ok: false as const, reason: "Limite temporário de cadastros. Tente mais tarde." };
+    }
+    try {
+      return await createManualAffiliateApplication(data);
+    } catch {
+      return {
+        ok: false as const,
+        reason: "Cadastro não confirmado. Verifique a disponibilidade do banco dedicado.",
       };
     }
   });
