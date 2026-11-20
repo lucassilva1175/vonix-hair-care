@@ -33,7 +33,15 @@ describe("C53 recruitment presentation boundaries", () => {
     for (const source of sources)
       expect(source.getAttribute("srcset")).toMatch(/^\/images\/products\/[a-z0-9-]+\.webp$/);
     expect(screen.getAllByText(/Não são depoimentos de afiliadas/).length).toBeGreaterThan(0);
-    expect(container.querySelectorAll("blockquote")).toHaveLength(3);
+    // The compact preview and full catalog section each show the same 3
+    // authentic PRODUCT reviews, with distinct levels of detail.
+    expect(
+      screen.getByTestId("vonix-c65-review-preview").querySelectorAll("blockquote"),
+    ).toHaveLength(3);
+    expect(
+      screen.getByTestId("vonix-c53-real-product-reviews").querySelectorAll("blockquote"),
+    ).toHaveLength(3);
+    expect(container.querySelectorAll("blockquote")).toHaveLength(6);
     expect(screen.getByRole("link", { name: /catálogo na loja oficial/ })).toHaveAttribute(
       "href",
       "/loja",

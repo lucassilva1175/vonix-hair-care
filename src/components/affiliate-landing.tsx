@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
 import { AffiliateProductProof } from "@/components/affiliate-product-proof";
+import { AffiliateVerifiedReviewPreview } from "@/components/affiliate-verified-review-preview";
 import {
   AffiliateEditorialHero,
   type RecruitmentStatus,
@@ -222,7 +223,7 @@ export function AffiliateLandingOffer({
       <div
         data-testid="affiliate-c61-eligibility-facts"
         aria-label="Informações essenciais da candidatura Vonix Hair"
-        className="border-b border-[#754558] bg-[#663448] px-5 py-5 text-[#fff9f6]"
+        className="border-b border-[#754558] bg-[#663448] px-5 py-4 text-[#fff9f6]"
       >
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 text-xs font-medium sm:grid-cols-4 sm:gap-8 sm:text-sm">
           <span>Candidatura gratuita</span>
@@ -232,11 +233,13 @@ export function AffiliateLandingOffer({
         </div>
       </div>
 
+      <AffiliateVerifiedReviewPreview />
+
       <section
         id="ganhos"
         data-testid="vonix-affiliate-earnings"
         aria-labelledby="vonix-affiliate-earnings-title"
-        className="scroll-mt-24 bg-card px-5 py-16 sm:py-24"
+        className="scroll-mt-24 bg-card px-5 py-12 sm:py-20"
       >
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
