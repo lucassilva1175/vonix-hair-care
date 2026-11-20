@@ -286,7 +286,28 @@ export function AffiliateLandingOffer({
             Valores sobre vendas confirmadas e pagas. As metas da supervisora são combinadas pela
             equipe com cada afiliada aprovada. Bônus e supervisão dependem de elegibilidade.
           </p>
-          <AffiliateEarningsSimulator />
+          <details
+            data-testid="vonix-c69-optional-simulator"
+            className="group/simulator mt-7 rounded-2xl border border-[#dfd0cd] bg-background"
+          >
+            <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-7 [&::-webkit-details-marker]:hidden">
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-primary">
+                  Explorar um cálculo ilustrativo de comissões
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                  Opcional: não é previsão nem garantia de ganhos.
+                </span>
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className="size-5 shrink-0 text-primary transition-transform motion-reduce:transition-none group-open/simulator:rotate-180"
+              />
+            </summary>
+            <div className="border-t border-border px-5 pb-2 sm:px-7">
+              <AffiliateEarningsSimulator compact />
+            </div>
+          </details>
           <div
             data-testid="vonix-c64-immediate-signup"
             className="mt-8 flex flex-col gap-4 rounded-2xl border border-[#dec8cd] bg-[#fbf2f0] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8"

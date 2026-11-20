@@ -5,12 +5,12 @@ import { illustrativeEarnings } from "@/lib/affiliate-marketing-math";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-export function AffiliateEarningsSimulator() {
+export function AffiliateEarningsSimulator({ compact = false }: { compact?: boolean }) {
   const [sales, setSales] = useState(2500);
   const result = illustrativeEarnings(sales);
   return (
     <div
-      className="mt-12 border-y border-border py-8 sm:py-12"
+      className={compact ? "py-5 sm:py-7" : "mt-12 border-y border-border py-8 sm:py-12"}
       role="group"
       aria-labelledby="simulator-title"
     >
