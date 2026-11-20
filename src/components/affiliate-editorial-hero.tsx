@@ -1,5 +1,6 @@
 import { ArrowDownRight, ArrowUpRight, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AffiliateProgramShare } from "@/components/affiliate-program-share";
 
 export type RecruitmentStatus = "loading" | "open" | "limited" | "closed";
 
@@ -136,6 +137,7 @@ export function AffiliateEditorialHero({
                 <ArrowDownRight aria-hidden="true" className="size-4" />
               </a>
             </Button>
+            <AffiliateProgramShare />
           </div>
           <ul
             className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-[#553d47]"
