@@ -1,4 +1,5 @@
-import { ArrowDownRight, ArrowUpRight, Check, Sparkles } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Check, PlayCircle, Sparkles } from "lucide-react";
+import { officialProductVideoReviewCount } from "@/components/affiliate-verified-review-preview";
 import { Button } from "@/components/ui/button";
 import { AffiliateProgramShare } from "@/components/affiliate-program-share";
 
@@ -99,15 +100,15 @@ export function AffiliateEditorialHero({
     <section
       data-testid="vonix-affiliate-hero"
       aria-labelledby="vonix-affiliate-title"
-      className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-11 sm:py-16 lg:py-20"
+      className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-8 sm:py-14 lg:py-16"
     >
-      <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-11 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-14 xl:gap-20">
+      <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-12 xl:gap-16">
         <div className="min-w-0 lg:py-5">
           <p className="inline-flex items-center gap-2 text-xs font-semibold text-[#7b4355]">
             <Sparkles aria-hidden="true" className="size-4" />
             Inscrição gratuita · seleção individual
           </p>
-          <p className="mt-6 text-sm font-semibold text-[#764254]">
+          <p className="mt-4 text-sm font-semibold text-[#764254]">
             Vonix Hair · Programa de afiliadas
           </p>
           <h1
@@ -117,11 +118,11 @@ export function AffiliateEditorialHero({
             Seu jeito de <span className="italic text-[#87465c]">criar.</span>
             <span className="mt-1 block">Nossa paixão por cabelos.</span>
           </h1>
-          <p className="mt-6 max-w-xl text-base leading-[1.75] text-[#5e4650] sm:text-lg">
+          <p className="mt-4 max-w-xl text-base leading-[1.75] text-[#5e4650] sm:text-lg">
             Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil à
             Vonix Hair e descubra como funciona a seleção para uma possível parceria.
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button
               asChild
               className="h-auto min-h-12 whitespace-normal rounded-lg px-6 py-3 text-sm"
@@ -140,7 +141,7 @@ export function AffiliateEditorialHero({
             <AffiliateProgramShare />
           </div>
           <ul
-            className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-[#553d47]"
+            className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-[#553d47]"
             aria-label="Informações da candidatura"
           >
             {["8% sobre vendas após aprovação", "Sem estoque próprio", "Inscrição gratuita"].map(
@@ -154,7 +155,7 @@ export function AffiliateEditorialHero({
           </ul>
           <div
             role="status"
-            className="mt-7 inline-flex max-w-lg flex-wrap items-center gap-2 rounded-lg border border-[#e5d2cf] bg-white px-4 py-3 text-xs font-semibold leading-5 text-[#523740]"
+            className="mt-5 inline-flex max-w-lg flex-wrap items-center gap-2 rounded-lg border border-[#e5d2cf] bg-white px-4 py-3 text-xs font-semibold leading-5 text-[#523740]"
           >
             <span
               aria-hidden="true"
@@ -177,7 +178,7 @@ export function AffiliateEditorialHero({
                     ? "Não foi possível consultar a disponibilidade das inscrições"
                     : "Conheça o formulário enquanto as inscrições estão em preparação"}
           </div>
-          <p className="mt-5 max-w-lg text-xs leading-[1.7] text-[#65515a]">
+          <p className="mt-3 max-w-lg text-xs leading-[1.7] text-[#65515a]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque
             nem compra de produtos para se candidatar.
           </p>
@@ -220,6 +221,29 @@ export function AffiliateEditorialHero({
             Fotos reais dos produtos à venda na loja oficial. Não são imagens de afiliadas,
             campanhas com criadoras ou prova de resultados.
           </figcaption>
+          {officialProductVideoReviewCount > 0 && (
+            <a
+              href="#avaliacoes-rapidas"
+              data-testid="vonix-c78-real-review-cta"
+              className="group mt-4 flex min-h-16 items-center gap-3 rounded-2xl border border-[#e1c9c9] bg-white px-4 py-3 text-left text-[#593344] shadow-[0_8px_22px_rgba(78,43,54,.06)] transition-colors hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754153]"
+            >
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#f3e3e1] text-[#854b5f]">
+                <PlayCircle aria-hidden="true" className="size-6" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="block text-sm font-bold leading-snug">
+                  {officialProductVideoReviewCount} avaliações em vídeo no catálogo Vonix
+                </strong>
+                <span className="mt-1 block text-xs leading-snug text-[#795e69]">
+                  Experiências de clientes com produtos — não são depoimentos de afiliadas.
+                </span>
+              </span>
+              <ArrowUpRight
+                aria-hidden="true"
+                className="size-5 shrink-0 text-[#854b5f] transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+              />
+            </a>
+          )}
         </figure>
       </div>
     </section>

@@ -16,13 +16,16 @@ const selectedReviews = ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis"].flat
   ),
 );
 
+export const officialProductVideoReviewCount = selectedReviews.length;
+
 export function AffiliateVerifiedReviewPreview() {
   return (
     <section
+      id="avaliacoes-rapidas"
       aria-labelledby="product-review-preview-title"
       aria-describedby="product-review-preview-disclaimer"
       data-testid="vonix-c65-review-preview"
-      className="border-y border-[#e5d8d3] bg-[#fbf6f2] px-5 py-5 text-[#493039] sm:py-6"
+      className="scroll-mt-36 border-y border-[#e5d8d3] bg-[#fbf6f2] px-5 py-4 text-[#493039] sm:py-5"
     >
       <div className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-8">
         <div className="flex flex-col gap-1 lg:col-start-1 lg:row-start-1">
@@ -108,6 +111,14 @@ export function AffiliateVerifiedReviewPreview() {
           >
             Ver produto na loja
             <ArrowUpRight aria-hidden="true" className="size-3.5" />
+          </a>
+          <a
+            href="#inscricao"
+            data-testid="vonix-c78-proof-signup-link"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#713f51] px-4 text-xs font-bold text-white hover:bg-[#5f3446] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754153]"
+          >
+            Ver candidatura
+            <ArrowUpRight aria-hidden="true" className="size-4" />
           </a>
         </div>
       </div>

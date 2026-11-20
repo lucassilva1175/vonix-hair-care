@@ -109,7 +109,7 @@ export function AffiliateShell({
                 Como funciona
               </a>
               <a
-                href="#avaliacoes-produtos"
+                href="#avaliacoes-rapidas"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
               >
                 Avaliações
@@ -164,7 +164,7 @@ export function AffiliateShell({
               Como funciona
             </a>
             <a
-              href="#avaliacoes-produtos"
+              href="#avaliacoes-rapidas"
               className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
             >
               Avaliações
