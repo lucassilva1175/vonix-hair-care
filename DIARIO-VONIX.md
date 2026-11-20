@@ -229,3 +229,9 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Meta: campanha Power ativa, 0 compras, gasto acumulado maior que ontem; orçamento aparece como R$ 250/dia (acima do teto de R$ 100): aguardando confirmação do dono. Nada alterado.
 - Pix 5% (16/11) reduz a margem de venda por anúncio; decisão pendente do dono.
 - Como desfazer: nada alterado além deste diário.
+
+## 20/11/2026 — dono do resultado (só diagnóstico, sem mudança no site)
+- Clarity 3 dias: 269 sessões (47 bots excluídos); produto 196, add_to_cart 29 (o passo "carrinho" do funil só mede a página /carrinho e subestima: o botão abre a gaveta), checkout aberto 13, 4 sessões convertidas (2,0%, acima do benchmark de 1,3%). Origem: Instagram/Facebook ~100 sessões; LCP 2,9 s, INP 360 ms.
+- Gargalo: anúncio → produto. Nas gravações do celular, a maioria das visitas pagas ao Botox Vonix (Facebook/Instagram/WhatsApp Status) fica 1 página, 0 cliques. Imagem principal do Botox já é leve (28 KB), então não é peso de foto. Sem prova de causa nas gravações, nenhuma mudança publicada.
+- Próxima hipótese: reduzir o que vem antes do preço no celular (compartilhar/benefício) e medir rolagem; conferir mapa de rolagem do /produto/botox-vonix. Meta não aberta (ordem do dono).
+- Como desfazer: nada alterado além deste diário.
