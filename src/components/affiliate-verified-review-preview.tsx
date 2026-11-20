@@ -1,4 +1,5 @@
-import { ArrowUpRight, PlayCircle } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, PlayCircle } from "lucide-react";
 import reviews from "@/data/reviews.json";
 
 /**
@@ -19,6 +20,51 @@ const selectedReviews = ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis"].flat
 export const officialProductVideoReviewCount = selectedReviews.length;
 
 export function AffiliateVerifiedReviewPreview() {
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(true);
+
+  const updateScrollControls = useCallback(() => {
+    const rail = carouselRef.current;
+    if (!rail) return;
+    const overflow = rail.scrollWidth > rail.clientWidth + 2;
+    setCanScrollBack(overflow && rail.scrollLeft > 3);
+    setCanScrollNext(overflow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 3);
+  }, []);
+
+  useEffect(() => {
+    const rail = carouselRef.current;
+    if (!rail) return;
+    updateScrollControls();
+    // The three cards can receive their responsive widths after hydration.
+    // Observe the cards as well as the rail: its own width may not change
+    // even when the children's combined scroll width does.
+    const frame = window.requestAnimationFrame(updateScrollControls);
+    window.addEventListener("resize", updateScrollControls);
+    window.addEventListener("load", updateScrollControls);
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateScrollControls) : null;
+    observer?.observe(rail);
+    rail.querySelectorAll('[data-testid="vonix-c72-review-card"]').forEach((card) => {
+      observer?.observe(card);
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener("resize", updateScrollControls);
+      window.removeEventListener("load", updateScrollControls);
+    };
+  }, [updateScrollControls]);
+
+  function moveReviews(direction: -1 | 1) {
+    const rail = carouselRef.current;
+    if (!rail) return;
+    const firstCard = rail.querySelector<HTMLElement>('[data-testid="vonix-c72-review-card"]');
+    const distance = (firstCard?.getBoundingClientRect().width ?? rail.clientWidth * 0.8) + 12;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    rail.scrollBy({ left: direction * distance, behavior: reduceMotion ? "instant" : "smooth" });
+  }
+
   return (
     <section
       id="avaliacoes-rapidas"
@@ -48,6 +94,39 @@ export function AffiliateVerifiedReviewPreview() {
         </div>
 
         <div
+          data-testid="vonix-c82-review-controls"
+          className="mt-3 flex items-center justify-between gap-3 md:hidden"
+        >
+          <p className="min-w-0 text-xs font-semibold leading-relaxed text-[#795767]">
+            {officialProductVideoReviewCount} avaliações reais de produto. Deslize ou use as setas.
+          </p>
+          <div className="flex shrink-0 gap-2" role="group" aria-label="Navegar pelas avaliações">
+            <button
+              type="button"
+              data-testid="vonix-c82-review-back"
+              aria-label="Ver avaliações anteriores"
+              disabled={!canScrollBack}
+              onClick={() => moveReviews(-1)}
+              className="grid size-11 place-items-center rounded-full border border-[#b48e9b] bg-white text-[#673c4d] transition-colors hover:bg-[#f5e4e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <ArrowLeft aria-hidden="true" className="size-5" />
+            </button>
+            <button
+              type="button"
+              data-testid="vonix-c82-review-next"
+              aria-label="Ver próximas avaliações"
+              disabled={!canScrollNext}
+              onClick={() => moveReviews(1)}
+              className="grid size-11 place-items-center rounded-full border border-[#b48e9b] bg-white text-[#673c4d] transition-colors hover:bg-[#f5e4e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <ArrowRight aria-hidden="true" className="size-5" />
+            </button>
+          </div>
+        </div>
+
+        <div
+          ref={carouselRef}
+          onScroll={updateScrollControls}
           role="region"
           tabIndex={0}
           aria-label="Três avaliações de clientes sobre Botox Vonix, deslize horizontalmente no celular"
