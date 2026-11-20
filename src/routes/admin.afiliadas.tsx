@@ -18,6 +18,7 @@ import {
   type AffiliateRejectionReason,
 } from "@/lib/affiliate-rejection";
 import { AffiliateOwnerActivationPanel } from "@/components/affiliate-owner-activation-panel";
+import { AffiliateManualRegistration } from "@/components/affiliate-manual-registration";
 import { affiliateWhatsAppContactUrl } from "@/lib/affiliate-whatsapp-contact";
 import {
   getAffiliateAdminSession,
@@ -946,6 +947,7 @@ export function AffiliateAdminPage() {
         ) : (
           <>
             <AffiliateOwnerActivationPanel />
+            <AffiliateManualRegistration onCreated={() => void load("pendente", 0, "")} />
             <section
               aria-label="Preparação do programa"
               className="mb-6 rounded-[1.5rem] border border-[#e8dcd8] bg-white p-5 sm:p-6"

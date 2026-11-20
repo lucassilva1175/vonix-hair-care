@@ -260,31 +260,55 @@ export function AffiliateLandingOffer({
                 big: "8%",
                 title: "Comissão de 8% em cada venda",
                 text: "Sobre vendas confirmadas e pagas. A comissão depende de aprovação e das condições aplicáveis à parceria.",
+                image: "/images/products/botox-vonix.webp",
               },
               {
                 big: "+ R$ 500",
                 title: "Bônus a cada R$ 10 mil vendidos",
                 text: "Bônus anunciado de R$ 500 por cada R$ 10.000 vendidos, condicionado às regras de elegibilidade. Não é garantido pela candidatura.",
+                image: "/images/products/kit-banana-e-mel.webp",
               },
               {
                 big: "Supervisora",
                 title: "Cresça para supervisora",
                 text: "Possibilidade de se tornar supervisora conforme metas e avaliação da equipe. A condição anunciada inclui, em média, 4% sobre o valor bruto vendido pela equipe, além das próprias comissões. Não há promoção automática.",
+                image: "/images/products/kit-cronograma-capilar.webp",
               },
-            ].map(({ big, title, text }) => (
+            ].map(({ big, title, text, image }) => (
               <article
                 key={title}
-                className="min-w-0 rounded-lg border border-border bg-background p-6 shadow-sm"
+                data-testid="vonix-c77-benefit-editorial"
+                className="min-w-0 overflow-hidden rounded-[1.4rem] border border-[#e8d5d4] bg-[#fffaf7] p-5 shadow-[0_9px_28px_rgba(75,42,53,.05)] sm:p-6"
               >
-                <p className="font-display text-3xl text-primary sm:text-4xl">{big}</p>
-                <h3 className="mt-5 font-display text-2xl text-foreground">{title}</h3>
-                <p className="mt-3 text-sm leading-[1.75] text-muted-foreground">{text}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="min-w-0 pt-1 font-display text-3xl leading-tight text-[#783c53] sm:text-4xl">
+                    {big}
+                  </p>
+                  <span className="flex size-[5.5rem] shrink-0 items-center justify-center rounded-2xl border border-[#f0e0dc] bg-[#f9ebe8]">
+                    <img
+                      src={image}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      decoding="async"
+                      width={96}
+                      height={96}
+                      className="size-full object-contain p-1.5"
+                    />
+                  </span>
+                </div>
+                <h3 className="mt-3 font-display text-xl leading-snug text-[#462f39] sm:text-2xl">
+                  {title}
+                </h3>
+                <p className="mt-3 text-sm leading-[1.75] text-[#6e5660]">{text}</p>
               </article>
             ))}
           </div>
           <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
             Valores sobre vendas confirmadas e pagas. As metas da supervisora são combinadas pela
-            equipe com cada afiliada aprovada. Bônus e supervisão dependem de elegibilidade.
+            equipe com cada afiliada aprovada. Bônus e supervisão dependem de elegibilidade. Fotos
+            ilustrativas de produtos oficiais Vonix: não representam ganhos ou depoimentos de
+            afiliadas.
           </p>
           <details
             data-testid="vonix-c69-optional-simulator"

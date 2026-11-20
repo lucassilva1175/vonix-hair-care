@@ -16,7 +16,10 @@ import { affiliateDecisionEmail } from "./affiliate-email";
 import { affiliateRejectionReasonSchema } from "./affiliate-rejection";
 import {
   affiliateSimpleSchema,
+  affiliateSimpleBaseSchema,
+  affiliateManualSchema,
   simpleAffiliateSocialUrls,
+  type AffiliateManualInput,
   type AffiliateSimpleInput,
 } from "./affiliate-simple";
 import { affiliateTrustedIpHeaderValid } from "./affiliate-throttle.server";
@@ -293,6 +296,77 @@ export async function createSimpleAffiliateApplication(raw: AffiliateSimpleInput
   }
   if (!response.ok)
     throw new Error("Não foi possível armazenar candidatura: HTTP " + response.status);
+  return { ok: true as const, trackingCode };
+}
+
+/** Protected staff intake: no Auth user, OTP, invitation or mail is sent.
+ * A candidate enters moderation as "pendente"; approval stays a separate action.
+ * A missing email is explicitly represented by SQL NULL, not a fake address. */
+export async function createManualAffiliateApplication(raw: AffiliateManualInput) {
+  const { candidate } = affiliateManualSchema.parse(raw);
+  const completeCandidate = affiliateSimpleBaseSchema.parse({ ...candidate, website: "" });
+  const socials = simpleAffiliateSocialUrls(completeCandidate);
+  const trackingCode = randomBytes(24).toString("base64url");
+  const statusTokenHash = createHash("sha256").update(trackingCode).digest("hex");
+  const record = {
+    status_token_hash: statusTokenHash,
+    full_name: candidate.fullName,
+    email: candidate.email || null,
+    city: candidate.city,
+    state: candidate.state,
+    instagram_url: normalizedProfile(socials.instagram_url),
+    tiktok_url: socials.tiktok_url ? normalizedProfile(socials.tiktok_url) : null,
+    questionnaire_encrypted: encryptSimpleAffiliateApplication({
+      ...candidate,
+      trackingCode,
+      website: "",
+    }),
+    consent_at: new Date().toISOString(),
+  };
+  const response = await requestSupabase("vonix_affiliate_applications", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(record),
+  });
+  if (response.status === 409) {
+    let constraint = "";
+    try {
+      const error: unknown = await response.json();
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505" &&
+        "message" in error &&
+        typeof error.message === "string"
+      ) {
+        for (const key of [
+          "vonix_affiliate_applications_email_key",
+          "vonix_affiliate_instagram_active_unique",
+          "vonix_affiliate_tiktok_active_unique",
+        ]) {
+          if (error.message.includes('"' + key + '"')) constraint = key;
+        }
+      }
+    } catch {
+      // Fail closed: never expose PostgREST's raw error or applicant details.
+    }
+    const reason =
+      constraint === "vonix_affiliate_applications_email_key"
+        ? "Já existe uma inscrição com este e-mail, mesmo que antiga. Pesquise no painel; para contato só por telefone, deixe o e-mail vazio."
+        : constraint === "vonix_affiliate_instagram_active_unique"
+          ? "Este Instagram já tem uma candidatura pendente ou aprovada. Procure o perfil no painel antes de registrar outra."
+          : constraint === "vonix_affiliate_tiktok_active_unique"
+            ? "Este TikTok já está vinculado a uma candidatura ativa. Confira no painel."
+            : "Possível cadastro duplicado. Confira e-mail e redes sociais na busca do painel.";
+    return { ok: false as const, reason };
+  }
+  if (!response.ok) {
+    return {
+      ok: false as const,
+      reason: "Não foi possível salvar o cadastro. Verifique a conexão com o banco dedicado.",
+    };
+  }
   return { ok: true as const, trackingCode };
 }
 

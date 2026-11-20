@@ -104,6 +104,25 @@ export const affiliateSimpleSchema = affiliateSimpleBaseSchema.superRefine((valu
   }
 });
 
+/** Admin-only, explicitly confirmed manual intake. The public form still requires
+ * an email; staff can record a phone-only applicant when no usable address exists. */
+export const affiliateManualSchema = z
+  .object({
+    candidate: affiliateSimpleBaseSchema.omit({ website: true, trackingCode: true }),
+    consentConfirmed: z.literal(true),
+  })
+  .strict()
+  .superRefine(({ candidate }, ctx) => {
+    if (!candidate.tiktok && candidate.tiktokFollowers !== null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["candidate", "tiktokFollowers"],
+        message: "Informe o TikTok ou retire a contagem de seguidores.",
+      });
+    }
+  });
+
+export type AffiliateManualInput = z.infer<typeof affiliateManualSchema>;
 export type AffiliateSimpleInput = z.infer<typeof affiliateSimpleSchema>;
 export type AffiliateSimpleDraft = z.input<typeof affiliateSimpleSchema>;
 
