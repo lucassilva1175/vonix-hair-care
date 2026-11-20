@@ -352,6 +352,30 @@ export function AffiliateSimpleForm({
   const formSeen = useRef(false);
   const formStarted = useRef(false);
   const dirty = Object.values(values).some(Boolean) || accepted || !!trap;
+  // Counts only whether required groups contain values; this is NOT
+  // validation, a submitted application or a conversion event.
+  // Applicant values never enter analytics, DOM attributes or persisted state.
+  const completionGroups = [
+    {
+      label: "Contato",
+      filled: (["fullName", "email", "phone"] as const).every(
+        (key) => values[key].trim().length > 0,
+      ),
+    },
+    {
+      label: "Endereço",
+      filled: (["postalCode", "street", "number", "district", "city", "state"] as const).every(
+        (key) => values[key].trim().length > 0,
+      ),
+    },
+    {
+      label: "Instagram",
+      filled: (["instagram", "instagramFollowers"] as const).every(
+        (key) => values[key].trim().length > 0,
+      ),
+    },
+  ];
+  const filledGroups = completionGroups.filter(({ filled }) => filled).length;
 
   // Count actual visible form exposure, not an offscreen render.
   // Never emit a stage for the non-submitting preview or a confirmed receipt.
@@ -749,6 +773,45 @@ export function AffiliateSimpleForm({
         </span>
         <h3 className="mt-3 font-display text-3xl text-[#482b37]">É simples participar.</h3>
         <p className={help}>Preencha seus dados e perfis sociais em um único formulário.</p>
+        <div
+          data-testid="affiliate-c70-form-progress"
+          className="mt-5 rounded-xl border border-[#e7d7d5] bg-white/85 p-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-[#65414b]">
+            <span>Seu preenchimento</span>
+            <span aria-live="polite" data-testid="affiliate-c70-progress-count">
+              {filledGroups} de 3 grupos informados
+            </span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label="Progresso de preenchimento dos campos obrigatórios"
+            aria-valuemin={0}
+            aria-valuemax={3}
+            aria-valuenow={filledGroups}
+            className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0dfe1]"
+          >
+            <div
+              className="h-full rounded-full bg-[#784452] transition-[width] duration-200 motion-reduce:transition-none"
+              style={{ width: (filledGroups / 3) * 100 + "%" }}
+            />
+          </div>
+          <ul className="mt-3 grid grid-cols-3 gap-2" aria-label="Etapas de preenchimento">
+            {completionGroups.map(({ label, filled }) => (
+              <li
+                key={label}
+                className="min-w-0 rounded-lg bg-[#faf2ef] px-2 py-2 text-center text-[11px] leading-snug text-[#65414b]"
+              >
+                <span className="block font-semibold">{label}</span>
+                <span className="block">{filled ? "Informado" : "Pendente"}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] leading-relaxed text-[#7c6269]">
+            Indica campos preenchidos, não validação. O aceite de privacidade é separado e
+            necessário para enviar.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-9 px-6 py-8 sm:px-10 sm:py-10">
