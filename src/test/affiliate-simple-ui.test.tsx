@@ -13,6 +13,12 @@ vi.mock("@/lib/affiliate-functions", () => ({
 }));
 import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
 
+/** Only a saved application with an accepted receipt may count as Meta Lead.
+ * C68 anonymous view/start events do not change this confirmation contract.
+ */
+const confirmedSignUpCalls = () =>
+  analytics.track.mock.calls.filter(([name]) => name === "sign_up");
+
 beforeEach(() => {
   vi.resetAllMocks();
   server.submit.mockImplementation(async (args: { data: { trackingCode?: string } }) => ({
@@ -146,9 +152,14 @@ describe("Vonix short single-page application form", () => {
       }),
     });
     expect(await screen.findByRole("status")).toHaveTextContent("Inscrição recebida!");
-    expect(analytics.track).toHaveBeenCalledExactlyOnceWith("sign_up", {
-      method: "affiliate_application",
-    });
+    expect(confirmedSignUpCalls()).toEqual([
+      [
+        "sign_up",
+        {
+          method: "affiliate_application",
+        },
+      ],
+    ]);
   });
 
   it("keeps a confirmed private tracking code masked until explicitly revealed", async () => {
@@ -429,9 +440,14 @@ describe("Vonix short single-page application form", () => {
       }),
     });
     expect(await screen.findByRole("status")).toHaveTextContent("Inscrição recebida!");
-    expect(analytics.track).toHaveBeenCalledExactlyOnceWith("sign_up", {
-      method: "affiliate_application",
-    });
+    expect(confirmedSignUpCalls()).toEqual([
+      [
+        "sign_up",
+        {
+          method: "affiliate_application",
+        },
+      ],
+    ]);
   });
 
   it("never confirms a honeypot/non-persisted acknowledgement as a Meta Lead", async () => {
@@ -443,7 +459,7 @@ describe("Vonix short single-page application form", () => {
       "Não foi possível confirmar o recebimento",
     );
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
   });
 
   it("rejects an invalid-length receipt without sending conversion events", async () => {
@@ -452,7 +468,7 @@ describe("Vonix short single-page application form", () => {
     fill();
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível confirmar");
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
   });
 
@@ -484,7 +500,7 @@ describe("Vonix short single-page application form", () => {
     expect(pendingCode).toMatch(/^[A-Za-z0-9_-]{32}$/);
     expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(pendingCode);
     expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível confirmar o envio");
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     const confirmed = await screen.findByLabelText("Código privado de acompanhamento");
     expect(confirmed).toHaveValue(pendingCode);
@@ -492,9 +508,14 @@ describe("Vonix short single-page application form", () => {
     expect(server.submit.mock.calls[0]![0].data.trackingCode).toBe(pendingCode);
     expect(server.submit.mock.calls[1]![0].data.trackingCode).toBe(pendingCode);
     expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
-    expect(analytics.track).toHaveBeenCalledExactlyOnceWith("sign_up", {
-      method: "affiliate_application",
-    });
+    expect(confirmedSignUpCalls()).toEqual([
+      [
+        "sign_up",
+        {
+          method: "affiliate_application",
+        },
+      ],
+    ]);
   });
 
   it("recovers a pending code after browser reload without claiming any enrollment was accepted", async () => {
@@ -529,7 +550,7 @@ describe("Vonix short single-page application form", () => {
     expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(codeBefore);
     expect(link.getAttribute("href")).not.toContain(codeBefore);
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
   });
 
   it("does not report a Meta Lead if the server returns another private code", async () => {
@@ -542,7 +563,7 @@ describe("Vonix short single-page application form", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível confirmar o recebimento");
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
     fireEvent.click(
       screen.getByRole("button", { name: "Descartar código e iniciar nova tentativa" }),
     );
@@ -558,7 +579,7 @@ describe("Vonix short single-page application form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Simular envio" }));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("apenas uma prévia"));
     expect(server.submit).not.toHaveBeenCalled();
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
   });
 
   it("never reports a lead when the server rejects a candidature", async () => {
@@ -567,7 +588,7 @@ describe("Vonix short single-page application form", () => {
     fill();
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Inscrições indisponíveis.");
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
   });
 
   it("rejects a missing address number before any request", () => {
@@ -576,7 +597,7 @@ describe("Vonix short single-page application form", () => {
     fireEvent.change(screen.getByLabelText(/Número/), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     expect(server.submit).not.toHaveBeenCalled();
-    expect(analytics.track).not.toHaveBeenCalled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
   });
 
   it("accepts shared official Instagram and TikTok profile links with tracking query parameters", async () => {
@@ -806,7 +827,7 @@ it("does not abandon an unconfirmed private receipt if browser storage refuses t
   expect(field).toHaveValue(code);
   expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
   expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
-  expect(analytics.track).not.toHaveBeenCalled();
+  expect(confirmedSignUpCalls()).toHaveLength(0);
 });
 
 it("stops navigation when storage silently drops an unconfirmed receipt", async () => {
@@ -825,7 +846,7 @@ it("stops navigation when storage silently drops an unconfirmed receipt", async 
   );
   expect(await screen.findByText(/Copie e guarde o código da tentativa/)).toBeInTheDocument();
   expect(code).toHaveValue((code as HTMLInputElement).value);
-  expect(analytics.track).not.toHaveBeenCalled();
+  expect(confirmedSignUpCalls()).toHaveLength(0);
 });
 
 it("offers a download of a confirmed code without sending another application or Meta Lead", async () => {
@@ -840,7 +861,7 @@ it("offers a download of a confirmed code without sending another application or
   expect(receipts.download).toHaveBeenCalledExactlyOnceWith(code, true);
   expect(screen.getByText(/Download solicitado/)).toBeInTheDocument();
   expect(server.submit).toHaveBeenCalledOnce();
-  expect(analytics.track).toHaveBeenCalledOnce();
+  expect(confirmedSignUpCalls()).toHaveLength(1);
 });
 
 it("allows local backup for an unconfirmed attempt without falsely claiming enrollment", async () => {
@@ -856,7 +877,7 @@ it("allows local backup for an unconfirmed attempt without falsely claiming enro
   expect(receipts.download).toHaveBeenCalledExactlyOnceWith(code, false);
   expect(screen.getByText(/Download solicitado/)).toBeInTheDocument();
   expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
-  expect(analytics.track).not.toHaveBeenCalled();
+  expect(confirmedSignUpCalls()).toHaveLength(0);
   expect(server.submit).toHaveBeenCalledOnce();
 });
 
@@ -886,7 +907,7 @@ it("blocks reusing an older private code with edited candidate details after an 
   expect(server.submit).toHaveBeenCalledOnce();
   expect(first).toHaveValue(code);
   expect(screen.getByRole("alert")).toHaveTextContent("dados foram alterados");
-  expect(analytics.track).not.toHaveBeenCalled();
+  expect(confirmedSignUpCalls()).toHaveLength(0);
 });
 
 it("requires an explicit decision before a recovered code can be reused after a reload", async () => {
@@ -910,5 +931,5 @@ it("requires an explicit decision before a recovered code can be reused after a 
   const newCode = server.submit.mock.calls[0]![0].data.trackingCode;
   expect(newCode).toMatch(/^[A-Za-z0-9_-]{32}$/);
   expect(newCode).not.toBe(old);
-  expect(analytics.track).toHaveBeenCalledOnce();
+  expect(confirmedSignUpCalls()).toHaveLength(1);
 });

@@ -66,7 +66,7 @@ export function AffiliateNextSteps({ recruitmentOpen }: { recruitmentOpen: boole
       id="depois-da-inscricao"
       aria-labelledby="vonix-next-steps-title"
       data-testid="affiliate-c55-next-steps"
-      className="scroll-mt-24 border-y border-border bg-secondary/30 px-5 py-20 sm:py-24"
+      className="scroll-mt-24 border-y border-border bg-secondary/30 px-5 py-12 sm:py-14"
     >
       <div className="mx-auto max-w-7xl">
         <div className="grid items-end gap-6 lg:grid-cols-[1.1fr_.9fr]">
@@ -77,30 +77,34 @@ export function AffiliateNextSteps({ recruitmentOpen }: { recruitmentOpen: boole
             </p>
             <h2
               id="vonix-next-steps-title"
-              className="mt-5 max-w-3xl font-display text-4xl leading-tight text-foreground sm:text-5xl"
+              className="mt-3 max-w-3xl font-display text-3xl leading-tight text-foreground sm:text-4xl"
             >
               Sua candidatura tem{" "}
               <span className="italic text-primary">próximos passos claros.</span>
             </h2>
           </div>
           <p className="max-w-lg text-sm leading-[1.85] text-muted-foreground sm:text-base">
-            Antes de se inscrever, saiba como acompanhar o processo. A candidatura é gratuita, mas a
-            equipe avalia cada inscrição e não há garantia de aprovação.
+            Depois de um envio confirmado, acompanhe a candidatura com seu código. A inscrição é
+            gratuita, a análise é individual e não há prazo ou aprovação garantidos.
           </p>
         </div>
 
-        <ol className="mt-10 grid gap-4 md:grid-cols-3">
+        <ol className="mt-6 grid gap-3 md:grid-cols-3">
           {stages.map(({ number, title, description, Icon }) => (
             <li
               key={number}
-              className="flex min-w-0 flex-col rounded-[1.55rem] border border-border bg-card p-6 shadow-[0_12px_35px_rgba(72,36,50,.05)] sm:p-8"
+              className="flex min-w-0 flex-col rounded-[1.25rem] border border-border bg-card p-4 shadow-[0_12px_35px_rgba(72,36,50,.05)] sm:p-6"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-display text-3xl text-primary">{number}</span>
+                <span className="font-display text-2xl text-primary sm:text-3xl">{number}</span>
                 <Icon aria-hidden="true" className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="mt-7 font-display text-2xl leading-tight text-foreground">{title}</h3>
-              <p className="mt-4 text-sm leading-[1.85] text-muted-foreground">{description}</p>
+              <h3 className="mt-2 font-display text-xl leading-tight text-foreground sm:mt-4">
+                {title}
+              </h3>
+              <p className="mt-1.5 text-sm leading-[1.65] text-muted-foreground sm:mt-2">
+                {description}
+              </p>
             </li>
           ))}
         </ol>
@@ -125,7 +129,7 @@ export function AffiliateNextSteps({ recruitmentOpen }: { recruitmentOpen: boole
           </a>
         </div>
 
-        <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border pt-7 sm:flex-row sm:items-center">
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-border pt-5 sm:flex-row sm:items-center">
           <div className="max-w-xl">
             <p className="text-sm font-semibold text-foreground">
               Conhece alguém que também gostaria de participar?

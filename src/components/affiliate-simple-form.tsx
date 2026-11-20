@@ -3,6 +3,7 @@ import { CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "lucide-react
 import { affiliateSimpleSchema } from "@/lib/affiliate-simple";
 import { downloadAffiliatePrivateReceipt } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
+import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 import { submitSimpleAffiliateApplication } from "@/lib/affiliate-functions";
 import { WIZARD_BRAZIL_STATES, onlyDigits } from "@/lib/affiliate-wizard";
 
@@ -347,7 +348,36 @@ export function AffiliateSimpleForm({
     {},
   );
   const submitting = useRef(false);
+  const formElement = useRef<HTMLFormElement | null>(null);
+  const formSeen = useRef(false);
+  const formStarted = useRef(false);
   const dirty = Object.values(values).some(Boolean) || accepted || !!trap;
+
+  // Count actual visible form exposure, not an offscreen render.
+  // Never emit a stage for the non-submitting preview or a confirmed receipt.
+  useEffect(() => {
+    if (
+      preview ||
+      sent ||
+      formSeen.current ||
+      !formElement.current ||
+      typeof IntersectionObserver === "undefined"
+    )
+      return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (formSeen.current || document.visibilityState !== "visible") return;
+        if (entries.some((entry) => entry.isIntersecting)) {
+          formSeen.current = true;
+          trackAffiliateFunnel("affiliate_form_visible");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(formElement.current);
+    return () => observer.disconnect();
+  }, [preview, sent]);
 
   // Address data returned by a third-party CEP provider must not silently
   // update a private application draft while the page is backgrounded.
@@ -379,6 +409,11 @@ export function AffiliateSimpleForm({
   function update(key: Key, raw: string) {
     // Do not let the visible values drift away from an in-flight, signed receipt.
     if (submitting.current) return;
+    // This event contains no field names or values; a preview never counts as a lead.
+    if (!preview && !formStarted.current && raw.trim().length > 0) {
+      formStarted.current = true;
+      trackAffiliateFunnel("affiliate_form_started");
+    }
     const value =
       key === "postalCode"
         ? onlyDigits(raw)
@@ -703,6 +738,7 @@ export function AffiliateSimpleForm({
 
   return (
     <form
+      ref={formElement}
       aria-busy={sending}
       onSubmit={(e) => void submit(e)}
       className="overflow-hidden rounded-[2rem] border border-[#eadbd6] bg-white shadow-[0_15px_70px_rgba(80,32,39,.08)]"
