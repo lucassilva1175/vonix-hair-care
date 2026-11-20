@@ -25,7 +25,7 @@ vi.mock("@/components/affiliate-simple-form", () => ({
         aria-label="Rascunho C71"
         onChange={(e) => onDraftChange?.(e.target.value.length > 0)}
       />
-      <button type="button" disabled={preview} aria-label="Bot?o de envio sint?tico C71">
+      <button type="button" disabled={preview} aria-label="Botão de envio sintético C71">
         Enviar
       </button>
     </div>
@@ -51,8 +51,8 @@ function pending<T>() {
 const open = { open: true, intakeEnabled: true, rateLimitReady: true };
 const closed = { open: false, intakeEnabled: false, rateLimitReady: false };
 
-describe("C71: consulta de retomada n?o confia em OPEN antigo", () => {
-  it("pausa envio durante GET pendente no foco e restaura apenas ap?s OPEN verificado", async () => {
+describe("C71: consulta de retomada não confia em OPEN antigo", () => {
+  it("pausa envio durante GET pendente no foco e restaura apenas após OPEN verificado", async () => {
     const next = pending<typeof open>();
     server.status.mockResolvedValueOnce(open).mockReturnValueOnce(next.promise);
     render(<AffiliateApplicationPage />);
@@ -63,7 +63,7 @@ describe("C71: consulta de retomada n?o confia em OPEN antigo", () => {
     await act(async () => window.dispatchEvent(new Event("focus")));
     await waitFor(() => expect(server.status).toHaveBeenCalledTimes(2));
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bot?o de envio sint?tico C71" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Botão de envio sintético C71" })).toBeDisabled();
     expect(screen.getByText(/verificando novamente a disponibilidade/i)).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Rascunho C71" })).toHaveValue(
       "Meu perfil privado, sem envio",
@@ -75,7 +75,7 @@ describe("C71: consulta de retomada n?o confia em OPEN antigo", () => {
     );
   });
 
-  it("revalida??o com fechamento confirmado n?o libera o rascunho anterior", async () => {
+  it("revalidação com fechamento confirmado não libera o rascunho anterior", async () => {
     const next = pending<typeof closed>();
     server.status.mockResolvedValueOnce(open).mockReturnValueOnce(next.promise);
     render(<AffiliateApplicationPage />);
@@ -84,10 +84,10 @@ describe("C71: consulta de retomada n?o confia em OPEN antigo", () => {
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();
     await act(async () => next.resolve(closed));
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();
-    expect(screen.getByText(/cadastro n?o recebe candidaturas/i)).toBeInTheDocument();
+    expect(screen.getByText(/cadastro não recebe candidaturas/i)).toBeInTheDocument();
   });
 
-  it("falha de rede ap?s rechecagem mant?m bloqueio e oferece GET retry", async () => {
+  it("falha de rede após rechecagem mantém bloqueio e oferece GET retry", async () => {
     const next = pending<typeof open>();
     server.status
       .mockResolvedValueOnce(open)
@@ -105,7 +105,7 @@ describe("C71: consulta de retomada n?o confia em OPEN antigo", () => {
     expect(await screen.findByText("Envio autorizado C71")).toBeInTheDocument();
   });
 
-  it("GET antigo OPEN n?o anula CLOSED mais recente ap?s dois focos", async () => {
+  it("GET antigo OPEN não anula CLOSED mais recente após dois focos", async () => {
     const earlier = pending<typeof open>();
     const latest = pending<typeof closed>();
     server.status
@@ -118,18 +118,18 @@ describe("C71: consulta de retomada n?o confia em OPEN antigo", () => {
     await act(async () => window.dispatchEvent(new Event("focus")));
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();
     await act(async () => latest.resolve(closed));
-    expect(screen.getByText(/cadastro n?o recebe candidaturas/i)).toBeInTheDocument();
+    expect(screen.getByText(/cadastro não recebe candidaturas/i)).toBeInTheDocument();
     await act(async () => earlier.resolve(open));
     expect(screen.queryByText("Envio autorizado C71")).not.toBeInTheDocument();
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();
   });
 
-  it("uma pr?via iniciada fechada n?o passa a ser envi?vel durante a rechecagem", async () => {
+  it("uma prévia iniciada fechada não passa a ser enviável durante a rechecagem", async () => {
     const next = pending<typeof open>();
     server.status.mockResolvedValueOnce(closed).mockReturnValueOnce(next.promise);
     render(<AffiliateApplicationPage />);
-    await screen.findByText("Inscri??es em prepara??o");
-    fireEvent.click(screen.getByRole("button", { name: /visualizar formul?rio/i }));
+    await screen.findByText("Inscrições em preparação");
+    fireEvent.click(screen.getByRole("button", { name: /visualizar formulário/i }));
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();
     await act(async () => window.dispatchEvent(new Event("focus")));
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();

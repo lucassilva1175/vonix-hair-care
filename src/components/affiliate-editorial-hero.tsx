@@ -18,15 +18,15 @@ const products = [
     background: "bg-[#f3e1d5]",
   },
   {
-    name: "M?scara Nutri Repair",
-    caption: "Nutri??o dos fios",
+    name: "Máscara Nutri Repair",
+    caption: "Nutrição dos fios",
     slug: "mascara-reparacao-nutri-repair",
     href: "/produto/mascara-reparacao-nutri-repair",
     background: "bg-[#f1e5e8]",
   },
   {
     name: "Botox Vonix",
-    caption: "Cat?logo profissional",
+    caption: "Catálogo profissional",
     slug: "botox-vonix",
     href: "/produto/botox-vonix",
     background: "bg-[#ece3df]",
@@ -48,7 +48,7 @@ function CatalogCard({
         "group flex w-[68vw] max-w-[17.5rem] shrink-0 snap-start min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e2d4d1] bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6f3b4d] lg:w-auto lg:max-w-none lg:shrink " +
         (featured ? "lg:row-span-2" : "")
       }
-      aria-label={item.name + " ? conferir produto no cat?logo oficial"}
+      aria-label={item.name + " — conferir produto no catálogo oficial"}
     >
       <picture
         className={
@@ -105,21 +105,21 @@ export function AffiliateEditorialHero({
         <div className="min-w-0 lg:py-5">
           <p className="inline-flex items-center gap-2 text-xs font-semibold text-[#7b4355]">
             <Sparkles aria-hidden="true" className="size-4" />
-            Inscri??o gratuita ? sele??o individual
+            Inscrição gratuita · seleção individual
           </p>
           <p className="mt-6 text-sm font-semibold text-[#764254]">
-            Vonix Hair ? Programa de afiliadas
+            Vonix Hair · Programa de afiliadas
           </p>
           <h1
             id="vonix-affiliate-title"
             className="mt-3 max-w-2xl font-display text-[clamp(2.55rem,4.2vw,4.35rem)] leading-[1.11] tracking-tight text-[#412936]"
           >
             Seu jeito de <span className="italic text-[#87465c]">criar.</span>
-            <span className="mt-1 block">Nossa paix?o por cabelos.</span>
+            <span className="mt-1 block">Nossa paixão por cabelos.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-[1.75] text-[#5e4650] sm:text-lg">
-            Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil ?
-            Vonix Hair e descubra como funciona a sele??o para uma poss?vel parceria.
+            Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil à
+            Vonix Hair e descubra como funciona a seleção para uma possível parceria.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button
@@ -127,13 +127,13 @@ export function AffiliateEditorialHero({
               className="h-auto min-h-12 whitespace-normal rounded-lg px-6 py-3 text-sm"
             >
               <a href="#inscricao">
-                {isOpen ? "Quero ser afiliada Vonix" : "Conhecer a inscri??o"}
+                {isOpen ? "Quero ser afiliada Vonix" : "Conhecer a inscrição"}
                 <ArrowUpRight aria-hidden="true" className="size-4" />
               </a>
             </Button>
             <Button asChild variant="link" className="h-auto min-h-11 whitespace-normal">
               <a href="#ganhos">
-                Conhecer as condi??es
+                Conhecer as condições
                 <ArrowDownRight aria-hidden="true" className="size-4" />
               </a>
             </Button>
@@ -141,9 +141,9 @@ export function AffiliateEditorialHero({
           </div>
           <ul
             className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-[#553d47]"
-            aria-label="Informa??es da candidatura"
+            aria-label="Informações da candidatura"
           >
-            {["8% sobre vendas ap?s aprova??o", "Sem estoque pr?prio", "Inscri??o gratuita"].map(
+            {["8% sobre vendas após aprovação", "Sem estoque próprio", "Inscrição gratuita"].map(
               (statement) => (
                 <li key={statement} className="inline-flex items-start gap-2">
                   <Check aria-hidden="true" className="mt-px size-4 shrink-0 text-[#7f4256]" />
@@ -168,17 +168,17 @@ export function AffiliateEditorialHero({
               }
             />
             {isOpen
-              ? "Candidaturas abertas para an?lise"
+              ? "Candidaturas abertas para análise"
               : recruitmentStatus === "loading"
-                ? "Consultando disponibilidade de inscri??o"
+                ? "Consultando disponibilidade de inscrição"
                 : recruitmentStatus === "limited"
-                  ? "Inscri??o temporariamente limitada nesta conex?o"
+                  ? "Inscrição temporariamente limitada nesta conexão"
                   : recruitmentStatus === "unavailable"
-                    ? "N?o foi poss?vel consultar a disponibilidade das inscri??es"
-                    : "Conhe?a o formul?rio enquanto as inscri??es est?o em prepara??o"}
+                    ? "Não foi possível consultar a disponibilidade das inscrições"
+                    : "Conheça o formulário enquanto as inscrições estão em preparação"}
           </div>
           <p className="mt-5 max-w-lg text-xs leading-[1.7] text-[#65515a]">
-            A candidatura n?o garante aprova??o, benef?cios ou v?nculo comercial. N?o exige estoque
+            A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque
             nem compra de produtos para se candidatar.
           </p>
         </div>
@@ -186,29 +186,29 @@ export function AffiliateEditorialHero({
         <figure
           data-testid="affiliate-c61-hero-catalog"
           className="mx-auto w-full max-w-[540px] min-w-0 lg:max-w-none lg:pl-2"
-          aria-label="Vitrine de produtos reais do cat?logo Vonix Hair"
+          aria-label="Vitrine de produtos reais do catálogo Vonix Hair"
         >
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <p className="font-display text-xl text-[#5d3546] sm:text-2xl">
-              Conhe?a o que voc? poderia apresentar
+              Conheça o que você poderia apresentar
             </p>
             <a
               href="/loja"
               className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-[#764355] underline underline-offset-4 focus-visible:outline-2"
             >
-              Ver cat?logo <ArrowUpRight aria-hidden="true" className="size-4" />
+              Ver catálogo <ArrowUpRight aria-hidden="true" className="size-4" />
             </a>
           </div>
           <p
             data-testid="vonix-c73-gallery-swipe-hint"
             className="mb-2 text-xs font-semibold text-[#765260] lg:hidden"
           >
-            Deslize para explorar os produtos <span aria-hidden="true">?</span>
+            Deslize para explorar os produtos <span aria-hidden="true">→</span>
           </p>
           <div
             role="region"
             tabIndex={0}
-            aria-label="Vitrine de tr?s produtos reais Vonix Hair, deslize horizontalmente para explorar no celular"
+            aria-label="Vitrine de três produtos reais Vonix Hair, deslize horizontalmente para explorar no celular"
             data-testid="vonix-c73-hero-products-region"
             className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-[1.03fr_.97fr] lg:grid-rows-2 lg:gap-4 lg:overflow-visible lg:pb-0"
           >
@@ -217,7 +217,7 @@ export function AffiliateEditorialHero({
             <CatalogCard item={products[2]} />
           </div>
           <figcaption className="mt-4 text-xs leading-relaxed text-[#6d5660]">
-            Fotos reais dos produtos ? venda na loja oficial. N?o s?o imagens de afiliadas,
+            Fotos reais dos produtos à venda na loja oficial. Não são imagens de afiliadas,
             campanhas com criadoras ou prova de resultados.
           </figcaption>
         </figure>
