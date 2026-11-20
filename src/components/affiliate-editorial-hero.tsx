@@ -45,8 +45,8 @@ function CatalogCard({
       href={item.href}
       data-testid="affiliate-c61-catalog-link"
       className={
-        "group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e2d4d1] bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6f3b4d] " +
-        (featured ? "row-span-2" : "")
+        "group flex w-[68vw] max-w-[17.5rem] shrink-0 snap-start min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e2d4d1] bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6f3b4d] lg:w-auto lg:max-w-none lg:shrink " +
+        (featured ? "lg:row-span-2" : "")
       }
       aria-label={item.name + " — conferir produto no catálogo oficial"}
     >
@@ -54,7 +54,7 @@ function CatalogCard({
         className={
           "flex min-h-0 flex-1 items-center justify-center " +
           item.background +
-          (featured ? " aspect-[4/5] sm:aspect-auto" : " aspect-[5/4]")
+          (featured ? " aspect-[5/4] lg:aspect-auto" : " aspect-[5/4]")
         }
       >
         <source srcSet={`/images/products/${item.slug}.webp`} type="image/webp" />
@@ -197,7 +197,19 @@ export function AffiliateEditorialHero({
               Ver catálogo <ArrowUpRight aria-hidden="true" className="size-4" />
             </a>
           </div>
-          <div className="grid min-w-0 grid-cols-[1.03fr_.97fr] grid-rows-2 gap-3 sm:gap-4">
+          <p
+            data-testid="vonix-c73-gallery-swipe-hint"
+            className="mb-2 text-xs font-semibold text-[#765260] lg:hidden"
+          >
+            Deslize para explorar os produtos <span aria-hidden="true">→</span>
+          </p>
+          <div
+            role="region"
+            tabIndex={0}
+            aria-label="Vitrine de três produtos reais Vonix Hair, deslize horizontalmente para explorar no celular"
+            data-testid="vonix-c73-hero-products-region"
+            className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-[1.03fr_.97fr] lg:grid-rows-2 lg:gap-4 lg:overflow-visible lg:pb-0"
+          >
             <CatalogCard item={products[0]} featured />
             <CatalogCard item={products[1]} />
             <CatalogCard item={products[2]} />
