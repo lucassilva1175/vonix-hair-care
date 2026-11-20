@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 describe("C65 — compact published product reviews", () => {
-  it.each(["Mariana Andrade", "Ayla Muniz"])(
+  it.each(["Mariana Andrade", "Ayla Muniz", "Fernanda Assis"])(
     "derives %s's quote and poster from public JSON",
     (author) => {
       render(<AffiliateVerifiedReviewPreview />);
@@ -48,10 +48,10 @@ describe("C65 — compact published product reviews", () => {
     },
   );
 
-  it("keeps honest product-only labeling, two quotes, local links and no media playback or submission", () => {
+  it("keeps honest product-only labeling, three quotes, local links and no media playback or submission", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { container } = render(<AffiliateVerifiedReviewPreview />);
-    expect(container.querySelectorAll("blockquote")).toHaveLength(2);
+    expect(container.querySelectorAll("blockquote")).toHaveLength(3);
     expect(screen.getByText(/Não são depoimentos de afiliadas/)).toHaveTextContent(
       "não comprovam compra verificada, vendas, renda ou participação no programa",
     );
