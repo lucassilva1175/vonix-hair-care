@@ -1,4 +1,13 @@
-import { ArrowDownRight, ArrowUpRight, Check, PlayCircle, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowDownRight,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  PlayCircle,
+  Sparkles,
+} from "lucide-react";
 import { officialProductVideoReviewCount } from "@/components/affiliate-verified-review-preview";
 import { Button } from "@/components/ui/button";
 import { AffiliateProgramShare } from "@/components/affiliate-program-share";
@@ -95,6 +104,57 @@ export function AffiliateEditorialHero({
   recruitmentStatus: RecruitmentStatus;
 }) {
   const isOpen = recruitmentStatus === "open";
+  const galleryRef = useRef<HTMLDivElement | null>(null);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [canGoNext, setCanGoNext] = useState(true);
+  const [visibleProduct, setVisibleProduct] = useState(1);
+
+  const updateGallery = useCallback(() => {
+    const gallery = galleryRef.current;
+    if (!gallery) return;
+    const overflow = gallery.scrollWidth > gallery.clientWidth + 2;
+    const maxScroll = Math.max(0, gallery.scrollWidth - gallery.clientWidth);
+    const atEnd = gallery.scrollLeft >= maxScroll - 3;
+    setCanGoBack(overflow && gallery.scrollLeft > 3);
+    setCanGoNext(overflow && !atEnd);
+    const first = gallery.querySelector<HTMLElement>('[data-testid="affiliate-c61-catalog-link"]');
+    const step = (first?.getBoundingClientRect().width ?? gallery.clientWidth * 0.68) + 12;
+    const position =
+      atEnd && overflow
+        ? products.length
+        : Math.min(products.length, 1 + Math.round(gallery.scrollLeft / Math.max(step, 1)));
+    setVisibleProduct(Math.max(1, position));
+  }, []);
+
+  useEffect(() => {
+    const gallery = galleryRef.current;
+    if (!gallery) return;
+    updateGallery();
+    const frame = window.requestAnimationFrame(updateGallery);
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateGallery) : null;
+    observer?.observe(gallery);
+    gallery.querySelectorAll('[data-testid="affiliate-c61-catalog-link"]').forEach((item) => {
+      observer?.observe(item);
+    });
+    window.addEventListener("resize", updateGallery);
+    window.addEventListener("load", updateGallery);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener("resize", updateGallery);
+      window.removeEventListener("load", updateGallery);
+    };
+  }, [updateGallery]);
+
+  function moveGallery(direction: -1 | 1) {
+    const gallery = galleryRef.current;
+    if (!gallery) return;
+    const first = gallery.querySelector<HTMLElement>('[data-testid="affiliate-c61-catalog-link"]');
+    const step = (first?.getBoundingClientRect().width ?? gallery.clientWidth * 0.68) + 12;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    gallery.scrollBy({ left: direction * step, behavior: reduceMotion ? "instant" : "smooth" });
+  }
 
   return (
     <section
@@ -206,13 +266,53 @@ export function AffiliateEditorialHero({
               Ver catálogo <ArrowUpRight aria-hidden="true" className="size-4" />
             </a>
           </div>
-          <p
-            data-testid="vonix-c73-gallery-swipe-hint"
-            className="mb-2 text-xs font-semibold text-[#765260] lg:hidden"
-          >
-            Deslize para explorar os produtos <span aria-hidden="true">→</span>
-          </p>
           <div
+            data-testid="vonix-c83-gallery-toolbar"
+            className="mb-3 flex min-w-0 items-center justify-between gap-3 lg:hidden"
+          >
+            <p
+              data-testid="vonix-c73-gallery-swipe-hint"
+              className="min-w-0 text-xs font-semibold leading-snug text-[#765260] lg:hidden"
+            >
+              Deslize para explorar os produtos <span aria-hidden="true">→</span>
+            </p>
+            <div
+              role="group"
+              aria-label="Navegação dos produtos Vonix Hair"
+              className="flex shrink-0 items-center gap-2"
+            >
+              <span
+                data-testid="vonix-c83-gallery-position"
+                aria-live="polite"
+                className="min-w-9 text-center text-xs font-bold tabular-nums text-[#704455]"
+              >
+                {visibleProduct} / {products.length}
+              </span>
+              <button
+                type="button"
+                data-testid="vonix-c83-gallery-back"
+                aria-label="Ver produtos anteriores"
+                disabled={!canGoBack}
+                onClick={() => moveGallery(-1)}
+                className="grid size-11 place-items-center rounded-full border border-[#cbaeb9] bg-white text-[#6e3e50] transition-colors hover:bg-[#f8e8ec] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <ArrowLeft aria-hidden="true" className="size-5" />
+              </button>
+              <button
+                type="button"
+                data-testid="vonix-c83-gallery-next"
+                aria-label="Ver próximos produtos"
+                disabled={!canGoNext}
+                onClick={() => moveGallery(1)}
+                className="grid size-11 place-items-center rounded-full border border-[#cbaeb9] bg-white text-[#6e3e50] transition-colors hover:bg-[#f8e8ec] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <ArrowRight aria-hidden="true" className="size-5" />
+              </button>
+            </div>
+          </div>
+          <div
+            ref={galleryRef}
+            onScroll={updateGallery}
             role="region"
             tabIndex={0}
             aria-label="Vitrine de três produtos reais Vonix Hair, deslize horizontalmente para explorar no celular"
@@ -225,7 +325,13 @@ export function AffiliateEditorialHero({
           </div>
           <figcaption className="mt-4 text-xs leading-relaxed text-[#6d5660]">
             Fotos reais dos produtos à venda na loja oficial. Não são imagens de afiliadas,
-            campanhas com criadoras ou prova de resultados.
+            campanhas com criadoras ou prova de resultados.{" "}
+            <a
+              href="#conheca-a-vonix"
+              className="font-semibold text-[#764355] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254]"
+            >
+              Conhecer a marca por trás da seleção
+            </a>
           </figcaption>
           {officialProductVideoReviewCount > 0 && (
             <a
