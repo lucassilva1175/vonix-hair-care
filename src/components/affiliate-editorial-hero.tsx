@@ -2,7 +2,7 @@ import { ArrowDownRight, ArrowUpRight, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AffiliateProgramShare } from "@/components/affiliate-program-share";
 
-export type RecruitmentStatus = "loading" | "open" | "limited" | "closed";
+export type RecruitmentStatus = "loading" | "open" | "limited" | "closed" | "unavailable";
 
 /**
  * Product photographs are published by the Vonix Hair store itself.
@@ -173,7 +173,9 @@ export function AffiliateEditorialHero({
                 ? "Consultando disponibilidade de inscrição"
                 : recruitmentStatus === "limited"
                   ? "Inscrição temporariamente limitada nesta conexão"
-                  : "Conheça o formulário enquanto as inscrições estão em preparação"}
+                  : recruitmentStatus === "unavailable"
+                    ? "Não foi possível consultar a disponibilidade das inscrições"
+                    : "Conheça o formulário enquanto as inscrições estão em preparação"}
           </div>
           <p className="mt-5 max-w-lg text-xs leading-[1.7] text-[#65515a]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque

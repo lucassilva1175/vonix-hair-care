@@ -16,7 +16,7 @@ export function AffiliateShell({
 }: {
   children: ReactNode;
   mode?: "landing" | "account";
-  recruitmentStatus?: "loading" | "open" | "limited" | "closed";
+  recruitmentStatus?: "loading" | "open" | "limited" | "closed" | "unavailable";
 }) {
   return (
     <div

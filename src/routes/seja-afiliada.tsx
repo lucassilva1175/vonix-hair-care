@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { AffiliateShell } from "@/components/affiliate-shell";
 import { getAffiliateRecruitmentStatus } from "@/lib/affiliate-functions";
@@ -51,9 +52,13 @@ export const Route = createFileRoute("/seja-afiliada")({
 });
 
 export function AffiliateApplicationPage() {
-  const [recruitment, setRecruitment] = useState<"loading" | "open" | "limited" | "closed">(
-    "loading",
-  );
+  const [recruitment, setRecruitment] = useState<RecruitmentStatus>("loading");
+  const [retryAvailability, setRetryAvailability] = useState(0);
+
+  function verifyAvailabilityAgain() {
+    setRecruitment("loading");
+    setRetryAvailability((attempt) => attempt + 1);
+  }
   const [preview, setPreview] = useState(false);
   const [backendDiagnostics, setBackendDiagnostics] = useState({
     storage: false,
@@ -75,6 +80,17 @@ export function AffiliateApplicationPage() {
     let latestRequest = 0;
     async function refreshStatus() {
       const requestId = ++latestRequest;
+      // Never trust a previously OPEN session while the next GET is pending.
+      // Keep the existing draft mounted, but pause any submission.
+      setRecruitment("loading");
+      setBackendDiagnostics({
+        storage: false,
+        storageDiagnostic: "checking",
+        publicNetworkDiagnostic: "checking",
+        ingress: false,
+        encryption: false,
+        emailConfigured: false,
+      });
       try {
         const {
           open,
@@ -101,8 +117,19 @@ export function AffiliateApplicationPage() {
         );
         if (open) setLiveFormStarted(true);
       } catch {
-        // Never assume availability while a status probe is unavailable.
-        if (active && requestId === latestRequest) setRecruitment("closed");
+        // A failed GET is not proof the program is closed. Fail closed for
+        // submissions, but give applicants an explicit retry action.
+        if (active && requestId === latestRequest) {
+          setBackendDiagnostics({
+            storage: false,
+            storageDiagnostic: "unavailable",
+            publicNetworkDiagnostic: "unavailable",
+            ingress: false,
+            encryption: false,
+            emailConfigured: false,
+          });
+          setRecruitment("unavailable");
+        }
       }
     }
     void refreshStatus();
@@ -121,7 +148,7 @@ export function AffiliateApplicationPage() {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, []);
+  }, [retryAvailability]);
 
   const showWizard = preview || recruitment === "open" || liveFormStarted;
   const simulationOnly = preview || recruitment !== "open";
@@ -178,7 +205,9 @@ export function AffiliateApplicationPage() {
                 ? "Inscrições abertas"
                 : recruitment === "limited"
                   ? "Programa aberto · acesso temporariamente limitado"
-                  : "Programa de afiliados"}
+                  : recruitment === "unavailable"
+                    ? "Disponibilidade não confirmada"
+                    : "Programa de afiliados"}
             </p>
             <h2 className="mt-3 font-display text-4xl sm:text-5xl">
               Sua inscrição, de um jeito simples.
@@ -203,15 +232,29 @@ export function AffiliateApplicationPage() {
                   ? "Verificando inscrições..."
                   : recruitment === "limited"
                     ? "Limite temporário nesta conexão"
-                    : "Inscrições em preparação"}
+                    : recruitment === "unavailable"
+                      ? "Não foi possível verificar inscrições"
+                      : "Inscrições em preparação"}
               </h3>
               <p className="mt-4 leading-relaxed text-muted-foreground">
                 {recruitment === "loading"
                   ? "Estamos verificando a disponibilidade do cadastro."
                   : recruitment === "limited"
                     ? "O programa de afiliadas continua aberto, mas esta conexão não pode enviar novas candidaturas agora. Aguarde alguns minutos e tente novamente; a prévia não registra inscrições."
-                    : "O formulário simplificado está disponível para visualização, mas não recebe candidaturas enquanto as inscrições estiverem fechadas."}
+                    : recruitment === "unavailable"
+                      ? "Não conseguimos consultar o status das inscrições nesta conexão. Isso não significa que o programa esteja fechado. O envio permanece bloqueado até uma confirmação do servidor."
+                      : "O formulário simplificado está disponível para visualização, mas não recebe candidaturas enquanto as inscrições estiverem fechadas."}
               </p>
+              {recruitment === "unavailable" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={verifyAvailabilityAgain}
+                  className="mt-6 min-h-12 rounded-lg px-6 py-3 text-sm font-bold"
+                >
+                  Verificar novamente
+                </Button>
+              )}
               {recruitment !== "loading" && (
                 <Button
                   type="button"
@@ -242,13 +285,29 @@ export function AffiliateApplicationPage() {
                 >
                   {preview
                     ? "Esta prévia nunca envia ou armazena candidaturas, mesmo se as inscrições forem abertas."
-                    : recruitment === "limited"
-                      ? "O programa continua aberto, mas esta conexão está temporariamente limitada. Seu rascunho permanece na aba; o envio não será realizado até o acesso ser restabelecido."
-                      : "A disponibilidade mudou: este cadastro não recebe candidaturas agora. O rascunho permanece nesta aba, mas nenhum envio será realizado."}
+                    : recruitment === "loading"
+                      ? "Verificando novamente a disponibilidade. Seu rascunho continua nesta aba, mas o envio fica pausado até uma confirmação do servidor."
+                      : recruitment === "limited"
+                        ? "O programa continua aberto, mas esta conexão está temporariamente limitada. Seu rascunho permanece na aba; o envio não será realizado até o acesso ser restabelecido."
+                        : recruitment === "unavailable"
+                          ? "Não foi possível confirmar a disponibilidade. Seu rascunho continua nesta aba, mas o envio fica bloqueado até uma resposta válida do servidor."
+                          : "A disponibilidade mudou: este cadastro não recebe candidaturas agora. O rascunho permanece nesta aba, mas nenhum envio será realizado."}
                 </p>
               )}
               {/* A preview must never turn into a live POST because status changed.
                   Switching explicitly to live starts a fresh form, not an old draft. */}
+              {!preview && recruitment === "unavailable" && (
+                <div className="mx-auto mb-5 max-w-3xl text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={verifyAvailabilityAgain}
+                    className="min-h-12 rounded-lg px-6 py-3 text-sm font-bold"
+                  >
+                    Verificar novamente
+                  </Button>
+                </div>
+              )}
               <AffiliateSimpleForm
                 key={preview ? "preview" : "live"}
                 preview={simulationOnly}
