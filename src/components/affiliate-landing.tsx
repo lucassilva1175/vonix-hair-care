@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -8,6 +9,7 @@ import {
   MessageCircleHeart,
   PenLine,
   ShieldCheck,
+  Search,
   UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -161,6 +163,14 @@ const questions = [
       "A disponibilidade real aparece na seção de inscrição. Quando o cadastro estiver em preparação, você poderá conhecer apenas a prévia interativa. A prévia não envia nem armazena candidaturas.",
   },
 ] as const;
+
+function normalizeFaqSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
 
 function Eyebrow({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
   return (
@@ -658,6 +668,14 @@ export function AffiliateLandingIntro({
 }
 
 export function AffiliateLandingFAQ() {
+  const [faqQuery, setFaqQuery] = useState("");
+  const normalizedQuery = normalizeFaqSearch(faqQuery);
+  const matchingQuestions = normalizedQuery
+    ? questions.filter(({ question, answer }) =>
+        normalizeFaqSearch(question + " " + answer).includes(normalizedQuery),
+      )
+    : questions;
+
   return (
     <section id="duvidas" className="scroll-mt-24 bg-card px-5 py-20 sm:py-28">
       <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[.75fr_1.25fr] lg:gap-16">
@@ -683,7 +701,84 @@ export function AffiliateLandingFAQ() {
         </div>
 
         <div className="space-y-3" data-testid="vonix-affiliate-faq">
-          {questions.map(({ question, answer }, i) => (
+          <div
+            data-testid="vonix-c84-faq-discovery"
+            className="rounded-[1.4rem] border border-[#e4d0d3] bg-[#fcf6f3] p-4 shadow-[0_8px_24px_rgba(83,50,59,.06)] sm:p-6"
+          >
+            <label
+              htmlFor="vonix-c84-faq-search"
+              className="mb-3 block text-sm font-bold text-[#65404d]"
+            >
+              Encontre sua resposta
+            </label>
+            <div className="relative">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#875968]"
+              />
+              <input
+                id="vonix-c84-faq-search"
+                type="search"
+                value={faqQuery}
+                maxLength={80}
+                autoComplete="off"
+                onChange={(event) => setFaqQuery(event.target.value)}
+                placeholder="Busque inscrição, Instagram, comissão..."
+                className="min-h-12 w-full rounded-xl border border-[#cfaeb9] bg-white py-3 pl-12 pr-4 text-base text-[#493039] outline-none focus:border-[#7b4857] focus:ring-2 focus:ring-[#dec5cc]"
+              />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-xs font-semibold text-[#795d69]">Dúvidas comuns:</span>
+              {["TikTok", "Comissão", "E-mail"].map((topic) => (
+                <button
+                  key={topic}
+                  type="button"
+                  aria-pressed={faqQuery === topic}
+                  onClick={() => setFaqQuery((current) => (current === topic ? "" : topic))}
+                  className={
+                    "min-h-11 rounded-full border px-4 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7b4857] " +
+                    (faqQuery === topic
+                      ? "border-[#723d52] bg-[#723d52] text-white"
+                      : "border-[#d2b6bd] bg-white text-[#734558] hover:bg-[#f3e4e8]")
+                  }
+                >
+                  {topic}
+                </button>
+              ))}
+              {faqQuery && (
+                <button
+                  type="button"
+                  onClick={() => setFaqQuery("")}
+                  className="min-h-11 px-2 text-xs font-semibold text-[#734558] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  Limpar busca
+                </button>
+              )}
+            </div>
+            <p
+              data-testid="vonix-c84-faq-result-count"
+              aria-live="polite"
+              className="mt-3 text-xs font-medium text-[#795d69]"
+            >
+              {matchingQuestions.length}{" "}
+              {matchingQuestions.length === 1 ? "resposta encontrada" : "respostas encontradas"}. A
+              busca acontece nesta página, sem enviar os termos digitados.
+            </p>
+          </div>
+          {matchingQuestions.length === 0 && (
+            <div
+              data-testid="vonix-c84-faq-empty"
+              className="rounded-xl border border-[#e5d3d5] bg-white p-6 text-sm leading-relaxed text-[#6e4d5a]"
+            >
+              Não encontramos uma pergunta com esse termo. Tente buscar por inscrição, Instagram ou
+              comissão. Você também pode{" "}
+              <a href="#inscricao" className="font-bold underline underline-offset-4">
+                conhecer o formulário
+              </a>
+              .
+            </div>
+          )}
+          {matchingQuestions.map(({ question, answer }, i) => (
             <details
               key={question}
               className="group rounded-lg border border-border bg-card px-5 py-1 shadow-sm open:border-border sm:px-7"
