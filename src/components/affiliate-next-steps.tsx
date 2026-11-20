@@ -13,7 +13,8 @@ import {
  * Public informational content only: no application data, tokens, cookies, or analytics.
  * The creator can share the public application page, not an affiliate sales link.
  */
-export const PUBLIC_AFFILIATE_PAGE = "https://vonixhair.com/seja-afiliada";
+import { PUBLIC_AFFILIATE_PAGE } from "@/lib/affiliate-public-share";
+export { PUBLIC_AFFILIATE_PAGE } from "@/lib/affiliate-public-share";
 
 const stages = [
   {
