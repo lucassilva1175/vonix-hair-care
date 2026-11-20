@@ -31,4 +31,4 @@ Não usar depoimentos, vídeos de creators ou promessa de renda de terceiros. As
 
 A loja e o portal compartilham publicação no Lovable. Main contém alterações comerciais dos PRs #250–#252 ainda sem homologação independente dentro deste projeto de afiliadas. **Não publicar o aplicativo todo apenas por este PR**. Integrar o código e executar gates não prova que está live. Esperar validação comercial da loja antes de um deploy unificado, verificar em seguida as duas áreas.
 
-QA restante do C69: registrar Vitest, TypeScript, ESLint, Prettier, build, Actions e status de publicação após execução efetiva.
+QA local do C69 certificado: Vitest direcionado **36/36 PASS** em cinco arquivos; TypeScript `tsc --noEmit` PASS, ESLint e Prettier escopados PASS, Nitro/Vite build PASS, `git diff --check` PASS. Chrome headless 360/390/768/1440 **4/4 PASS** com interação real por teclado, slider End e total ilustrativo de R$ 2.600,00, zero POST/MP4/erros JavaScript/overflow. A suíte integral do projeto será verificada pelo CI do PR em runner isolado; o resultado do CI e o status de publicação devem constar também no recibo final, e **não são presumidos pelo QA local**.
