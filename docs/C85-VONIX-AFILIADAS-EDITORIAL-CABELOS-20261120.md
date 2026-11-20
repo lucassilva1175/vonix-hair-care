@@ -30,3 +30,11 @@ Este sistema compartilha o repositório da loja. O domínio `https://vonixhair.c
 ## Próxima prioridade real
 
 Obter autorização/relatos reais de afiliadas (se existirem) e homologar publicação do portal sem liberar mudanças comerciais de loja não aprovadas. Fotos ilustrativas melhoram linguagem, mas não substituem prova social do programa.
+
+## C85B — correção de contratos legados descoberta no CI integral
+
+O primeiro GitHub Actions (run `44837334354`) encontrou **872 PASS / 2 FAIL** entre 874 testes; o PostgreSQL isolado ficou verde. Os dois casos falhos eram contratos anteriores que afirmavam que **todas** as imagens do portal deveriam ser embalagens de produtos: `affiliate-c55-content.test.tsx` procurava sempre `picture img` na seção de quatro formatos e `affiliate-recruitment-page.test.tsx` exigia que qualquer `img` do site viesse de `/images/products/`. Com a melhoria editorial, ambas as premissas ficaram desatualizadas; os testes antigos não sinalizavam defeito de renderização e não deveriam ser apagados ou ignorados.
+
+A correção C85B atualiza explicitamente esses contratos para aceitar apenas as **seis fotos de categoria previamente existentes no próprio site**, com `alt` informando origem Vonix e caráter ilustrativo/não participação. A foto de unboxing continua vinculada ao WebP oficial de produto; nenhuma origem arbitrária ou imagem de outra marca é permitida. O rótulo de acessibilidade dos formatos foi corrigido para `Formatos criativos ilustrados com o acervo da loja Vonix Hair`, sem prometer que fotos de cabelos sejam produtos.
+
+O rerun local com seis arquivos e contratos antigos C54/C55/C80/recrutamento/landing-v2/C85 foi **42/42 PASS**. O novo CI integral após o push de C85B é obrigatório antes de merge.

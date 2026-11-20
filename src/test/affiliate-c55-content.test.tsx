@@ -9,10 +9,10 @@ afterEach(() => {
 });
 
 describe("Vonix Afiliadas C55 — conteúdo útil, original e transparente", () => {
-  it("offers four real-product content formats with practical original scripts", () => {
+  it("offers four original content formats with real catalog and clearly illustrative hair photography", () => {
     render(<AffiliateLandingIntro recruitmentStatus="closed" />);
     const region = screen.getByRole("region", {
-      name: /Formatos criativos ilustrados com produtos oficiais Vonix Hair/i,
+      name: /Formatos criativos ilustrados com o acervo da loja Vonix Hair/i,
     });
     const cards = region.querySelectorAll("article");
     expect(cards).toHaveLength(4);
@@ -23,10 +23,27 @@ describe("Vonix Afiliadas C55 — conteúdo útil, original e transparente", () 
     expect(region.querySelectorAll("details[open]")).toHaveLength(1);
     expect(region).toHaveTextContent("Primeiro olhar: o que é importante observar neste kit?");
     expect(region).toHaveTextContent("Mostre a embalagem e os rótulos sem alterar informações.");
-    for (const card of cards) {
+    const expectedSources = [
+      "/images/categorias/nutricao.jpg",
+      "/images/products/kit-cronograma-capilar.jpg",
+      "/images/categorias/quimica.jpg",
+      "/images/categorias/reconstrucao.jpg",
+    ];
+    for (const [index, card] of Array.from(cards).entries()) {
       expect(card.querySelectorAll("details ol li")).toHaveLength(3);
-      const photo = card.querySelector("picture img");
-      expect(photo?.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+\.jpg$/);
+      const photo = card.querySelector("img");
+      expect(photo).toHaveAttribute("src", expectedSources[index]);
+      expect(photo?.getAttribute("alt")).toMatch(/Vonix/i);
+      if (index === 1) {
+        expect(card.querySelector("picture source")).toHaveAttribute(
+          "srcset",
+          "/images/products/kit-cronograma-capilar.webp",
+        );
+      } else {
+        expect(card.querySelector("picture")).toBeNull();
+        expect(card.textContent).toContain("não é depoimento de afiliada");
+        expect(photo?.getAttribute("alt")).toMatch(/editorial|ilustrativa/i);
+      }
       expect(card.textContent).toContain("Identifique publicidade quando houver parceria.");
     }
     expect(region.textContent).not.toMatch(

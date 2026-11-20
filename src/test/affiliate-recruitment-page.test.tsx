@@ -256,16 +256,34 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
 
     const images = Array.from(landing.querySelectorAll("img"));
     expect(images.length).toBeGreaterThanOrEqual(8);
+    const existingStoreCategoryPhotos = new Set([
+      "/images/categorias/cachos.jpg",
+      "/images/categorias/frizz.jpg",
+      "/images/categorias/hidratacao.jpg",
+      "/images/categorias/nutricao.jpg",
+      "/images/categorias/quimica.jpg",
+      "/images/categorias/reconstrucao.jpg",
+    ]);
     images.forEach((img) => {
       if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
-      expect(img.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+\.(?:jpg|webp)$/);
-      if (img.getAttribute("aria-hidden") === "true") {
-        // Decorative product photography is intentionally hidden from screen readers.
-        expect(img.getAttribute("alt")).toBe("");
+      const src = img.getAttribute("src") ?? "";
+      const alt = img.getAttribute("alt") ?? "";
+      if (src.startsWith("/images/categorias/")) {
+        // Only the six already-used store category photos are allowed, never
+        // third-party creators or images falsely attributed to affiliates.
+        expect(existingStoreCategoryPhotos.has(src)).toBe(true);
+        expect(alt).toMatch(/Vonix/i);
+        expect(alt).toMatch(/editorial|ilustrativa/i);
+        expect(alt).toMatch(/não identifica|não retrata|não como depoimento/i);
       } else {
-        expect(img.getAttribute("alt")?.toLowerCase()).toContain("vonix");
+        expect(src).toMatch(/^\/images\/products\/[a-z0-9-]+\.(?:jpg|webp)$/);
+        if (img.getAttribute("aria-hidden") === "true") {
+          expect(alt).toBe("");
+        } else {
+          expect(alt.toLowerCase()).toContain("vonix");
+        }
+        expect(alt).not.toMatch(/creator|parceria|depoimento/i);
       }
-      expect(img.getAttribute("alt")).not.toMatch(/creator|parceria|depoimento/i);
     });
     expect(document.querySelector("#inscricao")).not.toBeNull();
     expect(screen.getByText("Inscrições em preparação")).toBeInTheDocument();

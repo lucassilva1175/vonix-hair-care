@@ -561,7 +561,7 @@ export function AffiliateLandingDiscovery({
 
           <div
             role="region"
-            aria-label="Formatos criativos ilustrados com produtos oficiais Vonix Hair"
+            aria-label="Formatos criativos ilustrados com o acervo da loja Vonix Hair"
             tabIndex={0}
             className="-mx-5 mt-11 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-5 scroll-px-5 focus-visible:outline-2 focus-visible:outline-ring sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4"
             data-testid="vonix-original-products"
