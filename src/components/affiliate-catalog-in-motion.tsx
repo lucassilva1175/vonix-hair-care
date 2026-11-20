@@ -115,9 +115,10 @@ export function AffiliateCatalogInMotion({ recruitmentOpen }: { recruitmentOpen:
           <div className="flex flex-wrap items-center gap-3">
             <a
               href="/loja"
+              aria-label="Explorar a loja oficial"
               className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-[#754153] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
             >
-              Explorar a loja oficial
+              Ver catálogo
               <ArrowUpRight aria-hidden="true" className="size-4" />
             </a>
             <div className="flex gap-2" aria-label="Navegar pelos vídeos do catálogo">
@@ -126,7 +127,7 @@ export function AffiliateCatalogInMotion({ recruitmentOpen }: { recruitmentOpen:
                 disabled={!canScrollBack}
                 onClick={() => moveCarousel(-1)}
                 aria-label="Ver vídeos anteriores"
-                className="inline-flex size-11 items-center justify-center rounded-full border border-[#cdb8bf] bg-white text-[#633449] focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-[#cdb8bf] bg-white text-[#633449] focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ArrowLeft aria-hidden="true" className="size-4" />
               </button>
@@ -135,7 +136,7 @@ export function AffiliateCatalogInMotion({ recruitmentOpen }: { recruitmentOpen:
                 disabled={!canScrollNext}
                 onClick={() => moveCarousel(1)}
                 aria-label="Ver próximos vídeos"
-                className="inline-flex size-11 items-center justify-center rounded-full border border-[#cdb8bf] bg-white text-[#633449] focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-[#cdb8bf] bg-white text-[#633449] focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ArrowRight aria-hidden="true" className="size-4" />
               </button>

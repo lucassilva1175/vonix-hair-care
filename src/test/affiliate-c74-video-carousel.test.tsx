@@ -54,8 +54,17 @@ describe("C74 — six real product videos with one accessible carousel", () => {
     expect(carousel.className).toContain("overflow-x-auto");
     expect(carousel.className).toContain("snap-mandatory");
     expect(carousel.className).not.toContain("grid-cols");
-    expect(screen.getByRole("button", { name: "Ver vídeos anteriores" })).toHaveClass("size-11");
-    expect(screen.getByRole("button", { name: "Ver próximos vídeos" })).toHaveClass("size-11");
+    expect(screen.getByRole("button", { name: "Ver vídeos anteriores" })).toHaveClass(
+      "size-11",
+      "shrink-0",
+    );
+    expect(screen.getByRole("button", { name: "Ver próximos vídeos" })).toHaveClass(
+      "size-11",
+      "shrink-0",
+    );
+    expect(screen.getByRole("link", { name: /Explorar a loja oficial/ })).toHaveTextContent(
+      "Ver catálogo",
+    );
     expect(screen.getByText(/Seis vídeos do catálogo: deslize ou use as setas/)).toBeVisible();
     expect(within(carousel).getAllByTestId("vonix-c63-video-card")).toHaveLength(6);
   });
