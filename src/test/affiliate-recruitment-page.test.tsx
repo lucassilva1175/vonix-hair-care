@@ -259,7 +259,12 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
     images.forEach((img) => {
       if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
       expect(img.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+\.(?:jpg|webp)$/);
-      expect(img.getAttribute("alt")?.toLowerCase()).toContain("vonix");
+      if (img.getAttribute("aria-hidden") === "true") {
+        // Decorative product photography is intentionally hidden from screen readers.
+        expect(img.getAttribute("alt")).toBe("");
+      } else {
+        expect(img.getAttribute("alt")?.toLowerCase()).toContain("vonix");
+      }
       expect(img.getAttribute("alt")).not.toMatch(/creator|parceria|depoimento/i);
     });
     expect(document.querySelector("#inscricao")).not.toBeNull();

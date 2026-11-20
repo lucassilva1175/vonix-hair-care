@@ -234,7 +234,7 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
               aria-label="Código privado da candidata"
               readOnly
               value={receipt}
-              className="mt-3 min-h-12 w-full rounded-lg border border-[#e3d3d2] px-3 font-mono text-xs"
+              className="mt-3 min-h-12 w-full rounded-lg border border-[#e3d3d2] px-3 font-sans text-xs"
             />
             <button
               type="button"
