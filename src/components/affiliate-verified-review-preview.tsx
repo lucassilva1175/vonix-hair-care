@@ -1,6 +1,12 @@
+import { ArrowUpRight, PlayCircle } from "lucide-react";
 import reviews from "@/data/reviews.json";
 
-const selectedReviews = ["Mariana Andrade", "Ayla Muniz"].flatMap((author) =>
+/**
+ * Only existing public PRODUCT reviews from the official Vonix catalog.
+ * The poster is a preview of a product-review video, NOT a creator testimonial.
+ * Keep the video itself in C62 below the application (no early media preload).
+ */
+const selectedReviews = ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis"].flatMap((author) =>
   reviews.filter(
     (review) =>
       review.author === author &&
@@ -16,57 +22,92 @@ export function AffiliateVerifiedReviewPreview() {
       aria-labelledby="product-review-preview-title"
       aria-describedby="product-review-preview-disclaimer"
       data-testid="vonix-c65-review-preview"
-      className="border-y border-border bg-secondary/30 px-5 py-7 sm:py-8"
+      className="border-y border-[#e5d8d3] bg-[#fbf6f2] px-5 py-5 text-[#493039] sm:py-6"
     >
-      <div className="mx-auto max-w-5xl">
-        <h2
-          id="product-review-preview-title"
-          className="font-display text-2xl text-primary sm:text-3xl"
+      <div className="mx-auto max-w-6xl lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-8">
+        <div className="flex flex-col gap-1 lg:col-start-1 lg:row-start-1">
+          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#89586a]">
+            Vozes de clientes · Catálogo Vonix Hair
+          </p>
+          <h2
+            id="product-review-preview-title"
+            className="font-display text-2xl leading-tight text-[#603748] sm:text-3xl"
+          >
+            O que dizem sobre nossos produtos
+          </h2>
+          <p
+            id="product-review-preview-disclaimer"
+            className="max-w-4xl text-xs leading-relaxed text-[#765e67]"
+          >
+            Avaliações de clientes sobre o produto Botox Vonix. Não são depoimentos de afiliadas e
+            não comprovam compra verificada, vendas, renda ou participação no programa.
+          </p>
+        </div>
+
+        <div
+          role="region"
+          tabIndex={0}
+          aria-label="Três avaliações de clientes sobre Botox Vonix, deslize horizontalmente no celular"
+          data-testid="vonix-c72-product-reviews-carousel"
+          className="-mx-5 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] sm:mx-0 sm:px-0 sm:pb-0 md:grid md:grid-cols-3 md:overflow-visible lg:col-span-2 lg:row-start-2"
         >
-          O que dizem sobre nossos produtos
-        </h2>
-        <p
-          id="product-review-preview-disclaimer"
-          className="mt-3 max-w-4xl text-xs leading-relaxed text-muted-foreground"
-        >
-          Avaliações de clientes sobre o produto Botox Vonix. Não são depoimentos de afiliadas e não
-          comprovam compra verificada, vendas, renda ou participação no programa.
-        </p>
-        <div className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2 sm:gap-8">
           {selectedReviews.map((review) => (
-            <figure key={review.author} className="flex min-w-0 items-start gap-3">
-              <img
-                src={review.media.poster}
-                alt={`Imagem de prévia da avaliação de ${review.author} sobre Botox Vonix`}
-                width={64}
-                height={80}
-                loading="lazy"
-                decoding="async"
-                className="h-20 w-16 shrink-0 rounded object-cover"
-              />
-              <div className="min-w-0">
-                <blockquote className="text-sm leading-relaxed text-foreground">
+            <figure
+              key={review.author}
+              data-testid="vonix-c72-review-card"
+              className="flex w-[78vw] max-w-[20rem] shrink-0 snap-start overflow-hidden rounded-2xl border border-[#e5d7d3] bg-white shadow-[0_8px_24px_rgba(84,51,62,.07)] sm:w-[42vw] sm:max-w-none md:w-auto"
+            >
+              <a
+                href="#avaliacoes-produtos"
+                aria-label={`Ver avaliação em vídeo de ${review.author} na seção completa`}
+                className="group relative w-[35%] min-w-[5.7rem] max-w-[7rem] shrink-0 bg-[#eadee0] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#784254]"
+              >
+                <img
+                  src={review.media.poster}
+                  alt={`Imagem de prévia da avaliação de ${review.author} sobre Botox Vonix`}
+                  width={112}
+                  height={160}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full min-h-[9rem] w-full object-cover"
+                />
+                <PlayCircle
+                  aria-hidden="true"
+                  className="absolute bottom-2 right-2 size-6 rounded-full bg-white/90 text-[#783d53] transition-transform group-hover:scale-110 motion-reduce:transition-none"
+                />
+              </a>
+              <figcaption className="flex min-w-0 flex-1 flex-col px-3 py-2.5">
+                <p className="text-[9px] font-bold uppercase leading-snug tracking-[.04em] text-[#9a5c70]">
+                  Avaliação de produto em vídeo
+                </p>
+                <blockquote className="mt-1.5 break-words font-display text-sm leading-5 text-[#4d3340]">
                   “{review.comment}”
                 </blockquote>
-                <figcaption className="mt-2 text-xs font-semibold text-primary">
+                <span className="mt-auto pt-2 text-xs font-bold text-[#794558]">
                   {review.author}
-                </figcaption>
-              </div>
+                  <span className="mt-0.5 block text-[10px] font-normal text-[#836b72]">
+                    Cliente · Botox Vonix
+                  </span>
+                </span>
+              </figcaption>
             </figure>
           ))}
         </div>
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1">
+
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 lg:col-start-2 lg:row-start-1 lg:self-end lg:justify-self-end">
           <a
             href="#avaliacoes-produtos"
-            className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline underline-offset-4"
+            className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-[#784254] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             Ver avaliações completas
+            <ArrowUpRight aria-hidden="true" className="size-3.5" />
           </a>
           <a
             href="/produto/botox-vonix"
-            className="inline-flex min-h-11 items-center text-xs font-semibold text-primary underline underline-offset-4"
+            className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-[#784254] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             Ver produto na loja
+            <ArrowUpRight aria-hidden="true" className="size-3.5" />
           </a>
         </div>
       </div>
