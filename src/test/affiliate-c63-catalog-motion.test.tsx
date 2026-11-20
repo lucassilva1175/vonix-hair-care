@@ -12,14 +12,17 @@ const expected = [
   { id: "banana-mel", slug: "kit-banana-e-mel" },
   { id: "botox-1", slug: "botox-vonix" },
   { id: "fio-1", slug: "progressiva-fio-de-luz" },
+  { id: "desmaia", slug: "kit-desmaia" },
+  { id: "plex", slug: "plex-vonix" },
+  { id: "ig-05", slug: "kit-cachos" },
 ] as const;
 
 describe("C63 authentic catalogue movie showcase", () => {
-  it("shows exactly three matching videos and product pages from the source catalog", () => {
+  it("shows six matching product videos and official links from the source catalog", () => {
     const { container } = render(<AffiliateCatalogInMotion recruitmentOpen />);
     const section = screen.getByTestId("vonix-c63-catalog-motion");
     const cards = within(section).getAllByTestId("vonix-c63-video-card");
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(6);
     expect(container.querySelectorAll("#catalogo-em-video")).toHaveLength(1);
     expected.forEach(({ id, slug }, index) => {
       const media = productMedia.find((entry) => entry.id === id);
@@ -86,6 +89,6 @@ describe("C63 authentic catalogue movie showcase", () => {
     ).toBeTruthy();
     expect(selling.compareDocumentPosition(clips) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(clips.compareDocumentPosition(criteria) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getAllByTestId("vonix-c63-product-video")).toHaveLength(3);
+    expect(screen.getAllByTestId("vonix-c63-product-video")).toHaveLength(6);
   });
 });

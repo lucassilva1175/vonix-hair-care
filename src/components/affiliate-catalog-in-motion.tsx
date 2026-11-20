@@ -1,4 +1,5 @@
-import { ArrowUpRight, Camera, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Camera, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import publishedMedia from "@/data/provas-em-video.json";
 
@@ -29,9 +30,54 @@ const films = [
     tag: "Cuidados e técnicas",
     description: "Explore o universo capilar que inspira conteúdos com responsabilidade.",
   },
+  {
+    id: "desmaia",
+    slug: "kit-desmaia",
+    title: "Kit Desmaia Cabelo",
+    tag: "Rotina de cuidados",
+    description: "Vídeo vinculado à linha Desmaia Cabelo no catálogo da loja.",
+  },
+  {
+    id: "plex",
+    slug: "plex-vonix",
+    title: "Plex Vonix",
+    tag: "Universo capilar",
+    description: "Conheça mais uma linha disponível no catálogo Vonix Hair.",
+  },
+  {
+    id: "ig-05",
+    slug: "kit-cachos",
+    title: "Kit Cachos",
+    tag: "Cuidados com cachos",
+    description: "Vídeo associado à linha de cachos da loja oficial.",
+  },
 ] as const;
 
 export function AffiliateCatalogInMotion({ recruitmentOpen }: { recruitmentOpen: boolean }) {
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(true);
+  const updateScrollButtons = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    setCanScrollBack(el.scrollLeft > 4);
+    setCanScrollNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+  useEffect(() => {
+    updateScrollButtons();
+    const el = carouselRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(updateScrollButtons);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [updateScrollButtons]);
+  const moveCarousel = (direction: -1 | 1) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>('[data-testid="vonix-c63-video-card"]');
+    const distance = (card?.getBoundingClientRect().width ?? 320) + 16;
+    el.scrollBy({ left: distance * direction, behavior: "smooth" });
+  };
   const items = films.flatMap((film) => {
     const proof = publishedMedia.find(
       (entry) => entry.id === film.id && entry.slugs.includes(film.slug),
@@ -61,30 +107,55 @@ export function AffiliateCatalogInMotion({ recruitmentOpen }: { recruitmentOpen:
               Produtos reais. <span className="italic text-[#91596b]">Ideias que ganham vida.</span>
             </h2>
             <p className="mt-5 text-sm leading-7 text-[#6c555e] sm:text-base">
-              Conheça alguns vídeos já disponibilizados no catálogo Vonix Hair. Eles ajudam a
-              explorar produtos e possibilidades de conteúdo, mas não representam trabalho, ganhos
-              ou participação de afiliadas.
+              Seis vídeos do catálogo: deslize ou use as setas para explorar produtos e
+              possibilidades de conteúdo. Eles não representam trabalho, ganhos ou participação de
+              afiliadas.
             </p>
           </div>
-          <a
-            href="/loja"
-            className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-[#754153] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
-          >
-            Explorar a loja oficial
-            <ArrowUpRight aria-hidden="true" className="size-4" />
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href="/loja"
+              className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-semibold text-[#754153] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+            >
+              Explorar a loja oficial
+              <ArrowUpRight aria-hidden="true" className="size-4" />
+            </a>
+            <div className="flex gap-2" aria-label="Navegar pelos vídeos do catálogo">
+              <button
+                type="button"
+                disabled={!canScrollBack}
+                onClick={() => moveCarousel(-1)}
+                aria-label="Ver vídeos anteriores"
+                className="inline-flex size-11 items-center justify-center rounded-full border border-[#cdb8bf] bg-white text-[#633449] focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ArrowLeft aria-hidden="true" className="size-4" />
+              </button>
+              <button
+                type="button"
+                disabled={!canScrollNext}
+                onClick={() => moveCarousel(1)}
+                aria-label="Ver próximos vídeos"
+                className="inline-flex size-11 items-center justify-center rounded-full border border-[#cdb8bf] bg-white text-[#633449] focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </button>
+            </div>
+          </div>
         </div>
         <div
+          ref={carouselRef}
+          onScroll={updateScrollButtons}
           role="region"
           tabIndex={0}
-          aria-label="Vídeos de produtos Vonix Hair, deslize para explorar"
-          className="-mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-5 pb-5 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3"
+          data-testid="vonix-c74-catalog-video-carousel"
+          aria-label="Seis vídeos de produtos Vonix Hair, deslize ou use as setas para explorar"
+          className="-mx-5 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-5 pb-5 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0"
         >
           {items.map((item) => (
             <article
               key={item.id}
               data-testid="vonix-c63-video-card"
-              className="flex w-[82vw] max-w-[20rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.4rem] border border-[#dfcfce] bg-white shadow-[0_14px_36px_rgba(74,35,55,.06)] sm:w-auto sm:max-w-none"
+              className="flex w-[82vw] max-w-[20rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.4rem] border border-[#dfcfce] bg-white shadow-[0_14px_36px_rgba(74,35,55,.06)] sm:w-[44vw] sm:max-w-[22rem] lg:w-[30vw] lg:max-w-[24rem]"
             >
               <div className="relative bg-[#f0e5e0] p-3">
                 <video
