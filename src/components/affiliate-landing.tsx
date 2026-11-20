@@ -74,6 +74,19 @@ const experiences = [
 const creativeIdeas = [
   {
     number: "01",
+    name: "Rotina capilar",
+    text: "Mostre como o autocuidado entra na sua rotina, sem prometer resultados.",
+    opening: "Um cuidado simples que faz sentido para a minha rotina.",
+    takes: [
+      "Apresente o contexto da sua rotina capilar.",
+      "Mostre o produto apenas se de fato estiver usando-o.",
+      "Descreva sua experiência sem prometer o mesmo resultado a outras pessoas.",
+    ],
+    image: "/images/categorias/nutricao.jpg",
+    alt: "Fotografia editorial de cabelo da categoria Nutrição do site Vonix Hair, usada como ilustração, não como depoimento de afiliada",
+  },
+  {
+    number: "02",
     name: "Unboxing",
     text: "Apresente uma experiência real com um produto que você conhece.",
     opening: "Primeiro olhar: o que é importante observar neste kit?",
@@ -86,19 +99,6 @@ const creativeIdeas = [
     alt: "Kit Cronograma Capilar Vonix Hair",
   },
   {
-    number: "02",
-    name: "Rotina capilar",
-    text: "Mostre como o autocuidado entra na sua rotina, sem prometer resultados.",
-    opening: "Um cuidado simples que faz sentido para a minha rotina.",
-    takes: [
-      "Apresente o contexto da sua rotina capilar.",
-      "Mostre o produto apenas se de fato estiver usando-o.",
-      "Descreva sua experiência sem prometer o mesmo resultado a outras pessoas.",
-    ],
-    image: "/images/products/kit-cachos.jpg",
-    alt: "Kit Cachos Vonix Hair",
-  },
-  {
     number: "03",
     name: "Resenha sincera",
     text: "Explique sua experiência e suas impressões com transparência.",
@@ -108,21 +108,21 @@ const creativeIdeas = [
       "Distinga o que você observou de afirmações do fabricante.",
       "Se não usou o produto, apresente como análise de informações, não como resenha de uso.",
     ],
-    image: "/images/products/mascara-reparacao-nutri-repair.jpg",
-    alt: "Máscara de Reparação Nutri Repair Vonix Hair",
+    image: "/images/categorias/quimica.jpg",
+    alt: "Fotografia ilustrativa da categoria Química capilar do site Vonix Hair, não identifica uma participante do programa",
   },
   {
     number: "04",
-    name: "Foto de produto",
-    text: "Explore ângulos, cenários e composições que tenham a sua identidade.",
-    opening: "Uma embalagem, três detalhes visuais para explorar.",
+    name: "Foto editorial de cabelos",
+    text: "Explore retratos e composições capilares com transparência e identidade própria.",
+    opening: "Três enquadramentos para valorizar detalhes do cabelo.",
     takes: [
-      "Escolha uma composição com iluminação natural.",
-      "Registre rótulo, textura da embalagem e detalhe do produto.",
-      "Evite editar imagens para inventar resultados ou características.",
+      "Escolha um enquadramento com iluminação e contexto adequados.",
+      "Explore movimento, textura visual e detalhes do penteado.",
+      "Não atribua resultados ou produtos à pessoa retratada sem evidência e autorização.",
     ],
-    image: "/images/products/botox-vonix.jpg",
-    alt: "Botox Vonix Hair",
+    image: "/images/categorias/reconstrucao.jpg",
+    alt: "Fotografia editorial ilustrativa de cabelos da categoria Reconstrução Vonix Hair, não retrata uma afiliada identificada",
   },
 ] as const;
 
@@ -548,19 +548,20 @@ export function AffiliateLandingDiscovery({
                 Crie do <span className="italic text-primary">seu jeito.</span>
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-[1.8] text-muted-foreground">
-                O universo dos cabelos rende muitas ideias. Estes são exemplos de formatos que você
-                pode explorar com produtos que conhece, com sinceridade e atenção às orientações de
-                uso.
+                O universo dos cabelos rende muitas ideias. Explore diferentes formatos com imagens
+                de categorias da própria loja Vonix Hair e produtos reais do catálogo. Fotografias
+                ilustrativas não identificam criadoras do programa. Nunca invente experiências ou
+                resultados de uso.
               </p>
             </div>
             <span className="rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground">
-              Exemplos de formatos · não são posts de creators
+              Exemplos ilustrativos · não são posts de afiliadas
             </span>
           </div>
 
           <div
             role="region"
-            aria-label="Formatos criativos ilustrados com produtos oficiais Vonix Hair"
+            aria-label="Formatos criativos ilustrados com o acervo da loja Vonix Hair"
             tabIndex={0}
             className="-mx-5 mt-11 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-5 scroll-px-5 focus-visible:outline-2 focus-visible:outline-ring sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4"
             data-testid="vonix-original-products"
@@ -571,14 +572,31 @@ export function AffiliateLandingDiscovery({
                 className="group min-w-[76vw] max-w-[20rem] snap-start overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:min-w-0 sm:max-w-none"
               >
                 <div className="relative aspect-[.95] overflow-hidden bg-card">
-                  <ProductImage
-                    src={idea.image}
-                    alt={idea.alt}
-                    className="p-5 motion-safe:transition motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
-                  />
+                  {idea.name === "Unboxing" ? (
+                    <ProductImage
+                      src={idea.image}
+                      alt={idea.alt}
+                      className="p-5 motion-safe:transition motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <img
+                      src={idea.image}
+                      alt={idea.alt}
+                      width={480}
+                      height={480}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.03]"
+                    />
+                  )}
                   <span className="absolute left-4 top-4 rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
                     {idea.number}
                   </span>
+                  {idea.name !== "Unboxing" && (
+                    <span className="absolute bottom-3 left-3 right-3 rounded-lg bg-[#fffaf7]/95 px-3 py-2 text-[10px] font-semibold leading-snug text-[#563a47] shadow-sm">
+                      Foto editorial de categoria Vonix · não é depoimento de afiliada
+                    </span>
+                  )}
                 </div>
                 <div className="p-6">
                   <h3 className="font-display text-2xl text-foreground">{idea.name}</h3>

@@ -23,8 +23,9 @@ describe("Vonix Afiliadas C54: escolha de estilo sem criar promessa comercial", 
       "#inscricao",
     );
     const photo = within(section).getByRole("img");
-    expect(photo).toHaveAttribute("src", "/images/products/kit-banana-e-mel.webp");
-    expect(photo.getAttribute("alt")).toMatch(/fotografia de produto do catálogo/i);
+    expect(photo).toHaveAttribute("src", "/images/categorias/cachos.jpg");
+    expect(photo.getAttribute("alt")).toMatch(/fotografia editorial ilustrativa/i);
+    expect(section).toHaveTextContent(/não representam participantes do programa/i);
   });
 
   it("troca entre rotina e UGC com clique e teclado, sem coletar perfil nem enviar dados", () => {
@@ -36,7 +37,7 @@ describe("Vonix Afiliadas C54: escolha de estilo sem criar promessa comercial", 
     expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", ugc.id);
     expect(within(screen.getByRole("tabpanel")).getByRole("img")).toHaveAttribute(
       "src",
-      "/images/products/mascara-reparacao-nutri-repair.webp",
+      "/images/categorias/frizz.jpg",
     );
     expect(screen.getByText(/Sua criatividade pode aparecer nos detalhes/i)).toBeInTheDocument();
     fireEvent.keyDown(ugc, { key: "ArrowRight" });

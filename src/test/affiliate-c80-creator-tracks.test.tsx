@@ -19,13 +19,13 @@ describe("C80 Vonix: três estilos de conteúdo sem prometer vínculo ou ganhos"
     );
     expect(section).toHaveTextContent("Três jeitos de criar.");
     expect(section).toHaveTextContent("pode combinar todos eles");
-    expect(section).toHaveTextContent("não criadoras contratadas");
+    expect(section).toHaveTextContent("não representam participantes");
     fireEvent.click(tabs[2]!);
     const panel = within(section).getByRole("tabpanel");
     expect(panel).toHaveAttribute("aria-labelledby", tabs[2]!.id);
     expect(within(panel).getByRole("img")).toHaveAttribute(
       "src",
-      "/images/products/botox-vonix.webp",
+      "/images/categorias/hidratacao.jpg",
     );
     expect(panel).toHaveTextContent("sem prometer resultados");
     expect(panel).toHaveTextContent("informação do fabricante");
