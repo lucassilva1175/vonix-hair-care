@@ -16,7 +16,7 @@ export function AffiliateShell({
 }: {
   children: ReactNode;
   mode?: "landing" | "account";
-  recruitmentStatus?: "loading" | "open" | "limited" | "closed";
+  recruitmentStatus?: "loading" | "open" | "limited" | "closed" | "unavailable";
 }) {
   return (
     <div
@@ -55,14 +55,14 @@ export function AffiliateShell({
         href="#conteudo-afiliadas"
         className="sr-only rounded-md bg-background px-4 py-2 text-muted-foreground focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[90]"
       >
-        Pular para o conteúdo
+        Pular para o conte?do
       </a>
       <header className="sticky top-0 z-50 border-b border-border bg-background shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-4">
             <Link
               to="/"
-              aria-label="Voltar à loja Vonix Hair"
+              aria-label="Voltar ? loja Vonix Hair"
               className="inline-flex shrink-0 items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             >
               <img
@@ -81,7 +81,7 @@ export function AffiliateShell({
 
           {mode === "landing" && (
             <nav
-              aria-label="Navegação da seleção de afiliadas"
+              aria-label="Navega??o da sele??o de afiliadas"
               className="hidden items-center gap-5 xl:flex"
             >
               <a
@@ -100,7 +100,7 @@ export function AffiliateShell({
                 href="#criterios"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
               >
-                Para quem é
+                Para quem ?
               </a>
               <a
                 href="#como-funciona"
@@ -112,13 +112,13 @@ export function AffiliateShell({
                 href="#avaliacoes-produtos"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
               >
-                Avaliações
+                Avalia??es
               </a>
               <a
                 href="#duvidas"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
               >
-                Dúvidas
+                D?vidas
               </a>
             </nav>
           )}
@@ -129,10 +129,10 @@ export function AffiliateShell({
               className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-5 sm:text-sm"
             >
               <span className="sm:hidden">
-                {recruitmentStatus === "open" ? "Quero participar" : "Ver inscrição"}
+                {recruitmentStatus === "open" ? "Quero participar" : "Ver inscri??o"}
               </span>
               <span className="hidden sm:inline">
-                {recruitmentStatus === "open" ? "Enviar candidatura" : "Conhecer a inscrição"}
+                {recruitmentStatus === "open" ? "Enviar candidatura" : "Conhecer a inscri??o"}
               </span>
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </a>
@@ -147,7 +147,7 @@ export function AffiliateShell({
         </div>
         {mode === "landing" && (
           <nav
-            aria-label="Acesso rápido ao programa"
+            aria-label="Acesso r?pido ao programa"
             className="flex w-full max-w-full snap-x snap-proximity items-center justify-start gap-5 overflow-x-auto overscroll-x-contain border-t border-border px-4 text-xs xl:hidden"
             tabIndex={0}
           >
@@ -167,13 +167,13 @@ export function AffiliateShell({
               href="#avaliacoes-produtos"
               className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
             >
-              Avaliações
+              Avalia??es
             </a>
             <a
               href="#duvidas"
               className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
             >
-              Dúvidas
+              D?vidas
             </a>
             <Link
               to="/consultar-candidatura"
@@ -217,8 +217,8 @@ export function AffiliateShell({
               />
             </Link>
             <p className="mt-4 max-w-lg text-sm leading-[1.8] text-muted-foreground">
-              Inscrição e seleção de afiliadas Vonix Hair. A candidatura é gratuita, não garante
-              aprovação ou benefícios comerciais e não constitui contrato.
+              Inscri??o e sele??o de afiliadas Vonix Hair. A candidatura ? gratuita, n?o garante
+              aprova??o ou benef?cios comerciais e n?o constitui contrato.
             </p>
           </div>
           <div className="flex flex-col items-start gap-4 text-sm md:items-end">
@@ -232,7 +232,7 @@ export function AffiliateShell({
               to="/consultar-candidatura"
               className="underline decoration-border underline-offset-4 hover:text-primary-foreground"
             >
-              Acompanhar inscrição por código
+              Acompanhar inscri??o por c?digo
             </Link>
             {mode === "landing" && (
               <a
@@ -246,7 +246,7 @@ export function AffiliateShell({
               to="/acompanhar-inscricao"
               className="underline decoration-border underline-offset-4 hover:text-primary-foreground"
             >
-              Inscrições antigas por e-mail
+              Inscri??es antigas por e-mail
             </Link>
             <a
               href={INSTAGRAM}
@@ -259,8 +259,8 @@ export function AffiliateShell({
           </div>
         </div>
         <div className="mx-auto mt-10 flex max-w-7xl flex-wrap justify-between gap-2 border-t border-white/20 pt-6 text-xs text-muted-foreground">
-          <span>Vonix Hair · Programa de inscrição e seleção</span>
-          <span>As condições de eventual parceria são comunicadas separadamente.</span>
+          <span>Vonix Hair ? Programa de inscri??o e sele??o</span>
+          <span>As condi??es de eventual parceria s?o comunicadas separadamente.</span>
         </div>
       </footer>
     </div>
