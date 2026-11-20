@@ -13,6 +13,7 @@ import { AffiliateLandingIntro } from "@/components/affiliate-landing";
 import { AffiliateCreatorOpportunity } from "@/components/affiliate-creator-opportunity";
 import { AffiliateShell } from "@/components/affiliate-shell";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
+import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 
 afterEach(cleanup);
 
@@ -69,6 +70,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       <AffiliateShell recruitmentStatus="open">
         <AffiliateLandingIntro recruitmentStatus="open" />
         <AffiliateApplicationStepsPreview />
+        <AffiliateCreatorPaths />
         <section id="inscricao">Inscrição teste sem envio</section>
       </AffiliateShell>,
     );
@@ -77,6 +79,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     for (const [label, href] of [
       ["Ganhos", "#ganhos"],
       ["Como funciona", "#como-funciona"],
+      ["Ideias de conteúdo", "#perfis"],
       ["Avaliações", "#avaliacoes-rapidas"],
       ["Dúvidas", "#duvidas"],
       ["Status da candidatura", "/consultar-candidatura"],
@@ -84,6 +87,10 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       expect(within(mobile).getByRole("link", { name: label })).toHaveAttribute("href", href);
     }
     const desktop = screen.getByRole("navigation", { name: "Navegação da seleção de afiliadas" });
+    expect(within(desktop).getByRole("link", { name: "Ideias de conteúdo" })).toHaveAttribute(
+      "href",
+      "#perfis",
+    );
     expect(within(desktop).getByRole("link", { name: "Avaliações" })).toHaveAttribute(
       "href",
       "#avaliacoes-rapidas",
