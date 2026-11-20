@@ -23,6 +23,28 @@ type Key =
   | "tiktok"
   | "tiktokFollowers";
 
+type ValidationKey = Key | "privacyAccepted";
+
+const validationLabels: Record<ValidationKey, string> = {
+  fullName: "Nome completo",
+  email: "E-mail",
+  phone: "Telefone com DDD",
+  postalCode: "CEP",
+  street: "Rua / Avenida",
+  number: "Número",
+  district: "Bairro",
+  city: "Cidade",
+  state: "Estado (UF)",
+  complement: "Complemento",
+  instagram: "Instagram",
+  instagramFollowers: "Seguidores no Instagram",
+  tiktok: "TikTok",
+  tiktokFollowers: "Seguidores no TikTok",
+  privacyAccepted: "Aceite da Política de Privacidade",
+};
+
+const validationOrder = Object.keys(validationLabels) as ValidationKey[];
+
 const pendingReceiptSessionKey = "vonix-affiliate-unconfirmed-code";
 
 /** Resolve visibility at callback time, not from TypeScript's earlier narrowing.
@@ -62,7 +84,7 @@ const fields: Record<Key, string> = {
 };
 
 const inputClass =
-  "min-h-12 w-full rounded-xl border border-[#dec9cc] bg-white px-4 py-3 text-base text-[#39232f] outline-none transition focus:border-[#93606a] focus:ring-2 focus:ring-[#e8cccf] disabled:opacity-50";
+  "scroll-mt-40 min-h-12 w-full rounded-xl border border-[#dec9cc] bg-white px-4 py-3 text-base text-[#39232f] outline-none transition focus:border-[#93606a] focus:ring-2 focus:ring-[#e8cccf] disabled:opacity-50";
 const heading = "scroll-mt-40 font-display text-2xl text-[#4e2934]";
 const help = "mt-1.5 text-sm text-[#826b6f]";
 
@@ -170,7 +192,9 @@ export function AffiliateSimpleForm({
   onDraftChange?: (hasDraft: boolean) => void;
 }) {
   const [values, setValues] = useState(fields);
-  const [errors, setErrors] = useState<Partial<Record<Key | "privacyAccepted", string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<ValidationKey, string>>>({});
+  const [invalidAttempt, setInvalidAttempt] = useState(0);
+  const validationSummaryRef = useRef<HTMLDivElement | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [trap, setTrap] = useState("");
   const [sending, setSending] = useState(false);
@@ -352,6 +376,12 @@ export function AffiliateSimpleForm({
   const formSeen = useRef(false);
   const formStarted = useRef(false);
   const dirty = Object.values(values).some(Boolean) || accepted || !!trap;
+  const invalidKeys = validationOrder.filter((key) => Boolean(errors[key]));
+
+  // Focus only after a new invalid submit, never while the applicant fixes a field.
+  useEffect(() => {
+    if (invalidAttempt > 0) validationSummaryRef.current?.focus();
+  }, [invalidAttempt]);
   // Counts only whether required groups contain values; this is NOT
   // validation, a submitted application or a conversion event.
   // Applicant values never enter analytics, DOM attributes or persisted state.
@@ -571,15 +601,39 @@ export function AffiliateSimpleForm({
       website: trap,
     });
     if (!parsed.success) {
-      const failures: Partial<Record<Key | "privacyAccepted", string>> = {};
+      const failures: Partial<Record<ValidationKey, string>> = {};
       for (const issue of parsed.error.issues) {
-        const key = issue.path[0] as Key | "privacyAccepted";
-        if (!failures[key]) failures[key] = issue.message;
+        const key = issue.path[0] as ValidationKey;
+        if (!(key in validationLabels) || failures[key]) continue;
+        const empty = key !== "privacyAccepted" && !values[key].trim();
+        failures[key] =
+          key === "privacyAccepted"
+            ? "Confirme o aceite de privacidade e que você tem 18 anos ou mais."
+            : key === "state" && empty
+              ? "Selecione seu estado (UF)."
+              : empty
+                ? "Preencha este campo."
+                : key === "email"
+                  ? "Informe um e-mail válido para contato."
+                  : (key === "instagramFollowers" || key === "tiktokFollowers") &&
+                      !/^\d+$/.test(values[key])
+                    ? "Use apenas números para informar os seguidores."
+                    : /^(Invalid input|Too small|Too big)/i.test(issue.message)
+                      ? "Confira o preenchimento deste campo."
+                      : issue.message;
+      }
+      // Zod's final superRefine may not execute when another base field fails
+      // with a non-continuable issue (for example, NaN followers). E-mail is
+      // required in every new public application, so always surface it.
+      if (!values.email.trim() && !failures.email) {
+        failures.email = "Informe seu e-mail para contato sobre a candidatura.";
       }
       setErrors(failures);
-      document.getElementById("simple-" + String(parsed.error.issues[0]?.path[0] ?? ""))?.focus();
+      setMessage("");
+      setInvalidAttempt((previous) => previous + 1);
       return;
     }
+    setErrors({});
     if (preview) {
       setMessage("Esta é apenas uma prévia. Nenhuma candidatura foi enviada.");
       return;
@@ -766,6 +820,7 @@ export function AffiliateSimpleForm({
   return (
     <form
       ref={formElement}
+      noValidate
       aria-busy={sending}
       onSubmit={(e) => void submit(e)}
       className="overflow-hidden rounded-[2rem] border border-[#eadbd6] bg-white shadow-[0_15px_70px_rgba(80,32,39,.08)]"
@@ -822,6 +877,38 @@ export function AffiliateSimpleForm({
           </p>
         </div>
       </div>
+
+      {invalidKeys.length > 0 && (
+        <div
+          ref={validationSummaryRef}
+          role="region"
+          aria-live="polite"
+          tabIndex={-1}
+          aria-labelledby="vonix-c81-validation-title"
+          data-testid="vonix-c81-validation-summary"
+          className="mx-6 mt-5 scroll-mt-40 rounded-xl border-2 border-[#b95a66] bg-[#fff5f3] px-5 py-5 text-[#773b49] outline-none focus-visible:ring-2 focus-visible:ring-[#7b4857] sm:mx-10"
+        >
+          <h4 id="vonix-c81-validation-title" className="text-base font-bold">
+            Revise {invalidKeys.length} {invalidKeys.length === 1 ? "campo" : "campos"} antes de
+            enviar
+          </h4>
+          <p className="mt-2 text-sm">
+            Use os links para ir diretamente aos campos que precisam de atenção.
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
+            {invalidKeys.map((key) => (
+              <li key={key}>
+                <a
+                  href={"#simple-" + key}
+                  className="font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                >
+                  {validationLabels[key]}: {errors[key]}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="space-y-9 px-6 py-8 sm:px-10 sm:py-10">
         <section aria-labelledby="simple-contact-heading" className="space-y-5">
@@ -924,6 +1011,7 @@ export function AffiliateSimpleForm({
                 className={inputClass}
                 value={values.state}
                 aria-invalid={Boolean(errors.state)}
+                aria-describedby={errors.state ? "simple-error-state" : undefined}
                 onChange={(e) => update("state", e.target.value)}
               >
                 <option value="">Selecione o estado</option>
@@ -934,7 +1022,7 @@ export function AffiliateSimpleForm({
                 ))}
               </select>
               {errors.state ? (
-                <p role="alert" className="mt-1 text-xs text-red-700">
+                <p id="simple-error-state" role="alert" className="mt-1 text-xs text-red-700">
                   {errors.state}
                 </p>
               ) : null}
@@ -996,15 +1084,18 @@ export function AffiliateSimpleForm({
           {/* Mandatory LGPD consent is a legal acknowledgement, not an extra questionnaire. */}
           <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-[#654b53]">
             <input
+              id="simple-privacyAccepted"
               type="checkbox"
               disabled={sending}
               required
+              aria-invalid={Boolean(errors.privacyAccepted)}
+              aria-describedby={errors.privacyAccepted ? "simple-error-privacyAccepted" : undefined}
               checked={accepted}
               onChange={(e) => {
                 setAccepted(e.target.checked);
                 setErrors((old) => ({ ...old, privacyAccepted: "" }));
               }}
-              className="mt-1 h-4 w-4 accent-[#633a43]"
+              className="mt-1 h-4 w-4 scroll-mt-40 accent-[#633a43]"
             />
             Autorizo o uso destes dados para análise da candidatura e eventual contato sobre o
             programa de afiliadas, conforme a política de privacidade da Vonix Hair. Declaro ter 18
@@ -1023,7 +1114,11 @@ export function AffiliateSimpleForm({
             .
           </p>
           {errors.privacyAccepted ? (
-            <p role="alert" className="mt-2 text-xs font-semibold text-red-700">
+            <p
+              id="simple-error-privacyAccepted"
+              role="alert"
+              className="mt-2 text-xs font-semibold text-red-700"
+            >
               {errors.privacyAccepted}
             </p>
           ) : null}
