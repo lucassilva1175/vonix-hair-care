@@ -15,8 +15,8 @@ const paths = [
       "O que observa ao conhecer uma linha capilar",
       "Como conversa de verdade com sua comunidade",
     ],
-    image: "/images/products/kit-banana-e-mel.webp",
-    alt: "Kit Banana e Mel da Vonix Hair, fotografia de produto do catálogo da loja",
+    image: "/images/categorias/cachos.jpg",
+    alt: "Fotografia editorial ilustrativa de cabelos cacheados, presente nas categorias da Vonix Hair; não identifica participante do programa",
     tone: "bg-[#f1dfd2]",
   },
   {
@@ -32,8 +32,8 @@ const paths = [
       "Como contaria uma rotina em poucos segundos",
       "Sua forma de apresentar um produto com transparência",
     ],
-    image: "/images/products/mascara-reparacao-nutri-repair.webp",
-    alt: "Máscara Nutri Repair Vonix Hair, fotografia de produto do catálogo da loja",
+    image: "/images/categorias/frizz.jpg",
+    alt: "Fotografia editorial ilustrativa de cabelo longo, presente na categoria de frizz da loja Vonix Hair; não identifica afiliada",
     tone: "bg-[#e8dbe0]",
   },
   {
@@ -49,8 +49,8 @@ const paths = [
       "Como compararia informações de duas rotinas capilares",
       "O que é opinião pessoal e o que é informação do fabricante",
     ],
-    image: "/images/products/botox-vonix.webp",
-    alt: "Botox Vonix Hair, fotografia de produto do catálogo da loja",
+    image: "/images/categorias/hidratacao.jpg",
+    alt: "Fotografia editorial ilustrativa de cabelos, presente na categoria de hidratação da loja Vonix Hair; não identifica afiliada",
     tone: "bg-[#e9e4de]",
   },
 ] as const;
@@ -176,7 +176,7 @@ export function AffiliateCreatorPaths() {
             <div className="grid h-full md:grid-cols-[.9fr_1.1fr]">
               <div className={"relative min-h-64 overflow-hidden " + current.tone}>
                 <span className="absolute left-5 top-5 z-10 rounded-full bg-white/90 px-4 py-2 text-[10px] font-bold uppercase tracking-[.13em] text-[#6d3d4c]">
-                  Produto do catálogo Vonix Hair
+                  Imagem editorial da loja · não é depoimento
                 </span>
                 <img
                   src={current.image}
@@ -185,7 +185,7 @@ export function AffiliateCreatorPaths() {
                   height={480}
                   loading="lazy"
                   decoding="async"
-                  className="h-full w-full object-contain p-6 motion-safe:transition-transform motion-safe:duration-500"
+                  className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-500"
                 />
               </div>
               <div className="flex min-w-0 flex-col justify-center p-6 sm:p-9">
@@ -222,8 +222,9 @@ export function AffiliateCreatorPaths() {
         </div>
         <p className="mt-6 max-w-3xl text-xs leading-[1.8] text-muted-foreground">
           Estes são três exemplos de estilos de conteúdo — você pode combinar todos eles. Não são
-          categorias de aprovação, requisitos profissionais ou modalidades de contrato. As imagens
-          mostram produtos do catálogo da Vonix Hair, não criadoras contratadas.
+          categorias de aprovação, requisitos profissionais ou modalidades de contrato. As
+          fotografias ilustram categorias capilares presentes na loja Vonix Hair: não representam
+          participantes do programa, depoimentos de afiliadas nem resultados de parcerias.
         </p>
       </div>
     </section>
