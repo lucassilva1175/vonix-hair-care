@@ -27,3 +27,7 @@ Data 20/11/2026. Exclusivamente frontend do portal de afiliadas Vonix Hair /seja
 ## Bloqueios honestos
 
 A sincronização GitHub → Lovable **não publica** automaticamente a versão no domínio. A publicação global do projeto continua bloqueada até aprovação separada das alterações comerciais de e-commerce PR250–252. A prova de afiliadas real requer casos e permissões de uso verificáveis, ainda não obtidos. Nenhum benefício da referência Skence pode ser tratado como benefício Vonix.
+
+### C78B — atualização dos contratos de regressão
+
+O primeiro CI GitHub encontrou quatro testes legados (C53, C60, C65, C66) que presumiam a posição antiga da faixa de avaliações e o destino antigo da navegação. Os testes foram corrigidos para verificar a nova ordem real e as duas camadas de avaliações de **produtos** (resumo perto do topo e seção completa depois da candidatura), sem enfraquecer os controles de envio, origem, acesso ou privacidade. Rodada focada após o ajuste: 20/20 PASS; TypeScript/ESLint/Prettier e verificação de diff PASS. A homologação final exige novo CI completo com dois jobs verde antes do merge.

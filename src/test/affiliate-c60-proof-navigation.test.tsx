@@ -75,7 +75,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     for (const [label, href] of [
       ["Ganhos", "#ganhos"],
       ["Como funciona", "#como-funciona"],
-      ["Avaliações", "#avaliacoes-produtos"],
+      ["Avaliações", "#avaliacoes-rapidas"],
       ["Dúvidas", "#duvidas"],
       ["Status da candidatura", "/consultar-candidatura"],
     ] as const) {
@@ -84,7 +84,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     const desktop = screen.getByRole("navigation", { name: "Navegação da seleção de afiliadas" });
     expect(within(desktop).getByRole("link", { name: "Avaliações" })).toHaveAttribute(
       "href",
-      "#avaliacoes-produtos",
+      "#avaliacoes-rapidas",
     );
     for (const link of container.querySelectorAll('a[href^="#"]')) {
       const id = link.getAttribute("href")?.slice(1);

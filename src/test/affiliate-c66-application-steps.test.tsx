@@ -42,7 +42,7 @@ describe("C66 application guidance without submission", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it("inserts only between C65 and the unchanged C64 preparation and application", async () => {
+  it("keeps guidance after early product reviews and earnings, before signup", async () => {
     const request = vi.fn().mockRejectedValue(new Error("Network forbidden in C66 route test"));
     vi.stubGlobal("fetch", request);
     render(<AffiliateApplicationPage />);
@@ -50,7 +50,13 @@ describe("C66 application guidance without submission", () => {
     const preview = screen.getByTestId("vonix-c66-application-steps");
     const reviews = screen.getByTestId("vonix-c65-review-preview");
     const prep = screen.getByTestId("vonix-c64-preparation-details");
-    expect(reviews.nextElementSibling).toBe(preview);
+    const earnings = screen.getByTestId("vonix-affiliate-earnings");
+    expect(
+      reviews.compareDocumentPosition(earnings) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      earnings.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(preview.nextElementSibling).toContainElement(prep);
     const signup = document.getElementById("inscricao");
     if (!signup) throw new Error("Missing application section");

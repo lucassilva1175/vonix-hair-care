@@ -69,7 +69,7 @@ describe("C65 — compact published product reviews", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("preserves C64 order and protected preview without candidate POST", async () => {
+  it("shows product reviews before earnings without enabling candidate POST", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     render(<AffiliateApplicationPage />);
     await screen.findByText("Inscrições em preparação");
@@ -77,8 +77,8 @@ describe("C65 — compact published product reviews", () => {
     if (!signup) throw new Error("Missing application anchor");
     const sequence = [
       screen.getByTestId("vonix-affiliate-hero"),
-      screen.getByTestId("vonix-affiliate-earnings"),
       screen.getByTestId("vonix-c65-review-preview"),
+      screen.getByTestId("vonix-affiliate-earnings"),
       screen.getByTestId("vonix-c64-preparation-details"),
       signup,
       screen.getByTestId("vonix-c53-real-product-reviews"),
