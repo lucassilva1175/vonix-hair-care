@@ -25,3 +25,7 @@ Já havia 3 etapas públicas de candidatura em texto, formulário único com 3 g
 ## Restrições de release e autenticação
 
 Somente arquivos de frontend de afiliadas + testes e este documento serão integrados. Sem ações em Supabase, contas, dados reais, eventos de lead, pagamentos, checkout, preço, frete ou publicação. O site oficial pode continuar com bundle antigo apesar da sincronização Lovable/GitHub. Qualquer publicação exige homologação separada das alterações comerciais do projeto compartilhado.
+
+### C79B — regressão de navegação testada na página integral
+
+O CI inicial mostrou um teste legado C60 que montava apenas a landing introdutória, sem o novo guia `#candidatura-etapas` presente na rota real. A correção inclui `AffiliateApplicationStepsPreview` na mesma árvore de teste, em vez de dispensar a verificação de âncoras. Nova rodada C60/C79/C66/C70: 12/12 PASS; TypeScript, ESLint, Prettier e diff check 0. A integridade dos destinos dos links continua exigida.

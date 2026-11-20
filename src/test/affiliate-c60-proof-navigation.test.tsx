@@ -12,6 +12,7 @@ vi.mock("@tanstack/react-router", () => ({
 import { AffiliateLandingIntro } from "@/components/affiliate-landing";
 import { AffiliateCreatorOpportunity } from "@/components/affiliate-creator-opportunity";
 import { AffiliateShell } from "@/components/affiliate-shell";
+import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
 
 afterEach(cleanup);
 
@@ -67,6 +68,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     const { container } = render(
       <AffiliateShell recruitmentStatus="open">
         <AffiliateLandingIntro recruitmentStatus="open" />
+        <AffiliateApplicationStepsPreview />
         <section id="inscricao">Inscrição teste sem envio</section>
       </AffiliateShell>,
     );
