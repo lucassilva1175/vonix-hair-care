@@ -180,7 +180,13 @@ export function AffiliateEditorialHero({
           </div>
           <p className="mt-3 max-w-lg text-xs leading-[1.7] text-[#65515a]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque
-            nem compra de produtos para se candidatar.
+            nem compra de produtos para se candidatar.{" "}
+            <a
+              href="#candidatura-etapas"
+              className="font-semibold text-[#754153] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Entenda as três etapas da candidatura
+            </a>
           </p>
         </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
-import { CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "lucide-react";
+import { ArrowRight, CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "lucide-react";
 import { affiliateSimpleSchema } from "@/lib/affiliate-simple";
 import { downloadAffiliatePrivateReceipt } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
@@ -63,7 +63,7 @@ const fields: Record<Key, string> = {
 
 const inputClass =
   "min-h-12 w-full rounded-xl border border-[#dec9cc] bg-white px-4 py-3 text-base text-[#39232f] outline-none transition focus:border-[#93606a] focus:ring-2 focus:ring-[#e8cccf] disabled:opacity-50";
-const heading = "font-display text-2xl text-[#4e2934]";
+const heading = "scroll-mt-40 font-display text-2xl text-[#4e2934]";
 const help = "mt-1.5 text-sm text-[#826b6f]";
 
 function normalizeSocial(value: string, platform: "instagram" | "tiktok") {
@@ -358,18 +358,21 @@ export function AffiliateSimpleForm({
   const completionGroups = [
     {
       label: "Contato",
+      href: "#simple-contact-heading",
       filled: (["fullName", "email", "phone"] as const).every(
         (key) => values[key].trim().length > 0,
       ),
     },
     {
       label: "Endereço",
+      href: "#simple-address-heading",
       filled: (["postalCode", "street", "number", "district", "city", "state"] as const).every(
         (key) => values[key].trim().length > 0,
       ),
     },
     {
       label: "Instagram",
+      href: "#simple-social-heading",
       filled: (["instagram", "instagramFollowers"] as const).every(
         (key) => values[key].trim().length > 0,
       ),
@@ -797,19 +800,25 @@ export function AffiliateSimpleForm({
             />
           </div>
           <ul className="mt-3 grid grid-cols-3 gap-2" aria-label="Etapas de preenchimento">
-            {completionGroups.map(({ label, filled }) => (
-              <li
-                key={label}
-                className="min-w-0 rounded-lg bg-[#faf2ef] px-2 py-2 text-center text-[11px] leading-snug text-[#65414b]"
-              >
-                <span className="block font-semibold">{label}</span>
-                <span className="block">{filled ? "Informado" : "Pendente"}</span>
+            {completionGroups.map(({ label, href, filled }) => (
+              <li key={label} className="min-w-0">
+                <a
+                  href={href}
+                  data-testid="vonix-c79-group-jump"
+                  className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-[#e9d8d4] bg-[#faf2ef] px-1.5 py-2 text-center text-[11px] leading-snug text-[#65414b] hover:border-[#aa7b88] hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784452] sm:px-3"
+                >
+                  <span className="font-semibold">{label}</span>
+                  <span className="inline-flex items-center gap-1">
+                    {filled ? "Informado" : "Pendente"}
+                    <ArrowRight aria-hidden="true" className="size-3 shrink-0" />
+                  </span>
+                </a>
               </li>
             ))}
           </ul>
           <p className="mt-2 text-[11px] leading-relaxed text-[#7c6269]">
-            Indica campos preenchidos, não validação. O aceite de privacidade é separado e
-            necessário para enviar.
+            Toque em uma etapa para ir aos campos. Indica campos preenchidos, não validação. O
+            aceite de privacidade é separado e necessário para enviar.
           </p>
         </div>
       </div>
