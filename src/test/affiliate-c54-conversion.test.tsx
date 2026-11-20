@@ -7,16 +7,17 @@ import { AffiliateLandingIntro } from "@/components/affiliate-landing";
 afterEach(cleanup);
 
 describe("Vonix Afiliadas C54: escolha de estilo sem criar promessa comercial", () => {
-  it("oferece dois caminhos reais, acessíveis e sem exigir um portfólio", () => {
+  it("oferece três caminhos reais, acessíveis e sem exigir um portfólio", () => {
     render(<AffiliateCreatorPaths />);
     const section = screen.getByTestId("affiliate-c54-creator-paths");
     const tabs = within(section).getAllByRole("tab");
-    expect(tabs).toHaveLength(2);
+    expect(tabs).toHaveLength(3);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(tabs[1]).toHaveAttribute("aria-selected", "false");
+    expect(tabs[2]).toHaveAttribute("aria-selected", "false");
     expect(within(section).getByRole("tabpanel")).toHaveAttribute("aria-labelledby", tabs[0]!.id);
     expect(section).toHaveTextContent(/sem precisar de um portfólio profissional/);
-    expect(section).toHaveTextContent(/não categorias de aprovação/);
+    expect(section).toHaveTextContent(/Não são categorias de aprovação/);
     expect(within(section).getByRole("link", { name: /apresentar meu perfil/i })).toHaveAttribute(
       "href",
       "#inscricao",
@@ -39,11 +40,15 @@ describe("Vonix Afiliadas C54: escolha de estilo sem criar promessa comercial", 
     );
     expect(screen.getByText(/Sua criatividade pode aparecer nos detalhes/i)).toBeInTheDocument();
     fireEvent.keyDown(ugc, { key: "ArrowRight" });
+    const information = screen.getByRole("tab", { name: /Compartilho dicas de cabelo/i });
+    expect(information).toHaveAttribute("aria-selected", "true");
+    expect(information).toHaveFocus();
+    fireEvent.keyDown(information, { key: "ArrowRight" });
     expect(routine).toHaveAttribute("aria-selected", "true");
     expect(routine).toHaveFocus();
     fireEvent.keyDown(routine, { key: "End" });
-    expect(ugc).toHaveAttribute("aria-selected", "true");
-    expect(ugc).toHaveFocus();
+    expect(information).toHaveAttribute("aria-selected", "true");
+    expect(information).toHaveFocus();
     expect(screen.getByTestId("affiliate-c54-creator-paths")).not.toHaveTextContent(
       /cupom garantido|produtos grátis|ganhos garantidos|3 milhões de alcance/i,
     );

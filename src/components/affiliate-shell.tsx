@@ -97,6 +97,12 @@ export function AffiliateShell({
                 Status
               </Link>
               <a
+                href="#perfis"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
+              >
+                Ideias de conteúdo
+              </a>
+              <a
                 href="#criterios"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
               >
@@ -162,6 +168,12 @@ export function AffiliateShell({
               className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
             >
               Como funciona
+            </a>
+            <a
+              href="#perfis"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+            >
+              Ideias de conteúdo
             </a>
             <a
               href="#avaliacoes-rapidas"

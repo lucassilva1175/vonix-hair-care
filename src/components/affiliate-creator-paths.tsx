@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { ArrowRight, Camera, Heart, Sparkles, Check } from "lucide-react";
+import { ArrowRight, BookOpen, Camera, Heart, Sparkles, Check } from "lucide-react";
 
 const paths = [
   {
@@ -36,14 +36,31 @@ const paths = [
     alt: "Máscara Nutri Repair Vonix Hair, fotografia de produto do catálogo da loja",
     tone: "bg-[#e8dbe0]",
   },
+  {
+    id: "informacao",
+    eyebrow: "Caminho 03 · Informação e cuidado",
+    label: "Compartilho dicas de cabelo",
+    shortLabel: "Conteúdo informativo",
+    title: "Boas informações também criam conexões.",
+    intro:
+      "Você gosta de pesquisar o universo capilar, conferir rótulos e explicar diferenças entre rotinas de cuidado. Pode transformar curiosidades em conteúdo claro, sem prometer resultados nem se apresentar como profissional sem ser.",
+    prompts: [
+      "Um detalhe do rótulo que vale explicar com cuidado",
+      "Como compararia informações de duas rotinas capilares",
+      "O que é opinião pessoal e o que é informação do fabricante",
+    ],
+    image: "/images/products/botox-vonix.webp",
+    alt: "Botox Vonix Hair, fotografia de produto do catálogo da loja",
+    tone: "bg-[#e9e4de]",
+  },
 ] as const;
 
 export function AffiliateCreatorPaths() {
-  const [active, setActive] = useState<0 | 1>(0);
+  const [active, setActive] = useState<0 | 1 | 2>(0);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
   const current = paths[active];
 
-  function moveTab(event: KeyboardEvent<HTMLButtonElement>, index: 0 | 1) {
+  function moveTab(event: KeyboardEvent<HTMLButtonElement>, index: 0 | 1 | 2) {
     if (
       event.key !== "ArrowLeft" &&
       event.key !== "ArrowRight" &&
@@ -52,14 +69,14 @@ export function AffiliateCreatorPaths() {
     )
       return;
     event.preventDefault();
-    const next: 0 | 1 =
+    const next: 0 | 1 | 2 =
       event.key === "Home"
         ? 0
         : event.key === "End"
-          ? 1
+          ? 2
           : event.key === "ArrowRight"
-            ? (((index + 1) % 2) as 0 | 1)
-            : (((index + 1) % 2) as 0 | 1);
+            ? (((index + 1) % paths.length) as 0 | 1 | 2)
+            : (((index - 1 + paths.length) % paths.length) as 0 | 1 | 2);
     setActive(next);
     buttons.current[next]?.focus();
   }
@@ -67,7 +84,7 @@ export function AffiliateCreatorPaths() {
   return (
     <section
       id="perfis"
-      className="scroll-mt-24 bg-card px-5 py-20 sm:py-28"
+      className="scroll-mt-40 bg-card px-5 py-16 sm:py-24"
       aria-labelledby="vonix-creator-paths-title"
       data-testid="affiliate-c54-creator-paths"
     >
@@ -81,7 +98,7 @@ export function AffiliateCreatorPaths() {
             id="vonix-creator-paths-title"
             className="max-w-3xl font-display text-4xl leading-tight text-foreground sm:text-5xl lg:text-6xl"
           >
-            Dois jeitos de criar.{" "}
+            Três jeitos de criar.{" "}
             <span className="italic text-primary">O seu jeito de começar.</span>
           </h2>
           <p className="max-w-xl text-sm leading-[1.9] text-muted-foreground sm:text-base">
@@ -94,7 +111,7 @@ export function AffiliateCreatorPaths() {
           <div
             role="tablist"
             aria-label="Estilos de criação Vonix Hair"
-            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1"
+            className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-1"
           >
             {paths.map((path, index) => {
               const selected = active === index;
@@ -108,36 +125,41 @@ export function AffiliateCreatorPaths() {
                   role="tab"
                   id={"vonix-path-tab-" + path.id}
                   aria-controls="vonix-path-panel"
+                  aria-label={path.label}
                   aria-selected={selected}
                   tabIndex={selected ? 0 : -1}
-                  onClick={() => setActive(index as 0 | 1)}
-                  onKeyDown={(event) => moveTab(event, index as 0 | 1)}
+                  onClick={() => setActive(index as 0 | 1 | 2)}
+                  onKeyDown={(event) => moveTab(event, index as 0 | 1 | 2)}
                   className={
-                    "group flex min-h-[9.5rem] w-full flex-col justify-between rounded-[1.5rem] border p-5 text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:p-7 " +
+                    "group flex min-h-[7.25rem] w-full min-w-0 flex-col justify-between gap-2 rounded-[1.15rem] border px-2.5 py-3 text-center transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:min-h-[8rem] sm:rounded-[1.5rem] sm:p-5 sm:text-left lg:min-h-[8.75rem] lg:p-6 " +
                     (selected
                       ? "border-primary bg-primary text-primary-foreground shadow-[0_18px_40px_rgba(65,33,45,.15)]"
                       : "border-border bg-background text-foreground hover:border-primary")
                   }
                 >
-                  <span className="flex w-full items-center justify-between gap-3">
-                    <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.1em]">
+                  <span className="flex w-full items-center justify-center gap-1 sm:justify-between sm:gap-3">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[.1em] sm:gap-2 sm:text-[11px]">
                       {index === 0 ? (
                         <Heart aria-hidden="true" className="h-4 w-4" />
-                      ) : (
+                      ) : index === 1 ? (
                         <Camera aria-hidden="true" className="h-4 w-4" />
+                      ) : (
+                        <BookOpen aria-hidden="true" className="h-4 w-4" />
                       )}
-                      {path.eyebrow}
+                      <span className="sm:hidden">0{index + 1}</span>
+                      <span className="hidden sm:inline">{path.eyebrow}</span>
                     </span>
                     <ArrowRight
                       aria-hidden="true"
                       className={
-                        "h-5 w-5 transition-transform " +
+                        "hidden h-5 w-5 transition-transform sm:block " +
                         (selected ? "translate-x-1" : "group-hover:translate-x-1")
                       }
                     />
                   </span>
-                  <strong className="mt-5 font-display text-2xl leading-snug sm:text-3xl">
-                    {path.label}
+                  <strong className="font-display text-[13px] leading-snug sm:mt-3 sm:text-[1.45rem] lg:text-2xl">
+                    <span className="sm:hidden">{path.shortLabel}</span>
+                    <span className="hidden sm:inline">{path.label}</span>
                   </strong>
                 </button>
               );
@@ -199,9 +221,9 @@ export function AffiliateCreatorPaths() {
           </div>
         </div>
         <p className="mt-6 max-w-3xl text-xs leading-[1.8] text-muted-foreground">
-          Estes são exemplos de estilos de conteúdo, não categorias de aprovação ou modalidades de
-          contrato. As imagens mostram itens do catálogo da loja Vonix Hair, não criadoras
-          contratadas.
+          Estes são três exemplos de estilos de conteúdo — você pode combinar todos eles. Não são
+          categorias de aprovação, requisitos profissionais ou modalidades de contrato. As imagens
+          mostram produtos do catálogo da Vonix Hair, não criadoras contratadas.
         </p>
       </div>
     </section>
