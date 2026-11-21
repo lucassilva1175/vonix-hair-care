@@ -8,7 +8,10 @@ import {
   PlayCircle,
   Sparkles,
 } from "lucide-react";
-import { officialProductVideoReviewCount } from "@/components/affiliate-verified-review-preview";
+import {
+  officialProductReviewCount,
+  officialProductVideoReviewCount,
+} from "@/components/affiliate-verified-review-preview";
 import { Button } from "@/components/ui/button";
 import { AffiliateProgramShare } from "@/components/affiliate-program-share";
 
@@ -333,7 +336,7 @@ export function AffiliateEditorialHero({
               Conhecer a marca por trás da seleção
             </a>
           </figcaption>
-          {officialProductVideoReviewCount > 0 && (
+          {officialProductReviewCount > 0 && (
             <a
               href="#avaliacoes-rapidas"
               data-testid="vonix-c78-real-review-cta"
@@ -344,10 +347,10 @@ export function AffiliateEditorialHero({
               </span>
               <span className="min-w-0 flex-1">
                 <strong className="block text-sm font-bold leading-snug">
-                  {officialProductVideoReviewCount} avaliações em vídeo no catálogo Vonix
+                  {officialProductReviewCount} avaliações de clientes no catálogo Vonix
                 </strong>
                 <span className="mt-1 block text-xs leading-snug text-[#795e69]">
-                  Experiências de clientes com produtos — não são depoimentos de afiliadas.
+                  São {officialProductVideoReviewCount} vídeos e {officialProductReviewCount - officialProductVideoReviewCount} foto. Opiniões de clientes, não de afiliadas.
                 </span>
               </span>
               <ArrowUpRight
