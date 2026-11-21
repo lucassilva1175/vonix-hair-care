@@ -105,9 +105,10 @@ describe("C94: hero editorial creator-first com estado verdadeiro de inscrição
     expect(photo).not.toBeNull();
     expect(status).not.toBeNull();
     expect(action).not.toBeNull();
-    expect(
-      status?.compareDocumentPosition(action!) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    if (!(status instanceof Element) || !(action instanceof Element)) {
+      throw new Error("Hero status or CTA missing from static HTML");
+    }
+    expect(status.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(host.querySelectorAll('[data-testid="affiliate-c61-catalog-link"]')).toHaveLength(3);
     expect(host.querySelector('[data-testid="vonix-c83-gallery-next"]')).toBeDisabled();
     expect(host.querySelectorAll("form,iframe,video")).toHaveLength(0);
