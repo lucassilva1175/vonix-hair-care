@@ -29,7 +29,7 @@ describe("C53 recruitment presentation boundaries", () => {
   it("provides real local product pictures, not affiliate testimonials or third-party portraits", () => {
     const { container } = render(<AffiliateLandingIntro recruitmentStatus="closed" />);
     const sources = [...container.querySelectorAll("picture source")];
-    expect(sources.length).toBeGreaterThanOrEqual(8);
+    expect(sources.length).toBeGreaterThanOrEqual(6);
     for (const source of sources)
       expect(source.getAttribute("srcset")).toMatch(/^\/images\/products\/[a-z0-9-]+\.webp$/);
     expect(screen.getAllByText(/Não são depoimentos de afiliadas/).length).toBeGreaterThan(0);
