@@ -84,20 +84,31 @@ afterEach(() => {
   delete window.fbq;
   delete window.clarity;
 });
-const fill = async () => {
-  fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
-  await screen.findByText(/4 a 5 dias úteis/);
-  // Nenhum frete vem marcado: o cliente escolhe.
-  expect(screen.queryByRole("radio", { name: /dias úteis/, checked: true })).toBeNull();
-  fireEvent.click(screen.getAllByRole("radio", { name: /dias úteis/ })[0] as HTMLElement);
+const fillContact = () => {
   for (const [label, value] of [
     ["Nome completo", "Pessoa Teste"],
     ["E-mail", "teste@example.com"],
     ["WhatsApp com DDD", "31999999999"],
     ["CPF", "52998224725"],
-    ["Número", "10"],
   ] as const)
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
+};
+const showDelivery = async () => {
+  await screen.findByRole("button", { name: "Continuar para entrega" });
+  fillContact();
+  expect(screen.getByRole("group", { name: "Seus dados" })).toBeVisible();
+  expect(screen.getByLabelText("CEP")).not.toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
+  expect(screen.getByRole("group", { name: "Entrega" })).toBeVisible();
+};
+const showPayment = () => fireEvent.click(screen.getByRole("button", { name: "Continuar para finalização" }));
+const fill = async (proceed = true) => {
+  await showDelivery();
+  fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
+  await screen.findByText(/4 a 5 dias úteis/);
+  expect(screen.getByRole("radio", { name: /dias úteis/, checked: true })).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Número"), { target: { value: "10" } });
+  if (proceed) showPayment();
 };
 
 describe("checkout auditado sem chamadas reais", () => {
@@ -133,9 +144,9 @@ describe("checkout auditado sem chamadas reais", () => {
   });
   it("CPF inválido não envia pagamento", async () => {
     render(<Checkout />);
-    await fill();
+    fillContact();
     fireEvent.change(screen.getByLabelText("CPF"), { target: { value: "11111111111" } });
-    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
     expect(await screen.findByText("CPF inválido. Confira os números.")).toBeInTheDocument();
     expect(mocks.payment).not.toHaveBeenCalled();
   });
@@ -147,12 +158,15 @@ describe("checkout auditado sem chamadas reais", () => {
       method: "pix",
       orderId: 7,
       total: 99.9,
-      pix: { emv: "000201-teste", qrcode: "AAAA", expiresAt: brt(10) },
+      pix: { emv: "000201-teste", qrcode: "data:image/png;base64,AAAA", expiresAt: brt(10) },
     });
     render(<Checkout />);
     await fill();
     fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
     const timer = await screen.findByTestId("pix-timer");
+    expect(screen.getByRole("textbox", { name: "Código Pix copia e cola" })).toBeVisible();
+    expect(screen.getByRole("img", { name: "QR Code do Pix" })).toBeVisible();
+    expect(screen.getByRole("img", { name: "QR Code do Pix" })).toHaveAttribute("src", "data:image/png;base64,AAAA");
     expect(timer).toHaveTextContent("Seu Pix expira em");
     expect(timer).toHaveTextContent(/0[89]:\d\d|10:00/);
     cleanup();
@@ -170,9 +184,9 @@ describe("checkout auditado sem chamadas reais", () => {
   });
   it("WhatsApp curto ou nome curto: avisa o campo certo, uma vez só, e não envia o pedido", async () => {
     render(<Checkout />);
-    await fill();
+    fillContact();
     fireEvent.change(screen.getByLabelText("WhatsApp com DDD"), { target: { value: "123" } });
-    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
     const alerts = await screen.findAllByRole("alert");
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent("Digite seu WhatsApp com DDD");
@@ -182,7 +196,7 @@ describe("checkout auditado sem chamadas reais", () => {
     fireEvent.change(screen.getByLabelText("WhatsApp com DDD"), { target: { value: "31999999999" } });
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     fireEvent.change(screen.getByLabelText("Nome completo"), { target: { value: "Ab" } });
-    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
     expect(await screen.findByText("Digite seu nome completo.")).toBeInTheDocument();
     expect(mocks.payment).not.toHaveBeenCalled();
   });
@@ -205,6 +219,7 @@ describe("checkout auditado sem chamadas reais", () => {
     const muitoCaro = { id: 4, name: "Premium", company: "Jadlog", price: 120, days: 1, free: false };
     mocks.quote.mockResolvedValue({ ok: true, options: [muitoCaro, caro, rapido, barato] });
     render(<Checkout />);
+    await showDelivery();
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
     await screen.findByText(/Correios SEDEX/);
     const radios = () => screen.getAllByRole("radio", { name: /Correios (PAC|SEDEX)/ });
@@ -213,7 +228,7 @@ describe("checkout auditado sem chamadas reais", () => {
     expect(screen.getByText(/Jadlog Expresso/)).toBeInTheDocument();
     expect(screen.queryByText(/Jadlog Premium/)).toBeNull();
     expect(radios().some((r) => (r as HTMLInputElement).checked)).toBe(false);
-    expect(screen.getByText("Escolha o frete para liberar o pagamento")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Gerar Pix/ })).not.toBeInTheDocument();
     fireEvent.click(radios().find((r) => r.closest("label")?.textContent?.includes("PAC")) as HTMLElement);
     await waitFor(() =>
       expect(radios().find((r) => (r as HTMLInputElement).checked)?.closest("label")).toHaveTextContent("PAC"),
@@ -234,7 +249,7 @@ describe("checkout auditado sem chamadas reais", () => {
   it("frete funciona sem endereço; dados manuais permitem continuar", async () => {
     mocks.address.mockRejectedValue(new Error("timeout"));
     render(<Checkout />);
-    await fill();
+    await fill(false);
     for (const [label, value] of [
       ["Rua", "Rua manual"],
       ["Bairro", "Centro"],
@@ -242,8 +257,9 @@ describe("checkout auditado sem chamadas reais", () => {
       ["UF", "MG"],
     ] as const)
       fireEvent.change(screen.getByLabelText(label), { target: { value } });
-    expect(screen.getByRole("button", { name: /Gerar Pix/ })).toBeEnabled();
     expect(await screen.findByText(/Preencha manualmente; o frete/)).toBeInTheDocument();
+    showPayment();
+    expect(screen.getByRole("button", { name: /Gerar Pix/ })).toBeEnabled();
   });
   it("ignora endereço atrasado após trocar CEP e remove frete de CEP incompleto", async () => {
     let resolveOld: (result: unknown) => void = () => {};
@@ -264,7 +280,7 @@ describe("checkout auditado sem chamadas reais", () => {
     expect(resumo()).not.toHaveTextContent("OLD");
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "01310" } });
     expect(screen.queryByText(/Correios PAC/)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Gerar Pix/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Gerar Pix/ })).not.toBeInTheDocument();
   });
   it("produto exibe estimativa mesmo quando endereço falha", async () => {
     mocks.address.mockRejectedValue(new Error("network"));
@@ -334,9 +350,12 @@ describe("C86 — parcela em destaque e total informado no cartão do checkout",
       options: [{ ...option, price: 12.03, free: false }],
     });
     render(<Checkout />);
+    await showDelivery();
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
     await screen.findByText(/Correios PAC/);
     fireEvent.click(screen.getByRole("radio", { name: /Correios PAC/ }));
+    fireEvent.change(screen.getByLabelText("Número"), { target: { value: "10" } });
+    showPayment();
     const total = getProduct("kit-banana-e-mel")!.variants[0]!.price + 12.03;
     const amount = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
       .format(total)
@@ -351,8 +370,9 @@ describe("C86 — parcela em destaque e total informado no cartão do checkout",
 });
 
 describe("C86 — transparência dos centavos na parcela escolhida", () => {
-  it("informa primeira parcela diferente no botão e no resumo quando cliente escolhe 6x", () => {
+  it("informa primeira parcela diferente no botão e no resumo quando cliente escolhe 6x", async () => {
     render(<Checkout />);
+    await fill();
     fireEvent.click(screen.getByRole("radio", { name: /Cartão de crédito/ }));
     fireEvent.change(screen.getByLabelText("Parcelas"), { target: { value: "6" } });
     const price = getProduct("kit-banana-e-mel")!.variants[0]!.price;
@@ -370,4 +390,21 @@ describe("C86 — transparência dos centavos na parcela escolhida", () => {
     expect(summary).toContain("Parcelamento escolhido: " + expected);
     expect(mocks.payment).not.toHaveBeenCalled();
   });
+});
+
+it("volta para corrigir a entrega, preserva os dados e exige frete antes de pagar", async () => {
+  render(<Checkout />);
+  const timer = screen.getByTestId("checkout-timer");
+  expect(timer).toHaveTextContent("Você tem 15 minutos para finalizar com tranquilidade");
+  await fill();
+  expect(screen.getByTestId("checkout-timer")).toBe(timer);
+  expect(screen.getByText("Finalização")).toHaveAttribute("class", expect.stringContaining("font-semibold"));
+  expect(screen.getByLabelText("CEP")).not.toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Entrega" }));
+  expect(screen.getByLabelText("CEP")).toHaveValue("30140-010");
+  fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "123" } });
+  showPayment();
+  expect(screen.queryByRole("button", { name: /Gerar Pix/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Dados" }));
+  expect(screen.getByLabelText("Nome completo")).toHaveValue("Pessoa Teste");
 });
