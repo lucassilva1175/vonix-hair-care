@@ -470,65 +470,80 @@ export function AffiliateLandingDiscovery({
 
       <section
         id="como-funciona"
-        className="scroll-mt-24 relative overflow-hidden bg-primary px-5 py-20 text-primary-foreground sm:py-28"
+        data-testid="affiliate-c90-compact-journey"
+        className="scroll-mt-24 bg-primary px-5 py-9 text-primary-foreground sm:py-12"
       >
-        <div className="relative mx-auto max-w-7xl">
-          <div className="grid gap-7 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
-            <div>
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-5">
+            <div className="max-w-3xl">
               <Eyebrow light>Como funciona</Eyebrow>
-              <h2 className="mt-5 max-w-xl font-display text-4xl leading-tight sm:text-5xl lg:text-5xl">
+              <h2 className="mt-3 font-display text-3xl leading-tight sm:text-4xl">
                 Três momentos.{" "}
-                <span className="italic text-primary-foreground">Seu primeiro passo é aqui.</span>
+                <span className="italic text-primary-foreground">Sem etapas escondidas.</span>
               </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-[1.7] text-primary-foreground">
+                O passo a passo está explicado antes do formulário. Aqui vai o resumo: inscrição
+                gratuita, análise individual e acompanhamento sem promessa de aprovação.
+              </p>
             </div>
-            <p className="max-w-lg text-base leading-[1.85] text-primary-foreground">
-              A seleção começa pelo cadastro, passa por uma análise da equipe e pode evoluir para
-              uma conversa sobre possibilidades. Não existe aprovação instantânea nem condição
-              comercial automática.
-            </p>
+            <a
+              href="#candidatura-etapas"
+              className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary-foreground underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+            >
+              Ver o passo a passo completo
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </a>
           </div>
-          <div className="mt-12 grid gap-4 md:grid-cols-3">
+          <ol className="mt-6 grid gap-2.5 md:grid-cols-3">
             {[
               {
                 number: "01",
                 title: "Apresente seu perfil",
-                text: "Preencha nome, e-mail, telefone, endereço e Instagram com seguidores. TikTok é opcional.",
+                text: "Nome, contato, endereço e Instagram. TikTok opcional.",
                 Icon: ClipboardList,
               },
               {
                 number: "02",
                 title: "Análise individual",
-                text: "Quando as inscrições estiverem abertas, as informações serão avaliadas pela equipe responsável pela seleção.",
+                text: "A equipe avalia cada candidatura. Não existe aprovação automática.",
                 Icon: UsersRound,
               },
               {
                 number: "03",
                 title: "Próximos passos",
-                text: "Se houver avanço, a equipe poderá entrar em contato pelos canais informados e apresentar as condições aplicáveis.",
+                text: "Guarde o código recebido se o envio for confirmado e acompanhe a seleção.",
                 Icon: MessageCircleHeart,
               },
             ].map(({ number, title, text, Icon }) => (
-              <article key={number} className="relative border-t border-border py-7 sm:py-9">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="font-display text-5xl text-primary-foreground">{number}</span>
-                  <Icon aria-hidden="true" className="h-7 w-7 text-primary-foreground" />
-                </div>
-                <h3 className="mt-9 font-display text-2xl">{title}</h3>
-                <p className="mt-4 text-sm leading-[1.8] text-primary-foreground">{text}</p>
-              </article>
+              <li
+                key={number}
+                className="flex min-w-0 items-start gap-3 rounded-xl border border-primary-foreground/25 bg-primary-foreground/5 px-4 py-3.5"
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-foreground/15 text-xs font-bold"
+                >
+                  {number}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold leading-5">{title}</h3>
+                  <p className="mt-1 text-xs leading-[1.55] text-primary-foreground">{text}</p>
+                </span>
+                <Icon aria-hidden="true" className="mt-1 size-4 shrink-0 opacity-80" />
+              </li>
             ))}
-          </div>
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-5 border-t border-border py-6">
-            <p className="max-w-2xl text-sm leading-[1.75] text-primary-foreground">
-              <strong>Inscrições em preparação?</strong> Você pode visualizar o formulário simples
-              em uma prévia segura, sem enviar ou armazenar seus dados.
+          </ol>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-primary-foreground/25 pt-5">
+            <p className="max-w-2xl text-xs leading-[1.6] text-primary-foreground">
+              Inscrições indisponíveis? A prévia do formulário não envia nem armazena candidaturas.
+              A disponibilidade real é verificada separadamente.
             </p>
             <Button asChild variant="link" className="h-auto min-h-11 max-w-full whitespace-normal">
               <a
                 href="#inscricao"
                 className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-card px-5 py-2.5 text-sm font-bold text-primary transition hover:bg-accent"
               >
-                Ver disponibilidade <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                Ver disponibilidade <ArrowRight aria-hidden="true" className="size-4" />
               </a>
             </Button>
           </div>
