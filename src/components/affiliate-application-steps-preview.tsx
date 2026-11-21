@@ -92,7 +92,7 @@ export function AffiliateApplicationStepsPreview() {
               >
                 <div
                   className={
-                    "relative flex h-36 items-center justify-center overflow-hidden " + tone
+                    "relative flex h-20 items-center justify-center overflow-hidden sm:h-36 " + tone
                   }
                 >
                   <img
