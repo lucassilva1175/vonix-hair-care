@@ -42,6 +42,8 @@ export function AffiliateProductProof() {
   const fullReviewsRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
+    // Links can be followed safely once React has attached the hash/click listeners.
+    if (fullReviewsRef.current) fullReviewsRef.current.dataset.interactive = "true";
     const openForHash = () => {
       if (window.location.hash === "#avaliacoes-produtos" && fullReviewsRef.current) {
         fullReviewsRef.current.open = true;
@@ -57,6 +59,7 @@ export function AffiliateProductProof() {
     window.addEventListener("hashchange", openForHash);
     document.addEventListener("click", openForPreviewLink);
     return () => {
+      if (fullReviewsRef.current) delete fullReviewsRef.current.dataset.interactive;
       window.removeEventListener("hashchange", openForHash);
       document.removeEventListener("click", openForPreviewLink);
     };
