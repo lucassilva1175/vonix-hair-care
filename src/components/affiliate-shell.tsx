@@ -176,6 +176,12 @@ export function AffiliateShell({
               Ideias de conteúdo
             </a>
             <a
+              href="#criterios"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+            >
+              Para quem é
+            </a>
+            <a
               href="#avaliacoes-rapidas"
               className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
             >
