@@ -7,7 +7,7 @@ import { FAQ_LOJA } from "@/lib/faq";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { Grid, Shell } from "@/components/site";
-import { SITE_URL, brl, bySales, discountPct, forAudience, getProduct, homeBestSellers, products, useAudience } from "@/lib/store";
+import { SITE_URL, brl, bySales, discountPct, forAudience, getProduct, homeBestSellers, installments, pixPrice, products, useAudience } from "@/lib/store";
 import { soldFor } from "@/lib/sales";
 
 /**
@@ -17,6 +17,38 @@ import { soldFor } from "@/lib/sales";
 function Banner({ slug, priority }: { slug: string; priority: boolean }) {
   const p = getProduct(slug)!;
   const v = p.variants[0]!;
+  if (slug === "kit-banana-e-mel") {
+    const pix = pixPrice(v.price);
+    const split = installments(v.price);
+    return (
+      <Link to="/produto/$slug" params={{ slug }} data-testid="home-banana-banner" className="group relative block overflow-hidden bg-[#f3e9dc] text-[#241b16]">
+        <picture>
+          <source media="(min-width: 768px)" srcSet="/images/banners/kit-banana-e-mel-cliente-20261121.webp" width={1942} height={809} />
+          <img
+            src="/images/banners/kit-banana-e-mel-cliente-mobile-20261121.webp"
+            alt="Banana e Mel: mulher apresentando shampoo, condicionador, máscara e leave-in"
+            width={1122}
+            height={1402}
+            fetchPriority={priority ? "high" : "auto"}
+            className="block h-auto w-full object-contain md:aspect-[1942/809]"
+          />
+        </picture>
+        <div className="space-y-3 px-6 pb-10 pt-5 md:absolute md:inset-y-0 md:left-[5.2%] md:flex md:w-[39%] md:flex-col md:justify-center md:gap-3 md:space-y-0 md:p-0">
+          <p className="text-small font-semibold tracking-[0.22em]">VONIX HAIR</p>
+          <h2 className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(2rem, 4.2vw, 4.5rem)" }}>{p.name.replace(/^Kit\s+/i, "")}</h2>
+          <p className="text-body leading-relaxed">Shampoo, condicionador, máscara e leave-in.</p>
+          <div className="space-y-1">
+            <p className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(1.75rem, 3vw, 3rem)" }}>Por {brl(v.price)}</p>
+            {pix < v.price && <p className="text-body font-semibold">ou {brl(pix)} no Pix</p>}
+            <p className="text-small">Em até {split.count}x de {brl(split.value)} sem juros no cartão</p>
+          </div>
+          <span className="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-full bg-[#241b16] px-6 py-3 text-small font-semibold text-white">
+            Conheça o kit <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </span>
+        </div>
+      </Link>
+    );
+  }
   const off = discountPct(p.compareBase, v.price);
   const saving = p.compareBase ? p.compareBase - v.price : 0;
   return (
@@ -127,10 +159,10 @@ function Home() {
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
           <Banner slug={BANNERS[i]!} priority={i === 0} />
-          <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className="absolute left-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2">
+          <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className={`absolute left-3 ${BANNERS[i] === "kit-banana-e-mel" ? "top-6" : "top-[16%]"} grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2`}>
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button aria-label="Próximo" onClick={() => setI((i + 1) % BANNERS.length)} className="absolute right-3 top-[16%] grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2">
+          <button aria-label="Próximo" onClick={() => setI((i + 1) % BANNERS.length)} className={`absolute right-3 ${BANNERS[i] === "kit-banana-e-mel" ? "top-6" : "top-[16%]"} grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2`}>
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
