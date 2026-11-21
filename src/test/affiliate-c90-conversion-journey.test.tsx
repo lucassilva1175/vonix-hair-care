@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("C90: portal mais objetivo, sem duplicar galeria e processo", () => {
-  it("mantém o resumo de três momentos, âncoras e detalhes sem repetir o módulo longo", () => {
+  it("mantém um único passo a passo antes do formulário e preserva dois atalhos", () => {
     const { container } = render(
       <>
         <AffiliateApplicationStepsPreview />
@@ -18,25 +18,24 @@ describe("C90: portal mais objetivo, sem duplicar galeria e processo", () => {
         <section id="inscricao">Inscrição segura</section>
       </>,
     );
-    const journey = screen.getByTestId("affiliate-c90-compact-journey");
-    expect(journey).toHaveAttribute("id", "como-funciona");
-    expect(within(journey).getByRole("heading", { name: /Três momentos/i })).toBeInTheDocument();
-    expect(within(journey).getAllByRole("listitem")).toHaveLength(3);
-    for (const title of ["Apresente seu perfil", "Análise individual", "Próximos passos"]) {
-      expect(within(journey).getByRole("heading", { name: title })).toBeInTheDocument();
-    }
+    const original = screen.getByTestId("vonix-c66-application-steps");
+    expect(original).toHaveAttribute("id", "candidatura-etapas");
+    expect(original.querySelector("#como-funciona")).not.toBeNull();
     expect(
-      within(journey).getByRole("link", { name: /Ver o passo a passo completo/i }),
-    ).toHaveAttribute("href", "#candidatura-etapas");
-    expect(within(journey).getByRole("link", { name: /Ver disponibilidade/i })).toHaveAttribute(
-      "href",
-      "#inscricao",
-    );
+      within(original).getByRole("heading", { name: /Da sua ideia à sua candidatura/i }),
+    ).toBeInTheDocument();
+    expect(original.querySelectorAll('[data-testid="vonix-c79-step-card"]')).toHaveLength(3);
+    for (const text of ["Apresente seu perfil", "Guarde seu acesso", "Acompanhe a seleção"]) {
+      expect(original).toHaveTextContent(text);
+    }
+    expect(original).toHaveTextContent("não garante aprovação");
+    expect(original).not.toHaveTextContent(/cupom garantido|15%|21%|ganhos garantidos/i);
     expect(container.querySelectorAll("#como-funciona")).toHaveLength(1);
     expect(container.querySelectorAll("#candidatura-etapas")).toHaveLength(1);
     expect(container.querySelectorAll("#inscricao")).toHaveLength(1);
-    expect(journey).toHaveTextContent("sem promessa de aprovação");
-    expect(journey).not.toHaveTextContent(/cupom garantido|15%|21%|ganhos garantidos/i);
+    expect(
+      container.querySelectorAll('[data-testid="affiliate-c90-compact-journey"]'),
+    ).toHaveLength(0);
   });
 
   it("substitui as três imagens repetidas por um convite compacto para loja e candidatura", () => {
