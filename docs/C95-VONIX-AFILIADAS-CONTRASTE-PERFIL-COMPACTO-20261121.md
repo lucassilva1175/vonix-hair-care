@@ -11,10 +11,11 @@
 2. #criterios passou a usar quatro cartões de afinidade compactos, ainda com as **quatro imagens originais do catálogo Vonix** (thumbnails pequenas), quatro tags, quatro títulos e explicações completas; UX mobile horizontal com swipe/teclado e layout em duas/quatro colunas em telas maiores.
 3. Texto esclarece que identidade, afinidade capilar, criatividade e comunicação **não são requisitos fixos nem promessa de aprovação**. Elegibilidade continua 18+, TikTok opcional e inscrição gratuita.
 4. Preservados #criterios, #perfis, #formatos, #inscricao, quatro reviews reais de produtos, preços/condições, status de recrutamento e todos os links oficiais. Nenhuma integração de candidatos, dados privados, cookies, envios, Auth/Supabase ou checkout/e-commerce alterada.
-5. Contratos C95 com SSR, fonte e dimensão das imagens, quatro cards e compatibilidade do status/CTA; manter testes anteriores.
+5. O menu horizontal no celular agora também inclui o atalho **Para quem é** para #criterios; o menu de desktop já continha o destino. Mantidos teclado, foco, swipe e todos os atalhos anteriores.
+6. Contratos C95 com SSR, fonte e dimensão das imagens, quatro cards e compatibilidade do status/CTA; atualização dos contratos anteriores C53, V2 e C60 para o novo nome semântico da região e o novo atalho, sem mascarar falhas.
 
 ## Gate de entrega
 - QA Chromium 360/390/768/1440: computedStyle H1 branco, foto carregada, 4 cards com imagens oficiais, alturas antigas/novas, scroll/navegação, sem JS errors/overflow/POST/MP4 automático; screenshot do hero e da seção.
 - Vitest focado e completo, Prettier/ESLint, CI GitHub branch atual, revisar erros de TypeScript e distinguir falhas preexistentes do checkout.
 - **NÃO MESCLAR/PUBLICAR** o PR #279 enquanto a main compartilhada apresentar três TS2322 preexistentes em src/routes/checkout.tsx nas linhas 1466–1468; correção/homologação deve ocorrer em fluxo do e-commerce independente.
-- Modificações limitadas a src/components/affiliate-editorial-hero.tsx, src/components/affiliate-landing.tsx, src/test/affiliate-c95-contrast-and-fit.test.tsx e este documento. Modo turbo segue a referência global, sem ajustes no Windows.
+- Modificações limitadas a componentes do próprio portal (affiliate-editorial-hero.tsx, affiliate-landing.tsx, affiliate-shell.tsx), testes C95/C53/V2/C60 e este documento; não foi alterado nenhum código do checkout/e-commerce. Modo turbo segue a referência global, sem ajustes no Windows.
