@@ -58,11 +58,17 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     );
   });
 
-  it("keeps product gallery without a second review block", () => {
+  it("avoids repeated product images and preserves genuine links to catalog and application", () => {
     const { container } = render(<AffiliateCreatorOpportunity recruitmentOpen={false} />);
     expect(container.querySelectorAll("blockquote")).toHaveLength(0);
     expect(container.querySelectorAll("#avaliacoes-produtos")).toHaveLength(0);
-    expect(container.querySelectorAll("picture img")).toHaveLength(3);
+    expect(container.querySelectorAll("picture img")).toHaveLength(0);
+    expect(screen.getByTestId("affiliate-c90-creator-bridge")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("affiliate-c90-creator-bridge")).getByRole("link", {
+        name: /Conhecer o catálogo/i,
+      }),
+    ).toHaveAttribute("href", "/loja");
     expect(screen.getByRole("link", { name: /Conhecer a candidatura/ })).toHaveAttribute(
       "href",
       "#inscricao",
