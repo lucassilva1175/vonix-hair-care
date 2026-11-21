@@ -406,64 +406,65 @@ export function AffiliateLandingDiscovery({
 
       <AffiliateCatalogInMotion recruitmentOpen={isOpen} />
 
-      <section id="criterios" className="scroll-mt-24 bg-card px-5 py-20 sm:py-28">
+      <section
+        id="criterios"
+        data-testid="affiliate-c95-fit-section"
+        className="scroll-mt-24 border-y border-[#e8d8d6] bg-[#fbf5f1] px-5 py-10 sm:py-14"
+      >
         <div className="mx-auto max-w-7xl">
-          <div className="grid items-end gap-6 lg:grid-cols-[1.1fr_.9fr]">
+          <div className="grid items-end gap-4 lg:grid-cols-[1.1fr_.9fr] lg:gap-8">
             <div>
               <Eyebrow>O universo Vonix Hair</Eyebrow>
-              <h2 className="mt-5 max-w-3xl font-display text-4xl leading-[1.12] tracking-normal text-foreground sm:text-5xl lg:text-5xl">
+              <h2 className="mt-3 max-w-3xl font-display text-3xl leading-[1.14] text-[#523342] sm:text-4xl">
                 Não procuramos uma fórmula.{" "}
-                <span className="italic text-primary">Queremos conhecer você.</span>
+                <span className="italic text-[#9a5a70]">Queremos conhecer você.</span>
               </h2>
             </div>
-            <p className="max-w-xl text-sm leading-[1.9] text-muted-foreground sm:text-base lg:pb-2">
-              Cada criadora tem uma forma própria de falar sobre beleza. Esses são alguns dos temas
-              que ajudam a equipe a conhecer seu perfil — não uma lista de vantagens garantidas ou
-              requisitos de aprovação automática.
+            <p className="max-w-xl text-sm leading-[1.65] text-[#755d66]">
+              Cada pessoa tem sua linguagem e seu público. Estes quatro temas ajudam a apresentar
+              seu perfil à equipe — não são exigências fixas nem promessa de aprovação.
             </p>
           </div>
 
-          <p className="mt-8 text-xs font-semibold uppercase tracking-normal text-muted-foreground sm:hidden">
-            Deslize para conhecer os temas <span aria-hidden="true">→</span>
+          <p className="mt-5 text-xs font-semibold text-[#82566b] sm:hidden">
+            Deslize para conhecer os quatro temas <span aria-hidden="true">→</span>
           </p>
           <div
             role="region"
-            aria-label="Temas da seleção Vonix Hair; deslize horizontalmente em telas pequenas"
+            aria-label="Quatro aspectos de afinidade Vonix Hair, deslize horizontalmente em telas pequenas"
             tabIndex={0}
-            className="-mx-5 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-6 scroll-px-5 focus-visible:outline-2 focus-visible:outline-ring sm:mx-0 sm:mt-12 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4"
+            data-testid="affiliate-c95-fit-rail"
+            className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#875468] sm:mx-0 sm:mt-7 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4"
           >
             {experiences.map((item) => (
               <article
                 key={item.id}
-                className="group flex min-w-[78vw] max-w-[21rem] snap-start flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:min-w-0 sm:max-w-none"
+                data-testid="affiliate-c95-fit-card"
+                className="flex min-w-[80vw] max-w-[19rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.25rem] border border-[#e4d3d0] bg-white shadow-[0_10px_24px_rgba(82,43,57,.06)] sm:min-w-0 sm:max-w-none"
               >
-                <div className={"relative aspect-[4/3] overflow-hidden " + item.background}>
-                  <ProductImage
-                    src={item.image}
-                    alt={item.alt}
-                    className="p-5 transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none"
-                  />
-                  <span className="absolute left-4 top-4 rounded-full border border-border bg-background/95 px-3 py-1 text-[10px] font-bold tracking-wide text-primary">
-                    {item.id}
-                  </span>
+                <div className="flex items-center gap-3 border-b border-[#eee1dc] px-4 py-3.5">
+                  <div className="relative flex size-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f3e8e4]">
+                    <ProductImage src={item.image} alt={item.alt} className="p-1.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[.08em] text-[#97586e]">
+                      {item.id} · {item.tag}
+                    </p>
+                    <h3 className="mt-1.5 font-display text-lg leading-tight text-[#553745] sm:text-xl">
+                      {item.title}
+                    </h3>
+                  </div>
                 </div>
-                <div className="flex flex-1 flex-col px-5 pb-6 pt-6 sm:px-6">
-                  <p className="text-[10px] font-extrabold tracking-normal text-muted-foreground">
-                    {item.tag}
-                  </p>
-                  <h3 className="mt-3 font-display text-2xl leading-tight text-foreground">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 flex-1 text-sm leading-[1.75] text-muted-foreground">
-                    {item.description}
-                  </p>
-                </div>
+                <p className="flex-1 px-4 py-4 text-xs leading-[1.7] text-[#765e68] sm:text-sm">
+                  {item.description}
+                </p>
               </article>
             ))}
           </div>
-          <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
-            Imagens dos próprios produtos Vonix Hair, utilizadas como apresentação de catálogo. Não
-            representam candidatas, depoimentos ou colaborações realizadas.
+          <p className="mt-4 max-w-4xl text-[11px] leading-[1.65] text-[#806874]">
+            Fotos de produtos do catálogo oficial Vonix Hair, apenas como contexto da marca. Não
+            retratam candidatas ou parcerias realizadas. A inscrição gratuita exige 18 anos ou mais;
+            o TikTok é opcional e a aprovação depende da análise individual.
           </p>
         </div>
       </section>
