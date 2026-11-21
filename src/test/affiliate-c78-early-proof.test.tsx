@@ -34,7 +34,8 @@ describe("C78: prova de produto verdadeira antes das condições e sem bloqueio 
     const hero = screen.getByTestId("vonix-affiliate-hero");
     const cue = within(hero).getByTestId("vonix-c78-real-review-cta");
     expect(cue).toHaveAttribute("href", "#avaliacoes-rapidas");
-    expect(cue).toHaveTextContent("3 avaliações em vídeo no catálogo Vonix");
+    expect(cue).toHaveTextContent("4 avaliações de clientes no catálogo Vonix");
+    expect(cue).toHaveTextContent("São 3 vídeos e 1 foto.");
     expect(cue).toHaveTextContent(/não são depoimentos de afiliadas/);
     expect(within(hero).getByRole("link", { name: /Quero ser afiliada Vonix/i })).toHaveAttribute(
       "href",
