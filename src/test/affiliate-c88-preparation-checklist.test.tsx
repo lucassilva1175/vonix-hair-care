@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AffiliateApplicationPrep } from "@/components/affiliate-application-prep";
 
@@ -15,6 +16,13 @@ const labels = [
 ];
 
 describe("C88: affiliate checklist is guidance, never a real application", () => {
+  it("disables all four controls in server HTML until handlers are connected", () => {
+    const html = renderToStaticMarkup(<AffiliateApplicationPrep />);
+    const element = document.createElement("div");
+    element.innerHTML = html;
+    expect(element.querySelectorAll('input[type="checkbox"]:disabled')).toHaveLength(4);
+  });
+
   it("renders four local checkboxes and retains existing requirements and optional TikTok", () => {
     render(<AffiliateApplicationPrep />);
     const guide = screen.getByTestId("affiliate-c54-preparation");
