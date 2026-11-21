@@ -370,9 +370,9 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
 
     if (!app) throw new Error("Missing real application section");
     for (const [before, after] of [
-      [hero, earnings],
-      [earnings, app],
-      [app, brand],
+      [hero, app],
+      [app, earnings],
+      [earnings, brand],
       [brand, reviews],
       [reviews, selling],
       [selling, clips],
