@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const server = vi.hoisted(() => ({ status: vi.fn() }));
 vi.mock("@/lib/affiliate-functions", () => ({
@@ -22,6 +23,7 @@ vi.mock("@/components/affiliate-simple-form", () => ({
 }));
 
 import { AffiliateApplicationPage } from "@/routes/seja-afiliada";
+import { AffiliateLandingFAQ } from "@/components/affiliate-landing";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -33,6 +35,19 @@ afterEach(() => {
 });
 
 describe("C91: perguntas da candidatura antes de conteúdo editorial opcional", () => {
+  it("servidor entrega busca e filtros inertes até React conectar os eventos", () => {
+    const html = renderToStaticMarkup(<AffiliateLandingFAQ />);
+    const root = document.createElement("div");
+    root.innerHTML = html;
+    const search = root.querySelector("#vonix-c84-faq-search");
+    expect(search).not.toBeNull();
+    expect(search).toBeDisabled();
+    expect(
+      root.querySelectorAll('[data-testid="vonix-c84-faq-discovery"] button:disabled'),
+    ).toHaveLength(3);
+    expect(root.querySelectorAll("details")).toHaveLength(7);
+  });
+
   it("mantém inscrição → próximos passos → FAQ → exploração → Discovery, com todos os links", () => {
     const { container } = render(<AffiliateApplicationPage />);
     const signup = container.querySelector("#inscricao");
