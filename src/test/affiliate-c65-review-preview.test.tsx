@@ -48,10 +48,10 @@ describe("C65 — compact published product reviews", () => {
     },
   );
 
-  it("keeps honest product-only labeling, three quotes, local links and no media playback or submission", () => {
+  it("keeps honest product-only labeling, four quotes, local links and no media playback or submission", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { container } = render(<AffiliateVerifiedReviewPreview />);
-    expect(container.querySelectorAll("blockquote")).toHaveLength(3);
+    expect(container.querySelectorAll("blockquote")).toHaveLength(4);
     expect(screen.getByText(/Não são depoimentos de afiliadas/)).toHaveTextContent(
       "não comprovam compra verificada, vendas, renda ou participação no programa",
     );
