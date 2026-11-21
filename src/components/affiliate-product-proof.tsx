@@ -43,23 +43,22 @@ export function AffiliateProductProof() {
 
   useEffect(() => {
     // Links can be followed safely once React has attached the hash/click listeners.
-    if (fullReviewsRef.current) fullReviewsRef.current.setAttribute("data-interactive", "true");
+    const detailsNode = fullReviewsRef.current;
+    detailsNode?.setAttribute("data-interactive", "true");
     const openForHash = () => {
-      if (window.location.hash === "#avaliacoes-produtos" && fullReviewsRef.current) {
-        fullReviewsRef.current.open = true;
-      }
+      if (window.location.hash === "#avaliacoes-produtos" && detailsNode) detailsNode.open = true;
     };
     const openForPreviewLink = (event: MouseEvent) => {
       const element = event.target;
       if (element instanceof Element && element.closest('a[href="#avaliacoes-produtos"]')) {
-        if (fullReviewsRef.current) fullReviewsRef.current.open = true;
+        if (detailsNode) detailsNode.open = true;
       }
     };
     openForHash();
     window.addEventListener("hashchange", openForHash);
     document.addEventListener("click", openForPreviewLink);
     return () => {
-      if (fullReviewsRef.current) fullReviewsRef.current.removeAttribute("data-interactive");
+      detailsNode?.removeAttribute("data-interactive");
       window.removeEventListener("hashchange", openForHash);
       document.removeEventListener("click", openForPreviewLink);
     };
