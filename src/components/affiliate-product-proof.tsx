@@ -22,7 +22,12 @@ const customerComments = storeReviews
     };
     if (review.media.type === "video") {
       if (!("poster" in review.media) || typeof review.media.poster !== "string") return null;
-      return { ...base, mediaType: "video" as const, mediaSrc: review.media.src, poster: review.media.poster };
+      return {
+        ...base,
+        mediaType: "video" as const,
+        mediaSrc: review.media.src,
+        poster: review.media.poster,
+      };
     }
     if (review.media.type === "image") {
       return { ...base, mediaType: "image" as const, mediaSrc: review.media.src, poster: null };
@@ -97,35 +102,39 @@ export function AffiliateProductProof() {
                 className="grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] gap-4 rounded-[1.3rem] border border-[#e0cecb] bg-white px-4 py-5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:px-6"
               >
                 {mediaType === "video" ? (
-  <video
-    data-testid="affiliate-c62-customer-video"
-    className="aspect-[3/4] w-full min-w-0 self-start rounded-xl bg-[#382b31] object-contain"
-    controls
-    preload="none"
-    playsInline
-    poster={poster ?? undefined}
-    aria-label={"Vídeo publicado na loja junto à avaliação sobre Botox Vonix de " + name}
-  >
-    <source src={mediaSrc} type="video/mp4" />
-    Seu navegador não reproduz este vídeo. Consulte o link da avaliação na loja.
-  </video>
-) : (
-  <img
-    data-testid="affiliate-c86-customer-photo"
-    src={mediaSrc}
-    alt={"Foto publicada junto à avaliação de " + name + " sobre Botox Vonix"}
-    width={160}
-    height={220}
-    loading="lazy"
-    decoding="async"
-    className="aspect-[3/4] w-full min-w-0 self-start rounded-xl bg-[#382b31] object-cover"
-  />
-)}
+                  <video
+                    data-testid="affiliate-c62-customer-video"
+                    className="aspect-[3/4] w-full min-w-0 self-start rounded-xl bg-[#382b31] object-contain"
+                    controls
+                    preload="none"
+                    playsInline
+                    poster={poster ?? undefined}
+                    aria-label={
+                      "Vídeo publicado na loja junto à avaliação sobre Botox Vonix de " + name
+                    }
+                  >
+                    <source src={mediaSrc} type="video/mp4" />
+                    Seu navegador não reproduz este vídeo. Consulte o link da avaliação na loja.
+                  </video>
+                ) : (
+                  <img
+                    data-testid="affiliate-c86-customer-photo"
+                    src={mediaSrc}
+                    alt={"Foto publicada junto à avaliação de " + name + " sobre Botox Vonix"}
+                    width={160}
+                    height={220}
+                    loading="lazy"
+                    decoding="async"
+                    className="aspect-[3/4] w-full min-w-0 self-start rounded-xl bg-[#382b31] object-cover"
+                  />
+                )}
                 <div className="flex min-w-0 flex-col justify-between">
                   <div>
                     <p className="inline-flex items-start gap-2 text-xs font-semibold leading-relaxed text-[#855267]">
                       <MessageSquareQuote aria-hidden="true" className="mt-px size-4 shrink-0" />
-                      {mediaType === "video" ? "Comentário publicado no produto" : "Avaliação de produto com foto"}
+                      {mediaType === "video"
+                        ? "Comentário publicado no produto"
+                        : "Avaliação de produto com foto"}
                     </p>
                     <p className="mt-3 font-display text-lg leading-snug text-[#482e39] sm:text-2xl">
                       “{quote}”
@@ -143,10 +152,10 @@ export function AffiliateProductProof() {
 
         <p className="mt-6 max-w-4xl text-xs leading-6 text-[#705962]">
           Os três vídeos, a foto e os comentários escritos estão associados às avaliações de produto
-          publicadas na loja. O comentário não é uma transcrição integral do áudio. Estes comentários documentam
-          experiências com produtos da Vonix Hair. Eles não representam renda, vendas, comissões ou
-          participação no programa de afiliadas. A candidatura é gratuita, passa por seleção e não
-          garante parceria.
+          publicadas na loja. O comentário não é uma transcrição integral do áudio. Estes
+          comentários documentam experiências com produtos da Vonix Hair. Eles não representam
+          renda, vendas, comissões ou participação no programa de afiliadas. A candidatura é
+          gratuita, passa por seleção e não garante parceria.
         </p>
       </div>
     </section>
