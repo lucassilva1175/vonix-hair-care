@@ -14,7 +14,8 @@ const selectedReviews = ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis", "Ana
       (review) =>
         review.author === author &&
         review.slug === "botox-vonix" &&
-        ((review.media.type === "video" && "poster" in review.media &&
+        ((review.media.type === "video" &&
+          "poster" in review.media &&
           typeof review.media.poster === "string") ||
           (review.media.type === "image" && typeof review.media.src === "string")),
     ),
@@ -147,12 +148,28 @@ export function AffiliateVerifiedReviewPreview() {
             >
               <a
                 href="#avaliacoes-produtos"
-                aria-label={"Ver avaliação " + (review.media.type === "video" ? "em vídeo" : "com foto") + " de " + review.author + " na seção completa"}
+                aria-label={
+                  "Ver avaliação " +
+                  (review.media.type === "video" ? "em vídeo" : "com foto") +
+                  " de " +
+                  review.author +
+                  " na seção completa"
+                }
                 className="group relative w-[35%] min-w-[5.7rem] max-w-[7rem] shrink-0 bg-[#eadee0] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#784254]"
               >
                 <img
-                  src={review.media.type === "video" && "poster" in review.media ? review.media.poster : review.media.src}
-                  alt={(review.media.type === "video" ? "Imagem de prévia da avaliação de " : "Foto publicada junto à avaliação de ") + review.author + " sobre Botox Vonix"}
+                  src={
+                    review.media.type === "video" && "poster" in review.media
+                      ? review.media.poster
+                      : review.media.src
+                  }
+                  alt={
+                    (review.media.type === "video"
+                      ? "Imagem de prévia da avaliação de "
+                      : "Foto publicada junto à avaliação de ") +
+                    review.author +
+                    " sobre Botox Vonix"
+                  }
                   width={112}
                   height={160}
                   loading="lazy"
@@ -160,17 +177,21 @@ export function AffiliateVerifiedReviewPreview() {
                   className="h-full min-h-[9rem] w-full object-cover"
                 />
                 {review.media.type === "video" ? (
-  <PlayCircle
-    aria-hidden="true"
-    className="absolute bottom-2 right-2 size-6 rounded-full bg-white/90 text-[#783d53] transition-transform group-hover:scale-110 motion-reduce:transition-none"
-  />
-) : (
-  <span className="absolute bottom-2 right-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-bold text-[#783d53]">Foto</span>
-)}
+                  <PlayCircle
+                    aria-hidden="true"
+                    className="absolute bottom-2 right-2 size-6 rounded-full bg-white/90 text-[#783d53] transition-transform group-hover:scale-110 motion-reduce:transition-none"
+                  />
+                ) : (
+                  <span className="absolute bottom-2 right-2 rounded-md bg-white/95 px-2 py-1 text-[10px] font-bold text-[#783d53]">
+                    Foto
+                  </span>
+                )}
               </a>
               <figcaption className="flex min-w-0 flex-1 flex-col px-3 py-2.5">
                 <p className="text-[9px] font-bold uppercase leading-snug tracking-[.04em] text-[#9a5c70]">
-                  {review.media.type === "video" ? "Avaliação de produto em vídeo" : "Avaliação de produto com foto"}
+                  {review.media.type === "video"
+                    ? "Avaliação de produto em vídeo"
+                    : "Avaliação de produto com foto"}
                 </p>
                 <blockquote className="mt-1.5 break-words font-display text-sm leading-5 text-[#4d3340]">
                   “{review.comment}”
