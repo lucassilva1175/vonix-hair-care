@@ -350,7 +350,9 @@ export function AffiliateEditorialHero({
                   {officialProductReviewCount} avaliações de clientes no catálogo Vonix
                 </strong>
                 <span className="mt-1 block text-xs leading-snug text-[#795e69]">
-                  São {officialProductVideoReviewCount} vídeos e {officialProductReviewCount - officialProductVideoReviewCount} foto de clientes — não são depoimentos de afiliadas.
+                  São {officialProductVideoReviewCount} vídeos e{" "}
+                  {officialProductReviewCount - officialProductVideoReviewCount} foto de clientes —
+                  não são depoimentos de afiliadas.
                 </span>
               </span>
               <ArrowUpRight
