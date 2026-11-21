@@ -29,8 +29,12 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     expect(
       container.querySelectorAll('[data-testid="vonix-c53-real-product-reviews"]'),
     ).toHaveLength(1);
-    expect(evidence.querySelectorAll("blockquote")).toHaveLength(3);
-    expect(evidence.querySelectorAll("img")).toHaveLength(1);
+    expect(evidence.querySelectorAll("blockquote")).toHaveLength(4);
+    expect(evidence.querySelectorAll("img")).toHaveLength(2);
+    expect(evidence.querySelector('[data-testid="affiliate-c86-customer-photo"]')).toHaveAttribute(
+      "src",
+      "/depoimentos/depoimento-4.jpg",
+    );
   });
 
   it("preserves actual public review attribution, original imagery and verifiable source", () => {
@@ -44,7 +48,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       "/images/products/botox-vonix.webp",
     );
     expect(evidence.querySelector("picture img")?.getAttribute("alt")).toContain("Vonix");
-    for (const person of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade"]) {
+    for (const person of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade", "Ana Paula"]) {
       expect(evidence).toHaveTextContent(person);
     }
     expect(evidence).toHaveTextContent("Não são depoimentos de afiliadas");
@@ -54,11 +58,17 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     );
   });
 
-  it("keeps product gallery without a second review block", () => {
+  it("avoids repeated product images and preserves genuine links to catalog and application", () => {
     const { container } = render(<AffiliateCreatorOpportunity recruitmentOpen={false} />);
     expect(container.querySelectorAll("blockquote")).toHaveLength(0);
     expect(container.querySelectorAll("#avaliacoes-produtos")).toHaveLength(0);
-    expect(container.querySelectorAll("picture img")).toHaveLength(3);
+    expect(container.querySelectorAll("picture img")).toHaveLength(0);
+    expect(screen.getByTestId("affiliate-c90-creator-bridge")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("affiliate-c90-creator-bridge")).getByRole("link", {
+        name: /Conhecer o catálogo/i,
+      }),
+    ).toHaveAttribute("href", "/loja");
     expect(screen.getByRole("link", { name: /Conhecer a candidatura/ })).toHaveAttribute(
       "href",
       "#inscricao",
@@ -80,6 +90,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       ["Ganhos", "#ganhos"],
       ["Como funciona", "#como-funciona"],
       ["Ideias de conteúdo", "#perfis"],
+      ["Para quem é", "#criterios"],
       ["Avaliações", "#avaliacoes-rapidas"],
       ["Dúvidas", "#duvidas"],
       ["Status da candidatura", "/consultar-candidatura"],

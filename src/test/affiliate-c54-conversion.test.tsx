@@ -72,7 +72,12 @@ describe("Vonix Afiliadas C54: escolha de estilo sem criar promessa comercial", 
     expect(guide).not.toHaveTextContent(
       /taxa de inscrição|aprovada automaticamente|receber produtos grátis/i,
     );
-    expect(guide.querySelector("input")).toBeNull();
+    expect(within(guide).getAllByRole("checkbox")).toHaveLength(4);
+    expect(guide.querySelector('input:not([type="checkbox"])')).toBeNull();
+    expect(within(guide).getByRole("link", { name: /Conferir disponibilidade/i })).toHaveAttribute(
+      "href",
+      "#inscricao",
+    );
   });
 
   it.each([

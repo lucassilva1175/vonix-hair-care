@@ -8,6 +8,7 @@ import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
 import { AffiliateApplicationPrep } from "@/components/affiliate-application-prep";
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
+import { AffiliateDiscoveryGate } from "@/components/affiliate-discovery-gate";
 import { AffiliateMobileApplyBar } from "@/components/affiliate-mobile-apply-bar";
 import {
   AffiliateLandingOffer,
@@ -170,7 +171,7 @@ export function AffiliateApplicationPage() {
   return (
     <AffiliateShell recruitmentStatus={recruitment}>
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
-        <AffiliateLandingOffer recruitmentStatus={recruitment} />
+        <AffiliateLandingOffer recruitmentStatus={recruitment} placement="intro" />
         <AffiliateMobileApplyBar recruitmentStatus={recruitment} />
         <AffiliateApplicationStepsPreview />
 
@@ -365,8 +366,46 @@ export function AffiliateApplicationPage() {
           )}
         </section>
         <AffiliateNextSteps recruitmentOpen={recruitment === "open" && !preview} />
-        <AffiliateLandingDiscovery recruitmentStatus={recruitment} />
         <AffiliateLandingFAQ />
+        <AffiliateLandingOffer recruitmentStatus={recruitment} placement="details" />
+        <nav
+          data-testid="affiliate-c91-explore-paths"
+          aria-label="Continue explorando o universo Vonix Hair"
+          className="border-y border-[#e8d8d6] bg-[#fbf5f2] px-5 py-7 sm:py-9"
+        >
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5">
+            <div className="max-w-xl">
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#845268]">
+                Depois de conhecer a candidatura
+              </p>
+              <h2 className="mt-2 font-display text-2xl leading-tight text-[#533240] sm:text-3xl">
+                Explore mais do universo Vonix.
+              </h2>
+              <p className="mt-2 text-xs leading-[1.65] text-[#755a64]">
+                Avaliações são de clientes sobre produtos; vídeos e exemplos de conteúdo são
+                materiais editoriais da loja, não relatos de afiliadas aprovadas.
+              </p>
+            </div>
+            <div className="flex min-w-0 flex-wrap gap-2.5">
+              {[
+                { href: "#avaliacoes-produtos", label: "Avaliações de produtos" },
+                { href: "#catalogo-em-video", label: "Vídeos do catálogo" },
+                { href: "#perfis", label: "Ideias de conteúdo" },
+              ].map(({ href, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="inline-flex min-h-11 items-center rounded-full border border-[#d3b6bd] bg-white px-4 py-2 text-xs font-bold text-[#754353] transition-colors hover:bg-[#f1e4e5] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754353]"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </nav>
+        <AffiliateDiscoveryGate>
+          <AffiliateLandingDiscovery recruitmentStatus={recruitment} />
+        </AffiliateDiscoveryGate>
       </div>
     </AffiliateShell>
   );

@@ -9,7 +9,7 @@ afterEach(cleanup);
 describe("Vonix affiliate V2 editorial journey", () => {
   it("keeps the mobile galleries keyboard-accessible and swipeable, without importing third-party claims", () => {
     render(<AffiliateLandingIntro recruitmentStatus="closed" />);
-    const topics = screen.getByRole("region", { name: /Temas da seleção Vonix Hair/ });
+    const topics = screen.getByRole("region", { name: /Quatro aspectos de afinidade Vonix Hair/ });
     const ideas = screen.getByRole("region", { name: /Formatos criativos ilustrados/ });
     expect(topics).toHaveAttribute("tabindex", "0");
     expect(ideas).toHaveAttribute("tabindex", "0");

@@ -18,15 +18,15 @@ function layoutRail(element: HTMLElement, width: number, scrollWidth: number) {
 }
 
 describe("C82: navegação de avaliações reais de produtos, nunca afiliadas fictícias", () => {
-  it("mostra exatamente três depoimentos do catálogo oficial sem vídeos ou chamadas de rede", () => {
+  it("mostra quatro avaliações do catálogo oficial (três vídeos e uma foto) sem vídeos ou chamadas de rede", () => {
     const request = vi.spyOn(globalThis, "fetch");
     const { container } = render(<AffiliateVerifiedReviewPreview />);
     const section = screen.getByTestId("vonix-c65-review-preview");
     const controls = screen.getByTestId("vonix-c82-review-controls");
     expect(controls).toHaveClass("md:hidden");
     expect(officialProductVideoReviewCount).toBe(3);
-    expect(controls).toHaveTextContent("3 avaliações reais de produto");
-    expect(within(section).getAllByTestId("vonix-c72-review-card")).toHaveLength(3);
+    expect(controls).toHaveTextContent("4 avaliações reais de produto");
+    expect(within(section).getAllByTestId("vonix-c72-review-card")).toHaveLength(4);
     for (const author of ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis"]) {
       const record = sourceReviews.find((r) => r.author === author && r.slug === "botox-vonix");
       expect(record).toBeDefined();
