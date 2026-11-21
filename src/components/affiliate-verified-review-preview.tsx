@@ -177,7 +177,9 @@ export function AffiliateVerifiedReviewPreview() {
                   className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transform-none motion-reduce:transition-none"
                 />
                 <span className="absolute left-3 top-3 rounded-full border border-white/60 bg-[#fffaf7]/95 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.06em] text-[#683d4d] shadow-sm">
-                  {review.media.type === "video" ? "Avaliação de produto em vídeo" : "Avaliação de produto com foto"}
+                  {review.media.type === "video"
+                    ? "Avaliação de produto em vídeo"
+                    : "Avaliação de produto com foto"}
                 </span>
                 {review.media.type === "video" ? (
                   <PlayCircle
