@@ -185,6 +185,33 @@ export function AffiliateEditorialHero({
             Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil à
             Vonix Hair e descubra como funciona a seleção para uma possível parceria.
           </p>
+          <div
+            role="status"
+            aria-live="polite"
+            data-testid="affiliate-c94-intake-status"
+            className="mt-5 mb-2 inline-flex max-w-lg flex-wrap items-center gap-2 rounded-lg border border-[#e5d2cf] bg-white px-4 py-3 text-xs font-semibold leading-5 text-[#523740]"
+          >
+            <span
+              aria-hidden="true"
+              className={
+                "size-2.5 shrink-0 rounded-full " +
+                (isOpen
+                  ? "bg-emerald-600"
+                  : recruitmentStatus === "loading"
+                    ? "bg-amber-600"
+                    : "bg-[#7e4053]")
+              }
+            />
+            {isOpen
+              ? "Candidaturas abertas para análise"
+              : recruitmentStatus === "loading"
+                ? "Consultando disponibilidade de inscrição"
+                : recruitmentStatus === "limited"
+                  ? "Inscrição temporariamente limitada nesta conexão"
+                  : recruitmentStatus === "unavailable"
+                    ? "Não foi possível consultar a disponibilidade das inscrições"
+                    : "Conheça o formulário enquanto as inscrições estão em preparação"}
+          </div>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button
               asChild
@@ -216,31 +243,6 @@ export function AffiliateEditorialHero({
               ),
             )}
           </ul>
-          <div
-            role="status"
-            className="mt-5 inline-flex max-w-lg flex-wrap items-center gap-2 rounded-lg border border-[#e5d2cf] bg-white px-4 py-3 text-xs font-semibold leading-5 text-[#523740]"
-          >
-            <span
-              aria-hidden="true"
-              className={
-                "size-2.5 shrink-0 rounded-full " +
-                (isOpen
-                  ? "bg-emerald-600"
-                  : recruitmentStatus === "loading"
-                    ? "bg-amber-600"
-                    : "bg-[#7e4053]")
-              }
-            />
-            {isOpen
-              ? "Candidaturas abertas para análise"
-              : recruitmentStatus === "loading"
-                ? "Consultando disponibilidade de inscrição"
-                : recruitmentStatus === "limited"
-                  ? "Inscrição temporariamente limitada nesta conexão"
-                  : recruitmentStatus === "unavailable"
-                    ? "Não foi possível consultar a disponibilidade das inscrições"
-                    : "Conheça o formulário enquanto as inscrições estão em preparação"}
-          </div>
           <p className="mt-3 max-w-lg text-xs leading-[1.7] text-[#65515a]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque
             nem compra de produtos para se candidatar.{" "}
@@ -260,29 +262,37 @@ export function AffiliateEditorialHero({
         >
           <div
             data-testid="affiliate-c89-hair-editorial"
-            className="mb-5 min-w-0 overflow-hidden rounded-[1.5rem] border border-[#e1cfcb] bg-gradient-to-r from-[#eee0d9] via-[#f9eee8] to-[#fffaf6] shadow-[0_12px_32px_rgba(69,35,50,.07)]"
+            className="relative isolate mb-5 min-h-[16rem] min-w-0 overflow-hidden rounded-[1.75rem] border border-[#e1cfcb] bg-[#c5a89e] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[18rem] lg:min-h-[19rem]"
           >
-            <div className="grid grid-cols-[7.75rem_minmax(0,1fr)] items-stretch sm:grid-cols-[11.5rem_minmax(0,1fr)]">
-              <div className="relative min-h-[8.25rem] overflow-hidden bg-[#d8b8a8] sm:min-h-[10.75rem]">
-                <img
-                  src="/images/categorias/cachos.jpg"
-                  alt="Fotografia editorial de cabelos da categoria Cachos do catálogo Vonix Hair; não identifica uma afiliada"
-                  width={480}
-                  height={480}
-                  loading="eager"
-                  decoding="async"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              </div>
-              <div className="flex min-w-0 flex-col justify-center px-3.5 py-3.5 sm:px-6 sm:py-5">
-                <p className="text-[9px] font-bold uppercase leading-snug tracking-[.11em] text-[#865267] sm:text-[11px]">
-                  Inspiração capilar · Acervo Vonix
+            <img
+              src="/images/categorias/cachos.jpg"
+              alt="Fotografia editorial de cabelos da categoria Cachos do catálogo Vonix Hair; não identifica uma afiliada"
+              width={480}
+              height={480}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              data-testid="affiliate-c94-editorial-photo"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-t from-[#21151d]/90 via-[#251923]/40 to-[#21151d]/5"
+            />
+            <div className="relative flex min-h-[16rem] flex-col justify-between gap-8 p-5 text-white sm:min-h-[18rem] sm:p-7 lg:min-h-[19rem]">
+              <span className="w-fit rounded-full border border-white/50 bg-[#24151d]/55 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-white backdrop-blur-sm sm:text-[11px]">
+                Cabelos reais · Acervo editorial Vonix
+              </span>
+              <div className="max-w-[27rem]">
+                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-white/90">
+                  A criação começa pela sua identidade
                 </p>
-                <h2 className="mt-1.5 font-display text-lg leading-snug text-[#573342] sm:mt-2 sm:text-2xl">
+                <h2 className="mt-2 font-display text-[clamp(1.9rem,4vw,2.9rem)] leading-[1.08] tracking-tight text-white">
                   Movimento, textura e cuidado.
                 </h2>
-                <p className="mt-2 text-[10px] leading-[1.45] text-[#705663] sm:text-xs sm:leading-5">
-                  Imagem editorial da loja. Não retrata afiliada nem comprova parceria.
+                <p className="mt-2 max-w-lg text-xs leading-[1.6] text-white/90 sm:text-sm">
+                  Imagem da categoria Cachos da loja oficial. Não retrata afiliada nem comprova
+                  parceria.
                 </p>
               </div>
             </div>
