@@ -268,6 +268,10 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
       if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
       const src = img.getAttribute("src") ?? "";
       const alt = img.getAttribute("alt") ?? "";
+      if (img.closest('[data-testid="vonix-c53-real-product-reviews"]') && src === "/depoimentos/depoimento-4.jpg") {
+        expect(alt).toBe("Foto publicada junto à avaliação de Ana Paula sobre Botox Vonix");
+        return;
+      }
       if (src.startsWith("/images/categorias/")) {
         // Only the six already-used store category photos are allowed, never
         // third-party creators or images falsely attributed to affiliates.
