@@ -45,7 +45,7 @@ export function AffiliateApplicationStepsPreview() {
       data-testid="vonix-c66-application-steps"
       className="scroll-mt-36 overflow-hidden border-b border-[#e6d5d1] bg-[#fbf5f1] px-5 py-10 text-[#4e3240] sm:py-14"
     >
-      <div className="mx-auto max-w-7xl">
+      <div id="como-funciona" className="mx-auto max-w-7xl scroll-mt-36">
         <div className="flex flex-wrap items-end justify-between gap-5 sm:gap-8">
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.13em] text-[#865168]">
