@@ -8,11 +8,11 @@ afterEach(cleanup);
 const authors = ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis"] as const;
 
 describe("C72 — editorial customer-product evidence", () => {
-  it("renders all three real Botox product video reviews with authentic captions and posters", () => {
+  it("retains three real video reviews alongside a fourth photo with authentic captions and posters", () => {
     render(<AffiliateVerifiedReviewPreview />);
     const section = screen.getByTestId("vonix-c65-review-preview");
     const cards = within(section).getAllByTestId("vonix-c72-review-card");
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(4);
     for (const [index, author] of authors.entries()) {
       const source = reviews.find((item) => item.author === author && item.slug === "botox-vonix");
       if (!source?.media.poster || source.media.type !== "video")
@@ -66,7 +66,7 @@ describe("C72 — editorial customer-product evidence", () => {
     expect(within(preview).getAllByText("Avaliação de produto em vídeo")).toHaveLength(3);
     expect(preview.querySelector("video, audio, source, form, [autoplay]")).toBeNull();
     expect(preview.querySelector('[src$=".mp4"]')).toBeNull();
-    expect(preview.querySelectorAll("img")).toHaveLength(3);
+    expect(preview.querySelectorAll("img")).toHaveLength(4);
   });
 
   it("uses no analytics, network, submission, or external video player to render the proof", () => {
