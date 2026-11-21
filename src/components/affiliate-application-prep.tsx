@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -51,6 +51,8 @@ const checklistLabels: Record<PreparationKey, string> = {
  * component. No personal details, enrollment, network calls or storage.
  */
 export function AffiliateApplicationPrep() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [prepared, setPrepared] = useState<Record<PreparationKey, boolean>>({
     age: false,
     contact: false,
@@ -123,6 +125,7 @@ export function AffiliateApplicationPrep() {
           <input
             type="checkbox"
             checked={prepared.age}
+            disabled={!hydrated}
             onChange={(event) => togglePreparation("age", event.target.checked)}
             className="size-5 shrink-0 accent-[#793f54]"
           />
@@ -144,6 +147,7 @@ export function AffiliateApplicationPrep() {
                   <input
                     type="checkbox"
                     checked={prepared[id]}
+                    disabled={!hydrated}
                     onChange={(event) => togglePreparation(id, event.target.checked)}
                     className="size-5 shrink-0 accent-[#793f54]"
                   />
