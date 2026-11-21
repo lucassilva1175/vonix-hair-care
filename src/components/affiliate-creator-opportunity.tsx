@@ -128,7 +128,7 @@ export function AffiliateCreatorOpportunity({
             href="/loja"
             className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#d9bec3] bg-white px-5 py-3 text-sm font-bold text-[#754258] transition-colors hover:bg-[#f7e8eb] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754258]"
           >
-            Conhecer o catálogo
+            Conhecer o catálogo na loja oficial
             <ArrowUpRight aria-hidden="true" className="size-4" />
           </a>
           <Button asChild className="h-auto min-h-12 rounded-xl px-5 py-3 text-sm font-bold">
