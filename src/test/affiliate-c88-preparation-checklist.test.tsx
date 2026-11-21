@@ -13,7 +13,7 @@ const labels = [
   "Separei meus dados de contato",
   "Separei meu endereço com CEP e número",
   "Tenho meu Instagram e o número aproximado de seguidores",
-];
+] as const;
 
 describe("C88: affiliate checklist is guidance, never a real application", () => {
   it("disables all four controls in server HTML until handlers are connected", () => {
