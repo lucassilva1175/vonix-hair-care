@@ -5,7 +5,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
-  PlayCircle,
+  Images,
   Sparkles,
 } from "lucide-react";
 import {
@@ -343,7 +343,7 @@ export function AffiliateEditorialHero({
               className="group mt-4 flex min-h-16 items-center gap-3 rounded-2xl border border-[#e1c9c9] bg-white px-4 py-3 text-left text-[#593344] shadow-[0_8px_22px_rgba(78,43,54,.06)] transition-colors hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754153]"
             >
               <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#f3e3e1] text-[#854b5f]">
-                <PlayCircle aria-hidden="true" className="size-6" />
+                <Images aria-hidden="true" className="size-6" />
               </span>
               <span className="min-w-0 flex-1">
                 <strong className="block text-sm font-bold leading-snug">
