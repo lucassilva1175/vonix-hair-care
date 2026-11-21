@@ -1,9 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, CreditCard, Lock, ShieldCheck, Truck } from "lucide-react";
-import heroLogo from "@/assets/vonix-logo.webp";
-import { SecuritySeal, Shell } from "@/components/site";
-import { OrderBump } from "@/components/order-bump";
+import { ArrowRight, CreditCard, Lock } from "lucide-react";
+import { Shell } from "@/components/site";
 import { useCepAddress } from "@/hooks/use-cep-address";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
@@ -17,8 +15,6 @@ import {
   quoteShipping,
 } from "@/lib/checkout.functions";
 import {
-  FREE_SHIPPING_ABOVE,
-  OFFER_LABEL,
   WHATSAPP,
   brl,
   checkoutTotals,
@@ -49,22 +45,21 @@ export const Route = createFileRoute("/checkout")({
 });
 
 const inp =
-  "h-11 w-full rounded-lg border border-border bg-white px-3.5 text-body outline-none transition focus:border-action focus:ring-2 focus:ring-action/40";
+  "h-11 w-full rounded-xl border border-neutral-300 bg-white px-3.5 text-body outline-none transition placeholder:text-neutral-600 focus:border-black focus:bg-white focus:ring-2 focus:ring-black/20 max-sm:text-[16px]";
 
 const tint = "border-emerald-200 bg-emerald-50";
 
 const panel =
-  "space-y-2 rounded-2xl border border-border bg-white p-4 shadow-[0_6px_18px_-14px_rgba(60,40,10,0.35)] sm:p-5";
+  "space-y-2 rounded-2xl border border-neutral-200 bg-white p-4 shadow-[0_6px_18px_-14px_rgba(0,0,0,0.25)] sm:p-5";
 
-/** Selo dourado de cada forma de pagamento: marcado = borda e fundo dourados da marca. */
 const payTile = (on: boolean) =>
-  `relative flex min-w-0 cursor-pointer flex-col gap-1 rounded-xl border-2 p-3.5 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-action/60 ${
-    on ? "border-[#c9a45c] bg-[#1b1209] text-white shadow-sm" : "border-border bg-white hover:border-[#c9a45c]/60"
+  `relative flex min-w-0 cursor-pointer flex-col gap-1 rounded-xl border-2 p-3.5 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-black/50 ${
+    on ? "border-black bg-black text-white shadow-sm" : "border-neutral-200 bg-white text-black hover:border-neutral-500"
   }`;
 
 const StepTitle = ({ n, children }: { n: number; children: React.ReactNode }) => (
   <>
-  <legend className="float-left mb-2 flex w-full items-center gap-2.5 font-display text-name" data-step={n}>
+  <legend className="float-left mb-2 flex w-full items-center font-display text-name font-semibold text-black" data-step={n}>
     {children}
   </legend>
   <div className="clear-both" />
@@ -112,51 +107,6 @@ declare global {
 /** Appmax returns Brasília time as "Y-m-d H:i:s". */
 const parseExpiry = (s: string) => new Date(`${s.replace(" ", "T")}-03:00`).getTime();
 
-/** Contador de 15 min a partir da entrada no checkout (guardado na sessão, não reinicia ao recarregar). Só visual: não muda preço nem bloqueia a compra; some ao zerar. */
-function CheckoutTimer() {
-  const [left, setLeft] = useState<number | null>(null);
-  useEffect(() => {
-    let start = Date.now();
-    try {
-      const saved = Number(sessionStorage.getItem("vonix-checkout-inicio"));
-      if (saved > 0) start = saved;
-      else sessionStorage.setItem("vonix-checkout-inicio", String(start));
-    } catch {
-      /* sem sessionStorage: conta a partir de agora */
-    }
-    const tick = () => {
-      if (start + 15 * 60_000 - Date.now() <= 0) {
-        start = Date.now();
-        try {
-          sessionStorage.setItem("vonix-checkout-inicio", String(start));
-        } catch {
-          /* segue sem guardar */
-        }
-      }
-      setLeft(start + 15 * 60_000 - Date.now());
-    };
-    tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, []);
-  if (left === null || left <= 0) return null;
-  const mm = Math.floor(left / 60_000);
-  const ss = Math.floor((left % 60_000) / 1000);
-  return (
-    <p
-      role="timer"
-      aria-live="off"
-      data-testid="checkout-timer"
-      className="flex cursor-default select-none items-center justify-between gap-3 rounded-xl border border-[#c9a45c]/50 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-small font-medium text-white"
-    >
-      <span className="leading-snug">Você tem 15 minutos para finalizar com tranquilidade</span>
-      <span className="money shrink-0 rounded-lg border border-[#c9a45c]/40 bg-black/30 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-[#e3c07a]">
-        {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
-      </span>
-    </p>
-  );
-}
-
 /** Copia o texto mesmo quando o navegador do Instagram/Facebook bloqueia a área de transferência (usa o campo selecionado como plano B). */
 async function copyText(text: string, el?: HTMLTextAreaElement | null) {
   try {
@@ -195,6 +145,7 @@ function PixPanel({
 }) {
   const codeRef = useRef<HTMLTextAreaElement>(null);
   const [copyFailed, setCopyFailed] = useState(false);
+  const [qrFailed, setQrFailed] = useState(false);
   const [left, setLeft] = useState(() => parseExpiry(pix.expiresAt) - Date.now());
   useEffect(() => {
     const t = setInterval(() => setLeft(parseExpiry(pix.expiresAt) - Date.now()), 1000);
@@ -217,6 +168,12 @@ function PixPanel({
     );
   const mm = Math.max(0, Math.floor(left / 60000));
   const ss = Math.max(0, Math.floor((left % 60000) / 1000));
+  const qrCode = pix.qrcode?.trim();
+  const qrSrc = qrCode
+    ? /^(?:https:\/\/|data:image\/png;base64,)/i.test(qrCode)
+      ? qrCode
+      : `data:image/png;base64,${qrCode}`
+    : null;
   return (
     <div className="rounded-2xl border border-border bg-card p-6 text-center">
       <h1 className="font-display text-h1">Pague com Pix</h1>
@@ -228,10 +185,10 @@ function PixPanel({
         role="timer"
         aria-live="off"
         data-testid="pix-timer"
-        className="mt-4 flex cursor-default select-none items-center justify-between gap-3 rounded-xl border border-[#c9a45c]/50 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-left text-small font-medium text-white"
+        className="mt-4 flex cursor-default select-none items-center justify-between gap-3 rounded-xl border border-neutral-400/50 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-left text-small font-medium text-white"
       >
         <span className="leading-snug">{left > 0 ? "Seu Pix expira em" : "Este Pix expirou"}</span>
-        <span className="money shrink-0 rounded-lg border border-[#c9a45c]/40 bg-black/30 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-[#e3c07a]">
+        <span className="money shrink-0 rounded-lg border border-neutral-400/40 bg-black/30 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-white">
           {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
         </span>
       </p>
@@ -242,7 +199,7 @@ function PixPanel({
             const ok = await onCopy(codeRef.current);
             setCopyFailed(!ok);
           }}
-          className="mt-4 w-full rounded-full bg-action py-4 text-name font-semibold text-action-foreground"
+          className="mt-4 w-full rounded-full bg-black py-4 text-name font-semibold text-white disabled:cursor-not-allowed"
         >
           {copied ? "Código copiado!" : "Copiar código Pix"}
         </button>
@@ -250,7 +207,7 @@ function PixPanel({
         <button
           type="button"
           onClick={onRestart}
-          className="mt-4 w-full rounded-full bg-action py-4 text-name font-semibold text-action-foreground"
+          className="mt-4 w-full rounded-full bg-black py-4 text-name font-semibold text-white"
         >
           Gerar um novo Pix
         </button>
@@ -260,46 +217,80 @@ function PixPanel({
           Não conseguimos copiar sozinhos. Toque e segure no código abaixo, escolha "Copiar" e cole no app do seu banco.
         </p>
       )}
-      <ol className="mx-auto mt-4 max-w-sm list-decimal space-y-1 pl-5 text-left text-body">
-        <li>Toque em <b>Copiar código Pix</b>.</li>
-        <li>Abra o app do seu banco e escolha <b>Pix → Pix Copia e Cola</b>.</li>
-        <li>Cole o código e confirme o pagamento.</li>
-        <li>Pronto: volte aqui, esta tela confirma sozinha.</li>
-      </ol>
-      <textarea
-        ref={codeRef}
-        readOnly
-        value={pix.emv}
-        rows={3}
-        aria-label="Código Pix copia e cola"
-        className="mt-4 w-full rounded-lg border border-border bg-background p-2 text-small"
-        onFocus={(e) => e.currentTarget.select()}
-      />
-      <details className="mt-4 hidden text-left sm:block" open>
-        <summary className="cursor-pointer text-center text-body font-medium">Pagando pelo computador? Leia o QR Code</summary>
-        <img
-          src={`data:image/png;base64,${pix.qrcode}`}
-          alt="QR Code do Pix"
-          width={200}
-          height={200}
-          className="mx-auto mt-3 h-[200px] w-[200px]"
+      <label className="mt-3 block text-left text-small font-medium">
+        Pix Copia e Cola
+        <textarea
+          ref={codeRef}
+          readOnly
+          value={pix.emv}
+          rows={2}
+          aria-label="Código Pix copia e cola"
+          className="mt-1 w-full resize-none rounded-lg border border-border bg-background p-2 text-small"
+          onFocus={(e) => e.currentTarget.select()}
         />
-      </details>
+      </label>
+      {left > 0 && (
+        <figure className="mt-3 rounded-xl border border-border bg-white p-3">
+          <figcaption className="text-body font-semibold">Pague com outro celular</figcaption>
+          {qrSrc && !qrFailed ? (
+            <>
+              <p className="text-small text-muted-foreground">
+                Abra o Pix no app do banco e escaneie o QR Code.
+              </p>
+              <img
+                src={qrSrc}
+                alt="QR Code do Pix"
+                width={200}
+                height={200}
+                className="mx-auto mt-2 h-auto w-[200px] max-w-full"
+                referrerPolicy="no-referrer"
+                onError={() => setQrFailed(true)}
+              />
+            </>
+          ) : <p role="status" className="text-small text-muted-foreground">QR Code indisponível. Use o Pix Copia e Cola acima.</p>}
+        </figure>
+      )}
       <p className="mt-3 text-body text-muted-foreground">
         {left > 0 ? "" : "Este Pix expirou. Volte e gere outro. "}
-        Aguardando pagamento — esta tela atualiza sozinha.
+        Aguardando pagamento - esta tela atualiza sozinha.
       </p>
     </div>
   );
 }
 
-const STEPS = ["Dados", "Entrega", "Pagamento"];
+const STEPS = ["Dados", "Entrega", "Finalização"];
+const CHECKOUT_TIMER_SECONDS = 15 * 60;
+
+function CheckoutTimer() {
+  const [remaining, setRemaining] = useState(CHECKOUT_TIMER_SECONDS);
+  useEffect(() => {
+    const deadline = Date.now() + CHECKOUT_TIMER_SECONDS * 1000;
+    const timer = setInterval(() => {
+      const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setRemaining(seconds);
+      if (seconds === 0) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const seconds = String(remaining % 60).padStart(2, "0");
+  return (
+    <p role="timer" aria-live="off" data-testid="checkout-timer" className="flex cursor-default select-none items-center justify-between gap-3 rounded-xl border border-[#c9a45c]/50 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-small font-medium text-white">
+      <span className="leading-snug">
+        {remaining > 0 ? "Você tem 15 minutos para finalizar com tranquilidade" : "Você ainda pode finalizar sua compra"}
+      </span>
+      <span className="money shrink-0 rounded-lg border border-[#c9a45c]/40 bg-black/30 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-[#e3c07a]">
+        {minutes}:{seconds}
+      </span>
+    </p>
+  );
+}
 
 /** Losangos do Pix (desenho próprio, só o símbolo). */
 function PixMark() {
   return (
     <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" aria-hidden="true">
-      <g fill="#2fb39a">
+      <g fill="currentColor">
         <rect x="9.2" y="1.6" width="5.6" height="5.6" rx="1.2" transform="rotate(45 12 4.4)" />
         <rect x="9.2" y="16.8" width="5.6" height="5.6" rx="1.2" transform="rotate(45 12 19.6)" />
         <rect x="1.6" y="9.2" width="5.6" height="5.6" rx="1.2" transform="rotate(45 4.4 12)" />
@@ -327,7 +318,7 @@ function CardBrands() {
   );
 }
 
-function Drawer({ children, progress, steps }: { children: React.ReactNode; progress: number; steps: boolean[] }) {
+function Drawer({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[90] flex justify-end bg-black/50 backdrop-blur-[2px]" style={{ animation: "vx-fade .25s ease-out" }} onClick={() => history.back()}>
       <style>{"@keyframes vx-fade{from{opacity:0}to{opacity:1}}@keyframes vx-slide{from{transform:translateX(100%)}to{transform:none}}"}</style>
@@ -341,14 +332,6 @@ function Drawer({ children, progress, steps }: { children: React.ReactNode; prog
             <b className="flex items-center gap-2 text-name"><Lock className="h-4 w-4 text-emerald-600" aria-hidden="true" /> Compra segura</b>
             <button type="button" aria-label="Fechar" onClick={() => history.back()} className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xl leading-none">×</button>
           </div>
-          <div className="mt-3 flex gap-1.5" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
-            {STEPS.map((n, k) => (
-              <div key={n} className="flex-1">
-                <div className={`h-1.5 rounded-full transition-all duration-500 ${steps[k] ? "bg-emerald-600" : k === steps.filter(Boolean).length ? "bg-emerald-300" : "bg-border"}`} />
-                <div className={`mt-1 text-[0.7rem] font-semibold ${steps[k] ? "text-emerald-700" : "text-muted-foreground"}`}>{steps[k] ? "✓ " : ""}{n}</div>
-              </div>
-            ))}
-          </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
       </div>
@@ -357,13 +340,23 @@ function Drawer({ children, progress, steps }: { children: React.ReactNode; prog
 }
 
 function Checkout() {
+  const navigate = useNavigate();
   const [lateral, setLateral] = useState(false);
+  const [step, setStep] = useState(0);
+  const stepHeading = useRef<HTMLHeadingElement>(null);
+  const goToStep = (next: number) => {
+    setError(null);
+    setStep(next);
+    stepHeading.current?.focus();
+    stepHeading.current?.scrollIntoView?.({ block: "nearest" });
+  };
   useEffect(() => {
     let flag = false;
     try {
       flag = sessionStorage.getItem("vonix-lateral") === "1";
     } catch { /* sem armazenamento */ }
-    setLateral(flag || new URLSearchParams(location.search).has("lateral"));
+    const params = new URLSearchParams(location.search);
+    setLateral(flag || params.has("lateral"));
   }, []);
   const c = useCart();
   const hydrated = useHydrated();
@@ -491,7 +484,9 @@ function Checkout() {
         cidade: address.city,
         uf: address.uf,
       }));
-      numeroRef.current?.focus();
+      if (document.activeElement?.getAttribute("aria-label") === "CEP") {
+        numeroRef.current?.focus();
+      }
     },
     [],
   );
@@ -518,13 +513,15 @@ function Checkout() {
         if (cancelled) return;
         if (r.ok) {
           // 3 opções: as 2 mais baratas + 1 intermediária mais rápida (a mais barata que chega em até 3 dias; senão a do meio).
-          // NENHUMA vem marcada: quem escolhe o frete é o cliente.
           const byPrice = [...r.options].sort((a, b) => a.price - b.price || a.days - b.days);
           const rest = byPrice.slice(2);
           const medium = rest.find((o) => o.days <= 3) ?? rest[Math.floor((rest.length - 1) / 2)];
           const picked = [...byPrice.slice(0, 2), ...(medium ? [medium] : [])];
           setOptions(picked);
-          setServiceId((cur) => (picked.some((o) => o.id === cur) ? cur : null));
+          setServiceId((current) => {
+            if (picked.length === 1) return picked[0]?.id ?? null;
+            return picked.some((option) => option.id === current) ? current : null;
+          });
           if (!r.options.length)
             setQuoteErr("Nenhuma transportadora atende este CEP. Fale com a gente no WhatsApp.");
         } else {
@@ -533,10 +530,11 @@ function Checkout() {
           setQuoteErr(r.message);
         }
       })
-      .catch(
-        () =>
-          !cancelled && setQuoteErr("Não foi possível calcular o frete agora. Tente novamente."),
-      )
+      .catch(() => {
+        if (cancelled) return;
+        setServiceId(null);
+        setQuoteErr("Não foi possível calcular o frete agora. Tente novamente.");
+      })
       .finally(() => !cancelled && setQuoting(false));
     return () => {
       cancelled = true;
@@ -731,11 +729,32 @@ function Checkout() {
       setError(msg);
       document.querySelector<HTMLInputElement>(`input[aria-label="${field}"]`)?.focus();
     };
-    const phone = f.whatsapp.replace(/\D/g, "");
-    if (f.nome.trim().length < 3) return fail("Digite seu nome completo.", "Nome completo");
-    if (phone.length < 10 || phone.length > 13)
-      return fail("Digite seu WhatsApp com DDD, por exemplo (31) 99999-9999.", "WhatsApp com DDD");
-    if (!isValidCpf(f.cpf)) return fail("CPF inválido. Confira os números.", "CPF");
+    const form = e.currentTarget as HTMLFormElement;
+    const fields = form.querySelectorAll<HTMLInputElement>(`fieldset[data-checkout-step="${step}"] input`);
+    if (!Array.from(fields).every((input) => input.reportValidity())) return;
+    if (step === 0) {
+      const phone = f.whatsapp.replace(/\D/g, "");
+      if (f.nome.trim().length < 3) return fail("Digite seu nome completo.", "Nome completo");
+      if (phone.length < 10 || phone.length > 13)
+        return fail("Digite seu WhatsApp com DDD, por exemplo (31) 99999-9999.", "WhatsApp com DDD");
+      if (!isValidCpf(f.cpf)) return fail("CPF inválido. Confira os números.", "CPF");
+      goToStep(1);
+      return;
+    }
+    if (step === 1) {
+      if (f.cep.replace(/\D/g, "").length !== 8) return fail("Digite um CEP com 8 números.", "CEP");
+      if (!f.rua.trim() || !f.numero.trim() || !f.bairro.trim() || !f.cidade.trim() || f.uf.trim().length !== 2) {
+        setError("Confira os dados do endereço antes de continuar.");
+        return;
+      }
+      if (quoting || !chosen) {
+        setError(quoting ? "Aguarde o cálculo do frete." : options.length ? "Escolha a forma de entrega." : "Calcule o frete para continuar.");
+        return;
+      }
+      goToStep(2);
+      return;
+    }
+    if (busy || quoting || !chosen || !cfg?.pixEnabled) return;
     track("add_payment_info", { payment_type: pay, value: total });
     if (pay === "pix") void submitPayment();
     else if (!cfg?.externalId) setError("Pagamento por cartão indisponível no momento. Use o Pix.");
@@ -753,6 +772,7 @@ function Checkout() {
       <Shell>
         <div className="container-site max-w-xl py-10">
           <PixPanel
+            key={pix.expiresAt}
             pix={pix}
             paid={paid}
             copied={copied}
@@ -814,29 +834,29 @@ function Checkout() {
   const shipNote = chosen ? (chosen.free ? "frete grátis" : "com frete") : freeShip ? "frete grátis" : "sem frete";
   const selectedInstallments = installmentText(total, parcels);
   const payDisabled = busy || quoting || !chosen || !cfg || !cfg.pixEnabled;
-  // Botão de pagar: o de verdade fica dentro da caixa do método escolhido; quando ele sai da tela, uma barra fixa o repete.
-  const renderPay = (floating: boolean) => (
+  const paymentButton = (
     <>
-      {/* O erro aparece sempre junto do botão que o cliente está vendo: na barra fixa, ou na caixa quando o botão está na tela. */}
-      {error && (
+      {step === 2 && error && (
         <p role="alert" className="rounded-lg border border-destructive bg-white p-2.5 text-small text-destructive">
           {error}
         </p>
       )}
-      {!chosen && !quoting && (
+      {cfg && !cfg.pixEnabled && (
+        <p role="status" className="text-center text-small text-muted-foreground">Pagamento indisponível agora. <a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">Fale com a loja</a>.</p>
+      )}
+      {!chosen && !quoting && !quoteErr && (
         <p className="text-center text-small text-muted-foreground">
           {options.length > 0 ? "Escolha o frete para liberar o pagamento" : "Digite o CEP para liberar o pagamento"}
         </p>
       )}
       <button
-        type={floating ? "button" : "submit"}
-        form={floating ? undefined : "checkout-form"}
-        onClick={floating ? () => (document.getElementById("checkout-form") as HTMLFormElement | null)?.requestSubmit() : undefined}
+        type="submit"
+        form="checkout-form"
         disabled={payDisabled}
-        data-testid={floating ? "checkout-pay-float" : "checkout-pay-button"}
-        className="group flex w-full items-center gap-3 rounded-xl border border-[#c9a45c]/60 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-left text-white shadow-[0_14px_28px_-14px_rgba(0,0,0,0.75)] transition hover:from-[#2d2d2d] hover:to-[#111] active:scale-[0.99] disabled:cursor-not-allowed disabled:border-border disabled:from-neutral-200 disabled:to-neutral-200 disabled:text-neutral-500 disabled:shadow-none"
+        data-testid="checkout-pay-float"
+        className="group flex w-full items-center gap-3 rounded-xl border border-black bg-gradient-to-b from-neutral-800 to-black px-4 py-3 text-left text-white shadow-[0_14px_28px_-14px_rgba(0,0,0,0.75)] transition hover:from-neutral-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:border-neutral-300 disabled:from-neutral-100 disabled:to-neutral-100 disabled:text-neutral-600 disabled:shadow-none"
       >
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#c9a45c]/70 bg-black/30 text-[#e3c07a] group-disabled:border-neutral-300 group-disabled:bg-transparent group-disabled:text-neutral-400">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-neutral-400/70 bg-black/30 text-white group-disabled:border-neutral-300 group-disabled:bg-transparent group-disabled:text-neutral-400">
           <Lock className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1 leading-tight">
@@ -847,15 +867,16 @@ function Checkout() {
             Pagamento seguro
           </span>
         </span>
-        <ArrowRight className="h-5 w-5 shrink-0 text-[#e3c07a] transition group-hover:translate-x-0.5 group-disabled:text-neutral-400" strokeWidth={2} aria-hidden="true" />
+        <ArrowRight className="h-5 w-5 shrink-0 text-white transition group-hover:translate-x-0.5 group-disabled:text-neutral-400" strokeWidth={2} aria-hidden="true" />
       </button>
     </>
   );
-  const stepsDone = [!!(f.nome && f.email && f.whatsapp && f.cpf), !!chosen, false];
-  const progress = (stepsDone.filter(Boolean).length + 1) / 3;
+
+
 
   const totalsCard = (
-            <section aria-label="Resumo do pedido" data-testid="order-summary-body" className={`${panel} space-y-2`}>
+            <section aria-label="Resumo do pedido" data-testid="order-summary-body" className={panel}>
+              <h2 className="font-display text-name font-semibold text-black">Resumo do pedido</h2>
               <div className="space-y-2 text-body" data-testid="summary">
                 <div className="flex justify-between">
                   <span>Produtos</span>
@@ -883,7 +904,7 @@ function Checkout() {
                   <span>Frete</span>
                   <span className="text-right">{chosen ? (chosen.free ? "Grátis" : brl(chosen.price)) : freeShip ? "Grátis" : "A calcular"}</span>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border-t border-[#c9a45c]/50 bg-[#fbf5e6] px-3 py-2.5 text-name font-bold">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-neutral-200 bg-neutral-100 px-3 py-2.5 text-name font-bold text-black">
                   <span className="min-w-0">
                     {chosen || freeShip ? `Total ${pay === "pix" ? "no Pix" : "no cartão"}` : `Produtos ${pay === "pix" ? "no Pix" : "no cartão"}`}
                   </span>
@@ -894,9 +915,6 @@ function Checkout() {
                     {chosen ? "Total com o frete escolhido." : "Total final após calcular o frete."}
                   </p>
                 )}
-                <div className="flex justify-center">
-                  <SecuritySeal />
-                </div>
                 {pay === "card" && (
                   <div className="min-w-0 break-words text-small text-muted-foreground" aria-live="polite">
                     Parcelamento escolhido: {selectedInstallments}
@@ -909,91 +927,83 @@ function Checkout() {
   const body = (
       <div className={lateral ? "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-3" : "container-site mx-auto grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 pb-28 pt-0 sm:pt-4"} style={lateral ? undefined : { maxWidth: "42rem" }}>
         <div className="min-w-0 space-y-3">
-          <form id="checkout-form" className="flex min-w-0 flex-col gap-3" onSubmit={onSubmit}>
-            {!lateral && (
-              <div data-testid="checkout-hero" className="relative -mx-4 flex min-h-[176px] items-center overflow-hidden bg-[#1a1209] sm:mx-0 sm:rounded-2xl">
-                <img src="/images/categorias/hidratacao.jpg" alt="" width={480} height={480} className="absolute inset-y-0 right-0 h-full w-[62%] object-cover object-[50%_38%]" />
-                <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#1a1209] via-[#1a1209]/85 to-transparent" />
-                <div className="relative px-5 py-6">
-                  <img src={heroLogo} alt="Vonix Hair" width={420} height={163} className="h-11 w-auto brightness-0 invert" />
-                  <p className="mt-2 font-display text-body italic text-[#e3c07a]">Seu cuidado começa aqui</p>
-                </div>
-              </div>
-            )}
+          <form id="checkout-form" noValidate className="flex min-w-0 flex-col gap-3" onSubmit={onSubmit}>
+            <header className="flex items-center gap-3 rounded-2xl border border-neutral-900 bg-gradient-to-br from-neutral-800 to-black px-4 py-4 text-white sm:px-5">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/40 bg-white/10 text-white" aria-hidden="true">
+                <Lock className="size-5" strokeWidth={1.75} />
+              </span>
+              <h1 ref={stepHeading} tabIndex={-1} className="font-display text-h2 leading-tight outline-none">Finalizar compra</h1>
+            </header>
             <CheckoutTimer />
-            <div className="pt-1">
-              {!lateral && (
-                <p className="mb-1 flex items-center gap-3 text-small font-semibold uppercase tracking-[0.14em] text-[#8a6a1c]">
-                  Pedido à vista
-                  <span aria-hidden="true" className="h-px flex-1 bg-[#c9a45c]/50" />
-                </p>
-              )}
-              <h1 className={lateral ? "sr-only" : "font-display text-h1 leading-tight"}>Sua compra, sem surpresas</h1>
-            </div>
 
+            <ol aria-label="Etapas do checkout" className="grid grid-cols-3 gap-2 px-1 text-small">
+              {STEPS.map((label, index) => (
+                <li key={label} aria-current={step === index ? "step" : undefined}>
+                  <span aria-hidden="true" className={`mb-1.5 block h-1.5 rounded-full ${index <= step ? "bg-black" : "bg-neutral-200"}`} />
+                  {index < step ? (
+                    <button type="button" onClick={() => goToStep(index)} disabled={busy} className="min-h-8 text-left font-semibold text-black underline underline-offset-2">
+                      {label}
+                    </button>
+                  ) : (
+                    <span className={`flex min-h-8 items-center ${index === step ? "font-semibold text-black" : "text-neutral-600"}`}>{label}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
 
+            <fieldset data-checkout-step="0" hidden={step !== 0} className={panel}>
+              <StepTitle n={1}>Seus dados</StepTitle>
+              <input
+                required
+                aria-label="Nome completo"
+                placeholder="Nome completo"
+                value={f.nome}
+                onChange={set("nome")}
+                autoComplete="name"
+                className={inp}
+              />
+                <input
+                  required
+                  type="email"
+                  inputMode="email"
+                  aria-label="E-mail"
+                  placeholder="E-mail"
+                  value={f.email}
+                  onChange={set("email")}
+                  autoComplete="email"
+                  className={inp}
+                />
+              <div className="grid grid-cols-2 gap-2">
+<input
+                required
+                inputMode="tel"
+                aria-label="WhatsApp com DDD"
+                placeholder="WhatsApp"
+                value={f.whatsapp}
+                onChange={set("whatsapp")}
+                autoComplete="tel"
+                className={inp}
+              />
+              <input
+                required
+                inputMode="numeric"
+                aria-label="CPF"
+                placeholder="CPF"
+                value={f.cpf}
+                maxLength={14}
+                onChange={(e) => setF((old) => ({ ...old, cpf: maskCpf(e.target.value) }))}
+                className={inp}
+              />
+</div>
+              <p className="flex items-start gap-2 pt-1 text-small text-muted-foreground" data-testid="dados-confianca">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                <span>Usamos seus dados para emitir o pedido e enviar atualizações da entrega.</span>
+              </p>
+              </fieldset>
 
-            <fieldset className="order-3 space-y-2">
-              <StepTitle n={3}>Pagamento</StepTitle>
-              <div className="grid grid-cols-1 gap-2">
-                <label data-testid="pay-option-pix" className={payTile(pay === "pix")}>
-                  <span className="flex min-w-0 items-center justify-between gap-2 text-body font-semibold">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <input
-                        type="radio"
-                        name="pay"
-                        aria-label="Pix"
-                        className="h-5 w-5 shrink-0 accent-[#e3c07a]"
-                        checked={pay === "pix"}
-                        onChange={() => setPay("pix")}
-                      />
-                      <span className="truncate">Pix</span>
-                    </span>
-                    <PixMark />
-                  </span>
-                  <span className="min-w-0 leading-tight">
-                    <span className="money block text-name font-semibold">{brl(chosen ? tPix.net + shipping : tPix.net)}</span>
-                    {tPix.pixDiscount > 0 && <span className="block text-small font-semibold text-[#e3c07a]">5% OFF no Pix</span>}
-                    {applied && tPix.pixDiscount === 0 && <span className="block text-small text-white/70">Com cupom, o Pix não tem 5% OFF</span>}
-                    {(!chosen || chosen.free) && <span className={`block text-small ${pay === "pix" ? "text-white/70" : "text-muted-foreground"}`}>{chosen?.free || freeShip ? "Frete grátis" : "sem frete"}</span>}
-                  </span>
-                </label>
-                <label data-testid="pay-option-card" className={payTile(pay === "card")}>
-                  <span className="flex min-w-0 items-center justify-between gap-2 text-body font-semibold">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <input
-                        type="radio"
-                        name="pay"
-                        aria-label="Cartão de crédito"
-                        className="h-5 w-5 shrink-0 accent-[#e3c07a]"
-                        checked={pay === "card"}
-                        onChange={() => setPay("card")}
-                      />
-                      <span className="truncate">Cartão</span>
-                    </span>
-                    <CreditCard className={`h-6 w-6 shrink-0 ${pay === "card" ? "text-[#e3c07a]" : "text-neutral-500"}`} strokeWidth={1.6} aria-hidden="true" />
-                  </span>
-                  <span
-                    className="grid min-w-0 grid-cols-1 items-start gap-y-1 leading-tight"
-                    aria-live="polite"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-name font-bold leading-snug tabular-nums">
-                        {card6.count}x de {brl(card6.value)}
-                      </span>
-                      <span className="block text-small">sem juros</span>
-                    </span>
-                    <span className="min-w-0 text-small tabular-nums">
-                      Valor total {brl(cardTotal)} · {shipNote}
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </fieldset>
-
-            <fieldset className={`${panel} order-2`}>
+            <fieldset data-checkout-step="1" hidden={step !== 1} className={panel}>
               <StepTitle n={2}>Entrega</StepTitle>
-                            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.65fr)] gap-2">
                 <input
                   required
                   inputMode="numeric"
@@ -1004,21 +1014,16 @@ function Checkout() {
                   onChange={(e) => {
                     const m = maskCep(e.target.value);
                     // CEP novo = endereço novo: apaga o do CEP anterior para nunca ficar rua/cidade de outro lugar escondida.
-                    setF((old) => (old.cep === m ? old : { ...old, cep: m, rua: "", bairro: "", cidade: "", uf: "" }));
+                    if (f.cep === m) return;
+                    setOptions([]);
+                    setServiceId(null);
+                    setEditAddr(false);
+                    setShowCompl(false);
+                    setF((old) => ({ ...old, cep: m, rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" }));
                   }}
                   autoComplete="postal-code"
                   className={inp}
                 />
-                <button
-                  type="button"
-                  onClick={() => setQuoteTry((n) => n + 1)}
-                  disabled={f.cep.replace(/\D/g, "").length !== 8 || quoting}
-                  className="h-11 rounded-lg bg-foreground px-5 text-body font-semibold text-background transition active:scale-[0.98] disabled:opacity-40"
-                >
-                  Calcular
-                </button>
-              </div>
-              <p className="text-small text-muted-foreground">Veja valor e prazo da entrega.</p>
               <input
                 ref={numeroRef}
                 required
@@ -1030,6 +1035,7 @@ function Checkout() {
                 autoComplete="off"
                 className={inp}
               />
+              </div>
 {cepLoading && (
                 <p role="status" className="text-body text-muted-foreground">
                   Buscando endereço…
@@ -1070,7 +1076,7 @@ function Checkout() {
                   )}
                 </div>
               )}
-              {!compactAddr && (<>
+              {!compactAddr && f.cep.replace(/\D/g, "").length === 8 && (<>
               <input
                 required
                 aria-label="Rua"
@@ -1161,69 +1167,84 @@ function Checkout() {
               </div>
             </fieldset>
 
-            <fieldset className={`${panel} order-1`}>
-              <StepTitle n={1}>Seus dados</StepTitle>
-              <input
-                required
-                aria-label="Nome completo"
-                placeholder="Nome completo"
-                value={f.nome}
-                onChange={set("nome")}
-                autoComplete="name"
-                className={inp}
-              />
-              <input
-                required
-                type="email"
-                inputMode="email"
-                aria-label="E-mail"
-                placeholder="E-mail"
-                value={f.email}
-                onChange={set("email")}
-                autoComplete="email"
-                className={inp}
-              />
-              <div className="space-y-2">
-<input
-                required
-                inputMode="tel"
-                aria-label="WhatsApp com DDD"
-                placeholder="WhatsApp"
-                value={f.whatsapp}
-                onChange={set("whatsapp")}
-                autoComplete="tel"
-                className={inp}
-              />
-              <input
-                required
-                inputMode="numeric"
-                aria-label="CPF"
-                placeholder="CPF"
-                value={f.cpf}
-                maxLength={14}
-                onChange={(e) => setF((old) => ({ ...old, cpf: maskCpf(e.target.value) }))}
-                className={inp}
-              />
-</div>
-              <p className="flex items-start gap-2 pt-1 text-small text-muted-foreground" data-testid="dados-confianca">
-                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
-                <span>Usamos o CPF só para emitir o pedido e o e-mail e o WhatsApp só para enviar o rastreio. O pagamento é processado pela Appmax e você tem 7 dias para desistir da compra.</span>
-              </p>
-              </fieldset>
+            <fieldset hidden={step !== 2} className={panel}>
+              <StepTitle n={3}>Pagamento</StepTitle>
+              <div className="grid grid-cols-1 gap-2">
+                <label data-testid="pay-option-pix" className={payTile(pay === "pix")}>
+                  <span className="flex min-w-0 items-center justify-between gap-2 text-body font-semibold">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <input
+                        type="radio"
+                        name="pay"
+                        aria-label="Pix"
+                        className="h-5 w-5 shrink-0 accent-neutral-500"
+                        checked={pay === "pix"}
+                        onChange={() => setPay("pix")}
+                      />
+                      <span className="truncate">Pix</span>
+                    </span>
+                    <PixMark />
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="money block text-name font-semibold">{brl(chosen ? tPix.net + shipping : tPix.net)}</span>
+                    {tPix.pixDiscount > 0 && <span className={`block text-small font-semibold ${pay === "pix" ? "text-white" : "text-black"}`}>5% OFF no Pix</span>}
+                    {applied && tPix.pixDiscount === 0 && <span className={`block text-small ${pay === "pix" ? "text-white/80" : "text-muted-foreground"}`}>Com cupom, o Pix não tem 5% OFF</span>}
+                    {(!chosen || chosen.free) && <span className={`block text-small ${pay === "pix" ? "text-white/70" : "text-muted-foreground"}`}>{chosen?.free || freeShip ? "Frete grátis" : "sem frete"}</span>}
+                  </span>
+                </label>
+                <label data-testid="pay-option-card" className={payTile(pay === "card")}>
+                  <span className="flex min-w-0 items-center justify-between gap-2 text-body font-semibold">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <input
+                        type="radio"
+                        name="pay"
+                        aria-label="Cartão de crédito"
+                        className="h-5 w-5 shrink-0 accent-neutral-500"
+                        checked={pay === "card"}
+                        onChange={() => setPay("card")}
+                      />
+                      <span className="truncate">Cartão</span>
+                    </span>
+                    <CreditCard className={`h-6 w-6 shrink-0 ${pay === "card" ? "text-white" : "text-neutral-500"}`} strokeWidth={1.6} aria-hidden="true" />
+                  </span>
+                  <span
+                    className="grid min-w-0 grid-cols-1 items-start gap-y-1 leading-tight"
+                    aria-live="polite"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-name font-bold leading-snug tabular-nums">
+                        {card6.count}x de {brl(card6.value)}
+                      </span>
+                      <span className="block text-small">sem juros</span>
+                    </span>
+                    <span className="min-w-0 text-small tabular-nums">
+                      Valor total {brl(cardTotal)} · {shipNote}
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
 
-
-
+            {step < 2 && (
+              <>
+                {error && <p role="alert" className="text-small text-destructive">{error}</p>}
+                <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-body font-semibold text-white hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
+                  {step === 0 ? "Continuar para entrega" : "Continuar para finalização"}
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </button>
+              </>
+            )}
           </form>
 
-          {/* Card fields live in their own form so Appmax JS can tokenize them; the main form triggers it. */}
-          <div>
+          {/* The card form remains a sibling so Appmax can tokenize it. */}
+          <div hidden={step !== 2}>
             {/* Dados do cartão: caixa própria logo abaixo da escolha de pagamento (só aparece com o cartão marcado). */}
             <form
               id="card-form"
               data-appmax-checkout
               hidden={pay !== "card"}
               data-testid="card-form"
-              className="min-w-0 space-y-3 rounded-2xl border border-[#c9a45c]/60 bg-white p-4 shadow-[0_6px_18px_-14px_rgba(60,40,10,0.35)]"
+              className="min-w-0 space-y-3 rounded-2xl border border-neutral-400/60 bg-white p-4 shadow-[0_6px_18px_-14px_rgba(60,40,10,0.35)]"
               onSubmit={(e) => e.preventDefault()}
             >
               <input
@@ -1323,7 +1344,10 @@ function Checkout() {
             <form data-appmax-customer hidden />
           </div>
 
-          <div className="space-y-2">
+          <div hidden={step !== 2} className="space-y-2">
+            {!showCoupon && (
+              <button type="button" onClick={() => setShowCoupon(true)} className="text-small underline">Adicionar cupom</button>
+            )}
             {showCoupon && (
               <div className="space-y-2">
                 <div className="flex gap-2">
@@ -1364,11 +1388,11 @@ function Checkout() {
             )}
           </div>
 
-          <h2 className="font-display text-h2">Seu pedido</h2>
-          <section aria-label="Revise seu pedido" data-testid="checkout-review" className={`${panel} space-y-3`}>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-name">Itens do pedido</h2>
-                <Link to="/carrinho" className="shrink-0 text-small font-medium text-[#8a6a1c] underline">
+          {step === 2 && totalsCard}
+          <details hidden={step !== 2} data-testid="checkout-review" className="rounded-xl border border-border px-3 py-2.5">
+            <summary className="cursor-pointer text-body font-medium">Ver itens do pedido ({c.lines.length})</summary>
+              <div className="mt-3 flex justify-end">
+                <Link to="/carrinho" className="shrink-0 text-small font-medium text-black underline">
                   Editar pedido
                 </Link>
               </div>
@@ -1418,50 +1442,41 @@ function Checkout() {
                   </li>
                 ))}
               </ul>
-            </section>
-
-            <OrderBump />
-          {totalsCard}
-
-          <ul data-testid="checkout-confianca" className="space-y-4 py-2 text-right text-small">
-            {[
-              [Lock, "Compra segura", "Pagamento processado em ambiente seguro pela Appmax."],
-              [Truck, "Entrega para todo o Brasil", "Frete grátis. O prazo aparece antes de pagar, conforme o seu CEP."],
-              [ShieldCheck, "7 dias para desistir", "Você pode desistir da compra em até 7 dias após receber."],
-            ].map(([Icon, t, d]) => {
-              const I = Icon as typeof Lock;
-              return (
-                <li key={t as string} className="flex items-start justify-end gap-3">
-                  <div>
-                    <b className="block uppercase tracking-[0.12em]">{t as string}</b>
-                    <span className="text-muted-foreground">{d as string}</span>
-                  </div>
-                  <I className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-                </li>
-              );
-            })}
-          </ul>
+          </details>
         </div>
-        <div className="min-w-0 space-y-4">
+        <div hidden={step !== 2} className="min-w-0 space-y-4">
           <div
             data-testid="checkout-pay-bar"
             className={lateral
               ? "sticky bottom-0 z-20 -mx-4 space-y-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur"
-              : "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background px-4 py-3 shadow-[0_-8px_20px_-12px_rgba(0,0,0,0.3)]"}
+              : "fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_20px_-12px_rgba(0,0,0,0.3)]"}
           >
-            <div className="mx-auto w-full max-w-xl space-y-2">{renderPay(true)}</div>
+            <div className="mx-auto w-full max-w-xl space-y-2">{paymentButton}</div>
           </div>
           <p className="text-center text-small text-muted-foreground">
             Vonix Hair · CNPJ 68.272.005/0001-07 · 7 dias para desistir da compra, conforme a lei
           </p>
           <p className="text-center text-body text-muted-foreground">
-            Dúvidas?{" "}
+            Pagamento processado pela Appmax.{" "}
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="underline">
               Fale no WhatsApp
             </a>
           </p>
+          <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-small text-muted-foreground">
+            <Link to="/politica-de-privacidade" className="underline">Privacidade</Link>
+            <Link to="/termos-de-uso" className="underline">Termos de uso</Link>
+            <Link to="/politica-de-trocas-e-devolucoes" className="underline">Trocas e devoluções</Link>
+          </p>
         </div>
       </div>
   );
-  return lateral ? <Drawer progress={progress} steps={stepsDone}>{body}</Drawer> : <Shell>{body}</Shell>;
+  return lateral ? <Drawer>{body}</Drawer> : (
+    <Shell compactCheckout onBack={() => {
+      if (busy) return;
+      if (step > 0) goToStep(step - 1);
+      else void navigate({ to: "/carrinho" });
+    }}>
+      {body}
+    </Shell>
+  );
 }
