@@ -167,20 +167,54 @@ export function AffiliateEditorialHero({
     >
       <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-12 xl:gap-16">
         <div className="min-w-0 lg:py-5">
-          <p className="inline-flex items-center gap-2 text-xs font-semibold text-[#7b4355]">
-            <Sparkles aria-hidden="true" className="size-4" />
-            Inscrição gratuita · seleção individual
-          </p>
-          <p className="mt-4 text-sm font-semibold text-[#764254]">
-            Vonix Hair · Programa de afiliadas
-          </p>
-          <h1
-            id="vonix-affiliate-title"
-            className="mt-3 max-w-2xl font-display text-[clamp(2.55rem,4.2vw,4.35rem)] leading-[1.11] tracking-tight text-[#412936]"
+          <div
+            data-testid="affiliate-c89-hair-editorial"
+            className="relative isolate min-h-[21rem] min-w-0 overflow-hidden rounded-[1.8rem] border border-[#e1cfcb] bg-[#a7847f] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[23rem] lg:min-h-[25rem]"
           >
-            Seu jeito de <span className="italic text-[#87465c]">criar.</span>
-            <span className="mt-1 block">Nossa paixão por cabelos.</span>
-          </h1>
+            <img
+              src="/images/categorias/cachos.jpg"
+              alt="Fotografia editorial de cabelos da categoria Cachos do catálogo Vonix Hair; não identifica uma afiliada"
+              width={480}
+              height={480}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              data-testid="affiliate-c94-editorial-photo"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-t from-[#21151d]/95 via-[#2a1a25]/50 to-[#21151d]/20"
+            />
+            <div className="relative flex min-h-[21rem] flex-col justify-between gap-5 px-5 py-5 text-white sm:min-h-[23rem] sm:p-7 lg:min-h-[25rem]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-white/55 bg-[#21151d]/55 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[.09em] text-white backdrop-blur-sm">
+                  Inscrição gratuita · seleção individual
+                </span>
+                <span className="rounded-full border border-white/55 bg-[#21151d]/45 px-3.5 py-2 text-[10px] font-semibold text-white backdrop-blur-sm">
+                  Acervo oficial Vonix Hair
+                </span>
+              </div>
+              <div className="max-w-[28rem]">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[.13em] text-white/90">
+                  Vonix Hair · Programa de afiliadas
+                </p>
+                <h1
+                  id="vonix-affiliate-title"
+                  className="font-display text-[clamp(2.5rem,5vw,4.25rem)] leading-[1.05] tracking-tight text-white"
+                >
+                  Seu jeito de <span className="italic text-[#ffdae8]">criar.</span>
+                  <span className="mt-1 block">Nossa paixão por cabelos.</span>
+                </h1>
+                <p className="mt-3 text-sm font-semibold text-white">
+                  Movimento, textura e cuidado.
+                </p>
+                <p className="mt-2 text-[11px] leading-[1.5] text-white/90">
+                  Foto editorial do catálogo da loja. Não retrata afiliada nem comprova parceria.
+                </p>
+              </div>
+            </div>
+          </div>
           <p className="mt-4 max-w-xl text-base leading-[1.75] text-[#5e4650] sm:text-lg">
             Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil à
             Vonix Hair e descubra como funciona a seleção para uma possível parceria.
@@ -260,43 +294,6 @@ export function AffiliateEditorialHero({
           className="mx-auto w-full max-w-[540px] min-w-0 lg:max-w-none lg:pl-2"
           aria-label="Vitrine de produtos reais do catálogo Vonix Hair"
         >
-          <div
-            data-testid="affiliate-c89-hair-editorial"
-            className="relative isolate mb-5 min-h-[16rem] min-w-0 overflow-hidden rounded-[1.75rem] border border-[#e1cfcb] bg-[#c5a89e] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[18rem] lg:min-h-[19rem]"
-          >
-            <img
-              src="/images/categorias/cachos.jpg"
-              alt="Fotografia editorial de cabelos da categoria Cachos do catálogo Vonix Hair; não identifica uma afiliada"
-              width={480}
-              height={480}
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              data-testid="affiliate-c94-editorial-photo"
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-t from-[#21151d]/90 via-[#251923]/40 to-[#21151d]/5"
-            />
-            <div className="relative flex min-h-[16rem] flex-col justify-between gap-8 p-5 text-white sm:min-h-[18rem] sm:p-7 lg:min-h-[19rem]">
-              <span className="w-fit rounded-full border border-white/50 bg-[#24151d]/55 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-white backdrop-blur-sm sm:text-[11px]">
-                Cabelos reais · Acervo editorial Vonix
-              </span>
-              <div className="max-w-[27rem]">
-                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-white/90">
-                  A criação começa pela sua identidade
-                </p>
-                <h2 className="mt-2 font-display text-[clamp(1.9rem,4vw,2.9rem)] leading-[1.08] tracking-tight text-white">
-                  Movimento, textura e cuidado.
-                </h2>
-                <p className="mt-2 max-w-lg text-xs leading-[1.6] text-white/90 sm:text-sm">
-                  Imagem da categoria Cachos da loja oficial. Não retrata afiliada nem comprova
-                  parceria.
-                </p>
-              </div>
-            </div>
-          </div>
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <p className="font-display text-xl text-[#5d3546] sm:text-2xl">
               Conheça produtos e inspirações Vonix
