@@ -64,7 +64,9 @@ describe("C95: contraste do hero e quatro temas reais em cartões compactos", ()
       expect(img).toHaveAttribute("loading", "lazy");
       expect(img.getAttribute("alt")).toContain("Vonix");
       expect(card.querySelectorAll("img")).toHaveLength(1);
-      expect(card).toHaveTextContent(["IDENTIDADE", "BELEZA CAPILAR", "CRIAÇÃO", "CONEXÃO"][index]);
+      const expectedTag = ["IDENTIDADE", "BELEZA CAPILAR", "CRIAÇÃO", "CONEXÃO"][index];
+      if (!expectedTag) throw new Error("Missing expected fit-card theme");
+      expect(card).toHaveTextContent(expectedTag);
     });
     expect(section.querySelectorAll("img")).toHaveLength(4);
     expect(section.querySelectorAll("picture source[type='image/webp']")).toHaveLength(4);
