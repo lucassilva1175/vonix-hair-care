@@ -29,7 +29,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     expect(
       container.querySelectorAll('[data-testid="vonix-c53-real-product-reviews"]'),
     ).toHaveLength(1);
-    expect(evidence.querySelectorAll("blockquote")).toHaveLength(3);
+    expect(evidence.querySelectorAll("blockquote")).toHaveLength(4);
     expect(evidence.querySelectorAll("img")).toHaveLength(1);
   });
 
@@ -44,7 +44,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       "/images/products/botox-vonix.webp",
     );
     expect(evidence.querySelector("picture img")?.getAttribute("alt")).toContain("Vonix");
-    for (const person of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade"]) {
+    for (const person of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade", "Ana Paula"]) {
       expect(evidence).toHaveTextContent(person);
     }
     expect(evidence).toHaveTextContent("Não são depoimentos de afiliadas");
