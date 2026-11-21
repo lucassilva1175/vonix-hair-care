@@ -48,7 +48,7 @@ export function AffiliateBrandTrust({ recruitmentOpen }: { recruitmentOpen: bool
         >
           <img
             src="/images/categorias/frizz.jpg"
-            alt="Fotografia editorial de cabelos da categoria Frizz do catálogo oficial Vonix Hair"
+            alt="Fotografia editorial de cabelos da categoria Frizz do catálogo oficial Vonix Hair; não retrata afiliadas"
             width={480}
             height={480}
             loading="lazy"
