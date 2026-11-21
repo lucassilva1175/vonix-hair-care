@@ -612,15 +612,16 @@ export function ProductCard({ p }: { p: Product }) {
           <div className="text-[16px] font-bold">{brl(pricing.pix < pricing.price ? pricing.pix : pricing.price)}</div>
           <div className="mt-0.5 text-[12px] text-[#505052]">Ou {brl(pricing.price)} em até {par.count}x de {brl(par.value)}</div>
         </div>
-        <button
-          type="button"
-          onClick={bag}
-          aria-label={`Adicionar ${p.name} à sacola`}
-          className="relative z-10 mt-auto flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#091413] px-4 pt-0 text-[14px] font-semibold text-white transition-transform active:scale-[.98]"
-          style={{ marginTop: "0.75rem" }}
-        >
-          <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
-        </button>
+        <div className="mt-auto pt-3">
+          <button
+            type="button"
+            onClick={bag}
+            aria-label={`Adicionar ${p.name} à sacola`}
+            className="relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#091413] px-4 text-[14px] font-semibold text-white transition-transform active:scale-[.98]"
+          >
+            <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
+          </button>
+        </div>
       </div>
     </div>
   );
