@@ -63,7 +63,7 @@ describe("C53 recruitment presentation boundaries", () => {
     expect(container.textContent).not.toMatch(
       /depoimentos de afiliadas aprovadas|ganhos reais de afiliadas/i,
     );
-    const topics = screen.getByRole("region", { name: /Temas da seleção Vonix Hair/ });
+    const topics = screen.getByRole("region", { name: /Quatro aspectos de afinidade Vonix Hair/ });
     expect(topics.querySelectorAll("picture img")).toHaveLength(4);
     for (const img of topics.querySelectorAll("img"))
       expect(img.getAttribute("alt")).toContain("Vonix");
