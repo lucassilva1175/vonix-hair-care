@@ -26,7 +26,7 @@ describe("C94: hero editorial creator-first com estado verdadeiro de inscrição
     expect(editorial.className).toContain("rounded-[1.8rem]");
     expect(editorial).toHaveTextContent("Movimento, textura e cuidado.");
     expect(editorial).toHaveTextContent("Não retrata afiliada nem comprova parceria.");
-    expect(editorial).toHaveTextContent("Acervo editorial Vonix");
+    expect(editorial).toHaveTextContent("Acervo oficial Vonix Hair");
     expect(editorial.querySelectorAll("img")).toHaveLength(1);
     expect(editorial.contains(within(hero).getByRole("heading", { level: 1 }))).toBe(true);
     expect(within(hero).getAllByTestId("affiliate-c61-catalog-link")).toHaveLength(3);
