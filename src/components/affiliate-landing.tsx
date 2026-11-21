@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -701,6 +701,8 @@ export function AffiliateLandingIntro({
 }
 
 export function AffiliateLandingFAQ() {
+  const [interactive, setInteractive] = useState(false);
+  useEffect(() => setInteractive(true), []);
   const [faqQuery, setFaqQuery] = useState("");
   const normalizedQuery = normalizeFaqSearch(faqQuery);
   const matchingQuestions = normalizedQuery
@@ -753,6 +755,7 @@ export function AffiliateLandingFAQ() {
                 id="vonix-c84-faq-search"
                 type="search"
                 value={faqQuery}
+                disabled={!interactive}
                 maxLength={80}
                 autoComplete="off"
                 onChange={(event) => setFaqQuery(event.target.value)}
@@ -767,6 +770,7 @@ export function AffiliateLandingFAQ() {
                   key={topic}
                   type="button"
                   aria-pressed={faqQuery === topic}
+                  disabled={!interactive}
                   onClick={() => setFaqQuery((current) => (current === topic ? "" : topic))}
                   className={
                     "min-h-11 rounded-full border px-4 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7b4857] " +
@@ -782,6 +786,7 @@ export function AffiliateLandingFAQ() {
                 <button
                   type="button"
                   onClick={() => setFaqQuery("")}
+                  disabled={!interactive}
                   className="min-h-11 px-2 text-xs font-semibold text-[#734558] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   Limpar busca
