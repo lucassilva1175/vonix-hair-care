@@ -1,4 +1,13 @@
-import { ArrowUpRight, CheckCircle2, ClipboardCheck, LockKeyhole, SearchCheck } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  CheckCircle2,
+  ClipboardCheck,
+  LockKeyhole,
+  SearchCheck,
+} from "lucide-react";
 
 const steps = [
   {
@@ -38,12 +47,70 @@ const steps = [
 
 /** Official catalog artwork, never photos or testimonials of real creators. */
 export function AffiliateApplicationStepsPreview() {
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const [activeStep, setActiveStep] = useState(1);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollForward, setCanScrollForward] = useState(true);
+
+  const syncScroll = useCallback(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const cards = Array.from(
+      rail.querySelectorAll<HTMLElement>('[data-testid="vonix-c79-step-card"]'),
+    );
+    if (!cards.length) return;
+
+    const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+    const current = Math.min(maxScroll, Math.max(0, rail.scrollLeft));
+    setCanScrollBack(current > 4);
+    setCanScrollForward(maxScroll > 4 && current < maxScroll - 4);
+
+    if (maxScroll > 4 && current >= maxScroll - 4) {
+      setActiveStep(cards.length);
+      return;
+    }
+    const first = cards[0]!.offsetLeft;
+    const nearestIndex = cards.reduce((nearest, card, index) => {
+      const delta = Math.abs(current - (card.offsetLeft - first));
+      const prior = Math.abs(current - (cards[nearest]!.offsetLeft - first));
+      return delta < prior ? index : nearest;
+    }, 0);
+    setActiveStep(nearestIndex + 1);
+  }, []);
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    syncScroll();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(syncScroll) : null;
+    observer?.observe(rail);
+    rail
+      .querySelectorAll('[data-testid="vonix-c79-step-card"]')
+      .forEach((card) => observer?.observe(card));
+    window.addEventListener("resize", syncScroll);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", syncScroll);
+    };
+  }, [syncScroll]);
+
+  function moveRail(direction: -1 | 1) {
+    const rail = railRef.current;
+    if (!rail) return;
+    const cards = rail.querySelectorAll<HTMLElement>('[data-testid="vonix-c79-step-card"]');
+    if (cards.length < 2) return;
+    const cardWidth = cards[0]!.getBoundingClientRect().width;
+    const distance = Math.max(1, cards[1]!.offsetLeft - cards[0]!.offsetLeft, cardWidth + 16);
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    rail.scrollBy({ left: direction * distance, behavior: reducedMotion ? "instant" : "smooth" });
+  }
+
   return (
     <section
       id="candidatura-etapas"
       aria-labelledby="application-steps-preview-title"
       data-testid="vonix-c66-application-steps"
-      className="scroll-mt-36 overflow-hidden border-b border-[#e6d5d1] bg-[#fbf5f1] px-5 py-10 text-[#4e3240] sm:py-14"
+      className="scroll-mt-36 overflow-hidden border-b border-[#e6d5d1] bg-[#fbf5f1] px-5 py-6 text-[#4e3240] sm:py-14"
     >
       <div id="como-funciona" className="mx-auto max-w-7xl scroll-mt-36">
         <div className="flex flex-wrap items-end justify-between gap-5 sm:gap-8">
@@ -70,18 +137,52 @@ export function AffiliateApplicationStepsPreview() {
             <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
           </a>
         </div>
-        <p
-          data-testid="vonix-c79-steps-swipe-hint"
-          className="mt-6 text-xs font-semibold text-[#81566a] lg:hidden"
-        >
-          Deslize para ver as três etapas <span aria-hidden="true">→</span>
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3 lg:hidden">
+          <p
+            data-testid="vonix-c79-steps-swipe-hint"
+            className="text-xs font-semibold text-[#81566a]"
+          >
+            Deslize ou avance
+          </p>
+          <div data-testid="affiliate-c99-steps-controls" className="flex items-center gap-2">
+            <span
+              aria-live="polite"
+              aria-atomic="true"
+              className="mr-1 min-w-14 text-center text-xs font-semibold tabular-nums text-[#674556]"
+            >
+              {activeStep} de {steps.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => moveRail(-1)}
+              disabled={!canScrollBack}
+              aria-label="Etapa anterior da candidatura"
+              aria-controls="vonix-affiliate-steps-rail"
+              className="grid size-11 place-items-center rounded-full border border-[#c9aab4] bg-white text-[#684055] transition-colors hover:bg-[#f1e4e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ArrowLeft aria-hidden="true" className="size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => moveRail(1)}
+              disabled={!canScrollForward}
+              aria-label="Próxima etapa da candidatura"
+              aria-controls="vonix-affiliate-steps-rail"
+              className="grid size-11 place-items-center rounded-full border border-[#c9aab4] bg-white text-[#684055] transition-colors hover:bg-[#f1e4e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ArrowRight aria-hidden="true" className="size-5" />
+            </button>
+          </div>
+        </div>
         <div
+          id="vonix-affiliate-steps-rail"
+          ref={railRef}
+          onScroll={syncScroll}
           role="region"
           tabIndex={0}
           aria-label="Três etapas da candidatura, deslize para percorrer"
           data-testid="vonix-c79-steps-rail"
-          className="-mx-5 mt-4 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#865168] lg:mx-0 lg:px-0"
+          className="-mx-5 mt-2 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#865168] lg:mx-0 lg:px-0"
         >
           <ol className="flex min-w-max snap-x snap-mandatory gap-4 lg:grid lg:min-w-0 lg:grid-cols-3 lg:gap-5">
             {steps.map(({ eyebrow, title, text, detail, image, alt, Icon, tone }) => (
