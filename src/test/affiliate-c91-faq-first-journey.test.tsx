@@ -84,7 +84,7 @@ describe("C91: perguntas da candidatura antes de conteúdo editorial opcional", 
   it("FAQ mantém descoberta local por termo e conteúdo de inscrição gratuita", () => {
     const { container } = render(<AffiliateApplicationPage />);
     const faq = container.querySelector("#duvidas");
-    if (!faq) throw new Error("Missing FAQ");
+    if (!(faq instanceof HTMLElement)) throw new Error("Missing HTML FAQ");
     const find = within(faq).getByRole("searchbox", { name: "Encontre sua resposta" });
     const all = faq.querySelectorAll("details");
     expect(all).toHaveLength(7);
