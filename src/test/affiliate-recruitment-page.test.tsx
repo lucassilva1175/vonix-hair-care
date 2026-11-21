@@ -234,6 +234,11 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
     expect(text).toContain("Inscrição gratuita");
     expect(text).toContain("A candidatura não garante aprovação");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Seu jeito de criar.");
+    // Complementary editorial sections are still present, but now expand on demand.
+    const discovery = screen.getByTestId("affiliate-c96-discovery-gate");
+    expect(discovery).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByTestId("affiliate-c96-discovery-summary"));
+    expect(discovery).toHaveAttribute("open");
     expect(screen.getByRole("heading", { name: /Não procuramos uma fórmula/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Crie do seu jeito/i })).toBeInTheDocument();
 
@@ -268,6 +273,12 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
       if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
       const src = img.getAttribute("src") ?? "";
       const alt = img.getAttribute("alt") ?? "";
+      // The preview images inside <summary> are decorative, not creator portraits.
+      if (img.closest('[data-testid="affiliate-c96-discovery-summary"]')) {
+        expect(existingStoreCategoryPhotos.has(src)).toBe(true);
+        expect(alt).toBe("");
+        return;
+      }
       if (
         img.closest('[data-testid="vonix-c53-real-product-reviews"]') &&
         src === "/depoimentos/depoimento-4.jpg"
