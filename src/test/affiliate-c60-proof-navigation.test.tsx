@@ -30,7 +30,8 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       container.querySelectorAll('[data-testid="vonix-c53-real-product-reviews"]'),
     ).toHaveLength(1);
     expect(evidence.querySelectorAll("blockquote")).toHaveLength(4);
-    expect(evidence.querySelectorAll("img")).toHaveLength(1);
+    expect(evidence.querySelectorAll("img")).toHaveLength(2);
+    expect(evidence.querySelector('[data-testid="affiliate-c86-customer-photo"]')).toHaveAttribute("src", "/depoimentos/depoimento-4.jpg");
   });
 
   it("preserves actual public review attribution, original imagery and verifiable source", () => {
