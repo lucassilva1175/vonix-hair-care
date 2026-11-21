@@ -201,6 +201,7 @@ export function AffiliateEditorialHero({
                 </p>
                 <h1
                   id="vonix-affiliate-title"
+                  style={{ color: "#fff" }}
                   className="font-display text-[clamp(2.5rem,5vw,4.25rem)] leading-[1.05] tracking-tight text-white"
                 >
                   Seu jeito de <span className="italic text-[#ffdae8]">criar.</span>
