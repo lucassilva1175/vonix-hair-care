@@ -90,6 +90,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       ["Ganhos", "#ganhos"],
       ["Como funciona", "#como-funciona"],
       ["Ideias de conteúdo", "#perfis"],
+      ["Para quem é", "#criterios"],
       ["Avaliações", "#avaliacoes-rapidas"],
       ["Dúvidas", "#duvidas"],
       ["Status da candidatura", "/consultar-candidatura"],
