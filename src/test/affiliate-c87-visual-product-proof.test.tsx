@@ -45,8 +45,8 @@ describe("C87: visual-first product reviews preserve genuine media and identity"
     render(<AffiliateVerifiedReviewPreview />);
     const section = screen.getByTestId("vonix-c65-review-preview");
     const cards = within(section).getAllByTestId("vonix-c72-review-card");
-    expect(cards.filter(card => card.textContent?.includes("Avaliação em vídeo"))).toHaveLength(3);
-    expect(cards.filter(card => card.textContent?.includes("Avaliação com foto"))).toHaveLength(1);
+    expect(cards.filter(card => card.textContent?.includes("Avaliação de produto em vídeo"))).toHaveLength(3);
+    expect(cards.filter(card => card.textContent?.includes("Avaliação de produto com foto"))).toHaveLength(1);
     expect(within(section).getByRole("link", {name:/Ver avaliação com foto de Ana Paula/}))
       .toHaveAttribute("href", "#avaliacoes-produtos");
     expect(within(section).getByTestId("vonix-c78-proof-signup-link"))
