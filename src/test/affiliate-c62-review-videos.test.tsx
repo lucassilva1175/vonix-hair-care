@@ -16,9 +16,10 @@ describe("C62 genuine store product-review video evidence", () => {
     const { container } = render(<AffiliateProductProof />);
     const evidence = screen.getByTestId("vonix-c53-real-product-reviews");
     const quotes = [...evidence.querySelectorAll("blockquote")];
-    expect(quotes).toHaveLength(3);
+    expect(quotes).toHaveLength(4);
     expect(publishedVideoReviews).toHaveLength(3);
     expect(evidence.querySelectorAll("video")).toHaveLength(3);
+    expect(evidence.querySelectorAll('[data-testid="affiliate-c86-customer-photo"]')).toHaveLength(1);
     expect(container.querySelectorAll("#avaliacoes-produtos")).toHaveLength(1);
 
     for (const review of publishedVideoReviews) {
