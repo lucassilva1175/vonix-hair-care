@@ -171,7 +171,7 @@ export function AffiliateApplicationPage() {
   return (
     <AffiliateShell recruitmentStatus={recruitment}>
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
-        <AffiliateLandingOffer recruitmentStatus={recruitment} />
+        <AffiliateLandingOffer recruitmentStatus={recruitment} placement="intro" />
         <AffiliateMobileApplyBar recruitmentStatus={recruitment} />
         <AffiliateApplicationStepsPreview />
 
@@ -367,6 +367,7 @@ export function AffiliateApplicationPage() {
         </section>
         <AffiliateNextSteps recruitmentOpen={recruitment === "open" && !preview} />
         <AffiliateLandingFAQ />
+        <AffiliateLandingOffer recruitmentStatus={recruitment} placement="details" />
         <nav
           data-testid="affiliate-c91-explore-paths"
           aria-label="Continue explorando o universo Vonix Hair"
