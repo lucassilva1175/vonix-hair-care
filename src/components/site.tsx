@@ -217,7 +217,7 @@ function SearchBox({ onDone, autoFocus = false }: { onDone?: () => void; autoFoc
   );
 }
 
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({ children, onBack, compactCheckout = false }: { children: ReactNode; onBack?: () => void; compactCheckout?: boolean }) {
   const { count } = useCart();
   const { audience, set: setAudience } = useAudience();
   const paidVisit = usePaidVisit();
@@ -386,14 +386,26 @@ export function Shell({ children }: { children: ReactNode }) {
       )}
       {path !== "/" && (
         <div className="container-site pt-3">
-          <button type="button" onClick={() => router.history.back()} aria-label="Voltar" className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-small transition-colors hover:bg-muted">
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar
+          <button
+            type="button"
+            onClick={onBack ?? (() => router.history.back())}
+            aria-label="Voltar"
+            className={isCheckout
+              ? "inline-flex min-h-11 items-center gap-2 rounded-full border border-neutral-300 bg-white py-1.5 pl-1.5 pr-3.5 text-small font-semibold text-black transition-colors hover:bg-neutral-100"
+              : "inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-small transition-colors hover:bg-muted"}
+          >
+            {isCheckout ? (
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-black text-white">
+                <ArrowLeft className="size-[18px]" aria-hidden="true" />
+              </span>
+            ) : <ArrowLeft className="size-4" aria-hidden="true" />}
+            Voltar
           </button>
         </div>
       )}
       <main>{children}</main>
-      <Footer />
-      {!paidVisit && <BfPopup />}
+      {!compactCheckout && <Footer />}
+      {!compactCheckout && !paidVisit && <BfPopup />}
       {!hideWhatsApp && (
         <a
           href={WHATSAPP}
