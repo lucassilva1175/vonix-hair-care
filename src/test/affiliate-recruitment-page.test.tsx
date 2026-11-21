@@ -268,7 +268,10 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
       if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
       const src = img.getAttribute("src") ?? "";
       const alt = img.getAttribute("alt") ?? "";
-      if (img.closest('[data-testid="vonix-c53-real-product-reviews"]') && src === "/depoimentos/depoimento-4.jpg") {
+      if (
+        img.closest('[data-testid="vonix-c53-real-product-reviews"]') &&
+        src === "/depoimentos/depoimento-4.jpg"
+      ) {
         expect(alt).toBe("Foto publicada junto à avaliação de Ana Paula sobre Botox Vonix");
         return;
       }
@@ -296,10 +299,13 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
   it("explica etapas e condições sem inventar comissões ou garantir aprovação", async () => {
     server.status.mockResolvedValue({ open: false });
     render(<Page />);
-    const heading = await screen.findByRole("heading", { name: /Três momentos/i });
+    const heading = await screen.findByRole("heading", { name: /Da sua ideia à sua candidatura/i });
     expect(heading).toBeInTheDocument();
-    for (const step of ["Apresente seu perfil", "Análise individual", "Próximos passos"]) {
-      expect(screen.getByRole("heading", { name: step })).toBeInTheDocument();
+    const originalSteps = screen.getByTestId("vonix-c66-application-steps");
+    expect(originalSteps.querySelectorAll('[data-testid="vonix-c79-step-card"]')).toHaveLength(3);
+    expect(originalSteps.querySelector("#como-funciona")).not.toBeNull();
+    for (const text of ["Apresente seu perfil", "Guarde seu acesso", "Acompanhe a seleção"]) {
+      expect(originalSteps).toHaveTextContent(text);
     }
     const landing = screen.getByTestId("vonix-affiliate-editorial");
     expect(landing.querySelectorAll('a[href="#inscricao"]').length).toBeGreaterThanOrEqual(3);
