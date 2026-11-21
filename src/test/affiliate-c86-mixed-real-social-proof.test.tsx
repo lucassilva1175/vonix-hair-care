@@ -1,4 +1,5 @@
 import { statSync } from "node:fs";
+import { renderToString } from "react-dom/server";
 import { join } from "node:path";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +19,17 @@ const productReviews = reviews.filter((review) => review.slug === "botox-vonix")
 const imageReview = productReviews.find((review) => review.author === "Ana Paula");
 
 describe("C86: authentic mixed-media proof without fabricated creator results", () => {
+  it("keeps carousel arrows disabled in server HTML before hydration attaches click handlers", () => {
+    const markup = renderToString(<AffiliateVerifiedReviewPreview />);
+    const host = document.createElement("div");
+    host.innerHTML = markup;
+    const next = host.querySelector('[data-testid="vonix-c82-review-next"]');
+    const back = host.querySelector('[data-testid="vonix-c82-review-back"]');
+    expect(next).not.toBeNull();
+    expect(next).toHaveAttribute("disabled");
+    expect(back).toHaveAttribute("disabled");
+  });
+
   it("uses exactly four original product reviews, preserving all author/media associations", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     render(<AffiliateVerifiedReviewPreview />);
