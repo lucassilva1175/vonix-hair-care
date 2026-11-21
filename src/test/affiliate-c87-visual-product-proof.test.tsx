@@ -20,6 +20,7 @@ describe("C87: visual-first product reviews preserve genuine media and identity"
       );
       if (!record) throw new Error("Missing catalog review: " + author);
       const card = cards[i];
+      if (!card) throw new Error("Missing rendered card for " + author);
       const link = within(card).getByRole("link");
       const img = within(card).getByRole("img");
       const quote = within(card).getByText((_, element) => {
