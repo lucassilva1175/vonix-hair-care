@@ -21,7 +21,7 @@ describe("C98 — abertura mobile compacta sem perder produtos nem etapas", () =
     expect(toggle).toHaveAttribute("aria-controls", "affiliate-c98-products-panel");
     expect(panel).toHaveAttribute("id", "affiliate-c98-products-panel");
     expect(panel).toHaveClass("hidden", "lg:block");
-    expect(within(summary).getByRole("img", { hidden: true })).toHaveAttribute(
+    expect(summary.querySelector("img")).toHaveAttribute(
       "src",
       "/images/products/botox-vonix.webp",
     );
