@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getProduct, lineTotals } from "@/lib/store";
 
@@ -72,7 +72,7 @@ beforeEach(() => {
   mocks.cart.subtotal = variant.price;
   mocks.address.mockResolvedValue(address);
   mocks.quote.mockResolvedValue({ ok: true, options: [option] });
-  mocks.config.mockResolvedValue({ externalId: "test-only", sandbox: true, pixEnabled: true });
+  mocks.config.mockResolvedValue({ externalId: "test-only", sandbox: true, pixEnabled: true, boletoEnabled: true });
   mocks.payment.mockResolvedValue({ ok: false, message: "Pagamento mockado" });
   window.gtag = vi.fn();
   window.fbq = vi.fn();
@@ -110,6 +110,63 @@ const fill = async (proceed = true) => {
   fireEvent.change(screen.getByLabelText("Número"), { target: { value: "10" } });
   if (proceed) showPayment();
 };
+
+describe("boleto no checkout", () => {
+  it("mostra boleto à vista, sem desconto exclusivo do Pix ou campos de cartão", async () => {
+    render(<Checkout />);
+    await fill();
+    fireEvent.click(screen.getByRole("radio", { name: "Boleto bancário" }));
+    const price = getProduct("kit-banana-e-mel")!.variants[0]!.price;
+    expect(screen.getByTestId("pay-option-boleto")).toHaveTextContent("À vista");
+    expect(screen.getByTestId("summary")).toHaveTextContent("Total no boleto");
+    expect(screen.getByTestId("summary")).not.toHaveTextContent("Desconto no Pix");
+    expect(screen.getByTestId("card-form")).not.toBeVisible();
+    expect(screen.getByRole("button", { name: /Gerar boleto/ }).textContent?.replace(/\u00a0/g, " ")).toContain(price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/\u00a0/g, " "));
+    expect(mocks.payment).not.toHaveBeenCalled();
+  });
+  it("gera PDF e linha digitável, e só registra compra depois da confirmação Appmax", async () => {
+    const interval = vi.spyOn(globalThis, "setInterval");
+    mocks.payment.mockResolvedValue({ ok: true, method: "boleto", orderId: 42, total: 136.9, boleto: {
+      pdfUrl: "https://api.appmax.com.br/boleto/42.pdf",
+      digitableLine: "23793.38128 60000.000003 00000.000400 1 84340000034900",
+      dueDate: "2026-11-24",
+    } });
+    mocks.status.mockResolvedValue({ ok: true, paid: false, status: "pendente" });
+    render(<Checkout />);
+    await fill();
+    fireEvent.click(screen.getByRole("radio", { name: "Boleto bancário" }));
+    fireEvent.click(screen.getByRole("button", { name: /Gerar boleto/ }));
+    expect(await screen.findByRole("heading", { name: "Boleto gerado" })).toBeVisible();
+    expect(mocks.payment).toHaveBeenCalledTimes(1);
+    expect(mocks.payment.mock.calls[0]?.[0].data).toMatchObject({ method: "boleto" });
+    expect(mocks.payment.mock.calls[0]?.[0].data.token).toBeUndefined();
+    expect(screen.getByRole("link", { name: "Abrir boleto em PDF" })).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("link", { name: "Abrir boleto em PDF" })).toHaveAttribute("href", "https://api.appmax.com.br/boleto/42.pdf");
+    expect(screen.getByRole("textbox", { name: "Linha digitável do boleto" })).toHaveValue("23793.38128 60000.000003 00000.000400 1 84340000034900");
+    expect(screen.getByText("Vencimento: 24/11/2026")).toBeVisible();
+    expect(screen.getByText(/Aguardando pagamento/)).toBeVisible();
+    expect(mocks.cart.clear).not.toHaveBeenCalled();
+    expect(vi.mocked(window.gtag!).mock.calls.some(c => c[1] === "purchase")).toBe(false);
+    const check = interval.mock.calls.find(c => c[1] === 30000)?.[0] as (() => Promise<void>) | undefined;
+    expect(check).toBeTypeOf("function");
+    await act(async () => { await check!(); });
+    expect(mocks.cart.clear).not.toHaveBeenCalled();
+    mocks.status.mockResolvedValue({ ok: true, paid: true, status: "pago" });
+    await act(async () => { await check!(); });
+    expect(screen.getByRole("heading", { name: "Pagamento confirmado!" })).toBeVisible();
+    expect(mocks.cart.clear).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(window.gtag!).mock.calls.filter(c => c[1] === "purchase")).toHaveLength(1);
+    interval.mockRestore();
+  });
+  it("não mostra boleto quando está desabilitado e preserva cartão e Pix", async () => {
+    mocks.config.mockResolvedValue({ externalId: "test-only", sandbox: true, pixEnabled: true, boletoEnabled: false });
+    render(<Checkout />);
+    await fill();
+    expect(screen.queryByRole("radio", { name: "Boleto bancário" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Pix" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "Cartão de crédito" })).toBeVisible();
+  });
+});
 
 describe("checkout auditado sem chamadas reais", () => {
   it("cartão e resumo precedem CTA; formulários separados, atributos e 6 parcelas preservados", async () => {

@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, CreditCard, Lock } from "lucide-react";
+import { ArrowRight, Barcode, CreditCard, Lock } from "lucide-react";
 import { Shell } from "@/components/site";
 import { useCepAddress } from "@/hooks/use-cep-address";
 import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
+import { boletoDueDateLabel, type BoletoPayment } from "@/lib/boleto";
 import { clearRef, getRef } from "@/lib/affiliate-ref";
 import { registerCartLead } from "@/lib/leads.functions";
 import {
@@ -90,6 +91,7 @@ type ShipOption = {
   free: boolean;
 };
 type PixResult = { orderId: number; total: number; emv: string; qrcode: string; expiresAt: string };
+type BoletoResult = BoletoPayment & { orderId: number; total: number };
 
 declare global {
   interface Window {
@@ -128,6 +130,41 @@ async function copyText(text: string, el?: HTMLTextAreaElement | null) {
     /* sem cópia automática */
   }
   return false;
+}
+
+function BoletoPanel({ boleto, paid }: { boleto: BoletoResult; paid: boolean }) {
+  const codeRef = useRef<HTMLTextAreaElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const dueDate = boletoDueDateLabel(boleto.dueDate);
+  return (
+    <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+      <h1 className="font-display text-h1">{paid ? "Pagamento confirmado!" : "Boleto gerado"}</h1>
+      <p className="text-body">Pedido nº {boleto.orderId} · {brl(boleto.total)}</p>
+      {paid ? (
+        <p className="text-body">Recebemos a confirmação do pagamento do seu pedido.</p>
+      ) : (
+        <>
+          <p className="text-body">Aguardando pagamento. O pedido será confirmado após a compensação do boleto.</p>
+          <p className="text-body font-semibold">{dueDate ? `Vencimento: ${dueDate}` : "Confira o vencimento no PDF do boleto."}</p>
+          <a href={boleto.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-full bg-action px-6 py-3 text-body font-semibold text-action-foreground">
+            Abrir boleto em PDF
+          </a>
+          <label className="block text-small font-semibold" htmlFor="boleto-code">Linha digitável do boleto</label>
+          <textarea id="boleto-code" ref={codeRef} readOnly value={boleto.digitableLine} rows={3} className="w-full resize-none rounded-xl border border-border bg-white p-3 text-body break-all" />
+          <button type="button" onClick={async () => {
+            const ok = await copyText(boleto.digitableLine, codeRef.current);
+            setCopied(ok);
+            setCopyFailed(!ok);
+          }} className="min-h-11 rounded-full border border-foreground px-6 py-3 text-body font-semibold">
+            {copied ? "Código copiado!" : "Copiar código do boleto"}
+          </button>
+          {copyFailed && <p role="status" className="text-small">Selecione e copie a linha digitável acima.</p>}
+        </>
+      )}
+      <Link to="/loja" className="block text-body underline">Continuar comprando</Link>
+    </div>
+  );
 }
 
 function PixPanel({
@@ -380,7 +417,7 @@ function Checkout() {
   const lastQuotedCep = useRef("");
   const [quoteTry, setQuoteTry] = useState(0);
   const compactAddr = !editAddr && !!(f.rua && f.bairro && f.cidade && f.uf);
-  const [pay, setPay] = useState<"pix" | "card">("pix");
+  const [pay, setPay] = useState<"pix" | "card" | "boleto">("pix");
   const [showCoupon, setShowCoupon] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
@@ -398,6 +435,7 @@ function Checkout() {
     setError(null);
   }, [f, pay, card, parcels, serviceId]);
   const [pix, setPix] = useState<PixResult | null>(null);
+  const [boleto, setBoleto] = useState<BoletoResult | null>(null);
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
   const [cardDone, setCardDone] = useState<{ orderId: number; paid: boolean } | null>(null);
@@ -405,6 +443,7 @@ function Checkout() {
     externalId: string;
     sandbox: boolean;
     pixEnabled?: boolean;
+    boletoEnabled?: boolean;
   } | null>(null);
   const ip = useRef("");
   useEffect(() => {
@@ -434,7 +473,7 @@ function Checkout() {
     } catch { /* sem armazenamento */ }
     getPaymentConfig()
       .then(setCfg)
-      .catch(() => setCfg({ externalId: "", sandbox: true, pixEnabled: false }));
+      .catch(() => setCfg({ externalId: "", sandbox: true, pixEnabled: false, boletoEnabled: false }));
     // A coupon won on the prize wheel is applied automatically.
     const prize = getPrize();
     if (prize) {
@@ -582,7 +621,7 @@ function Checkout() {
     ...(f.uf ? { uf: f.uf.slice(0, 2) } : {}),
   });
   useEffect(() => {
-    if (pix || cardDone || !hasLines) return;
+    if (pix || boleto || cardDone || !hasLines) return;
     if (f.nome.trim().length < 2 || f.whatsapp.replace(/\D/g, "").length < 10) return;
     const body = { ...leadPayload(), status: "preencheu" as const };
     const key = JSON.stringify(body);
@@ -592,7 +631,7 @@ function Checkout() {
       registerCartLead({ data: body }).catch(() => {});
     }, 4000);
     return () => clearTimeout(timer);
-  }, [f.nome, f.whatsapp, f.email, f.cidade, f.uf, chosen?.id, total, itemsKey, pix, cardDone, hasLines]);
+  }, [f.nome, f.whatsapp, f.email, f.cidade, f.uf, chosen?.id, total, itemsKey, pix, boleto, cardDone, hasLines]);
 
   const applyCoupon = async () => {
     if (!coupon.trim()) return setCouponMsg("Digite um código de cupom.");
@@ -622,18 +661,19 @@ function Checkout() {
   const finishRef = useRef(finish);
   finishRef.current = finish;
 
-  // Pix: poll the order until Appmax reports it as paid.
+  // Creating Pix or boleto is not a purchase: wait for Appmax to confirm payment.
   useEffect(() => {
-    if (!pix || paid) return;
+    const pending = pix ?? boleto;
+    if (!pending || paid) return;
     const timer = setInterval(async () => {
-      const r = await getOrderStatus({ data: { orderId: pix.orderId } }).catch(() => null);
+      const r = await getOrderStatus({ data: { orderId: pending.orderId } }).catch(() => null);
       if (r?.ok && r.paid) {
         setPaid(true);
-        finishRef.current(pix.orderId, pix.total);
+        finishRef.current(pending.orderId, pending.total);
       }
-    }, 5000);
+    }, boleto ? 30000 : 5000);
     return () => clearInterval(timer);
-  }, [pix, paid]);
+  }, [pix, boleto, paid]);
 
   const submitPayment = async (token?: string) => {
     if (!chosen) {
@@ -676,6 +716,9 @@ function Checkout() {
           qrcode: r.pix.qrcode,
           expiresAt: r.pix.expiresAt,
         });
+        window.scrollTo({ top: 0 });
+      } else if (r.method === "boleto") {
+        setBoleto({ ...r.boleto, orderId: r.orderId, total: r.total });
         window.scrollTo({ top: 0 });
       } else {
         setCardDone({ orderId: r.orderId, paid: r.paid });
@@ -756,7 +799,8 @@ function Checkout() {
     }
     if (busy || quoting || !chosen || !cfg?.pixEnabled) return;
     track("add_payment_info", { payment_type: pay, value: total });
-    if (pay === "pix") void submitPayment();
+    if (pay === "boleto" && !cfg.boletoEnabled) return setError("Boleto indisponível no momento. Escolha cartão ou Pix.");
+    if (pay !== "card") void submitPayment();
     else if (!cfg?.externalId) setError("Pagamento por cartão indisponível no momento. Use o Pix.");
     else {
       const cardForm = document.getElementById("card-form");
@@ -766,6 +810,9 @@ function Checkout() {
       cardForm.requestSubmit();
     }
   };
+
+  if (boleto)
+    return <Shell><div className="container-site max-w-xl py-10"><BoletoPanel boleto={boleto} paid={paid} /></div></Shell>;
 
   if (pix)
     return (
@@ -833,7 +880,7 @@ function Checkout() {
   const freeShip = missingForFreeShipping(gross) === 0;
   const shipNote = chosen ? (chosen.free ? "frete grátis" : "com frete") : freeShip ? "frete grátis" : "sem frete";
   const selectedInstallments = installmentText(total, parcels);
-  const payDisabled = busy || quoting || !chosen || !cfg || !cfg.pixEnabled;
+  const payDisabled = busy || quoting || !chosen || !cfg || !cfg.pixEnabled || (pay === "boleto" && !cfg.boletoEnabled);
   const paymentButton = (
     <>
       {step === 2 && error && (
@@ -861,7 +908,7 @@ function Checkout() {
         </span>
         <span className="min-w-0 flex-1 leading-tight">
           <span className="block text-name font-semibold tracking-wide">
-            {busy ? "Processando…" : pay === "pix" ? `Gerar Pix · ${brl(total)}` : `Pagar ${installmentText(total, parcels, parcels > 1)} no cartão`}
+            {busy ? "Processando…" : pay === "pix" ? `Gerar Pix · ${brl(total)}` : pay === "boleto" ? `Gerar boleto · ${brl(total)}` : `Pagar ${installmentText(total, parcels, parcels > 1)} no cartão`}
           </span>
           <span className="mt-0.5 block text-[0.72rem] font-normal tracking-wide text-white/70 group-disabled:text-neutral-500">
             Pagamento seguro
@@ -906,7 +953,7 @@ function Checkout() {
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-neutral-200 bg-neutral-100 px-3 py-2.5 text-name font-bold text-black">
                   <span className="min-w-0">
-                    {chosen || freeShip ? `Total ${pay === "pix" ? "no Pix" : "no cartão"}` : `Produtos ${pay === "pix" ? "no Pix" : "no cartão"}`}
+                    {chosen || freeShip ? `Total ${pay === "pix" ? "no Pix" : pay === "boleto" ? "no boleto" : "no cartão"}` : `Produtos ${pay === "pix" ? "no Pix" : pay === "boleto" ? "no boleto" : "no cartão"}`}
                   </span>
                   <span className="money text-h2">{brl(total)}</span>
                 </div>
@@ -1222,6 +1269,19 @@ function Checkout() {
                     </span>
                   </span>
                 </label>
+                {cfg?.boletoEnabled && (
+                  <label data-testid="pay-option-boleto" className={payTile(pay === "boleto")}>
+                    <span className="flex min-w-0 items-center justify-between gap-2 text-body font-semibold">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <input type="radio" name="pay" aria-label="Boleto bancário" className="h-5 w-5 shrink-0 accent-neutral-500" checked={pay === "boleto"} onChange={() => setPay("boleto")} />
+                        Boleto bancário
+                      </span>
+                      <Barcode className="h-6 w-6 shrink-0" strokeWidth={1.6} aria-hidden="true" />
+                    </span>
+                    <span className="block text-name font-semibold">{brl(cardTotal)}</span>
+                    <span className="text-small">À vista · confirmação após a compensação</span>
+                  </label>
+                )}
               </div>
             </fieldset>
 

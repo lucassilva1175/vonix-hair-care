@@ -314,7 +314,7 @@ export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compar
  */
 export function checkoutTotals(
   lines: { gross: number; net: number; offer?: Offer | undefined }[],
-  method: "pix" | "card",
+  method: "pix" | "card" | "boleto",
   couponPct = 0,
 ) {
   const gross = cents(lines.reduce((s, l) => s + l.gross, 0));

@@ -1,6 +1,6 @@
 import { thumb, webp } from "@/lib/images";
 import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ChevronLeft, ChevronRight, CreditCard, Facebook, Heart, Star, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, ShoppingCart, Truck, User, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Barcode, ChevronLeft, ChevronRight, CreditCard, Facebook, Heart, Star, House, Instagram, Menu, QrCode, Scissors, Search, ShieldCheck, ShoppingBag, ShoppingCart, Truck, User, X, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -122,7 +122,7 @@ export function PixMark({ className = "h-3.5 w-3.5" }: { className?: string }) {
   );
 }
 
-/** Payment methods the checkout really accepts (Appmax: Pix and credit card). Add boleto/wallets here only once they are built. */
+/** Payment methods implemented in the Appmax checkout. */
 export function PaymentMethods({ dark = false }: { dark?: boolean }) {
   const pill = `inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-small font-semibold ${dark ? "border-marquee-foreground/35 text-marquee-foreground" : "border-border bg-white text-foreground"}`;
   return (
@@ -132,6 +132,9 @@ export function PaymentMethods({ dark = false }: { dark?: boolean }) {
       </li>
       <li className={pill}>
         <CreditCard className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" /> Cartão de crédito · até 6x sem juros
+      </li>
+      <li className={pill}>
+        <Barcode className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" /> Boleto bancário · à vista
       </li>
     </ul>
   );

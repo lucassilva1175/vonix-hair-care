@@ -1,4 +1,5 @@
 import { env, requireEnv } from "./env.server";
+import { readBoletoPayment } from "./boleto";
 
 const hosts = () =>
   env("APPMAX_ENV") === "production"
@@ -72,6 +73,12 @@ export const payWithPix = async (orderId: number, document: string) => {
   );
   return r.data.payment;
 };
+
+export const payWithBoleto = async (orderId: number, document: string) =>
+  readBoletoPayment(await appmax<unknown>("POST", "/v1/payments/boleto", {
+    order_id: orderId,
+    payment_data: { boleto: { document_number: document } },
+  }));
 
 export const payWithCard = (p: {
   orderId: number;

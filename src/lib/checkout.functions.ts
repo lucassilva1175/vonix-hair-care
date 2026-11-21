@@ -84,6 +84,7 @@ export const getPaymentConfig = createServerFn({ method: "GET" }).handler(async 
   externalId: env("APPMAX_EXTERNAL_ID"),
   sandbox: env("APPMAX_ENV") !== "production",
   pixEnabled: !!env("APPMAX_CLIENT_ID") && !!env("APPMAX_CLIENT_SECRET"),
+  boletoEnabled: !!env("APPMAX_CLIENT_ID") && !!env("APPMAX_CLIENT_SECRET") && env("APPMAX_BOLETO_ENABLED", "true") !== "false",
 }));
 
 const customerSchema = z.object({
@@ -110,7 +111,7 @@ const paySchema = z.object({
   coupon: couponSchema,
   ip: z.string().max(64).optional(),
   ref: z.string().max(30).optional(),
-  method: z.enum(["pix", "card"]),
+  method: z.enum(["pix", "card", "boleto"]),
   token: z.string().max(200).optional(),
   holderName: z.string().max(120).optional(),
   installments: z.number().int().min(1).max(6).optional(),
@@ -120,6 +121,8 @@ export const createPayment = createServerFn({ method: "POST" })
   .inputValidator(paySchema)
   .handler(async ({ data }) => {
     if (!env("APPMAX_CLIENT_ID") || !env("APPMAX_CLIENT_SECRET")) return { ok: false as const, message: "Os pagamentos desta loja estão sendo ativados. Fale com a gente no WhatsApp para comprar agora." };
+    if (data.method === "boleto" && env("APPMAX_BOLETO_ENABLED", "true") === "false")
+      return { ok: false as const, message: "Boleto indisponível no momento. Escolha cartão ou Pix." };
     try {
       const lines = buildLines(data.items);
       const option = (await shippingOptions(data.address.cep, lines, data.coupon)).find((o) => o.id === data.serviceId);
@@ -179,6 +182,11 @@ export const createPayment = createServerFn({ method: "POST" })
       if (data.method === "pix") {
         const pix = await appmax.payWithPix(orderId, document);
         return { ok: true as const, method: "pix" as const, orderId, total, pix: { emv: pix.pix_emv, qrcode: pix.pix_qrcode, expiresAt: pix.pix_expiration_date } };
+      }
+
+      if (data.method === "boleto") {
+        const boleto = await appmax.payWithBoleto(orderId, document);
+        return { ok: true as const, method: "boleto" as const, orderId, total, boleto };
       }
 
       if (!data.token) return { ok: false as const, message: "Não foi possível validar o cartão. Confira os dados e tente de novo." };

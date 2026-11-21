@@ -11,7 +11,7 @@ export const FAQ_LOJA: FaqItem[] = [
   },
   {
     q: "Quais são as formas de pagamento?",
-    a: "Pix, com 5% OFF nos itens sem outra oferta, ou cartão de crédito em até 6x sem juros. Os pagamentos são processados em ambiente seguro.",
+    a: "Pix, com 5% OFF nos itens sem outra oferta, cartão de crédito em até 6x sem juros ou boleto bancário à vista. No boleto, o pedido é confirmado após a compensação. Os pagamentos são processados pela Appmax em ambiente seguro.",
   },
   {
     q: "Em quanto tempo o meu pedido chega?",
