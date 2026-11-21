@@ -44,7 +44,7 @@ describe("C95: contraste do hero e quatro temas reais em cartões compactos", ()
     expect(section).toHaveTextContent("não são exigências fixas nem promessa de aprovação");
     expect(section).toHaveTextContent("18 anos");
     expect(section).toHaveTextContent("TikTok é opcional");
-    expect(section).toHaveTextContent("não retratam candidatas ou parcerias");
+    expect(section).toHaveTextContent("Não retratam candidatas ou parcerias");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
