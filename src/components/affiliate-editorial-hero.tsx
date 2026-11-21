@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  ChevronDown,
   Images,
   Sparkles,
 } from "lucide-react";
@@ -111,6 +112,7 @@ export function AffiliateEditorialHero({
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoNext, setCanGoNext] = useState(false);
   const [visibleProduct, setVisibleProduct] = useState(1);
+  const [mobileCatalogExpanded, setMobileCatalogExpanded] = useState(false);
 
   const updateGallery = useCallback(() => {
     const gallery = galleryRef.current;
@@ -295,84 +297,136 @@ export function AffiliateEditorialHero({
           className="mx-auto w-full max-w-[540px] min-w-0 lg:max-w-none lg:pl-2"
           aria-label="Vitrine de produtos reais do catálogo Vonix Hair"
         >
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <p className="font-display text-xl text-[#5d3546] sm:text-2xl">
-              Conheça produtos e inspirações Vonix
-            </p>
-            <a
-              href="/loja"
-              className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-[#764355] underline underline-offset-4 focus-visible:outline-2"
-            >
-              Ver catálogo <ArrowUpRight aria-hidden="true" className="size-4" />
-            </a>
-          </div>
           <div
-            data-testid="vonix-c83-gallery-toolbar"
-            className="mb-3 flex min-w-0 items-center justify-between gap-3 lg:hidden"
+            data-testid="affiliate-c98-mobile-catalog-summary"
+            className="mb-3 rounded-2xl border border-[#e1d1d1] bg-white p-3 shadow-[0_8px_24px_rgba(76,41,54,.06)] lg:hidden"
           >
-            <p
-              data-testid="vonix-c73-gallery-swipe-hint"
-              className="min-w-0 text-xs font-semibold leading-snug text-[#765260] lg:hidden"
-            >
-              Deslize para explorar os produtos <span aria-hidden="true">→</span>
-            </p>
-            <div
-              role="group"
-              aria-label="Navegação dos produtos Vonix Hair"
-              className="flex shrink-0 items-center gap-2"
-            >
-              <span
-                data-testid="vonix-c83-gallery-position"
-                aria-live="polite"
-                className="min-w-9 text-center text-xs font-bold tabular-nums text-[#704455]"
-              >
-                {visibleProduct} / {products.length}
-              </span>
+            <div className="flex min-w-0 items-center gap-3">
+              <img
+                src="/images/products/botox-vonix.webp"
+                alt=""
+                aria-hidden="true"
+                width={76}
+                height={76}
+                loading="lazy"
+                decoding="async"
+                className="size-[4.25rem] shrink-0 rounded-xl bg-[#f1e5e8] object-contain p-1"
+              />
               <button
                 type="button"
-                data-testid="vonix-c83-gallery-back"
-                aria-label="Ver produtos anteriores"
-                disabled={!canGoBack}
-                onClick={() => moveGallery(-1)}
-                className="grid size-11 place-items-center rounded-full border border-[#cbaeb9] bg-white text-[#6e3e50] transition-colors hover:bg-[#f8e8ec] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
+                data-testid="affiliate-c98-mobile-catalog-toggle"
+                aria-expanded={mobileCatalogExpanded}
+                aria-controls="affiliate-c98-products-panel"
+                onClick={() => setMobileCatalogExpanded((previous) => !previous)}
+                className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-2 rounded-lg py-1 text-left text-[#60394a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254]"
               >
-                <ArrowLeft aria-hidden="true" className="size-5" />
-              </button>
-              <button
-                type="button"
-                data-testid="vonix-c83-gallery-next"
-                aria-label="Ver próximos produtos"
-                disabled={!canGoNext}
-                onClick={() => moveGallery(1)}
-                className="grid size-11 place-items-center rounded-full border border-[#cbaeb9] bg-white text-[#6e3e50] transition-colors hover:bg-[#f8e8ec] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
-              >
-                <ArrowRight aria-hidden="true" className="size-5" />
+                <span className="min-w-0">
+                  <strong className="block text-sm font-bold leading-snug">
+                    3 produtos do catálogo Vonix
+                  </strong>
+                  <span className="mt-1 block text-[11px] leading-snug text-[#775d68]">
+                    {mobileCatalogExpanded
+                      ? "Recolher vitrine"
+                      : "Ver a vitrine de produtos (opcional)"}
+                  </span>
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={
+                    "size-5 shrink-0 text-[#784254] transition-transform motion-reduce:transition-none " +
+                    (mobileCatalogExpanded ? "rotate-180" : "")
+                  }
+                />
               </button>
             </div>
+            <p className="mt-2 text-[11px] leading-[1.5] text-[#7a626b]">
+              Imagens de produtos oficiais, não fotografias de afiliadas ou parcerias.
+            </p>
           </div>
           <div
-            ref={galleryRef}
-            onScroll={updateGallery}
-            role="region"
-            tabIndex={0}
-            aria-label="Vitrine de três produtos reais Vonix Hair, deslize horizontalmente para explorar no celular"
-            data-testid="vonix-c73-hero-products-region"
-            className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-[1.03fr_.97fr] lg:grid-rows-2 lg:gap-4 lg:overflow-visible lg:pb-0"
+            id="affiliate-c98-products-panel"
+            data-testid="affiliate-c98-products-panel"
+            className={mobileCatalogExpanded ? "block" : "hidden lg:block"}
           >
-            <CatalogCard item={products[0]} featured />
-            <CatalogCard item={products[1]} />
-            <CatalogCard item={products[2]} />
-          </div>
-          <figcaption className="mt-4 text-xs leading-relaxed text-[#6d5660]">
-            Fotos reais dos produtos à venda na loja oficial. Não são imagens de afiliadas,
-            campanhas com criadoras ou prova de resultados.{" "}
-            <a
-              href="#conheca-a-vonix"
-              className="font-semibold text-[#764355] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254]"
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <p className="font-display text-xl text-[#5d3546] sm:text-2xl">
+                Conheça produtos e inspirações Vonix
+              </p>
+              <a
+                href="/loja"
+                className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-[#764355] underline underline-offset-4 focus-visible:outline-2"
+              >
+                Ver catálogo <ArrowUpRight aria-hidden="true" className="size-4" />
+              </a>
+            </div>
+            <div
+              data-testid="vonix-c83-gallery-toolbar"
+              className="mb-3 flex min-w-0 items-center justify-between gap-3 lg:hidden"
             >
-              Conhecer a marca por trás da seleção
-            </a>
-          </figcaption>
+              <p
+                data-testid="vonix-c73-gallery-swipe-hint"
+                className="min-w-0 text-xs font-semibold leading-snug text-[#765260] lg:hidden"
+              >
+                Deslize para explorar os produtos <span aria-hidden="true">→</span>
+              </p>
+              <div
+                role="group"
+                aria-label="Navegação dos produtos Vonix Hair"
+                className="flex shrink-0 items-center gap-2"
+              >
+                <span
+                  data-testid="vonix-c83-gallery-position"
+                  aria-live="polite"
+                  className="min-w-9 text-center text-xs font-bold tabular-nums text-[#704455]"
+                >
+                  {visibleProduct} / {products.length}
+                </span>
+                <button
+                  type="button"
+                  data-testid="vonix-c83-gallery-back"
+                  aria-label="Ver produtos anteriores"
+                  disabled={!canGoBack}
+                  onClick={() => moveGallery(-1)}
+                  className="grid size-11 place-items-center rounded-full border border-[#cbaeb9] bg-white text-[#6e3e50] transition-colors hover:bg-[#f8e8ec] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ArrowLeft aria-hidden="true" className="size-5" />
+                </button>
+                <button
+                  type="button"
+                  data-testid="vonix-c83-gallery-next"
+                  aria-label="Ver próximos produtos"
+                  disabled={!canGoNext}
+                  onClick={() => moveGallery(1)}
+                  className="grid size-11 place-items-center rounded-full border border-[#cbaeb9] bg-white text-[#6e3e50] transition-colors hover:bg-[#f8e8ec] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ArrowRight aria-hidden="true" className="size-5" />
+                </button>
+              </div>
+            </div>
+            <div
+              ref={galleryRef}
+              onScroll={updateGallery}
+              role="region"
+              tabIndex={0}
+              aria-label="Vitrine de três produtos reais Vonix Hair, deslize horizontalmente para explorar no celular"
+              data-testid="vonix-c73-hero-products-region"
+              className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-[1.03fr_.97fr] lg:grid-rows-2 lg:gap-4 lg:overflow-visible lg:pb-0"
+            >
+              <CatalogCard item={products[0]} featured />
+              <CatalogCard item={products[1]} />
+              <CatalogCard item={products[2]} />
+            </div>
+            <figcaption className="mt-4 text-xs leading-relaxed text-[#6d5660]">
+              Fotos reais dos produtos à venda na loja oficial. Não são imagens de afiliadas,
+              campanhas com criadoras ou prova de resultados.{" "}
+              <a
+                href="#conheca-a-vonix"
+                className="font-semibold text-[#764355] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254]"
+              >
+                Conhecer a marca por trás da seleção
+              </a>
+            </figcaption>
+          </div>
           {officialProductReviewCount > 0 && (
             <a
               href="#avaliacoes-rapidas"
