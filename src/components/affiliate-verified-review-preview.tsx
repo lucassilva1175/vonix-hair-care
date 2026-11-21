@@ -29,7 +29,7 @@ export const officialProductReviewCount = selectedReviews.length;
 export function AffiliateVerifiedReviewPreview() {
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const [canScrollBack, setCanScrollBack] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(true);
+  const [canScrollNext, setCanScrollNext] = useState(false);
 
   const updateScrollControls = useCallback(() => {
     const rail = carouselRef.current;
