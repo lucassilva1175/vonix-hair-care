@@ -19,7 +19,9 @@ describe("C62 genuine store product-review video evidence", () => {
     expect(quotes).toHaveLength(4);
     expect(publishedVideoReviews).toHaveLength(3);
     expect(evidence.querySelectorAll("video")).toHaveLength(3);
-    expect(evidence.querySelectorAll('[data-testid="affiliate-c86-customer-photo"]')).toHaveLength(1);
+    expect(evidence.querySelectorAll('[data-testid="affiliate-c86-customer-photo"]')).toHaveLength(
+      1,
+    );
     expect(container.querySelectorAll("#avaliacoes-produtos")).toHaveLength(1);
 
     for (const review of publishedVideoReviews) {
