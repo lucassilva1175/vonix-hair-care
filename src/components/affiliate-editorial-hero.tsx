@@ -109,7 +109,7 @@ export function AffiliateEditorialHero({
   const isOpen = recruitmentStatus === "open";
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const [canGoBack, setCanGoBack] = useState(false);
-  const [canGoNext, setCanGoNext] = useState(true);
+  const [canGoNext, setCanGoNext] = useState(false);
   const [visibleProduct, setVisibleProduct] = useState(1);
 
   const updateGallery = useCallback(() => {
@@ -258,9 +258,38 @@ export function AffiliateEditorialHero({
           className="mx-auto w-full max-w-[540px] min-w-0 lg:max-w-none lg:pl-2"
           aria-label="Vitrine de produtos reais do catálogo Vonix Hair"
         >
+          <div
+            data-testid="affiliate-c89-hair-editorial"
+            className="mb-5 min-w-0 overflow-hidden rounded-[1.5rem] border border-[#e1cfcb] bg-gradient-to-r from-[#eee0d9] via-[#f9eee8] to-[#fffaf6] shadow-[0_12px_32px_rgba(69,35,50,.07)]"
+          >
+            <div className="grid grid-cols-[7.75rem_minmax(0,1fr)] items-stretch sm:grid-cols-[11.5rem_minmax(0,1fr)]">
+              <div className="relative min-h-[8.25rem] overflow-hidden bg-[#d8b8a8] sm:min-h-[10.75rem]">
+                <img
+                  src="/images/categorias/cachos.jpg"
+                  alt="Fotografia editorial de cabelos da categoria Cachos do catálogo Vonix Hair; não identifica uma afiliada"
+                  width={480}
+                  height={480}
+                  loading="eager"
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              </div>
+              <div className="flex min-w-0 flex-col justify-center px-3.5 py-3.5 sm:px-6 sm:py-5">
+                <p className="text-[9px] font-bold uppercase leading-snug tracking-[.11em] text-[#865267] sm:text-[11px]">
+                  Inspiração capilar · Acervo Vonix
+                </p>
+                <h2 className="mt-1.5 font-display text-lg leading-snug text-[#573342] sm:mt-2 sm:text-2xl">
+                  Movimento, textura e cuidado.
+                </h2>
+                <p className="mt-2 text-[10px] leading-[1.45] text-[#705663] sm:text-xs sm:leading-5">
+                  Imagem editorial da loja. Não retrata afiliada nem comprova parceria.
+                </p>
+              </div>
+            </div>
+          </div>
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <p className="font-display text-xl text-[#5d3546] sm:text-2xl">
-              Conheça o que você poderia apresentar
+              Conheça produtos e inspirações Vonix
             </p>
             <a
               href="/loja"
