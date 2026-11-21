@@ -57,7 +57,10 @@ describe("C66 application guidance without submission", () => {
     expect(
       preview.compareDocumentPosition(reviews) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(preview.nextElementSibling).toContainElement(prep);
+    const spotlight = screen.getByTestId("affiliate-c100-creator-spotlight");
+    expect(preview.nextElementSibling).toBe(spotlight);
+    expect(spotlight.compareDocumentPosition(prep) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(spotlight).toHaveTextContent("Nenhum estilo garante aprovação");
     const signup = document.getElementById("inscricao");
     if (!signup) throw new Error("Missing application section");
     expect(prep.compareDocumentPosition(signup) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
