@@ -82,47 +82,36 @@ export function AffiliateShell({
           {mode === "landing" && (
             <nav
               aria-label="Navegação da seleção de afiliadas"
-              className="hidden items-center gap-5 xl:flex"
+              className="hidden items-center gap-4 xl:flex"
             >
+              <Link
+                to="/consultar-candidatura"
+                data-testid="affiliate-c112-returning-desktop"
+                className="inline-flex min-h-11 items-center rounded-full border border-[#d7bec4] bg-[#faf2ef] px-3 text-xs font-bold text-[#754256] transition hover:bg-[#f1e5e6] focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                Já me inscrevi
+              </Link>
               <a
                 href="#ganhos"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
-                Ganhos
-              </a>
-              <Link
-                to="/consultar-candidatura"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
-              >
-                Status
-              </Link>
-              <a
-                href="#perfis"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
-              >
-                Ideias de conteúdo
-              </a>
-              <a
-                href="#criterios"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
-              >
-                Para quem é
+                Comissão e bônus
               </a>
               <a
                 href="#como-funciona"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
                 Como funciona
               </a>
               <a
                 href="#avaliacoes-rapidas"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
-                Avaliações
+                Avaliações de produtos
               </a>
               <a
                 href="#duvidas"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
                 Dúvidas
               </a>
@@ -154,51 +143,40 @@ export function AffiliateShell({
         {mode === "landing" && (
           <nav
             aria-label="Acesso rápido ao programa"
-            className="flex w-full max-w-full snap-x snap-proximity items-center justify-start gap-5 overflow-x-auto overscroll-x-contain border-t border-border px-4 text-xs xl:hidden"
+            className="flex w-full max-w-full snap-x snap-proximity items-center justify-start gap-3 overflow-x-auto overscroll-x-contain border-t border-border px-4 text-xs xl:hidden"
             tabIndex={0}
           >
+            <Link
+              to="/consultar-candidatura"
+              data-testid="affiliate-c112-returning-mobile"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center rounded-lg bg-[#f0e2e4] px-3 font-bold text-[#754256]"
+            >
+              Já me inscrevi
+            </Link>
             <a
               href="#ganhos"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 font-semibold text-primary"
             >
-              Ganhos
+              Comissão e bônus
             </a>
             <a
               href="#como-funciona"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
             >
               Como funciona
             </a>
             <a
-              href="#perfis"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
-            >
-              Ideias de conteúdo
-            </a>
-            <a
-              href="#criterios"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
-            >
-              Para quem é
-            </a>
-            <a
               href="#avaliacoes-rapidas"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
             >
-              Avaliações
+              Avaliações de produtos
             </a>
             <a
               href="#duvidas"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 pr-2 text-primary"
             >
               Dúvidas
             </a>
-            <Link
-              to="/consultar-candidatura"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center pr-2 text-primary"
-            >
-              Status da candidatura
-            </Link>
           </nav>
         )}
       </header>

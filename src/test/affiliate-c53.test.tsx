@@ -76,12 +76,10 @@ describe("C53 recruitment presentation boundaries", () => {
       const id = link.getAttribute("href")?.slice(1);
       expect(id && document.getElementById(id)).toBeTruthy();
     }
-    for (const link of screen.getAllByRole("link", { name: "Ganhos" }))
+    for (const link of screen.getAllByRole("link", { name: "Comissão e bônus" }))
       expect(link).toHaveAttribute("href", "#ganhos");
-    expect(screen.getByRole("link", { name: "Status" })).toHaveAttribute(
-      "href",
-      "/consultar-candidatura",
-    );
+    for (const link of screen.getAllByRole("link", { name: "Já me inscrevi" }))
+      expect(link).toHaveAttribute("href", "/consultar-candidatura");
   });
 
   it("retains the actual simplified form and does not post any preview data", async () => {

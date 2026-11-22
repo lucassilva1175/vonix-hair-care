@@ -218,11 +218,38 @@ export function AffiliateApplicationPage() {
               Sua inscrição, de um jeito simples.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Só precisamos do seu nome completo, e-mail válido, telefone, endereço com CEP e
-              número, do seu perfil no Instagram e da quantidade de seguidores. TikTok e seguidores
-              no TikTok são opcionais. A inscrição é gratuita e não garante aprovação. Se sua
-              candidatura não for selecionada, você poderá se inscrever novamente com o mesmo
-              Instagram. Guarde o código de acompanhamento.
+              Apresente seu nome, contato, endereço e perfil do Instagram com número de seguidores.
+              O TikTok é opcional. A inscrição é gratuita, depende de disponibilidade e não garante
+              aprovação. Após um envio confirmado, guarde o código privado exibido na tela.
+            </p>
+            <div
+              data-testid="affiliate-c112-form-essentials"
+              aria-label="Requisitos principais da candidatura"
+              className="mx-auto mt-4 flex max-w-3xl flex-wrap items-center justify-center gap-2"
+            >
+              {[
+                "18 anos ou mais",
+                "E-mail válido obrigatório",
+                "Instagram com seguidores",
+                "TikTok opcional",
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-[#e0c8ce] bg-[#fcf6f3] px-3 py-1.5 text-xs font-semibold text-[#76465a]"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-[#765665]">
+              Já enviou uma candidatura?{" "}
+              <Link
+                to="/consultar-candidatura"
+                data-testid="affiliate-c112-form-status"
+                className="inline-flex min-h-11 items-center font-bold text-[#744256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                Consultar meu status pelo código
+              </Link>
             </p>
           </div>
 
