@@ -21,30 +21,30 @@ function Banner({ slug, priority }: { slug: string; priority: boolean }) {
     const pix = pixPrice(v.price);
     const split = installments(v.price);
     return (
-      <Link to="/produto/$slug" params={{ slug }} data-testid="home-banana-banner" className="group relative block overflow-hidden bg-[#f3e9dc] text-[#241b16]">
-        <picture>
-          <source media="(min-width: 768px)" srcSet="/images/banners/kit-banana-e-mel-cliente-20261121.webp" width={1942} height={809} />
+      <Link to="/produto/$slug" params={{ slug }} data-testid="home-banana-banner" className="group relative block overflow-hidden bg-[#231811] text-[#fff3e1]">
           <img
-            src="/images/banners/kit-banana-e-mel-cliente-mobile-20261121.webp"
+            src="/images/banners/kit-banana-e-mel-cliente-20261121.webp"
             alt="Banana e Mel: mulher apresentando shampoo, condicionador, máscara e leave-in"
-            width={1122}
-            height={1402}
+            width={1942}
+            height={809}
             fetchPriority={priority ? "high" : "auto"}
-            className="block h-auto w-full object-contain md:aspect-[1942/809]"
+            className="block aspect-[1942/809] h-auto w-full object-contain"
           />
-        </picture>
-        <div className="space-y-3 px-6 pb-10 pt-5 md:absolute md:inset-y-0 md:left-[5.2%] md:flex md:w-[39%] md:flex-col md:justify-center md:gap-3 md:space-y-0 md:p-0">
-          <p className="text-small font-semibold tracking-[0.22em]">VONIX HAIR</p>
-          <h2 className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(2rem, 4.2vw, 4.5rem)" }}>{p.name.replace(/^Kit\s+/i, "")}</h2>
-          <p className="text-body leading-relaxed">Shampoo, condicionador, máscara e leave-in.</p>
-          <div className="space-y-1">
-            <p className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(1.75rem, 3vw, 3rem)" }}>Por {brl(v.price)}</p>
-            {pix < v.price && <p className="text-body font-semibold">ou {brl(pix)} no Pix</p>}
-            <p className="text-small">Em até {split.count}x de {brl(split.value)} sem juros no cartão</p>
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/35 via-transparent to-transparent" />
+        <div className="absolute inset-y-0 left-[5.2%] flex w-[40%] flex-col justify-center gap-1 md:w-[39%] md:gap-3">
+          <p className="hidden text-small font-semibold tracking-[0.22em] md:block">VONIX HAIR</p>
+          <h2 className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(1.1rem, 4.2vw, 4.5rem)" }}>{p.name.replace(/^Kit\s+/i, "")}</h2>
+          <p className="hidden text-body leading-relaxed md:block">Shampoo, condicionador, máscara e leave-in.</p>
+          <div className="space-y-1 md:space-y-3">
+            <div className="space-y-0.5 md:space-y-1">
+              <p className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(1rem, 3vw, 3rem)" }}>Por {brl(v.price)}</p>
+              {pix < v.price && <p className="text-[0.65rem] font-semibold sm:text-small md:text-body">ou {brl(pix)} no Pix</p>}
+            </div>
+            <span className="inline-flex min-h-6 items-center justify-center gap-1 rounded-full bg-[#e4bd7b] px-2.5 py-1 text-[0.6rem] font-semibold text-[#251a12] md:min-h-11 md:gap-2 md:px-6 md:py-3 md:text-small">
+              Conheça o kit <ArrowRight className="h-3 w-3 md:h-4 md:w-4" aria-hidden="true" />
+            </span>
           </div>
-          <span className="inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-full bg-[#241b16] px-6 py-3 text-small font-semibold text-white">
-            Conheça o kit <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </span>
+          <p className="hidden text-small md:block">Em até {split.count}x de {brl(split.value)} sem juros no cartão</p>
         </div>
       </Link>
     );
@@ -59,13 +59,13 @@ function Banner({ slug, priority }: { slug: string; priority: boolean }) {
         width={1942}
         height={809}
         fetchPriority={priority ? "high" : "auto"}
-        className="block h-auto w-full"
+        className="block aspect-[1942/809] h-auto w-full object-contain"
       />
-      <div className="px-4 pb-12 pt-3 text-center md:absolute md:bottom-[3.5%] md:left-[5.2%] md:p-0 md:text-left">
+      <div className="absolute bottom-[4.5%] left-[5.2%] max-w-[42%] text-left">
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 md:justify-start">
           {off > 0 && <span className="rounded bg-foreground px-3 py-1 text-small font-semibold tracking-[0.15em] text-background">{off}% OFF</span>}
           {p.compareBase && <span className="text-body line-through opacity-60">{brl(p.compareBase)}</span>}
-          <span className="font-display font-semibold leading-none" style={{ fontSize: "clamp(1.5rem, 2.4vw, 2.4rem)" }}>Por {brl(v.price)}</span>
+          <span className="whitespace-nowrap font-display font-semibold leading-none" style={{ fontSize: "clamp(0.95rem, 2.4vw, 2.4rem)" }}>Por {brl(v.price)}</span>
         </div>
         {saving > 0 && <div className="mt-1 text-small font-semibold">Você economiza {brl(saving)}</div>}
       </div>
@@ -158,7 +158,7 @@ function Home() {
       <h1 className="sr-only">Vonix Hair — Cosméticos Capilares Profissionais</h1>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
-          <Banner slug={BANNERS[i]!} priority={i === 0} />
+          <Banner key={BANNERS[i]} slug={BANNERS[i]!} priority={i === 0} />
           <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className={`absolute left-3 ${BANNERS[i] === "kit-banana-e-mel" ? "top-6" : "top-[16%]"} grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2`}>
             <ChevronLeft className="h-4 w-4" />
           </button>

@@ -62,18 +62,23 @@ describe("Fio de Luz: fotos e vídeos na mesma galeria", () => {
     expect(container.querySelector("video")).toHaveAttribute("src", "/provas/botox-2.mp4");
   });
 
-  it("inclui os oito vídeos específicos de Fio de Luz sem alterar outros produtos", () => {
-    expect(videos).toHaveLength(8);
+  it("inclui os seis vídeos específicos de Fio de Luz sem as duas cópias repetidas", () => {
+    expect(videos).toHaveLength(6);
+    expect(videos.map((video) => video.id)).not.toContain("fio-4");
+    expect(videos.map((video) => video.id)).not.toContain("ig-03");
     expect(videos.map((video) => video.src)).toContain("/provas/ig-26.mp4");
     expect(productGalleryVideosFor("kit-coco-nutri")).toBeUndefined();
   });
 
-  it("mostra apenas o vídeo próprio do Banana e Mel junto da foto branca", () => {
+  it("mostra os três vídeos próprios do Banana e Mel junto da foto branca", () => {
     const banana = catalog.find((p) => p.slug === "kit-banana-e-mel")!;
     const ownVideos = productGalleryVideosFor(banana.slug)!;
     const { container } = render(<ProductGallery images={banana.images.slice(0, 1)} name={banana.name} videos={ownVideos} />);
     expect(screen.getAllByRole("button", { name: /^Ver imagem/ })).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: /^Ver vídeo/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /^Ver vídeo/ })).toHaveLength(3);
+    expect(ownVideos.map((video) => video.src)).toEqual([
+      "/provas/banana-mel.mp4", "/provas/banana-mel-kit-3.mp4", "/provas/banana-mel-banho-cliente.mp4",
+    ]);
     fireEvent.click(screen.getByRole("button", { name: "Ver vídeo 1", exact: true }));
     expect(container.querySelector("video")).toHaveAttribute("src", "/provas/banana-mel.mp4");
     expect(container.querySelector("video")).toHaveAttribute("autoplay");

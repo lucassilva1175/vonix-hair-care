@@ -8,6 +8,22 @@
   ]
  },
  {
+  "id": "banana-mel-kit-3",
+  "src": "/provas/banana-mel-kit-3.mp4",
+  "poster": "/provas/banana-mel-kit-3.jpg",
+  "slugs": [
+   "kit-banana-e-mel"
+  ]
+ },
+ {
+  "id": "banana-mel-banho-cliente",
+  "src": "/provas/banana-mel-banho-cliente.mp4",
+  "poster": "/provas/banana-mel-banho-cliente.jpg",
+  "slugs": [
+   "kit-banana-e-mel"
+  ]
+ },
+ {
   "id": "botox-1",
   "src": "/provas/botox-1.mp4",
   "poster": "/provas/botox-1.jpg",
@@ -51,15 +67,6 @@
   "id": "fio-3",
   "src": "/provas/fio-3.mp4",
   "poster": "/provas/fio-3.jpg",
-  "slugs": [
-   "progressiva-fio-de-luz",
-   "shampoo-fio-de-luz-anti-residuo"
-  ]
- },
- {
-  "id": "fio-4",
-  "src": "/provas/fio-4.mp4",
-  "poster": "/provas/fio-4.jpg",
   "slugs": [
    "progressiva-fio-de-luz",
    "shampoo-fio-de-luz-anti-residuo"
@@ -118,14 +125,6 @@
   "src": "/provas/ig-02.mp4",
   "poster": "/provas/ig-02.jpg",
   "slugs": []
- },
- {
-  "id": "ig-03",
-  "src": "/provas/ig-03.mp4",
-  "poster": "/provas/ig-03.jpg",
-  "slugs": [
-   "progressiva-fio-de-luz"
-  ]
  },
  {
   "id": "ig-04",
