@@ -1,6 +1,14 @@
 import { useRef, useState } from "react";
-import { ArrowUpRight, MessageCircleMore, PlayCircle, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  Instagram,
+  MessageCircleMore,
+  PlayCircle,
+  X,
+} from "lucide-react";
 import reviews from "@/data/reviews.json";
+import socialCommentsSource from "@/data/comentarios-instagram.json";
 
 /**
  * Genuine published PRODUCT reviews only. Preserve the author, comment and
@@ -18,9 +26,28 @@ const selectedReviews = reviewedAuthors.flatMap((author) =>
   ),
 );
 
+/** Three different PRODUCT categories already displayed by the Vonix storefront.
+ * Links lead to original posts (not permalinks verifying individual comments).
+ * A public comment does not establish a purchase or an affiliate relationship.
+ */
+const selectedSocialCommentKeys = [
+  { user: "aleandriele", produto: "SOS Reconstrutor Capilar" },
+  { user: "darislainedocuras", produto: "Kit Desmaia Cabelo" },
+  { user: "irene__soares", produto: "Perfume Capilar Vonix" },
+] as const;
+const selectedSocialComments = selectedSocialCommentKeys.flatMap(({ user, produto }) =>
+  socialCommentsSource.filter(
+    (comment) =>
+      comment.user === user &&
+      comment.produto === produto &&
+      comment.url.startsWith("https://www.instagram.com/"),
+  ),
+);
+
 export function AffiliateCustomerVoiceTeaser() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [showSocialComments, setShowSocialComments] = useState(false);
   const videoTriggerRef = useRef<HTMLButtonElement>(null);
   const selected = selectedReviews[selectedIndex] ?? selectedReviews[0];
   if (!selected || selectedReviews.length !== reviewedAuthors.length) return null;
@@ -163,8 +190,94 @@ export function AffiliateCustomerVoiceTeaser() {
                 <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
               </a>
             </nav>
+            {selectedSocialComments.length === selectedSocialCommentKeys.length && (
+              <button
+                type="button"
+                data-testid="affiliate-c110-social-toggle"
+                aria-expanded={showSocialComments}
+                aria-controls={showSocialComments ? "affiliate-c110-social-comments" : undefined}
+                onClick={() => setShowSocialComments((open) => !open)}
+                className="mt-1 inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-lg px-1 py-2 text-left text-xs font-bold text-[#774457] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256]"
+              >
+                <Instagram aria-hidden="true" className="size-4 shrink-0" />
+                {showSocialComments
+                  ? "Ocultar comentários nas redes"
+                  : "Ver comentários sobre outros 3 produtos"}
+                <ChevronDown
+                  aria-hidden="true"
+                  className={
+                    "size-4 shrink-0 transition-transform motion-reduce:transition-none " +
+                    (showSocialComments ? "rotate-180" : "")
+                  }
+                />
+              </button>
+            )}
           </div>
         </div>
+        {showSocialComments &&
+          selectedSocialComments.length === selectedSocialCommentKeys.length && (
+            <section
+              id="affiliate-c110-social-comments"
+              aria-label="Comentários em publicações sobre diferentes produtos Vonix"
+              data-testid="affiliate-c110-social-panel"
+              className="col-span-2 min-w-0 rounded-xl border border-[#e4cace] bg-[#f9f0ed] px-3 py-4 sm:p-5"
+            >
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[.08em] text-[#88566a]">
+                    Outras vozes · Produtos Vonix Hair
+                  </p>
+                  <h3 className="mt-1 font-display text-lg leading-snug text-[#563443]">
+                    Mais comentários públicos sobre o catálogo
+                  </h3>
+                </div>
+                <span className="rounded-full border border-[#dbbac5] bg-white px-3 py-1.5 text-[10px] font-bold text-[#78485d]">
+                  3 produtos diferentes
+                </span>
+              </div>
+              <ul
+                className="grid min-w-0 gap-2 sm:grid-cols-3"
+                data-testid="affiliate-c110-social-list"
+              >
+                {selectedSocialComments.map((comment) => (
+                  <li
+                    key={comment.user}
+                    data-testid="affiliate-c110-social-card"
+                    className="flex min-w-0 flex-col rounded-xl border border-[#e9d8d4] bg-white px-3 py-3"
+                  >
+                    <p className="text-[10px] font-bold uppercase leading-relaxed text-[#875568]">
+                      {comment.produto}
+                    </p>
+                    <blockquote className="mt-2 flex-1 break-words text-sm font-medium leading-[1.55] text-[#553745]">
+                      “{comment.text}”
+                    </blockquote>
+                    <p className="mt-2 text-xs font-semibold text-[#754558]">
+                      {"@" + comment.user}
+                    </p>
+                    <a
+                      href={comment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={
+                        "Abrir publicação relacionada ao comentário de @" +
+                        comment.user +
+                        " sobre " +
+                        comment.produto
+                      }
+                      className="mt-1 inline-flex min-h-11 items-center gap-1 self-start text-xs font-bold text-[#774457] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256]"
+                    >
+                      Ver publicação <ArrowUpRight aria-hidden="true" className="size-4" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[11px] leading-relaxed text-[#806570]">
+                Comentários já exibidos na loja Vonix em publicações sobre produtos, inclusive de
+                terceiros. Os links apontam para as postagens, não comprovam a autoria de uma compra
+                nem participação no programa de afiliadas. Publicações e comentários podem mudar.
+              </p>
+            </section>
+          )}
         {videoOpen && selected.media.type === "video" && (
           <div
             id="affiliate-c107-video-region"
