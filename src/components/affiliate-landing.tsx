@@ -17,6 +17,7 @@ import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
 import { AffiliateProductProof } from "@/components/affiliate-product-proof";
 import { AffiliateVerifiedReviewPreview } from "@/components/affiliate-verified-review-preview";
+import { AffiliateEarlyValueBand } from "@/components/affiliate-early-value-band";
 import {
   AffiliateEditorialHero,
   type RecruitmentStatus,
@@ -237,18 +238,7 @@ export function AffiliateLandingOffer({
         <>
           <AffiliateEditorialHero recruitmentStatus={recruitmentStatus} />
 
-          <div
-            data-testid="affiliate-c61-eligibility-facts"
-            aria-label="Informações essenciais da candidatura Vonix Hair"
-            className="border-b border-[#754558] bg-[#663448] px-5 py-4 text-[#fff9f6]"
-          >
-            <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 text-xs font-medium sm:grid-cols-4 sm:gap-8 sm:text-sm">
-              <span>Candidatura gratuita</span>
-              <span>Seleção individual</span>
-              <span>Maiores de 18 anos</span>
-              <span>TikTok opcional</span>
-            </div>
-          </div>
+          <AffiliateEarlyValueBand />
         </>
       )}
       {placement !== "intro" && (
