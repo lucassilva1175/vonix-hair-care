@@ -51,6 +51,7 @@ const steps = [
  */
 export function AffiliateApplicationStepsPreview() {
   const [openMobileStep, setOpenMobileStep] = useState<number | null>(null);
+  const [mobileJourneyExpanded, setMobileJourneyExpanded] = useState(false);
 
   return (
     <section
@@ -84,13 +85,45 @@ export function AffiliateApplicationStepsPreview() {
             <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
           </a>
         </div>
+        <button
+          type="button"
+          data-testid="affiliate-c108-steps-toggle"
+          aria-controls="vonix-affiliate-steps-rail"
+          aria-expanded={mobileJourneyExpanded}
+          onClick={() => {
+            setMobileJourneyExpanded((expanded) => !expanded);
+            setOpenMobileStep(null);
+          }}
+          className="mt-3 flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-[#d9bec8] bg-white px-3 py-2.5 text-left text-xs font-bold text-[#704355] shadow-sm transition-colors hover:bg-[#faf0ed] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704355] lg:hidden"
+        >
+          <span className="min-w-0">
+            <span className="block text-[10px] font-semibold uppercase leading-4 text-[#926275]">
+              3 etapas · sem portfólio obrigatório
+            </span>
+            <span className="mt-0.5 block leading-snug">
+              {mobileJourneyExpanded
+                ? "Ocultar detalhes do processo"
+                : "Ver as 3 etapas antes de me candidatar"}
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={
+              "size-5 shrink-0 transition-transform motion-reduce:transition-none " +
+              (mobileJourneyExpanded ? "rotate-180" : "")
+            }
+          />
+        </button>
         <div
           id="vonix-affiliate-steps-rail"
           role="region"
           tabIndex={0}
           aria-label="Três etapas da candidatura Vonix"
           data-testid="vonix-c79-steps-rail"
-          className="mt-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#865168] lg:mt-7"
+          className={
+            "mt-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#865168] lg:mt-7 " +
+            (mobileJourneyExpanded ? "block" : "hidden lg:block")
+          }
         >
           <ol className="grid grid-cols-1 gap-2 lg:grid-cols-3 lg:gap-5">
             {steps.map(({ eyebrow, title, text, detail, image, alt, Icon, tone }, index) => (

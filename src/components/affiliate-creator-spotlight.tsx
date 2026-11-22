@@ -5,6 +5,7 @@ import { affiliateCreatorPaths } from "@/data/affiliate-creator-paths";
 /** Editorial exploration only: not an eligibility test or a signup form. */
 export function AffiliateCreatorSpotlight() {
   const [selected, setSelected] = useState<number | null>(null);
+  const [mobileStylesExpanded, setMobileStylesExpanded] = useState(false);
   const current = selected === null ? null : affiliateCreatorPaths[selected];
 
   return (
@@ -37,10 +38,37 @@ export function AffiliateCreatorSpotlight() {
             Ir direto à inscrição <ArrowUpRight aria-hidden="true" className="size-4" />
           </a>
         </div>
+        <button
+          type="button"
+          data-testid="affiliate-c108-styles-toggle"
+          aria-controls="affiliate-c100-path-options"
+          aria-expanded={mobileStylesExpanded}
+          onClick={() => {
+            setMobileStylesExpanded((expanded) => !expanded);
+            setSelected(null);
+          }}
+          className="mt-3 flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-[#dfc9ce] bg-white px-3 py-2.5 text-left text-xs font-bold text-[#744256] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#744256] sm:hidden"
+        >
+          <span>
+            {mobileStylesExpanded
+              ? "Ocultar ideias de conteúdo"
+              : "Descobrir 3 estilos de conteúdo"}
+          </span>
+          <ArrowRight
+            aria-hidden="true"
+            className={
+              "size-4 shrink-0 transition-transform motion-reduce:transition-none " +
+              (mobileStylesExpanded ? "rotate-90" : "")
+            }
+          />
+        </button>
         <div
+          id="affiliate-c100-path-options"
           role="group"
           aria-label="Escolha seu estilo de conteúdo"
-          className="mt-4 grid grid-cols-3 gap-2 sm:gap-3"
+          className={
+            "mt-4 grid-cols-3 gap-2 sm:grid sm:gap-3 " + (mobileStylesExpanded ? "grid" : "hidden")
+          }
         >
           {affiliateCreatorPaths.map((path, index) => (
             <button
