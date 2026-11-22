@@ -168,10 +168,10 @@ export function AffiliateEditorialHero({
       className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-8 sm:py-14 lg:py-16"
     >
       <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-12 xl:gap-16">
-        <div className="min-w-0 lg:py-5">
+        <div className="flex min-w-0 flex-col lg:py-5">
           <div
             data-testid="affiliate-c89-hair-editorial"
-            className="relative isolate min-h-[21rem] min-w-0 overflow-hidden rounded-[1.8rem] border border-[#e1cfcb] bg-[#a7847f] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[23rem] lg:min-h-[25rem]"
+            className="order-1 relative isolate min-h-[19rem] min-w-0 overflow-hidden rounded-[1.8rem] border border-[#e1cfcb] bg-[#a7847f] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[23rem] lg:min-h-[25rem]"
           >
             <img
               src="/images/categorias/cachos.jpg"
@@ -188,7 +188,7 @@ export function AffiliateEditorialHero({
               aria-hidden="true"
               className="absolute inset-0 bg-gradient-to-t from-[#21151d]/95 via-[#2a1a25]/50 to-[#21151d]/20"
             />
-            <div className="relative flex min-h-[21rem] flex-col justify-between gap-5 px-5 py-5 text-white sm:min-h-[23rem] sm:p-7 lg:min-h-[25rem]">
+            <div className="relative flex min-h-[19rem] flex-col justify-between gap-4 px-5 py-5 text-white sm:min-h-[23rem] sm:gap-5 sm:p-7 lg:min-h-[25rem]">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-white/55 bg-[#21151d]/55 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[.09em] text-white backdrop-blur-sm">
                   Inscrição gratuita · seleção individual
@@ -218,7 +218,7 @@ export function AffiliateEditorialHero({
               </div>
             </div>
           </div>
-          <p className="mt-4 max-w-xl text-base leading-[1.75] text-[#5e4650] sm:text-lg">
+          <p className="order-4 mt-4 max-w-xl text-base leading-[1.75] text-[#5e4650] sm:text-lg lg:order-2">
             Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil à
             Vonix Hair e descubra como funciona a seleção para uma possível parceria.
           </p>
@@ -226,7 +226,7 @@ export function AffiliateEditorialHero({
             role="status"
             aria-live="polite"
             data-testid="affiliate-c94-intake-status"
-            className="mt-5 mb-2 inline-flex max-w-lg flex-wrap items-center gap-2 rounded-lg border border-[#e5d2cf] bg-white px-4 py-3 text-xs font-semibold leading-5 text-[#523740]"
+            className="order-2 mt-5 mb-2 inline-flex max-w-lg flex-wrap items-center gap-2 self-start rounded-lg border border-[#e5d2cf] bg-white px-4 py-3 text-xs font-semibold leading-5 text-[#523740] lg:order-3"
           >
             <span
               aria-hidden="true"
@@ -249,7 +249,7 @@ export function AffiliateEditorialHero({
                     ? "Não foi possível consultar a disponibilidade das inscrições"
                     : "Conheça o formulário enquanto as inscrições estão em preparação"}
           </div>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="order-3 mt-3 flex flex-wrap items-center gap-3 lg:order-4 lg:mt-5">
             <Button
               asChild
               className="h-auto min-h-12 whitespace-normal rounded-lg px-6 py-3 text-sm"
@@ -268,7 +268,7 @@ export function AffiliateEditorialHero({
             <AffiliateProgramShare />
           </div>
           <ul
-            className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-[#553d47]"
+            className="order-5 mt-6 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-[#553d47]"
             aria-label="Informações da candidatura"
           >
             {["8% sobre vendas após aprovação", "Sem estoque próprio", "Inscrição gratuita"].map(
@@ -280,7 +280,7 @@ export function AffiliateEditorialHero({
               ),
             )}
           </ul>
-          <p className="mt-3 max-w-lg text-xs leading-[1.7] text-[#65515a]">
+          <p className="order-6 mt-3 max-w-lg text-xs leading-[1.7] text-[#65515a]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque
             nem compra de produtos para se candidatar.{" "}
             <a
