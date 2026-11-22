@@ -47,8 +47,8 @@ describe("C79: convite editorial com provas de produto e navegação sem coleta 
     expect(links).toHaveLength(3);
     expect(links.map((el) => el.getAttribute("href"))).toEqual([
       "#simple-contact-heading",
-      "#simple-address-heading",
       "#simple-social-heading",
+      "#simple-address-heading",
     ]);
     for (const link of links) {
       const target = document.querySelector(link.getAttribute("href") ?? "");
