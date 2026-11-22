@@ -1,7 +1,8 @@
 import { thumb, webp } from "@/lib/images";
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 type GalleryCard = { id: string; title: string; lines: string[] };
+type GalleryVideo = { id: string; src: string; poster: string; own: boolean };
 
 const ZOOM = 2.4;
 /** Faixa (em %) junto às bordas da foto em que a lupa fica desligada. */
@@ -30,10 +31,11 @@ function CardFace({ card, photo, small }: { card: GalleryCard; photo: string; sm
   );
 }
 
-export function ProductGallery({ images, name, cards = [] }: { images: string[]; name: string; cards?: GalleryCard[] }) {
+export function ProductGallery({ images, name, cards = [], videos = [] }: { images: string[]; name: string; cards?: GalleryCard[]; videos?: GalleryVideo[] }) {
   const photo = webp(images[0]!);
-  const slides: ({ kind: "img"; src: string; detail?: boolean } | { kind: "card"; card: GalleryCard })[] = [
+  const slides: ({ kind: "img"; src: string; detail?: boolean } | { kind: "card"; card: GalleryCard } | { kind: "video"; video: GalleryVideo })[] = [
     ...images.map((src) => ({ kind: "img" as const, src: webp(src) })),
+    ...videos.map((video) => ({ kind: "video" as const, video })),
     ...(cards.length ? [{ kind: "img" as const, src: photo, detail: true }] : []),
     ...cards.map((card) => ({ kind: "card" as const, card })),
   ];
@@ -43,6 +45,7 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
   const [big, setBig] = useState(false);
   const n = slides.length;
   const cur = slides[i]!;
+  const showGrid = videos.length === 0 && images.length >= 2;
   const go = useCallback((d: number) => { setI((c) => (c + d + n) % n); setBig(false); }, [n]);
 
   useEffect(() => {
@@ -75,7 +78,7 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
   return (
     <div className="min-w-0">
       {/* Computador: fotos em grade 2x2 (cada uma abre o visualizador com lupa). Celular: carrossel abaixo. */}
-      {gridSlides.length >= 2 && (
+      {showGrid && (
         <div className="hidden grid-cols-2 gap-3 lg:grid" data-testid="gallery-grid">
           {gridSlides.map(({ sl, k }) => (
             <button
@@ -90,16 +93,16 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
           ))}
         </div>
       )}
-      <div className={gridSlides.length >= 2 ? "lg:hidden" : ""}>
+      <div className={showGrid ? "lg:hidden" : ""}>
       <div
-        role="button"
-        tabIndex={0}
-        aria-label="Ampliar imagem do produto"
-        onPointerMove={move}
+        role={cur.kind === "video" ? undefined : "button"}
+        tabIndex={cur.kind === "video" ? undefined : 0}
+        aria-label={cur.kind === "video" ? "Vídeo da galeria do produto" : "Ampliar imagem do produto"}
+        onPointerMove={cur.kind === "video" ? undefined : move}
         onPointerLeave={() => setPos(null)}
-        onClick={() => setOpen(true)}
-        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setOpen(true)}
-        className="relative block w-full cursor-zoom-in overflow-hidden rounded-2xl bg-card-image"
+        onClick={() => cur.kind !== "video" && setOpen(true)}
+        onKeyDown={(e) => cur.kind !== "video" && (e.key === "Enter" || e.key === " ") && setOpen(true)}
+        className={`relative block w-full overflow-hidden rounded-2xl bg-card-image ${cur.kind === "video" ? "" : "cursor-zoom-in"}`}
       >
         {cur.kind === "img" ? (
           <img
@@ -112,12 +115,14 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
             style={pos ? { transform: `scale(${cur.detail ? ZOOM * 1.4 : ZOOM})`, transformOrigin: `${pos.x}% ${pos.y}%` } : cur.detail ? { transform: "scale(1.9)", transformOrigin: "50% 42%" } : undefined}
             className={`aspect-square w-full object-contain ${pos ? "" : "transition-transform duration-200"}`}
           />
+        ) : cur.kind === "video" ? (
+          <video key={cur.video.id} src={cur.video.src} poster={cur.video.poster} controls playsInline preload="none" aria-label={cur.video.own ? `Vídeo de quem usa ${name}` : "Vídeo de quem usa a linha Vonix"} className="aspect-square w-full bg-black object-contain" />
         ) : (
           <div className="aspect-square w-full"><CardFace card={cur.card} photo={photo} /></div>
         )}
-        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-small font-semibold shadow">
+        {cur.kind !== "video" && <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-small font-semibold shadow">
           <ZoomIn className="h-4 w-4" aria-hidden="true" /> Ampliar
-        </span>
+        </span>}
         {n > 1 && (
           <>
             <button type="button" aria-label="Imagem anterior" onClick={(e) => { e.stopPropagation(); go(-1); }} className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background/90 shadow">
@@ -126,15 +131,20 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
             <button type="button" aria-label="Próxima imagem" onClick={(e) => { e.stopPropagation(); go(1); }} className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background/90 shadow">
               <ChevronRight className="h-5 w-5" />
             </button>
-            <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-foreground/80 px-2.5 py-1 text-small text-background">{i + 1}/{n}</span>
+            <span className={`pointer-events-none absolute right-3 rounded-full bg-foreground/80 px-2.5 py-1 text-small text-background ${cur.kind === "video" ? "top-3" : "bottom-3"}`}>{i + 1}/{n}</span>
           </>
         )}
       </div>
       <div className="mt-3 flex gap-2 overflow-x-auto">
         {slides.map((sl, k) => (
-          <button key={k} type="button" aria-label={`Ver imagem ${k + 1}`} onClick={() => { setI(k); setBig(false); }} className={`h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-card-image ${k === i ? "border-foreground" : "border-transparent"}`}>
+          <button key={k} type="button" aria-label={sl.kind === "video" ? `Ver vídeo ${videos.findIndex((v) => v.id === sl.video.id) + 1}` : `Ver imagem ${k + 1}`} aria-pressed={k === i} onClick={() => { setI(k); setBig(false); setPos(null); }} className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-card-image ${k === i ? "border-foreground" : "border-transparent"}`}>
             {sl.kind === "img" ? (
               <img src={thumb(sl.src)} alt="" width={80} height={80} loading="lazy" decoding="async" fetchPriority="low" className="h-full w-full object-cover" style={sl.detail ? { transform: "scale(1.9)", transformOrigin: "50% 42%" } : undefined} />
+            ) : sl.kind === "video" ? (
+              <>
+                <img src={sl.video.poster} alt="" width={80} height={80} loading="lazy" className="h-full w-full object-cover" />
+                <span className="absolute inset-0 grid place-items-center bg-black/20"><Play aria-hidden="true" className="h-7 w-7 rounded-full bg-black/60 p-1 text-white" /></span>
+              </>
             ) : (
               <CardFace card={sl.card} photo={photo} small />
             )}
@@ -146,17 +156,17 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
       {open && (
         <div role="dialog" aria-modal="true" aria-label={`${name}: imagem ampliada`} className="fixed inset-0 z-[70] flex flex-col bg-black/95">
           <div className="flex items-center justify-between gap-2 p-3 text-white">
-            <span className="text-body">{i + 1} de {n} · {big ? "arraste para ver os detalhes" : "toque na imagem para ampliar"}</span>
+            <span className="text-body">{i + 1} de {n} · {cur.kind === "video" ? "Vídeo" : big ? "arraste para ver os detalhes" : "toque na imagem para ampliar"}</span>
             <div className="flex gap-2">
-              <button type="button" aria-label={big ? "Reduzir" : "Ampliar"} onClick={() => setBig((b) => !b)} className="grid h-10 w-10 place-items-center rounded-full bg-white/15">
+              {cur.kind !== "video" && <button type="button" aria-label={big ? "Reduzir" : "Ampliar"} onClick={() => setBig((b) => !b)} className="grid h-10 w-10 place-items-center rounded-full bg-white/15">
                 {big ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}
-              </button>
+              </button>}
               <button type="button" aria-label="Fechar" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-full bg-white/15">
                 <X className="h-5 w-5" />
               </button>
             </div>
           </div>
-          <div className="relative min-h-0 flex-1 overflow-auto" onClick={() => setBig((b) => !b)}>
+          <div className="relative min-h-0 flex-1 overflow-auto" onClick={() => cur.kind !== "video" && setBig((b) => !b)}>
             <div className={`flex min-h-full min-w-full items-center justify-center ${big ? "" : "h-full"}`}>
               {cur.kind === "img" ? (
                 <img
@@ -166,6 +176,8 @@ export function ProductGallery({ images, name, cards = [] }: { images: string[];
                   style={big ? { width: `${ZOOM * 100}%`, maxWidth: "none" } : undefined}
                   className={big ? "h-auto cursor-zoom-out" : "max-h-full max-w-full cursor-zoom-in object-contain"}
                 />
+              ) : cur.kind === "video" ? (
+                <video key={cur.video.id} src={cur.video.src} poster={cur.video.poster} controls playsInline preload="none" aria-label={cur.video.own ? `Vídeo de quem usa ${name}` : "Vídeo de quem usa a linha Vonix"} className="max-h-full max-w-full object-contain" />
               ) : (
                 <div className="aspect-square w-full max-w-[min(92vw,80vh)] overflow-hidden rounded-2xl"><CardFace card={cur.card} photo={photo} /></div>
               )}

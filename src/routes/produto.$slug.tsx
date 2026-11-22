@@ -6,7 +6,7 @@ import { ProductGallery } from "@/components/product-gallery";
 import { thumb } from "@/lib/images";
 import { ProductDetails } from "@/components/product-details";
 import { ProductReviews, ReviewStrip, reviewsFor } from "@/components/reviews";
-import { ProvasEmVideo } from "@/components/provas-em-video";
+import { ProvasEmVideo, provasFor } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { ShareButton } from "@/components/share-button";
 import { Grid, PaymentMethods, SecuritySeal, Shell, Stars } from "@/components/site";
@@ -351,7 +351,7 @@ function ProductPage() {
           / {p.name}
         </nav>
         <div className="grid gap-10 lg:grid-cols-2">
-          <ProductGallery key={p.slug} images={p.images} name={p.name} />
+          <ProductGallery key={p.slug} images={p.images} name={p.name} videos={p.slug === "progressiva-fio-de-luz" ? provasFor(p.slug) : undefined} />
           <div className="min-w-0">
             <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">5% OFF</span>
             <h1 className="mt-3 font-display text-h1">{p.name}</h1>
@@ -560,7 +560,6 @@ function ProductPage() {
             <div className="mt-3">
               <SecuritySeal />
             </div>
-            <ShippingCalc subtotal={total} slug={p.slug} variant={v.label} qty={qty} />
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
                 Frete grátis em todos os produtos, em qualquer pedido · entrega de 3 a 5 dias úteis
@@ -580,10 +579,10 @@ function ProductPage() {
                 </a>
               </li>
             </ul>
-            <div className="mt-8">
+            {p.slug !== "progressiva-fio-de-luz" && <div className="mt-8">
               <p className="mb-2 text-small font-semibold">Veja em vídeo quem usa</p>
               <ProvasEmVideo slug={p.slug} seed={p.slug} />
-            </div>
+            </div>}
             <ComentariosInstagram slug={p.slug} max={4} />
           </div>
         </div>
