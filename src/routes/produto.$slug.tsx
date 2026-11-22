@@ -373,7 +373,7 @@ function ProductPage() {
                 <span className="leading-snug">{p.short}</span>
               </div>
             )}
-            <ReviewStrip slug={p.slug} />
+            {!galleryVideos && <ReviewStrip slug={p.slug} />}
             <div className="mt-4" data-testid="product-price-block">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
