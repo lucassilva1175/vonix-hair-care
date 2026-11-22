@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowUpRight, MessageCircleMore } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowUpRight, MessageCircleMore, PlayCircle, X } from "lucide-react";
 import reviews from "@/data/reviews.json";
 
 /**
@@ -20,6 +20,8 @@ const selectedReviews = reviewedAuthors.flatMap((author) =>
 
 export function AffiliateCustomerVoiceTeaser() {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [videoOpen, setVideoOpen] = useState(false);
+  const videoTriggerRef = useRef<HTMLButtonElement>(null);
   const selected = selectedReviews[selectedIndex] ?? selectedReviews[0];
   if (!selected || selectedReviews.length !== reviewedAuthors.length) return null;
 
@@ -38,22 +40,42 @@ export function AffiliateCustomerVoiceTeaser() {
       className="border-b border-[#e8d9d4] bg-[#f6eeea] px-5 py-3 text-[#543745] sm:py-6"
     >
       <div className="mx-auto grid max-w-5xl min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-4 rounded-2xl border border-[#e3ccc9] bg-[#fffaf7] p-2.5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-6 sm:px-5 sm:py-4">
-        <a
-          href="#avaliacoes-produtos"
-          aria-label={"Ver avaliação completa de " + selected.author + " sobre Botox Vonix"}
-          className="block overflow-hidden rounded-xl bg-[#eadad5] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#80485e]"
-        >
-          <img
-            data-testid="affiliate-c106-review-image"
-            src={imageSrc}
-            alt={imageAlt}
-            width={240}
-            height={300}
-            loading="lazy"
-            decoding="async"
-            className="aspect-[3/4] w-full object-contain"
-          />
-        </a>
+        <div className="relative min-w-0">
+          <a
+            href="#avaliacoes-produtos"
+            aria-label={"Ver avaliação completa de " + selected.author + " sobre Botox Vonix"}
+            className="block overflow-hidden rounded-xl bg-[#eadad5] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#80485e]"
+          >
+            <img
+              data-testid="affiliate-c106-review-image"
+              src={imageSrc}
+              alt={imageAlt}
+              width={240}
+              height={300}
+              loading="lazy"
+              decoding="async"
+              className="aspect-[3/4] w-full object-contain"
+            />
+          </a>
+          {selected.media.type === "video" && (
+            <button
+              ref={videoTriggerRef}
+              type="button"
+              data-testid="affiliate-c107-video-toggle"
+              aria-label={
+                (videoOpen ? "Fechar" : "Assistir") +
+                " vídeo da avaliação de produto de " +
+                selected.author
+              }
+              aria-expanded={videoOpen}
+              aria-controls={videoOpen ? "affiliate-c107-video-region" : undefined}
+              onClick={() => setVideoOpen((open) => !open)}
+              className="absolute bottom-1.5 right-1.5 grid size-11 place-items-center rounded-full border border-[#e5d7d3] bg-[#fffaf7]/95 text-[#754255] shadow-md transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754255]"
+            >
+              <PlayCircle aria-hidden="true" className="size-6" />
+            </button>
+          )}
+        </div>
         <div id="affiliate-c106-review-panel" className="min-w-0">
           <p className="flex items-center gap-1.5 text-[11px] font-semibold leading-4 text-[#835267]">
             <MessageCircleMore aria-hidden="true" className="size-4 shrink-0" />
@@ -102,7 +124,10 @@ export function AffiliateCustomerVoiceTeaser() {
                   aria-label={"Ver avaliação de produto de " + review.author}
                   aria-controls="affiliate-c106-review-panel"
                   aria-pressed={selectedIndex === index}
-                  onClick={() => setSelectedIndex(index)}
+                  onClick={() => {
+                    setVideoOpen(false);
+                    setSelectedIndex(index);
+                  }}
                   data-testid="affiliate-c106-review-choice"
                   className={
                     "min-h-11 min-w-0 rounded-lg border px-1.5 py-2 text-center text-[11px] font-semibold leading-snug transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256] sm:px-3 sm:text-xs " +
@@ -140,6 +165,43 @@ export function AffiliateCustomerVoiceTeaser() {
             </nav>
           </div>
         </div>
+        {videoOpen && selected.media.type === "video" && (
+          <div
+            id="affiliate-c107-video-region"
+            data-testid="affiliate-c107-video-region"
+            className="col-span-2 min-w-0 rounded-xl border border-[#ead5d6] bg-[#f7eeec] px-3 py-3 sm:p-5"
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="max-w-xl text-xs leading-relaxed text-[#654451]">
+                Vídeo publicado junto à avaliação de {selected.author} sobre Botox Vonix. É uma
+                avaliação de produto, não um depoimento de afiliada.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setVideoOpen(false);
+                  videoTriggerRef.current?.focus();
+                }}
+                className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-[#d9c0c4] bg-white px-3 text-xs font-bold text-[#784256] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256]"
+              >
+                <X aria-hidden="true" className="size-4" /> Fechar vídeo
+              </button>
+            </div>
+            <video
+              key={selected.media.src}
+              data-testid="affiliate-c107-review-video"
+              aria-label={"Vídeo publicado com a avaliação de produto de " + selected.author}
+              controls
+              playsInline
+              preload="none"
+              poster={selected.media.poster}
+              src={selected.media.src}
+              className="mx-auto block aspect-video max-h-[65vh] w-full max-w-[42rem] rounded-lg bg-[#2e2028] object-contain"
+            >
+              Seu navegador não permite reproduzir este vídeo. Veja a avaliação no catálogo.
+            </video>
+          </div>
+        )}
       </div>
     </aside>
   );

@@ -2,7 +2,7 @@
 export const PUBLIC_AFFILIATE_PAGE = "https://vonixhair.com/seja-afiliada";
 
 export const PUBLIC_AFFILIATE_SHARE_TEXT =
-  "Conhece alguém que cria conteúdo sobre cabelos? Conheça o programa de afiliadas Vonix Hair: candidatura gratuita e seleção individual quando disponível. A inscrição não garante aprovação. Confira as condições no site oficial.";
+  "Você cria conteúdo sobre cabelos e autocuidado? ✨ Conheça a seleção de afiliadas Vonix Hair: candidatura gratuita, sem compra de produtos ou estoque para se candidatar. Após aprovação, a comissão é de 8% sobre vendas confirmadas e pagas, conforme as condições do programa. A seleção é individual e não garante aprovação nem ganhos. Confira a disponibilidade e as regras no site oficial.";
 
 /** No private referral code, applicant details or tracking parameters. */
 export const PUBLIC_AFFILIATE_SHARE_MESSAGE =
