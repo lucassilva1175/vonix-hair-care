@@ -1,95 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Atom, Barcode, ChevronLeft, ChevronRight, CreditCard, FlaskConical, QrCode, ShowerHead, Sparkles, Truck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, Atom, FlaskConical, ShowerHead, Sparkles } from "lucide-react";
 import { ReviewCard, reviews } from "@/components/reviews";
 import { FaqSection } from "@/components/faq";
 import { FAQ_LOJA } from "@/lib/faq";
 import { ProvasEmVideo } from "@/components/provas-em-video";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { Grid, Shell } from "@/components/site";
-import { SITE_URL, brl, bySales, discountPct, forAudience, getProduct, homeBestSellers, installments, pixPrice, products, useAudience } from "@/lib/store";
-import { soldFor } from "@/lib/sales";
+import { SITE_URL, bySales, forAudience, homeBestSellers, products, useAudience } from "@/lib/store";
+import { HomeGiftBanner } from "@/components/home-gift-banner";
 
-function BannerBenefits() {
-  return (
-    <ul aria-label="Condições de pagamento e entrega" data-testid="home-banner-benefits" className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-white/10 bg-[#091413] px-4 py-2.5 text-[0.7rem] font-medium text-white sm:text-small md:flex md:items-center md:justify-center md:gap-8 md:py-3">
-      {[
-        { Icon: CreditCard, text: "Até 6x sem juros" },
-        { Icon: QrCode, text: "Pix: 5% de desconto" },
-        { Icon: Barcode, text: "Boleto à vista" },
-        { Icon: Truck, text: "Frete grátis" },
-      ].map(({ Icon, text }) => (
-        <li key={text} className="flex min-w-0 items-center justify-center gap-1.5">
-          <Icon className="h-4 w-4 shrink-0 text-[#e4bd7b]" strokeWidth={1.5} aria-hidden="true" />
-          <span>{text}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/**
- * Banner da home: a arte (título, produtos e fundo) é a imagem enviada pela loja;
- * a oferta (desconto, preço antigo e preço novo) vem do catálogo e fica por cima, em HTML.
- */
-function Banner({ slug, priority }: { slug: string; priority: boolean }) {
-  const p = getProduct(slug)!;
-  const v = p.variants[0]!;
-  if (slug === "kit-banana-e-mel") {
-    const pix = pixPrice(v.price);
-    const split = installments(v.price);
-    return (
-      <Link to="/produto/$slug" params={{ slug }} data-testid="home-banana-banner" className="group relative block overflow-hidden bg-[#231811] text-[#fff3e1]">
-          <img
-            src="/images/banners/kit-banana-e-mel-cliente-20261121.webp"
-            alt="Banana e Mel: mulher apresentando shampoo, condicionador, máscara e leave-in"
-            width={1942}
-            height={809}
-            fetchPriority={priority ? "high" : "auto"}
-            className="block aspect-[1942/809] h-auto w-full object-contain"
-          />
-        <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/35 via-transparent to-transparent" />
-        <div className="absolute inset-y-0 left-[5.2%] flex w-[40%] flex-col justify-center gap-1 md:w-[39%] md:gap-3">
-          <p className="hidden text-small font-semibold tracking-[0.22em] md:block">VONIX HAIR</p>
-          <h2 className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(1.1rem, 4.2vw, 4.5rem)" }}>{p.name.replace(/^Kit\s+/i, "")}</h2>
-          <p className="hidden text-body leading-relaxed md:block">Shampoo, condicionador, máscara e leave-in.</p>
-          <div className="space-y-1 md:space-y-3">
-            <div className="space-y-0.5 md:space-y-1">
-              <p className="font-display font-semibold leading-tight" style={{ fontSize: "clamp(1rem, 3vw, 3rem)" }}>Por {brl(v.price)}</p>
-              {pix < v.price && <p className="text-[0.65rem] font-semibold sm:text-small md:text-body">ou {brl(pix)} no Pix</p>}
-            </div>
-            <span className="inline-flex min-h-6 items-center justify-center gap-1 rounded-full bg-[#e4bd7b] px-2.5 py-1 text-[0.6rem] font-semibold text-[#251a12] md:min-h-11 md:gap-2 md:px-6 md:py-3 md:text-small">
-              Conheça o kit <ArrowRight className="h-3 w-3 md:h-4 md:w-4" aria-hidden="true" />
-            </span>
-          </div>
-          <p className="hidden text-small md:block">Em até {split.count}x de {brl(split.value)} sem juros no cartão</p>
-        </div>
-      </Link>
-    );
-  }
-  const off = discountPct(p.compareBase, v.price);
-  const saving = p.compareBase ? p.compareBase - v.price : 0;
-  return (
-    <Link to="/produto/$slug" params={{ slug }} className="group relative block overflow-hidden bg-[oklch(0.98_0.012_88)] text-foreground">
-      <img
-        src={`/images/banners/${slug}-home.webp`}
-        alt={`Vonix Hair ${p.name}`}
-        width={1942}
-        height={809}
-        fetchPriority={priority ? "high" : "auto"}
-        className="block aspect-[1942/809] h-auto w-full object-contain"
-      />
-      <div className="absolute bottom-[4.5%] left-[5.2%] max-w-[42%] text-left">
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 md:justify-start">
-          {off > 0 && <span className="rounded bg-foreground px-3 py-1 text-small font-semibold tracking-[0.15em] text-background">{off}% OFF</span>}
-          {p.compareBase && <span className="text-body line-through opacity-60">{brl(p.compareBase)}</span>}
-          <span className="whitespace-nowrap font-display font-semibold leading-none" style={{ fontSize: "clamp(0.95rem, 2.4vw, 2.4rem)" }}>Por {brl(v.price)}</span>
-        </div>
-        {saving > 0 && <div className="mt-1 text-small font-semibold">Você economiza {brl(saving)}</div>}
-      </div>
-    </Link>
-  );
-}
 /** Faixa de valores da marca que passa devagar embaixo do banner (ícone de traço + frase curta). Não repete frete, parcelamento nem Pix. */
 const MARCA = [
   { Icon: Sparkles, text: "Resultado de salão" },
@@ -130,12 +49,6 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-/** Banners dos kits que têm arte, do que mais vende para o que menos vende (o primeiro é a oferta principal da loja). */
-const BANNERS = ["kit-banana-e-mel", "kit-cachos", "kit-coco-nutri", "kit-cronograma-capilar", "kit-desmaia", "kit-whey-protein", "kit-matizador-shampoo-e-mascara"]
-  .map((s, i) => [s, i] as const)
-  .sort((a, b) => soldFor(b[0]) - soldFor(a[0]) || a[1] - b[1])
-  .map(([s]) => s);
-
 function Title({ a, b, to }: { a: string; b: string; to?: Record<string, string> }) {
   return (
     <div className="mb-8 flex items-end justify-between">
@@ -152,7 +65,6 @@ function Title({ a, b, to }: { a: string; b: string; to?: Record<string, string>
 }
 
 function Home() {
-  const [i, setI] = useState(0);
   const { audience } = useAudience();
   // Ordem do curso: o que mais vende primeiro e nenhuma vitrine repete o que já apareceu em cima.
   const bestSellers = homeBestSellers(audience);
@@ -167,27 +79,12 @@ function Home() {
   const lavatorio = take(forAudience(bySales(products.filter((p) => p.category === "lavatorio")), audience));
   const avulsos = take(bySales(products.filter((p) => p.category === "avulsos")), 12);
   const finalizadores = take(forAudience(bySales(products.filter((p) => p.category === "finalizadores")), audience));
-  useEffect(() => {
-    const t = setInterval(() => setI((x) => (x + 1) % BANNERS.length), 6000);
-    return () => clearInterval(t);
-  }, []);
   return (
     <Shell>
       <h1 className="sr-only">Vonix Hair — Cosméticos Capilares Profissionais</h1>
-      <section className="container-site pt-5">
-        <div className="relative overflow-hidden rounded-2xl">
-          <div className="relative">
-          <Banner key={BANNERS[i]} slug={BANNERS[i]!} priority={i === 0} />
-          <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className={`absolute left-3 ${BANNERS[i] === "kit-banana-e-mel" ? "top-6" : "top-[16%]"} grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2`}>
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button aria-label="Próximo" onClick={() => setI((i + 1) % BANNERS.length)} className={`absolute right-3 ${BANNERS[i] === "kit-banana-e-mel" ? "top-6" : "top-[16%]"} grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2`}>
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          </div>
-          <BannerBenefits />
-        </div>
-      </section>
+      <div className="container-site pt-5">
+        <HomeGiftBanner />
+      </div>
 
       <FaixaMarca />
 

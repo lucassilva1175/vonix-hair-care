@@ -7,7 +7,7 @@ import { thumb } from "@/lib/images";
 import { ProductDetails } from "@/components/product-details";
 import { ProductReviews, ReviewStrip, reviewsFor } from "@/components/reviews";
 import { ProvasEmVideo } from "@/components/provas-em-video";
-import { productGalleryVideosFor } from "@/lib/product-media";
+import { productGalleryImagesFor, productGalleryVideosFor } from "@/lib/product-media";
 import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { ShareButton } from "@/components/share-button";
 import { Grid, PaymentMethods, SecuritySeal, Shell, Stars } from "@/components/site";
@@ -353,7 +353,7 @@ function ProductPage() {
           / {p.name}
         </nav>
         <div className="grid gap-10 lg:grid-cols-2">
-          <ProductGallery key={p.slug} images={galleryVideos ? p.images.slice(0, 1) : p.images} name={p.name} videos={galleryVideos} />
+          <ProductGallery key={p.slug} images={productGalleryImagesFor(p.slug, p.images)} name={p.name} videos={galleryVideos} />
           <div className="min-w-0">
             <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">5% OFF</span>
             <h1 className="mt-3 font-display text-h1">{p.name}</h1>
