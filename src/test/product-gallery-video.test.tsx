@@ -65,6 +65,17 @@ describe("Fio de Luz: fotos e vídeos na mesma galeria", () => {
   it("inclui os oito vídeos específicos de Fio de Luz sem alterar outros produtos", () => {
     expect(videos).toHaveLength(8);
     expect(videos.map((video) => video.src)).toContain("/provas/ig-26.mp4");
-    expect(productGalleryVideosFor("kit-banana-e-mel")).toBeUndefined();
+    expect(productGalleryVideosFor("kit-coco-nutri")).toBeUndefined();
+  });
+
+  it("mostra apenas o vídeo próprio do Banana e Mel junto da foto branca", () => {
+    const banana = catalog.find((p) => p.slug === "kit-banana-e-mel")!;
+    const ownVideos = productGalleryVideosFor(banana.slug)!;
+    const { container } = render(<ProductGallery images={banana.images.slice(0, 1)} name={banana.name} videos={ownVideos} />);
+    expect(screen.getAllByRole("button", { name: /^Ver imagem/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /^Ver vídeo/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Ver vídeo 1", exact: true }));
+    expect(container.querySelector("video")).toHaveAttribute("src", "/provas/banana-mel.mp4");
+    expect(container.querySelector("video")).toHaveAttribute("autoplay");
   });
 });
