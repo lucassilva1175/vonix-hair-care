@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Atom, ChevronLeft, ChevronRight, FlaskConical, ShowerHead, Sparkles } from "lucide-react";
+import { ArrowRight, Atom, Barcode, ChevronLeft, ChevronRight, CreditCard, FlaskConical, QrCode, ShowerHead, Sparkles, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewCard, reviews } from "@/components/reviews";
 import { FaqSection } from "@/components/faq";
@@ -9,6 +9,24 @@ import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { Grid, Shell } from "@/components/site";
 import { SITE_URL, brl, bySales, discountPct, forAudience, getProduct, homeBestSellers, installments, pixPrice, products, useAudience } from "@/lib/store";
 import { soldFor } from "@/lib/sales";
+
+function BannerBenefits() {
+  return (
+    <ul aria-label="Condições de pagamento e entrega" data-testid="home-banner-benefits" className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-white/10 bg-[#091413] px-4 py-2.5 text-[0.7rem] font-medium text-white sm:text-small md:flex md:items-center md:justify-center md:gap-8 md:py-3">
+      {[
+        { Icon: CreditCard, text: "Até 6x sem juros" },
+        { Icon: QrCode, text: "Pix: 5% de desconto" },
+        { Icon: Barcode, text: "Boleto à vista" },
+        { Icon: Truck, text: "Frete grátis" },
+      ].map(({ Icon, text }) => (
+        <li key={text} className="flex min-w-0 items-center justify-center gap-1.5">
+          <Icon className="h-4 w-4 shrink-0 text-[#e4bd7b]" strokeWidth={1.5} aria-hidden="true" />
+          <span>{text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /**
  * Banner da home: a arte (título, produtos e fundo) é a imagem enviada pela loja;
@@ -158,6 +176,7 @@ function Home() {
       <h1 className="sr-only">Vonix Hair — Cosméticos Capilares Profissionais</h1>
       <section className="container-site pt-5">
         <div className="relative overflow-hidden rounded-2xl">
+          <div className="relative">
           <Banner key={BANNERS[i]} slug={BANNERS[i]!} priority={i === 0} />
           <button aria-label="Anterior" onClick={() => setI((i + BANNERS.length - 1) % BANNERS.length)} className={`absolute left-3 ${BANNERS[i] === "kit-banana-e-mel" ? "top-6" : "top-[16%]"} grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:left-4 md:top-1/2`}>
             <ChevronLeft className="h-4 w-4" />
@@ -165,6 +184,8 @@ function Home() {
           <button aria-label="Próximo" onClick={() => setI((i + 1) % BANNERS.length)} className={`absolute right-3 ${BANNERS[i] === "kit-banana-e-mel" ? "top-6" : "top-[16%]"} grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-background md:right-4 md:top-1/2`}>
             <ChevronRight className="h-4 w-4" />
           </button>
+          </div>
+          <BannerBenefits />
         </div>
       </section>
 
