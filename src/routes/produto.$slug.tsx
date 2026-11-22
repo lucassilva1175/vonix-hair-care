@@ -351,7 +351,7 @@ function ProductPage() {
           / {p.name}
         </nav>
         <div className="grid gap-10 lg:grid-cols-2">
-          <ProductGallery key={p.slug} images={p.images} name={p.name} videos={p.slug === "progressiva-fio-de-luz" ? provasFor(p.slug) : undefined} />
+          <ProductGallery key={p.slug} images={p.slug === "progressiva-fio-de-luz" ? p.images.slice(0, 1) : p.images} name={p.name} videos={p.slug === "progressiva-fio-de-luz" ? provasFor(p.slug) : undefined} />
           <div className="min-w-0">
             <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">5% OFF</span>
             <h1 className="mt-3 font-display text-h1">{p.name}</h1>
