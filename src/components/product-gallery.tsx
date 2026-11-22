@@ -116,7 +116,7 @@ export function ProductGallery({ images, name, cards = [], videos = [] }: { imag
             className={`aspect-square w-full object-contain ${pos ? "" : "transition-transform duration-200"}`}
           />
         ) : cur.kind === "video" ? (
-          <video key={cur.video.id} src={cur.video.src} poster={cur.video.poster} controls playsInline preload="none" aria-label={cur.video.own ? `Vídeo de quem usa ${name}` : "Vídeo de quem usa a linha Vonix"} className="aspect-square w-full bg-black object-contain" />
+          <video key={cur.video.id} src={cur.video.src} poster={cur.video.poster} controls autoPlay={!open} playsInline preload="none" aria-label={cur.video.own ? `Vídeo de quem usa ${name}` : "Vídeo de quem usa a linha Vonix"} className="aspect-square w-full bg-black object-contain" />
         ) : (
           <div className="aspect-square w-full"><CardFace card={cur.card} photo={photo} /></div>
         )}
@@ -177,7 +177,7 @@ export function ProductGallery({ images, name, cards = [], videos = [] }: { imag
                   className={big ? "h-auto cursor-zoom-out" : "max-h-full max-w-full cursor-zoom-in object-contain"}
                 />
               ) : cur.kind === "video" ? (
-                <video key={cur.video.id} src={cur.video.src} poster={cur.video.poster} controls playsInline preload="none" aria-label={cur.video.own ? `Vídeo de quem usa ${name}` : "Vídeo de quem usa a linha Vonix"} className="max-h-full max-w-full object-contain" />
+                <video key={cur.video.id} src={cur.video.src} poster={cur.video.poster} controls autoPlay playsInline preload="none" aria-label={cur.video.own ? `Vídeo de quem usa ${name}` : "Vídeo de quem usa a linha Vonix"} className="max-h-full max-w-full object-contain" />
               ) : (
                 <div className="aspect-square w-full max-w-[min(92vw,80vh)] overflow-hidden rounded-2xl"><CardFace card={cur.card} photo={photo} /></div>
               )}
