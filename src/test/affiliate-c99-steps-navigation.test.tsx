@@ -6,121 +6,91 @@ import { AffiliateApplicationStepsPreview } from "@/components/affiliate-applica
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
 });
 
-function setRailGeometry() {
-  const rail = screen.getByTestId("vonix-c79-steps-rail");
-  const cards = within(rail).getAllByTestId("vonix-c79-step-card");
-  Object.defineProperties(rail, {
-    scrollWidth: { configurable: true, value: 920 },
-    clientWidth: { configurable: true, value: 320 },
-    scrollLeft: { configurable: true, writable: true, value: 0 },
-  });
-  cards.forEach((card, index) => {
-    Object.defineProperty(card, "offsetLeft", { configurable: true, value: index * 304 });
-  });
-  const scrollBy = vi.fn(({ left }: ScrollToOptions) => {
-    rail.scrollLeft = Math.min(600, Math.max(0, rail.scrollLeft + Number(left ?? 0)));
-    fireEvent.scroll(rail);
-  });
-  Object.defineProperty(rail, "scrollBy", { configurable: true, value: scrollBy });
-  fireEvent.resize(window);
-  return { rail, scrollBy };
-}
-
-describe("C99 — guia de três etapas com controles móveis verificáveis", () => {
-  it("mantém instruções verdadeiras, três cards e controles sem formulários ou envios", () => {
+describe("C99 → C104: três etapas progressivas sem navegação falsa", () => {
+  it("mantém três cards, fontes oficiais e âncoras existentes", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { container } = render(<AffiliateApplicationStepsPreview />);
     const section = screen.getByTestId("vonix-c66-application-steps");
-    expect(section).toHaveClass("py-6", "sm:py-14");
-    const rail = within(section).getByTestId("vonix-c79-steps-rail");
-    const controls = within(section).getByTestId("affiliate-c99-steps-controls");
-    expect(controls).toHaveClass("flex");
-    expect(within(rail).getAllByTestId("vonix-c79-step-card")).toHaveLength(3);
+    const rail = screen.getByTestId("vonix-c79-steps-rail");
+    expect(section).toHaveAttribute("id", "candidatura-etapas");
+    expect(section.querySelector("#como-funciona")).not.toBeNull();
     expect(rail).toHaveAttribute("id", "vonix-affiliate-steps-rail");
     expect(rail).toHaveAttribute("tabindex", "0");
-    expect(
-      within(controls).getByRole("button", { name: "Etapa anterior da candidatura" }),
-    ).toHaveAttribute("aria-controls", "vonix-affiliate-steps-rail");
-    expect(
-      within(controls).getByRole("button", { name: "Próxima etapa da candidatura" }),
-    ).toHaveAttribute("aria-controls", "vonix-affiliate-steps-rail");
+    expect(within(rail).getAllByTestId("vonix-c79-step-card")).toHaveLength(3);
     expect(section).toHaveTextContent("TikTok é opcional");
     expect(section).toHaveTextContent("sem prazo ou aprovação garantidos");
-    expect(container.querySelectorAll("form, input, video, audio, [autoplay]")).toHaveLength(0);
+    expect(section).toHaveTextContent("Imagens do catálogo oficial Vonix Hair");
+    expect(container.querySelector("form, input, video, audio, [autoplay]")).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("avança e volta com índice sincronizado ao scroll e limites reais", () => {
+  it("oferece três botões acessíveis com detalhes inicialmente recolhidos", () => {
     render(<AffiliateApplicationStepsPreview />);
-    const { rail, scrollBy } = setRailGeometry();
-    const controls = screen.getByTestId("affiliate-c99-steps-controls");
-    const prev = within(controls).getByRole("button", { name: "Etapa anterior da candidatura" });
-    const next = within(controls).getByRole("button", { name: "Próxima etapa da candidatura" });
-    expect(controls).toHaveTextContent("1 de 3");
-    expect(prev).toBeDisabled();
-    expect(next).toBeEnabled();
-
-    fireEvent.click(next);
-    expect(controls).toHaveTextContent("2 de 3");
-    expect(prev).toBeEnabled();
-    fireEvent.click(next);
-    expect(controls).toHaveTextContent("3 de 3");
-    expect(next).toBeDisabled();
-    expect(scrollBy).toHaveBeenCalledTimes(2);
-
-    fireEvent.click(prev);
-    expect(controls).toHaveTextContent("2 de 3");
-    rail.scrollLeft = 0;
-    fireEvent.scroll(rail);
-    expect(controls).toHaveTextContent("1 de 3");
-    expect(prev).toBeDisabled();
+    const toggles = screen.getAllByTestId("affiliate-c104-step-toggle");
+    const details = screen.getAllByTestId("affiliate-c104-step-detail");
+    expect(toggles).toHaveLength(3);
+    expect(details).toHaveLength(3);
+    for (let index = 0; index < 3; index += 1) {
+      expect(toggles[index]).toHaveAttribute("type", "button");
+      expect(toggles[index]).toHaveAttribute("aria-expanded", "false");
+      expect(toggles[index]).toHaveAttribute(
+        "aria-controls",
+        "affiliate-c104-step-detail-" + (index + 1),
+      );
+      expect(details[index]).toHaveAttribute("id", "affiliate-c104-step-detail-" + (index + 1));
+      expect(details[index]).toHaveAttribute("hidden");
+      expect(toggles[index]).toHaveClass("min-h-14");
+    }
+    expect(screen.queryByTestId("affiliate-c99-steps-controls")).toBeNull();
   });
 
-  it("reflete gesto horizontal e respeita preferência por movimento reduzido", () => {
-    vi.stubGlobal("matchMedia", () => ({ matches: true }));
+  it("abre uma etapa por vez e recolhe a mesma etapa ao clicar novamente", () => {
     render(<AffiliateApplicationStepsPreview />);
-    const { rail, scrollBy } = setRailGeometry();
-    const controls = screen.getByTestId("affiliate-c99-steps-controls");
-    rail.scrollLeft = 304;
-    fireEvent.scroll(rail);
-    expect(controls).toHaveTextContent("2 de 3");
-    fireEvent.click(within(controls).getByRole("button", { name: "Próxima etapa da candidatura" }));
-    expect(scrollBy).toHaveBeenCalledWith({ left: 304, behavior: "instant" });
-    expect(controls).toHaveTextContent("3 de 3");
+    const toggles = screen.getAllByTestId("affiliate-c104-step-toggle");
+    const details = screen.getAllByTestId("affiliate-c104-step-detail");
+    fireEvent.click(toggles[0]!);
+    expect(toggles[0]).toHaveAttribute("aria-expanded", "true");
+    expect(details[0]).not.toHaveAttribute("hidden");
+    expect(details[0]).toHaveTextContent("não é preciso comprar produtos");
+    fireEvent.click(toggles[2]!);
+    expect(details[0]).toHaveAttribute("hidden");
+    expect(details[2]).not.toHaveAttribute("hidden");
+    expect(details[2]).toHaveTextContent("não ativa um vínculo, comissão ou parceria");
+    fireEvent.click(toggles[2]!);
+    expect(details.every((item) => item.hasAttribute("hidden"))).toBe(true);
   });
 
-  it("suporta página sem overflow sem sugerir navegação falsa", () => {
+  it("mantém imagens oficiais, rótulos úteis e link real para acompanhar", () => {
     render(<AffiliateApplicationStepsPreview />);
-    const rail = screen.getByTestId("vonix-c79-steps-rail");
-    Object.defineProperties(rail, {
-      scrollWidth: { configurable: true, value: 760 },
-      clientWidth: { configurable: true, value: 760 },
-      scrollLeft: { configurable: true, value: 0 },
-    });
-    fireEvent.resize(window);
-    const controls = screen.getByTestId("affiliate-c99-steps-controls");
+    const section = screen.getByTestId("vonix-c66-application-steps");
+    const images = within(section).getAllByRole("img", { hidden: true });
+    expect(images.map((image) => image.getAttribute("src"))).toEqual([
+      "/images/products/kit-banana-e-mel.webp",
+      "/images/products/kit-cronograma-capilar.webp",
+      "/images/products/botox-vonix.webp",
+    ]);
+    expect(images.every((img) => img.getAttribute("alt")?.includes("Vonix"))).toBe(true);
     expect(
-      within(controls).getByRole("button", { name: "Etapa anterior da candidatura" }),
-    ).toBeDisabled();
-    expect(
-      within(controls).getByRole("button", { name: "Próxima etapa da candidatura" }),
-    ).toBeDisabled();
-    expect(controls).toHaveTextContent("1 de 3");
+      within(section).getByRole("link", { name: /Acompanhe sua candidatura/ }),
+    ).toHaveAttribute("href", "/consultar-candidatura");
+    expect(section).not.toHaveTextContent(
+      /ganhos garantidos|aprovação automática|depoimentos de afiliadas reais/i,
+    );
   });
 
-  it("preserva SSR acessível sem criar depoimentos de afiliadas fictícias", () => {
+  it("preserva SSR e informações sem criar formulários ou cliques automáticos", () => {
     const html = renderToStaticMarkup(<AffiliateApplicationStepsPreview />);
     const root = document.createElement("div");
     root.innerHTML = html;
     expect(root.querySelectorAll('[data-testid="vonix-c79-step-card"]')).toHaveLength(3);
+    expect(root.querySelectorAll('[data-testid="affiliate-c104-step-toggle"]')).toHaveLength(3);
     expect(
-      root.querySelectorAll('button[aria-controls="vonix-affiliate-steps-rail"]'),
-    ).toHaveLength(2);
-    expect(root.querySelectorAll("form")).toHaveLength(0);
-    expect(root.textContent).toContain("Imagens do catálogo oficial Vonix Hair");
-    expect(root.textContent).toContain("1 de 3");
+      root.querySelectorAll('[data-testid="affiliate-c104-step-detail"][hidden]'),
+    ).toHaveLength(3);
+    expect(root.querySelectorAll("img")).toHaveLength(3);
+    expect(root.querySelectorAll("form, input, video, iframe")).toHaveLength(0);
+    expect(root.textContent).toContain("Se o envio for confirmado, guarde o código");
   });
 });

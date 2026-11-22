@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
-  ArrowLeft,
-  ArrowRight,
   ArrowUpRight,
   CheckCircle2,
+  ChevronDown,
   ClipboardCheck,
   LockKeyhole,
   SearchCheck,
@@ -45,183 +44,135 @@ const steps = [
   },
 ] as const;
 
-/** Official catalog artwork, never photos or testimonials of real creators. */
+/**
+ * Mobile/tablet: three compact disclosures, expanded only by the visitor.
+ * Desktop: original illustrated catalog steps.
+ * All labels and constraints come from the same source; no creator endorsements.
+ */
 export function AffiliateApplicationStepsPreview() {
-  const railRef = useRef<HTMLDivElement | null>(null);
-  const [activeStep, setActiveStep] = useState(1);
-  const [canScrollBack, setCanScrollBack] = useState(false);
-  const [canScrollForward, setCanScrollForward] = useState(true);
-
-  const syncScroll = useCallback(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    const cards = Array.from(
-      rail.querySelectorAll<HTMLElement>('[data-testid="vonix-c79-step-card"]'),
-    );
-    if (!cards.length) return;
-
-    const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
-    const current = Math.min(maxScroll, Math.max(0, rail.scrollLeft));
-    setCanScrollBack(current > 4);
-    setCanScrollForward(maxScroll > 4 && current < maxScroll - 4);
-
-    if (maxScroll > 4 && current >= maxScroll - 4) {
-      setActiveStep(cards.length);
-      return;
-    }
-    const first = cards[0]!.offsetLeft;
-    const nearestIndex = cards.reduce((nearest, card, index) => {
-      const delta = Math.abs(current - (card.offsetLeft - first));
-      const prior = Math.abs(current - (cards[nearest]!.offsetLeft - first));
-      return delta < prior ? index : nearest;
-    }, 0);
-    setActiveStep(nearestIndex + 1);
-  }, []);
-
-  useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    syncScroll();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(syncScroll) : null;
-    observer?.observe(rail);
-    rail
-      .querySelectorAll('[data-testid="vonix-c79-step-card"]')
-      .forEach((card) => observer?.observe(card));
-    window.addEventListener("resize", syncScroll);
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", syncScroll);
-    };
-  }, [syncScroll]);
-
-  function moveRail(direction: -1 | 1) {
-    const rail = railRef.current;
-    if (!rail) return;
-    const cards = rail.querySelectorAll<HTMLElement>('[data-testid="vonix-c79-step-card"]');
-    if (cards.length < 2) return;
-    const cardWidth = cards[0]!.getBoundingClientRect().width;
-    const distance = Math.max(1, cards[1]!.offsetLeft - cards[0]!.offsetLeft, cardWidth + 16);
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    rail.scrollBy({ left: direction * distance, behavior: reducedMotion ? "instant" : "smooth" });
-  }
+  const [openMobileStep, setOpenMobileStep] = useState<number | null>(null);
 
   return (
     <section
       id="candidatura-etapas"
       aria-labelledby="application-steps-preview-title"
       data-testid="vonix-c66-application-steps"
-      className="scroll-mt-36 overflow-hidden border-b border-[#e6d5d1] bg-[#fbf5f1] px-5 py-6 text-[#4e3240] sm:py-14"
+      className="scroll-mt-36 overflow-hidden border-b border-[#e6d5d1] bg-[#fbf5f1] px-5 py-4 text-[#4e3240] sm:py-6 lg:py-14"
     >
       <div id="como-funciona" className="mx-auto max-w-7xl scroll-mt-36">
-        <div className="flex flex-wrap items-end justify-between gap-5 sm:gap-8">
+        <div className="flex flex-wrap items-end justify-between gap-2 lg:gap-8">
           <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.13em] text-[#865168]">
+            <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.1em] text-[#865168] lg:text-xs lg:tracking-[.13em]">
               <CheckCircle2 aria-hidden="true" className="size-4" /> Passo a passo transparente
             </p>
             <h2
               id="application-steps-preview-title"
-              className="mt-3 font-display text-3xl leading-tight sm:text-4xl"
+              className="mt-1 font-display text-2xl leading-tight sm:text-3xl lg:mt-3 lg:text-4xl"
             >
               Da sua ideia à sua candidatura.
             </h2>
-            <p className="mt-3 max-w-xl text-sm leading-7 text-[#745661]">
+            <p className="mt-1.5 max-w-xl text-xs leading-5 text-[#745661] sm:text-sm sm:leading-6 lg:mt-3 lg:leading-7">
               Conheça as três etapas antes de enviar seus dados. O programa não exige portfólio
               pronto e o envio não garante aprovação.
             </p>
           </div>
           <a
             href="/consultar-candidatura"
-            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#784256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+            className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-[#784256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 sm:text-sm"
           >
             Já se inscreveu? Acompanhe sua candidatura
             <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
           </a>
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3 lg:hidden">
-          <p
-            data-testid="vonix-c79-steps-swipe-hint"
-            className="text-xs font-semibold text-[#81566a]"
-          >
-            Deslize ou avance
-          </p>
-          <div data-testid="affiliate-c99-steps-controls" className="flex items-center gap-2">
-            <span
-              aria-live="polite"
-              aria-atomic="true"
-              className="mr-1 min-w-14 text-center text-xs font-semibold tabular-nums text-[#674556]"
-            >
-              {activeStep} de {steps.length}
-            </span>
-            <button
-              type="button"
-              onClick={() => moveRail(-1)}
-              disabled={!canScrollBack}
-              aria-label="Etapa anterior da candidatura"
-              aria-controls="vonix-affiliate-steps-rail"
-              className="grid size-11 place-items-center rounded-full border border-[#c9aab4] bg-white text-[#684055] transition-colors hover:bg-[#f1e4e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ArrowLeft aria-hidden="true" className="size-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveRail(1)}
-              disabled={!canScrollForward}
-              aria-label="Próxima etapa da candidatura"
-              aria-controls="vonix-affiliate-steps-rail"
-              className="grid size-11 place-items-center rounded-full border border-[#c9aab4] bg-white text-[#684055] transition-colors hover:bg-[#f1e4e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ArrowRight aria-hidden="true" className="size-5" />
-            </button>
-          </div>
-        </div>
         <div
           id="vonix-affiliate-steps-rail"
-          ref={railRef}
-          onScroll={syncScroll}
           role="region"
           tabIndex={0}
-          aria-label="Três etapas da candidatura, deslize para percorrer"
+          aria-label="Três etapas da candidatura Vonix"
           data-testid="vonix-c79-steps-rail"
-          className="-mx-5 mt-2 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#865168] lg:mx-0 lg:px-0"
+          className="mt-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#865168] lg:mt-7"
         >
-          <ol className="flex min-w-max snap-x snap-mandatory gap-4 lg:grid lg:min-w-0 lg:grid-cols-3 lg:gap-5">
-            {steps.map(({ eyebrow, title, text, detail, image, alt, Icon, tone }) => (
+          <ol className="grid grid-cols-1 gap-2 lg:grid-cols-3 lg:gap-5">
+            {steps.map(({ eyebrow, title, text, detail, image, alt, Icon, tone }, index) => (
               <li
                 key={eyebrow}
                 data-testid="vonix-c79-step-card"
-                className="w-[80vw] max-w-[20.5rem] shrink-0 snap-start overflow-hidden rounded-[1.4rem] border border-[#e2d0cc] bg-white shadow-[0_12px_32px_rgba(76,37,51,.06)] sm:w-[43vw] lg:w-auto lg:max-w-none"
+                className="min-w-0 overflow-hidden rounded-xl border border-[#e2d0cc] bg-white lg:rounded-[1.4rem] lg:shadow-[0_12px_32px_rgba(76,37,51,.06)]"
               >
-                <div
-                  className={
-                    "relative flex h-20 items-center justify-center overflow-hidden sm:h-36 " + tone
-                  }
-                >
-                  <img
-                    src={image}
-                    alt={alt}
-                    width={440}
-                    height={220}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-contain px-5 py-3"
-                  />
-                  <span className="absolute right-4 top-4 grid size-10 place-items-center rounded-xl border border-white/70 bg-white/90 text-[#784256]">
-                    <Icon aria-hidden="true" className="size-5" />
-                  </span>
+                <div className="lg:hidden">
+                  <button
+                    type="button"
+                    data-testid="affiliate-c104-step-toggle"
+                    aria-expanded={openMobileStep === index}
+                    aria-controls={"affiliate-c104-step-detail-" + (index + 1)}
+                    onClick={() =>
+                      setOpenMobileStep((previous) => (previous === index ? null : index))
+                    }
+                    className="flex min-h-14 w-full items-center gap-3 px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256]"
+                  >
+                    <span className={"grid size-10 shrink-0 place-items-center rounded-lg " + tone}>
+                      <Icon aria-hidden="true" className="size-5 text-[#784256]" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-[.08em] text-[#875468]">
+                        {eyebrow}
+                      </span>
+                      <span className="mt-0.5 block text-xs font-semibold leading-snug text-[#593b48] sm:text-sm">
+                        {title}
+                      </span>
+                    </span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={
+                        "size-4 shrink-0 text-[#784256] transition-transform motion-reduce:transition-none " +
+                        (openMobileStep === index ? "rotate-180" : "")
+                      }
+                    />
+                  </button>
+                  <div
+                    id={"affiliate-c104-step-detail-" + (index + 1)}
+                    data-testid="affiliate-c104-step-detail"
+                    hidden={openMobileStep !== index}
+                    className="border-t border-[#e6d5d1] bg-[#fffaf7] px-4 py-3 text-xs leading-5 text-[#705462] sm:text-sm"
+                  >
+                    <p className="font-semibold text-[#593b48]">{text}</p>
+                    <p className="mt-1.5">{detail}</p>
+                  </div>
                 </div>
-                <div className="space-y-2.5 px-5 py-5">
-                  <p className="text-[11px] font-bold uppercase tracking-[.09em] text-[#875468]">
-                    {eyebrow}
-                  </p>
-                  <h3 className="font-display text-xl leading-tight sm:text-2xl">{title}</h3>
-                  <p className="text-sm font-semibold leading-6 text-[#593b48]">{text}</p>
-                  <p className="text-xs leading-6 text-[#775e69]">{detail}</p>
+                <div className="hidden lg:block">
+                  <div
+                    className={
+                      "relative flex h-20 items-center justify-center overflow-hidden sm:h-36 " +
+                      tone
+                    }
+                  >
+                    <img
+                      src={image}
+                      alt={alt}
+                      width={440}
+                      height={220}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-contain px-5 py-3"
+                    />
+                    <span className="absolute right-4 top-4 grid size-10 place-items-center rounded-xl border border-white/70 bg-white/90 text-[#784256]">
+                      <Icon aria-hidden="true" className="size-5" />
+                    </span>
+                  </div>
+                  <div className="space-y-2.5 px-5 py-5">
+                    <p className="text-[11px] font-bold uppercase tracking-[.09em] text-[#875468]">
+                      {eyebrow}
+                    </p>
+                    <h3 className="font-display text-xl leading-tight sm:text-2xl">{title}</h3>
+                    <p className="text-sm font-semibold leading-6 text-[#593b48]">{text}</p>
+                    <p className="text-xs leading-6 text-[#775e69]">{detail}</p>
+                  </div>
                 </div>
               </li>
             ))}
           </ol>
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-[#795e68]">
+        <p className="mt-1 hidden text-xs leading-relaxed text-[#795e68] lg:block">
           Imagens do catálogo oficial Vonix Hair. São fotos de produtos, não de afiliadas ou de
           parcerias.
         </p>
