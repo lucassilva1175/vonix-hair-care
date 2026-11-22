@@ -165,13 +165,13 @@ export function AffiliateEditorialHero({
     <section
       data-testid="vonix-affiliate-hero"
       aria-labelledby="vonix-affiliate-title"
-      className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-8 sm:py-14 lg:py-16"
+      className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-5 sm:py-8 lg:py-16"
     >
-      <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-12 xl:gap-16">
+      <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-12 xl:gap-16">
         <div className="flex min-w-0 flex-col lg:py-5">
           <div
             data-testid="affiliate-c89-hair-editorial"
-            className="order-1 relative isolate min-h-[19rem] min-w-0 overflow-hidden rounded-[1.8rem] border border-[#e1cfcb] bg-[#a7847f] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[23rem] lg:min-h-[25rem]"
+            className="order-1 relative isolate min-h-[16rem] min-w-0 overflow-hidden rounded-[1.6rem] border border-[#e1cfcb] bg-[#a7847f] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[19rem] lg:min-h-[25rem] lg:rounded-[1.8rem]"
           >
             <img
               src="/images/categorias/cachos.jpg"
@@ -188,12 +188,12 @@ export function AffiliateEditorialHero({
               aria-hidden="true"
               className="absolute inset-0 bg-gradient-to-t from-[#21151d]/95 via-[#2a1a25]/50 to-[#21151d]/20"
             />
-            <div className="relative flex min-h-[19rem] flex-col justify-between gap-4 px-5 py-5 text-white sm:min-h-[23rem] sm:gap-5 sm:p-7 lg:min-h-[25rem]">
+            <div className="relative flex min-h-[16rem] flex-col justify-between gap-3 px-4 py-4 text-white sm:min-h-[19rem] sm:gap-4 sm:p-6 lg:min-h-[25rem] lg:gap-5 lg:p-7">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-white/55 bg-[#21151d]/55 px-3.5 py-2 text-[10px] font-bold uppercase tracking-[.09em] text-white backdrop-blur-sm">
+                <span className="rounded-full border border-white/55 bg-[#21151d]/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.09em] text-white backdrop-blur-sm sm:px-3.5 sm:py-2">
                   Inscrição gratuita · seleção individual
                 </span>
-                <span className="rounded-full border border-white/55 bg-[#21151d]/45 px-3.5 py-2 text-[10px] font-semibold text-white backdrop-blur-sm">
+                <span className="rounded-full border border-white/55 bg-[#21151d]/45 px-3 py-1.5 text-[10px] font-semibold text-white backdrop-blur-sm sm:px-3.5 sm:py-2">
                   Acervo oficial Vonix Hair
                 </span>
               </div>
@@ -204,7 +204,7 @@ export function AffiliateEditorialHero({
                 <h1
                   id="vonix-affiliate-title"
                   style={{ color: "#fff" }}
-                  className="font-display text-[clamp(2.5rem,5vw,4.25rem)] leading-[1.05] tracking-tight text-white"
+                  className="font-display text-[clamp(2.1rem,5vw,4.25rem)] leading-[1.05] tracking-tight text-white sm:text-[clamp(2.5rem,5vw,4.25rem)]"
                 >
                   Seu jeito de <span className="italic text-[#ffdae8]">criar.</span>
                   <span className="mt-1 block">Nossa paixão por cabelos.</span>
@@ -218,7 +218,7 @@ export function AffiliateEditorialHero({
               </div>
             </div>
           </div>
-          <p className="order-4 mt-4 max-w-xl text-base leading-[1.75] text-[#5e4650] sm:text-lg lg:order-2">
+          <p className="order-4 mt-2 max-w-xl text-sm leading-[1.55] text-[#5e4650] sm:mt-3 sm:text-base lg:order-2 lg:mt-4 lg:text-lg lg:leading-[1.75]">
             Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil à
             Vonix Hair e descubra como funciona a seleção para uma possível parceria.
           </p>
@@ -226,7 +226,7 @@ export function AffiliateEditorialHero({
             role="status"
             aria-live="polite"
             data-testid="affiliate-c94-intake-status"
-            className="order-2 mt-5 mb-2 inline-flex max-w-lg flex-wrap items-center gap-2 self-start rounded-lg border border-[#e5d2cf] bg-white px-4 py-3 text-xs font-semibold leading-5 text-[#523740] lg:order-3"
+            className="order-2 mt-3 mb-0 inline-flex max-w-lg flex-wrap items-center gap-2 self-start rounded-lg border border-[#e5d2cf] bg-white px-3 py-2 text-xs font-semibold leading-5 text-[#523740] sm:px-4 sm:py-3 lg:order-3 lg:mt-5 lg:mb-2"
           >
             <span
               aria-hidden="true"
@@ -249,7 +249,7 @@ export function AffiliateEditorialHero({
                     ? "Não foi possível consultar a disponibilidade das inscrições"
                     : "Conheça o formulário enquanto as inscrições estão em preparação"}
           </div>
-          <div className="order-3 mt-3 flex flex-wrap items-center gap-3 lg:order-4 lg:mt-5">
+          <div className="order-3 mt-2 flex flex-wrap items-center gap-2 lg:order-4 lg:mt-5 lg:gap-3">
             <Button
               asChild
               className="h-auto min-h-12 whitespace-normal rounded-lg px-6 py-3 text-sm"
@@ -268,7 +268,7 @@ export function AffiliateEditorialHero({
             <AffiliateProgramShare />
           </div>
           <ul
-            className="order-5 mt-6 flex flex-wrap gap-x-5 gap-y-3 text-xs font-medium text-[#553d47]"
+            className="order-5 mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] font-medium text-[#553d47] sm:text-xs lg:mt-6 lg:gap-x-5 lg:gap-y-3"
             aria-label="Informações da candidatura"
           >
             {["8% sobre vendas após aprovação", "Sem estoque próprio", "Inscrição gratuita"].map(
@@ -280,7 +280,7 @@ export function AffiliateEditorialHero({
               ),
             )}
           </ul>
-          <p className="order-6 mt-3 max-w-lg text-xs leading-[1.7] text-[#65515a]">
+          <p className="order-6 mt-1.5 max-w-lg text-[11px] leading-[1.5] text-[#65515a] sm:text-xs lg:mt-3 lg:leading-[1.7]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque
             nem compra de produtos para se candidatar.{" "}
             <a
@@ -299,7 +299,7 @@ export function AffiliateEditorialHero({
         >
           <div
             data-testid="affiliate-c98-mobile-catalog-summary"
-            className="mb-3 rounded-2xl border border-[#e1d1d1] bg-white p-3 shadow-[0_8px_24px_rgba(76,41,54,.06)] lg:hidden"
+            className="mb-2 rounded-2xl border border-[#e1d1d1] bg-white p-2.5 shadow-[0_8px_24px_rgba(76,41,54,.06)] sm:p-3 lg:hidden"
           >
             <div className="flex min-w-0 items-center gap-3">
               <img
@@ -310,7 +310,7 @@ export function AffiliateEditorialHero({
                 height={76}
                 loading="lazy"
                 decoding="async"
-                className="size-[4.25rem] shrink-0 rounded-xl bg-[#f1e5e8] object-contain p-1"
+                className="size-[3.5rem] shrink-0 rounded-xl bg-[#f1e5e8] object-contain p-1 sm:size-[4.25rem]"
               />
               <button
                 type="button"
@@ -431,7 +431,7 @@ export function AffiliateEditorialHero({
             <a
               href="#avaliacoes-rapidas"
               data-testid="vonix-c78-real-review-cta"
-              className="group mt-4 flex min-h-16 items-center gap-3 rounded-2xl border border-[#e1c9c9] bg-white px-4 py-3 text-left text-[#593344] shadow-[0_8px_22px_rgba(78,43,54,.06)] transition-colors hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754153]"
+              className="group mt-2 flex min-h-14 items-center gap-2 rounded-2xl border border-[#e1c9c9] bg-white px-3 py-2 text-left text-[#593344] shadow-[0_8px_22px_rgba(78,43,54,.06)] transition-colors hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754153] lg:mt-4 lg:min-h-16 lg:gap-3 lg:px-4 lg:py-3"
             >
               <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#f3e3e1] text-[#854b5f]">
                 <Images aria-hidden="true" className="size-6" />

@@ -22,8 +22,8 @@ describe("C94: hero editorial creator-first com estado verdadeiro de inscrição
     expect(photo).toHaveAttribute("loading", "eager");
     expect(photo).toHaveAttribute("fetchpriority", "high");
     expect(photo).toHaveAttribute("alt", expect.stringContaining("não identifica uma afiliada"));
-    expect(editorial.className).toContain("min-h-[19rem]");
-    expect(editorial.className).toContain("sm:min-h-[23rem]");
+    expect(editorial.className).toContain("min-h-[16rem]");
+    expect(editorial.className).toContain("sm:min-h-[19rem]");
     expect(editorial.className).toContain("lg:min-h-[25rem]");
     expect(editorial.className).toContain("rounded-[1.8rem]");
     expect(editorial).toHaveTextContent("Movimento, textura e cuidado.");

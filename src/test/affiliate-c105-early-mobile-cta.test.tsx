@@ -15,7 +15,12 @@ describe("C105 — CTA mais imediato sem omitir contexto da candidatura", () => 
     const editorial = within(hero).getByTestId("affiliate-c89-hair-editorial");
     const column = editorial.parentElement;
     expect(column).toHaveClass("flex", "flex-col");
-    expect(editorial).toHaveClass("order-1", "min-h-[19rem]", "sm:min-h-[23rem]");
+    expect(editorial).toHaveClass(
+      "order-1",
+      "min-h-[16rem]",
+      "sm:min-h-[19rem]",
+      "lg:min-h-[25rem]",
+    );
     const intro = within(hero).getByText(
       /Sua criatividade e o universo dos cabelos podem se encontrar/i,
     );
