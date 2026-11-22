@@ -67,7 +67,8 @@ export function AffiliateCreatorSpotlight() {
           role="group"
           aria-label="Escolha seu estilo de conteúdo"
           className={
-            "mt-4 grid-cols-3 gap-2 sm:grid sm:gap-3 " + (mobileStylesExpanded ? "grid" : "hidden")
+            "mt-4 grid-cols-1 gap-2.5 sm:grid sm:grid-cols-3 sm:gap-4 " +
+            (mobileStylesExpanded ? "grid" : "hidden")
           }
         >
           {affiliateCreatorPaths.map((path, index) => (
@@ -76,21 +77,58 @@ export function AffiliateCreatorSpotlight() {
               type="button"
               data-testid="affiliate-c100-path-button"
               aria-pressed={selected === index}
+              aria-controls={selected === index ? "affiliate-c100-selected-path" : undefined}
               onClick={() => setSelected((previous) => (previous === index ? null : index))}
               className={
-                "min-h-14 rounded-xl border px-2 py-3 text-center text-xs font-semibold leading-snug transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784256] sm:text-sm " +
-                (selected === index
-                  ? "border-[#744256] bg-[#744256] text-white"
-                  : "border-[#d9c1c6] bg-white text-[#704758] hover:bg-[#f6e9ed]")
+                "group relative isolate flex min-h-36 min-w-0 overflow-hidden rounded-[1.35rem] border-2 text-left shadow-[0_10px_25px_rgba(73,41,50,.12)] transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_35px_rgba(73,41,50,.17)] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#784256] sm:min-h-64 " +
+                (selected === index ? "border-[#754256]" : "border-transparent")
               }
             >
-              <span className="mr-1 font-bold tabular-nums" aria-hidden="true">
-                0{index + 1}
+              <img
+                data-testid="affiliate-c111-style-photo"
+                src={path.image}
+                alt={path.alt}
+                width={480}
+                height={480}
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.045] motion-reduce:transition-none"
+              />
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-t from-[#2a1b26]/95 via-[#38232f]/30 to-[#241722]/30"
+              />
+              <span className="relative flex min-h-36 w-full flex-col justify-between gap-4 p-4 text-white sm:min-h-64 sm:p-5">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="rounded-full border border-white/60 bg-[#241722]/50 px-3 py-1.5 text-[10px] font-bold tracking-wider">
+                    0{index + 1} / 03
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="rounded-full border border-white/60 bg-[#241722]/50 px-3 py-1.5 text-[10px] font-semibold"
+                  >
+                    {selected === index ? "Selecionado" : "Explorar"}
+                  </span>
+                </span>
+                <span className="block">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[.13em] text-white/85">
+                    Uma ideia para seu perfil
+                  </span>
+                  <span className="mt-1 block font-display text-2xl leading-tight sm:text-[1.6rem]">
+                    {path.shortLabel}
+                  </span>
+                  <span className="mt-2 block text-xs font-medium text-white/90">
+                    {selected === index ? "Toque para recolher" : "Toque para descobrir"}
+                  </span>
+                </span>
               </span>
-              {path.shortLabel}
             </button>
           ))}
         </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-[#795f6b]">
+          Fotografias editoriais de categorias do site Vonix Hair. Não mostram afiliadas
+          participantes nem comprovam uma parceria. Escolha apenas para explorar ideias.
+        </p>
         {current && (
           <>
             <div
@@ -117,7 +155,7 @@ export function AffiliateCreatorSpotlight() {
                   {current.title}
                 </h3>
                 <ul className="mt-3 grid gap-1.5 text-sm leading-[1.5] text-[#69505d] sm:grid-cols-2">
-                  {current.prompts.slice(0, 2).map((prompt) => (
+                  {current.prompts.map((prompt) => (
                     <li key={prompt} className="flex items-start gap-2">
                       <span
                         aria-hidden="true"
