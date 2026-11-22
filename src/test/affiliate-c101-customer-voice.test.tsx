@@ -21,10 +21,11 @@ describe("C101 — depoimento de produto autêntico antes do formulário", () =>
     const region = screen.getByTestId("affiliate-c101-customer-voice");
     expect(region).toHaveTextContent(actual!.comment);
     expect(region).toHaveTextContent(actual!.author);
-    expect(region).toHaveTextContent("Avaliação de produto, não depoimento de afiliada");
-    expect(region).toHaveTextContent("Não comprova compra verificada");
+    expect(region).toHaveTextContent("Avaliações de produto, não depoimentos de afiliadas");
+    expect(region).toHaveTextContent("Não comprovam compra verificada");
     expect(region).toHaveTextContent("Ver as 4 avaliações completas");
-    expect(container.querySelectorAll("form, input, video, [autoplay], button")).toHaveLength(0);
+    expect(container.querySelectorAll("form, input, video, [autoplay]")).toHaveLength(0);
+    expect(within(region).getAllByTestId("affiliate-c106-review-choice")).toHaveLength(4);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
