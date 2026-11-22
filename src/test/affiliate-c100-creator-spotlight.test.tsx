@@ -55,7 +55,12 @@ describe("C100 — descoberta criativa compacta antes da inscrição", () => {
     ]);
     fireEvent.click(screen.getAllByTestId("affiliate-c100-path-button")[1]!);
     const hrefs = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href"));
-    expect(hrefs).toEqual(["#inscricao", "#inscricao", "#perfis"]);
+    expect(hrefs).toEqual([
+      "#inscricao",
+      "#inscricao",
+      "#perfis",
+      "/produto/mascara-reparacao-nutri-repair",
+    ]);
     expect(
       screen.getByRole("group", { name: "Escolha seu estilo de conteúdo" }),
     ).toBeInTheDocument();

@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { affiliateCreatorPaths } from "@/data/affiliate-creator-paths";
+import { affiliateCreatorProductStories } from "@/data/affiliate-creator-product-stories";
+import { AffiliateCreatorProductStory } from "@/components/affiliate-creator-product-story";
 
 /** Editorial exploration only: not an eligibility test or a signup form. */
 export function AffiliateCreatorSpotlight() {
   const [selected, setSelected] = useState<number | null>(null);
   const [mobileStylesExpanded, setMobileStylesExpanded] = useState(false);
   const current = selected === null ? null : affiliateCreatorPaths[selected];
+  const currentStory = selected === null ? undefined : affiliateCreatorProductStories[selected];
 
   return (
     <section
@@ -27,8 +30,8 @@ export function AffiliateCreatorSpotlight() {
               Três caminhos. <span className="italic text-[#884d63]">Um começo possível.</span>
             </h2>
             <p className="mt-3 text-sm leading-[1.7] text-[#705965]">
-              Escolha um caminho para ver ideias de conteúdo. Nenhum estilo garante aprovação,
-              parceria ou remuneração.
+              Escolha um estilo e veja um roteiro visual criado com produtos reais do catálogo.
+              Nenhum estilo garante aprovação, parceria ou remuneração.
             </p>
           </div>
           <a
@@ -53,6 +56,25 @@ export function AffiliateCreatorSpotlight() {
             {mobileStylesExpanded
               ? "Ocultar ideias de conteúdo"
               : "Descobrir 3 estilos de conteúdo"}
+          </span>
+          <span
+            aria-hidden="true"
+            data-testid="affiliate-c113-mobile-product-peek"
+            className="ml-auto flex shrink-0 -space-x-2"
+          >
+            {affiliateCreatorProductStories.map((product) => (
+              <img
+                key={product.profileId}
+                src={product.image}
+                alt=""
+                aria-hidden="true"
+                width={40}
+                height={40}
+                loading="lazy"
+                decoding="async"
+                className="size-9 rounded-full border-2 border-white bg-[#f3e5e2] object-contain p-1 shadow-sm"
+              />
+            ))}
           </span>
           <ArrowRight
             aria-hidden="true"
@@ -129,7 +151,7 @@ export function AffiliateCreatorSpotlight() {
           Fotografias editoriais de categorias do site Vonix Hair. Não mostram afiliadas
           participantes nem comprovam uma parceria. Escolha apenas para explorar ideias.
         </p>
-        {current && (
+        {current && currentStory && (
           <>
             <div
               data-testid="affiliate-c100-selected-path"
@@ -181,6 +203,7 @@ export function AffiliateCreatorSpotlight() {
                 </div>
               </div>
             </div>
+            <AffiliateCreatorProductStory story={currentStory} />
             <p className="mt-3 text-xs leading-[1.7] text-[#7c606b]">
               As imagens são editoriais do catálogo oficial Vonix Hair, não retratos ou depoimentos
               de afiliadas. A candidatura é gratuita e a análise é individual.
