@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import storeReviews from "@/data/reviews.json";
 
 const server = vi.hoisted(() => ({ status: vi.fn() }));
 vi.mock("@/lib/affiliate-functions", () => ({
@@ -270,9 +271,19 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
       "/images/categorias/reconstrucao.jpg",
     ]);
     images.forEach((img) => {
-      if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
       const src = img.getAttribute("src") ?? "";
       const alt = img.getAttribute("alt") ?? "";
+      if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
+      if (img.closest('[data-testid="affiliate-c101-customer-voice"]')) {
+        const source = storeReviews.find(
+          (item) => item.slug === "botox-vonix" && item.author === "Mariana Andrade",
+        );
+        if (!source || source.media.type !== "video") throw new Error("C101 source review missing");
+        expect(src).toBe(source.media.poster);
+        expect(alt).toContain(source.author);
+        expect(alt).toContain("Botox Vonix");
+        return;
+      }
       // The preview images inside <summary> are decorative, not creator portraits.
       if (img.closest('[data-testid="affiliate-c96-discovery-summary"]')) {
         expect(existingStoreCategoryPhotos.has(src)).toBe(true);

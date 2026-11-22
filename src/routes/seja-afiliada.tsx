@@ -9,6 +9,7 @@ import { AffiliateApplicationPrep } from "@/components/affiliate-application-pre
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
 import { AffiliateCreatorSpotlight } from "@/components/affiliate-creator-spotlight";
+import { AffiliateCustomerVoiceTeaser } from "@/components/affiliate-customer-voice-teaser";
 import { AffiliateDiscoveryGate } from "@/components/affiliate-discovery-gate";
 import { AffiliateMobileApplyBar } from "@/components/affiliate-mobile-apply-bar";
 import {
@@ -176,6 +177,7 @@ export function AffiliateApplicationPage() {
         <AffiliateMobileApplyBar recruitmentStatus={recruitment} />
         <AffiliateApplicationStepsPreview />
         <AffiliateCreatorSpotlight />
+        <AffiliateCustomerVoiceTeaser />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
           <details
