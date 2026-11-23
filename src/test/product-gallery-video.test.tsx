@@ -15,7 +15,7 @@ describe("Fio de Luz: fotos e vídeos na mesma galeria", () => {
     expect(screen.getAllByRole("button", { name: /^Ver imagem/ })).toHaveLength(product.images.length);
     expect(screen.getAllByRole("button", { name: /^Ver vídeo/ })).toHaveLength(videos.length);
     expect(container.querySelector("video")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Ver vídeo 1", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver vídeo 1$/ }));
     const video = container.querySelector("video")!;
     expect(video).toHaveAttribute("src", videos[0]!.src);
     expect(video).toHaveAttribute("poster", videos[0]!.poster);
@@ -24,21 +24,21 @@ describe("Fio de Luz: fotos e vídeos na mesma galeria", () => {
     expect(video).toHaveAttribute("preload", "none");
     expect(video).toHaveAttribute("autoplay");
     expect(video).not.toHaveAttribute("muted");
-    fireEvent.click(screen.getByRole("button", { name: "Ver imagem 1", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver imagem 1$/ }));
     expect(container.querySelector("video")).toBeNull();
     expect(screen.getByRole("img", { name: product.name })).toHaveAttribute("src", expect.stringContaining("progressiva-fio-de-luz.webp"));
   });
 
   it("permite navegar das fotos para os vídeos no visualizador ampliado", () => {
     render(<ProductGallery images={product.images} name={product.name} videos={videos} />);
-    fireEvent.click(screen.getByRole("button", { name: "Ver imagem 4", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver imagem 4$/ }));
     fireEvent.click(screen.getByRole("button", { name: "Ampliar imagem do produto" }));
     const dialog = screen.getByRole("dialog");
     fireEvent.click(dialog.querySelector('[aria-label="Próxima imagem"]')!);
     expect(dialog.querySelector("video")).toHaveAttribute("src", videos[0]!.src);
     expect(dialog.querySelector("video")).toHaveAttribute("autoplay");
     expect(dialog.querySelector('[aria-label="Ampliar"]')).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Fechar", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Fechar$/ }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe("Fio de Luz: fotos e vídeos na mesma galeria", () => {
       "/depoimentos/depoimento-1.mp4", "/depoimentos/depoimento-2.mp4", "/depoimentos/depoimento-3.mp4",
     ]));
     expect(screen.getByRole("img", { name: botox.name })).toHaveAttribute("src", expect.stringContaining("botox-vonix.webp"));
-    fireEvent.click(screen.getByRole("button", { name: "Ver vídeo 2", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver vídeo 2$/ }));
     expect(container.querySelector("video")).toHaveAttribute("src", "/provas/botox-2.mp4");
   });
 
@@ -79,7 +79,7 @@ describe("Fio de Luz: fotos e vídeos na mesma galeria", () => {
     expect(ownVideos.map((video) => video.src)).toEqual([
       "/provas/banana-mel.mp4", "/provas/banana-mel-kit-3.mp4", "/provas/banana-mel-banho-cliente.mp4",
     ]);
-    fireEvent.click(screen.getByRole("button", { name: "Ver vídeo 1", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver vídeo 1$/ }));
     expect(container.querySelector("video")).toHaveAttribute("src", "/provas/banana-mel.mp4");
     expect(container.querySelector("video")).toHaveAttribute("autoplay");
   });
