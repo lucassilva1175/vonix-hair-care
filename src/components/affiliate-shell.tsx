@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Instagram } from "lucide-react";
 import type { ReactNode } from "react";
 import logoUrl from "@/assets/vonix-logo.webp";
 import { INSTAGRAM } from "@/lib/store";
+import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 
 /**
  * Dedicated recruitment chrome: the store's search, product audiences, sales
@@ -13,10 +14,12 @@ export function AffiliateShell({
   children,
   mode = "landing",
   recruitmentStatus = "loading",
+  onSafePreview,
 }: {
   children: ReactNode;
   mode?: "landing" | "account";
   recruitmentStatus?: "loading" | "open" | "limited" | "closed" | "unavailable";
+  onSafePreview?: (() => void) | undefined;
 }) {
   return (
     <div
@@ -121,6 +124,16 @@ export function AffiliateShell({
           {mode === "landing" ? (
             <a
               href="#inscricao"
+              data-testid="affiliate-c127-header-apply"
+              title={
+                recruitmentStatus === "open"
+                  ? "Ir à candidatura"
+                  : "Abrir uma prévia segura do formulário"
+              }
+              onClick={() => {
+                trackAffiliateFunnel("affiliate_application_interest");
+                if (recruitmentStatus !== "open") onSafePreview?.();
+              }}
               className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-5 sm:text-sm"
             >
               <span className="sm:hidden">
@@ -130,6 +143,9 @@ export function AffiliateShell({
                 {recruitmentStatus === "open" ? "Enviar candidatura" : "Conhecer a inscrição"}
               </span>
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              {recruitmentStatus !== "open" && (
+                <span className="sr-only"> (abre prévia segura, sem enviar dados)</span>
+              )}
             </a>
           ) : (
             <Link

@@ -199,7 +199,7 @@ export function AffiliateApplicationPage() {
   }
 
   return (
-    <AffiliateShell recruitmentStatus={recruitment}>
+    <AffiliateShell recruitmentStatus={recruitment} onSafePreview={openSafePreview}>
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
         <AffiliateLandingOffer
           recruitmentStatus={recruitment}
