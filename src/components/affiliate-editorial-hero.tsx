@@ -77,8 +77,8 @@ function CatalogCard({
           alt={item.name + ", embalagem do produto vendido na loja Vonix Hair"}
           width={640}
           height={640}
-          loading={featured ? "eager" : "lazy"}
-          fetchPriority={featured ? "high" : "auto"}
+          loading="lazy"
+          fetchPriority="low"
           decoding="async"
           className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-[1.025] sm:p-5"
         />

@@ -45,24 +45,27 @@ export function AffiliateMobileApplyBar({
     return () => observer.disconnect();
   }, []);
 
-  const show =
-    recruitmentStatus !== "loading" && visibility.hero === false && visibility.form === false;
+  const show = visibility.hero === false && visibility.form === false;
 
   if (!show) return null;
 
   const isOpen = recruitmentStatus === "open";
   const statusText = isOpen
     ? "Candidaturas abertas para análise"
-    : recruitmentStatus === "limited"
-      ? "Acesso temporariamente limitado"
-      : recruitmentStatus === "unavailable"
-        ? "Disponibilidade não confirmada"
-        : "Inscrições em preparação";
+    : recruitmentStatus === "loading"
+      ? "Consultando disponibilidade"
+      : recruitmentStatus === "limited"
+        ? "Acesso temporariamente limitado"
+        : recruitmentStatus === "unavailable"
+          ? "Disponibilidade não confirmada"
+          : "Inscrições em preparação";
   const actionLabel = isOpen
     ? "Fazer minha inscrição"
-    : recruitmentStatus === "limited" || recruitmentStatus === "unavailable"
-      ? "Ver disponibilidade"
-      : "Conhecer o formulário";
+    : recruitmentStatus === "loading"
+      ? "Ver prévia segura"
+      : recruitmentStatus === "limited" || recruitmentStatus === "unavailable"
+        ? "Ver disponibilidade"
+        : "Conhecer o formulário";
 
   return (
     <nav

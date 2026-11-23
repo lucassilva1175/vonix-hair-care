@@ -82,8 +82,10 @@ export function AffiliateApplicationPage() {
   useEffect(() => {
     let active = true;
     let latestRequest = 0;
+    const statusTimeouts = new Set<number>();
     async function refreshStatus() {
       const requestId = ++latestRequest;
+      let timeoutId: number | undefined;
       // Never trust a previously OPEN session while the next GET is pending.
       // Keep the existing draft mounted, but pause any submission.
       setRecruitment("loading");
@@ -106,7 +108,18 @@ export function AffiliateApplicationPage() {
           cfConnectingIpPresent,
           encryptionReady,
           transactionalEmailConfigured,
-        } = await getAffiliateRecruitmentStatus();
+        } = await Promise.race([
+          getAffiliateRecruitmentStatus(),
+          new Promise<never>((_, reject) => {
+            // GETs can hang on unreliable connections. Never leave applicants
+            // in a permanent loading state or assume recruitment is OPEN.
+            timeoutId = window.setTimeout(() => {
+              if (timeoutId !== undefined) statusTimeouts.delete(timeoutId);
+              reject(new Error("affiliate_status_timeout"));
+            }, 10_000);
+            statusTimeouts.add(timeoutId);
+          }),
+        ]);
         if (!active || requestId !== latestRequest) return;
         setBackendDiagnostics({
           storage: storageReachable,
@@ -134,6 +147,11 @@ export function AffiliateApplicationPage() {
           });
           setRecruitment("unavailable");
         }
+      } finally {
+        if (timeoutId !== undefined) {
+          window.clearTimeout(timeoutId);
+          statusTimeouts.delete(timeoutId);
+        }
       }
     }
     void refreshStatus();
@@ -149,6 +167,8 @@ export function AffiliateApplicationPage() {
     return () => {
       active = false;
       latestRequest += 1;
+      statusTimeouts.forEach((timeout) => window.clearTimeout(timeout));
+      statusTimeouts.clear();
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };

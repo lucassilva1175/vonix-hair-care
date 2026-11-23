@@ -24,7 +24,7 @@ describe("C73 — editorial product-gallery hero on mobile", () => {
     expect(screen.getByTestId("vonix-c73-gallery-swipe-hint").className).toContain("lg:hidden");
   });
 
-  it("preserves all 3 authentic store product links and priority of the first image only", () => {
+  it("preserves all 3 authentic store product links while prioritizing the portrait", () => {
     render(<AffiliateEditorialHero recruitmentStatus="open" />);
     const gallery = screen.getByTestId("vonix-c73-hero-products-region");
     const cards = within(gallery).getAllByTestId("affiliate-c61-catalog-link");
@@ -40,8 +40,8 @@ describe("C73 — editorial product-gallery hero on mobile", () => {
       expect(source).toHaveAttribute("srcset", `/images/products/${slug}.webp`);
       const image = within(card).getByRole("img");
       expect(image).toHaveAttribute("src", `/images/products/${slug}.jpg`);
-      expect(image).toHaveAttribute("loading", index === 0 ? "eager" : "lazy");
-      expect(image).toHaveAttribute("fetchpriority", index === 0 ? "high" : "auto");
+      expect(image).toHaveAttribute("loading", "lazy");
+      expect(image).toHaveAttribute("fetchpriority", "low");
     }
     expect(cards[0]?.className).toContain("lg:row-span-2");
     expect(

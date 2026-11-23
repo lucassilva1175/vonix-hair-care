@@ -53,7 +53,11 @@ describe("C76: CTA mobile do programa sem envio nem sobreposição", () => {
     expect(screen.queryByRole("navigation", { name: /atalho mobile/i })).not.toBeInTheDocument();
     trigger(hero, false);
     trigger(form, false);
-    expect(screen.queryByTestId("affiliate-c76-mobile-apply")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ver prévia segura/i })).toHaveAttribute(
+      "href",
+      "#inscricao",
+    );
+    expect(screen.getByText("Consultando disponibilidade")).toBeInTheDocument();
     rerender(<AffiliateMobileApplyBar recruitmentStatus="open" />);
     expect(screen.getByRole("link", { name: /fazer minha inscrição/i })).toHaveAttribute(
       "href",
