@@ -3,26 +3,33 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, PlayCircle } from "lucide-react";
 import reviews from "@/data/reviews.json";
 
 /**
- * Only existing public PRODUCT reviews from the official Vonix catalog.
- * The poster is a preview of a product-review video, NOT a creator testimonial.
- * Keep the video itself in C62 below the application (no early media preload).
+ * Authentic public PRODUCT reviews from the official Vonix catalog only.
+ * Three reviews have videos; the fourth has a photo, not a video.
+ * Neither form of media proves an affiliate, verified purchase or income.
+ * Preview images load lazily; videos are presented below the application.
  */
-const selectedReviews = ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis"].flatMap((author) =>
-  reviews.filter(
-    (review) =>
-      review.author === author &&
-      review.slug === "botox-vonix" &&
-      review.media.type === "video" &&
-      review.media.poster,
-  ),
+const selectedReviews = ["Mariana Andrade", "Ayla Muniz", "Fernanda Assis", "Ana Paula"].flatMap(
+  (author) =>
+    reviews.filter(
+      (review) =>
+        review.author === author &&
+        review.slug === "botox-vonix" &&
+        ((review.media.type === "video" &&
+          "poster" in review.media &&
+          typeof review.media.poster === "string") ||
+          (review.media.type === "image" && typeof review.media.src === "string")),
+    ),
 );
 
-export const officialProductVideoReviewCount = selectedReviews.length;
+export const officialProductVideoReviewCount = selectedReviews.filter(
+  (review) => review.media.type === "video",
+).length;
+export const officialProductReviewCount = selectedReviews.length;
 
 export function AffiliateVerifiedReviewPreview() {
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const [canScrollBack, setCanScrollBack] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(true);
+  const [canScrollNext, setCanScrollNext] = useState(false);
 
   const updateScrollControls = useCallback(() => {
     const rail = carouselRef.current;
@@ -36,7 +43,7 @@ export function AffiliateVerifiedReviewPreview() {
     const rail = carouselRef.current;
     if (!rail) return;
     updateScrollControls();
-    // The three cards can receive their responsive widths after hydration.
+    // Cards can receive their responsive widths after hydration.
     // Observe the cards as well as the rail: its own width may not change
     // even when the children's combined scroll width does.
     const frame = window.requestAnimationFrame(updateScrollControls);
@@ -98,7 +105,7 @@ export function AffiliateVerifiedReviewPreview() {
           className="mt-3 flex items-center justify-between gap-3 md:hidden"
         >
           <p className="min-w-0 text-xs font-semibold leading-relaxed text-[#795767]">
-            {officialProductVideoReviewCount} avaliações reais de produto. Deslize ou use as setas.
+            {officialProductReviewCount} avaliações reais de produto. Deslize ou use as setas.
           </p>
           <div className="flex shrink-0 gap-2" role="group" aria-label="Navegar pelas avaliações">
             <button
@@ -129,46 +136,73 @@ export function AffiliateVerifiedReviewPreview() {
           onScroll={updateScrollControls}
           role="region"
           tabIndex={0}
-          aria-label="Três avaliações de clientes sobre Botox Vonix, deslize horizontalmente no celular"
+          aria-label="Quatro avaliações de clientes sobre Botox Vonix, deslize horizontalmente no celular"
           data-testid="vonix-c72-product-reviews-carousel"
-          className="-mx-5 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] sm:mx-0 sm:px-0 sm:pb-0 md:grid md:grid-cols-3 md:overflow-visible lg:col-span-2 lg:row-start-2"
+          className="-mx-5 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784254] sm:mx-0 sm:px-0 sm:pb-0 md:grid md:grid-cols-2 md:overflow-visible lg:col-span-2 lg:row-start-2 lg:grid-cols-4"
         >
           {selectedReviews.map((review) => (
             <figure
               key={review.author}
               data-testid="vonix-c72-review-card"
-              className="flex w-[78vw] max-w-[20rem] shrink-0 snap-start overflow-hidden rounded-2xl border border-[#e5d7d3] bg-white shadow-[0_8px_24px_rgba(84,51,62,.07)] sm:w-[42vw] sm:max-w-none md:w-auto"
+              className="group flex w-[78vw] max-w-[20rem] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[#e5d7d3] bg-white shadow-[0_12px_28px_rgba(84,51,62,.10)] transition-shadow hover:shadow-[0_16px_34px_rgba(84,51,62,.15)] sm:w-[42vw] sm:max-w-none md:w-auto"
             >
               <a
                 href="#avaliacoes-produtos"
-                aria-label={`Ver avaliação em vídeo de ${review.author} na seção completa`}
-                className="group relative w-[35%] min-w-[5.7rem] max-w-[7rem] shrink-0 bg-[#eadee0] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#784254]"
+                aria-label={
+                  "Ver avaliação " +
+                  (review.media.type === "video" ? "em vídeo" : "com foto") +
+                  " de " +
+                  review.author +
+                  " na seção completa"
+                }
+                className="relative block aspect-[5/4] w-full shrink-0 overflow-hidden bg-[#eadee0] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#784254] sm:aspect-[16/11] lg:aspect-[5/4]"
               >
                 <img
-                  src={review.media.poster}
-                  alt={`Imagem de prévia da avaliação de ${review.author} sobre Botox Vonix`}
-                  width={112}
-                  height={160}
+                  src={
+                    review.media.type === "video" && "poster" in review.media
+                      ? review.media.poster
+                      : review.media.src
+                  }
+                  alt={
+                    (review.media.type === "video"
+                      ? "Imagem de prévia da avaliação de "
+                      : "Foto publicada junto à avaliação de ") +
+                    review.author +
+                    " sobre Botox Vonix"
+                  }
+                  width={640}
+                  height={480}
                   loading="lazy"
                   decoding="async"
-                  className="h-full min-h-[9rem] w-full object-cover"
+                  className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.025] motion-reduce:transform-none motion-reduce:transition-none"
                 />
-                <PlayCircle
-                  aria-hidden="true"
-                  className="absolute bottom-2 right-2 size-6 rounded-full bg-white/90 text-[#783d53] transition-transform group-hover:scale-110 motion-reduce:transition-none"
-                />
+                <span className="absolute left-3 top-3 rounded-full border border-white/60 bg-[#fffaf7]/95 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.06em] text-[#683d4d] shadow-sm">
+                  {review.media.type === "video"
+                    ? "Avaliação de produto em vídeo"
+                    : "Avaliação de produto com foto"}
+                </span>
+                {review.media.type === "video" ? (
+                  <PlayCircle
+                    aria-hidden="true"
+                    className="absolute bottom-3 right-3 size-9 rounded-full bg-white/95 p-1 text-[#783d53] shadow-lg transition-transform group-hover:scale-110 motion-reduce:transform-none motion-reduce:transition-none"
+                  />
+                ) : (
+                  <span className="absolute bottom-3 right-3 rounded-lg bg-white/95 px-3 py-1.5 text-[10px] font-bold text-[#783d53] shadow-sm">
+                    Foto real
+                  </span>
+                )}
               </a>
-              <figcaption className="flex min-w-0 flex-1 flex-col px-3 py-2.5">
-                <p className="text-[9px] font-bold uppercase leading-snug tracking-[.04em] text-[#9a5c70]">
-                  Avaliação de produto em vídeo
+              <figcaption className="flex min-h-[10.75rem] min-w-0 flex-1 flex-col px-4 py-4 sm:px-5">
+                <p className="text-[10px] font-bold uppercase tracking-[.06em] text-[#9a5c70]">
+                  Cliente · Botox Vonix
                 </p>
-                <blockquote className="mt-1.5 break-words font-display text-sm leading-5 text-[#4d3340]">
+                <blockquote className="mt-2 line-clamp-4 break-words font-display text-base leading-snug text-[#4d3340] sm:text-lg">
                   “{review.comment}”
                 </blockquote>
-                <span className="mt-auto pt-2 text-xs font-bold text-[#794558]">
+                <span className="mt-auto pt-4 text-sm font-bold text-[#794558]">
                   {review.author}
-                  <span className="mt-0.5 block text-[10px] font-normal text-[#836b72]">
-                    Cliente · Botox Vonix
+                  <span className="mt-0.5 block text-[11px] font-normal text-[#836b72]">
+                    Avaliação de produto · não de afiliada
                   </span>
                 </span>
               </figcaption>

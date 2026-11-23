@@ -29,8 +29,12 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     expect(
       container.querySelectorAll('[data-testid="vonix-c53-real-product-reviews"]'),
     ).toHaveLength(1);
-    expect(evidence.querySelectorAll("blockquote")).toHaveLength(3);
-    expect(evidence.querySelectorAll("img")).toHaveLength(1);
+    expect(evidence.querySelectorAll("blockquote")).toHaveLength(4);
+    expect(evidence.querySelectorAll("img")).toHaveLength(2);
+    expect(evidence.querySelector('[data-testid="affiliate-c86-customer-photo"]')).toHaveAttribute(
+      "src",
+      "/depoimentos/depoimento-4.jpg",
+    );
   });
 
   it("preserves actual public review attribution, original imagery and verifiable source", () => {
@@ -44,7 +48,7 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       "/images/products/botox-vonix.webp",
     );
     expect(evidence.querySelector("picture img")?.getAttribute("alt")).toContain("Vonix");
-    for (const person of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade"]) {
+    for (const person of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade", "Ana Paula"]) {
       expect(evidence).toHaveTextContent(person);
     }
     expect(evidence).toHaveTextContent("Não são depoimentos de afiliadas");
@@ -54,11 +58,17 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     );
   });
 
-  it("keeps product gallery without a second review block", () => {
+  it("avoids repeated product images and preserves genuine links to catalog and application", () => {
     const { container } = render(<AffiliateCreatorOpportunity recruitmentOpen={false} />);
     expect(container.querySelectorAll("blockquote")).toHaveLength(0);
     expect(container.querySelectorAll("#avaliacoes-produtos")).toHaveLength(0);
-    expect(container.querySelectorAll("picture img")).toHaveLength(3);
+    expect(container.querySelectorAll("picture img")).toHaveLength(0);
+    expect(screen.getByTestId("affiliate-c90-creator-bridge")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("affiliate-c90-creator-bridge")).getByRole("link", {
+        name: /Conhecer o catálogo/i,
+      }),
+    ).toHaveAttribute("href", "/loja");
     expect(screen.getByRole("link", { name: /Conhecer a candidatura/ })).toHaveAttribute(
       "href",
       "#inscricao",
@@ -77,24 +87,28 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
     const mobile = screen.getByRole("navigation", { name: "Acesso rápido ao programa" });
     expect(mobile).toHaveAttribute("tabindex", "0");
     for (const [label, href] of [
-      ["Ganhos", "#ganhos"],
+      ["Já me inscrevi", "/consultar-candidatura"],
+      ["Comissão e bônus", "#ganhos"],
       ["Como funciona", "#como-funciona"],
-      ["Ideias de conteúdo", "#perfis"],
-      ["Avaliações", "#avaliacoes-rapidas"],
+      ["Avaliações de produtos", "#avaliacoes-rapidas"],
       ["Dúvidas", "#duvidas"],
-      ["Status da candidatura", "/consultar-candidatura"],
     ] as const) {
       expect(within(mobile).getByRole("link", { name: label })).toHaveAttribute("href", href);
     }
+    expect(within(mobile).getAllByRole("link")).toHaveLength(5);
     const desktop = screen.getByRole("navigation", { name: "Navegação da seleção de afiliadas" });
-    expect(within(desktop).getByRole("link", { name: "Ideias de conteúdo" })).toHaveAttribute(
+    expect(within(desktop).getByRole("link", { name: "Já me inscrevi" })).toHaveAttribute(
       "href",
-      "#perfis",
+      "/consultar-candidatura",
     );
-    expect(within(desktop).getByRole("link", { name: "Avaliações" })).toHaveAttribute(
+    expect(within(desktop).getByRole("link", { name: "Avaliações de produtos" })).toHaveAttribute(
       "href",
       "#avaliacoes-rapidas",
     );
+    expect(within(desktop).getAllByRole("link")).toHaveLength(5);
+    // Complete discovery content remains available beyond the concise navigation.
+    expect(container.querySelector("#perfis")).not.toBeNull();
+    expect(container.querySelector("#criterios")).not.toBeNull();
     for (const link of container.querySelectorAll('a[href^="#"]')) {
       const id = link.getAttribute("href")?.slice(1);
       if (id !== "duvidas" && id !== "inscricao")

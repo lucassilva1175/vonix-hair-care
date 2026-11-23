@@ -63,6 +63,7 @@ describe("C70 form progress — presence only, no applicant data", () => {
     fillSocial();
     expect(value()).toHaveAttribute("aria-valuenow", "1");
     expect(within(progress()).getByText("1 de 3 grupos informados")).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/Também tem TikTok\?/));
     change(/^TikTok/, "@perfilopcional");
     change(/Seguidores no TikTok/, "800");
     expect(value()).toHaveAttribute("aria-valuenow", "1");
