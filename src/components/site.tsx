@@ -409,7 +409,7 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
       )}
       <main>{children}</main>
       {!compactCheckout && <Footer />}
-      {!compactCheckout && !paidVisit && <BfPopup />}
+      {!compactCheckout && !paidVisit && path !== "/falar-com-a-vonix" && <BfPopup />}
       {!hideWhatsApp && (
         <a
           href={WHATSAPP}
