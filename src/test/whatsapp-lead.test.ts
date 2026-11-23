@@ -11,6 +11,7 @@ describe("formulário Falar com a Vonix", () => {
   it("a mensagem do WhatsApp leva nome, perfil, produto e prazo", () => {
     const msg = mensagemWhatsapp(" Ana ", { perfil: "profissional", produto: "fio-de-luz", quando: "hoje" });
     expect(msg).toContain("Sou Ana,");
+    expect(msg).toContain("falar com um vendedor");
     expect(msg).toContain("Sou cabeleireira / tenho salão");
     expect(msg).toContain("Progressiva Fio de Luz");
     expect(msg).toContain("hoje");
