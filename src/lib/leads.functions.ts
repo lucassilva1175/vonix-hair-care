@@ -114,3 +114,55 @@ export const registerLead = createServerFn({ method: "POST" })
       message: "Não foi possível salvar seu cadastro. Tente novamente em instantes.",
     };
   });
+
+const whatsappLeadSchema = z.object({
+  nome: z.string().trim().min(2).max(80),
+  whatsapp: z.string().trim().max(30),
+  perfil: z.enum(["profissional", "casa"]),
+  produto: z.enum(["fio-de-luz", "botox", "sos", "kits", "nao-sei"]),
+  quando: z.enum(["hoje", "semana", "olhando"]),
+  /** Campo-isca escondido: gente de verdade não preenche. */
+  empresa: z.string().max(200).optional(),
+});
+
+/**
+ * Formulário "Falar com a Vonix" (anúncio de WhatsApp): guarda as respostas para a planilha separar quem quer comprar
+ * de quem só está olhando. Melhor esforço: se o destino falhar, a pessoa segue para o WhatsApp do mesmo jeito.
+ * Destino: LEAD_WEBHOOK_URL. Sem webhook, só um aviso curto no log (sem telefone).
+ */
+export const registerWhatsappLead = createServerFn({ method: "POST" })
+  .inputValidator(whatsappLeadSchema)
+  .handler(async ({ data }) => {
+    if (data.empresa) return { ok: false as const, saved: false };
+    const digits = data.whatsapp.replace(/\D/g, "");
+    if (digits.length < 10 || digits.length > 13) return { ok: false as const, saved: false };
+    const qualificado = data.quando === "hoje" || data.quando === "semana";
+    const lead = {
+      origem: "formulario-whatsapp",
+      nome: data.nome,
+      whatsapp: digits,
+      perfil: data.perfil,
+      produto: data.produto,
+      quando: data.quando,
+      qualificado,
+      em: new Date().toISOString(),
+    };
+    const url = env("LEAD_WEBHOOK_URL");
+    if (!url) {
+      console.info("[formulario-whatsapp]", data.perfil, data.produto, data.quando);
+      return { ok: true as const, saved: false };
+    }
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(lead),
+        signal: AbortSignal.timeout(6000),
+      });
+      if (!r.ok) throw new Error(`webhook respondeu ${r.status}`);
+      return { ok: true as const, saved: true };
+    } catch (e) {
+      console.error("[formulario-whatsapp] webhook falhou", e);
+      return { ok: true as const, saved: false };
+    }
+  });

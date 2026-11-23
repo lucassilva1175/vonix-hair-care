@@ -41,6 +41,8 @@ const META_EVENTS: Record<string, string> = {
   begin_checkout: "InitiateCheckout",
   purchase: "Purchase",
   sign_up: "Lead",
+  // Formulário "Falar com a Vonix": só quem quer comprar hoje/nesta semana dispara este evento.
+  generate_lead: "Lead",
 };
 
 /** Converte os parâmetros do GA4 para os da Meta (content_ids/contents com o código do catálogo). */

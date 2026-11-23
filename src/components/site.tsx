@@ -231,7 +231,8 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
   const [open, setOpen] = useState(false);
   const path = useLocation().pathname;
   const router = useRouter();
-  const hideWhatsApp = path === "/carrinho" || path === "/checkout";
+  // No formulário "Falar com a Vonix" o WhatsApp só abre depois das perguntas, então o botão flutuante some.
+  const hideWhatsApp = path === "/carrinho" || path === "/checkout" || path === "/falar-com-a-vonix";
   const isProduct = path.startsWith("/produto/");
   const isCheckout = path === "/checkout";
   const [searchOpen, setSearchOpen] = useState(false);
