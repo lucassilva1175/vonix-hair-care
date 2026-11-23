@@ -36,10 +36,20 @@ describe("C128 — conteúdo real da Vonix na primeira dobra", () => {
     const mosaic = within(proof).getByTestId("affiliate-c128-authentic-review-mosaic");
     const imgs = Array.from(mosaic.querySelectorAll("img"));
     expect(imgs).toHaveLength(3);
+    expect(imgs.map((img) => img.getAttribute("src"))).toEqual([
+      "/images/afiliadas/review-depoimento-1-112.jpg",
+      "/images/afiliadas/review-depoimento-2-112.jpg",
+      "/images/afiliadas/review-depoimento-4-112.jpg",
+    ]);
+    expect(imgs.map((img) => img.getAttribute("data-original-source"))).toEqual([
+      "/depoimentos/depoimento-1-poster.jpg",
+      "/depoimentos/depoimento-2-poster.jpg",
+      "/depoimentos/depoimento-4.jpg",
+    ]);
     for (const img of imgs) {
-      expect(img.getAttribute("src")).toMatch(/^\/depoimentos\/depoimento-[1-4](?:-poster)?\.jpg$/);
       expect(img).toHaveAttribute("alt", "");
       expect(img).toHaveAttribute("loading", "lazy");
+      expect(img).toHaveAttribute("decoding", "async");
     }
     expect(proof).toHaveAttribute("href", "#avaliacoes-rapidas");
     expect(proof).toHaveTextContent(/avaliações de clientes/i);

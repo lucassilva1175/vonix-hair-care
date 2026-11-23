@@ -56,6 +56,12 @@ const previewProducts = [products[2], products[0], products[1]] as const;
  * Names and media paths are sourced from the actual reviews dataset.
  * This is not affiliate UGC, purchase verification or creator income proof.
  */
+const optimizedReviewThumbnails: Record<string, string> = {
+  "/depoimentos/depoimento-1-poster.jpg": "/images/afiliadas/review-depoimento-1-112.jpg",
+  "/depoimentos/depoimento-2-poster.jpg": "/images/afiliadas/review-depoimento-2-112.jpg",
+  "/depoimentos/depoimento-4.jpg": "/images/afiliadas/review-depoimento-4-112.jpg",
+};
+
 const authenticReviewPosters = ["Mariana Andrade", "Ayla Muniz", "Ana Paula"]
   .flatMap((author) =>
     reviews
@@ -76,7 +82,11 @@ const authenticReviewPosters = ["Mariana Andrade", "Ayla Muniz", "Ana Paula"]
   .filter(
     (review): review is { author: string; src: string } =>
       typeof review.src === "string" && review.src.startsWith("/depoimentos/"),
-  );
+  )
+  .map((review) => ({
+    ...review,
+    thumb: optimizedReviewThumbnails[review.src] ?? review.src,
+  }));
 
 function CatalogCard({
   item,
@@ -519,7 +529,8 @@ export function AffiliateEditorialHero({
                   {authenticReviewPosters.map((review) => (
                     <img
                       key={review.author}
-                      src={review.src}
+                      src={review.thumb}
+                      data-original-source={review.src}
                       alt=""
                       width={80}
                       height={80}

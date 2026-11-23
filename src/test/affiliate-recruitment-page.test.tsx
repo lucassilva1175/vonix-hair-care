@@ -284,6 +284,33 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
         expect(alt).toContain("Botox Vonix");
         return;
       }
+      // C128: verify exactly the approved decorative product thumbnails.
+      // A blank alt is intentional because the nearby button names the catalog.
+      if (img.closest('[data-testid="affiliate-c128-product-peek"]')) {
+        expect(src).toMatch(
+          /^\/images\/products\/(?:botox-vonix|kit-banana-e-mel|mascara-reparacao-nutri-repair)-480\.webp$/,
+        );
+        expect(alt).toBe("");
+        expect(img.closest('[aria-hidden="true"]')).not.toBeNull();
+        return;
+      }
+      // C128: compressed crops are derived only from genuine, already-published
+      // CUSTOMER product-review media; never treat them as creator testimonials.
+      if (img.closest('[data-testid="affiliate-c128-authentic-review-mosaic"]')) {
+        expect(src).toMatch(/^\/images\/afiliadas\/review-depoimento-(?:1|2|4)-112\.jpg$/);
+        expect(alt).toBe("");
+        const original = img.getAttribute("data-original-source");
+        expect(original).toMatch(/^\/depoimentos\/depoimento-(?:1|2|4)(?:-poster)?\.jpg$/);
+        const source = storeReviews.find(
+          (item) =>
+            item.slug === "botox-vonix" &&
+            (item.media.type === "video"
+              ? item.media.poster === original
+              : item.media.src === original),
+        );
+        expect(source).toBeDefined();
+        return;
+      }
       // The preview images inside <summary> are decorative, not creator portraits.
       if (img.closest('[data-testid="affiliate-c96-discovery-summary"]')) {
         expect(existingStoreCategoryPhotos.has(src)).toBe(true);
