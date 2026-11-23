@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ArrowLeft, Truck } from "lucide-react";
 import { Shell, WhatsAppIcon } from "@/components/site";
-import { validWhatsapp } from "@/components/bf-vip-form";
 import { track } from "@/lib/analytics";
 import { registerWhatsappLead } from "@/lib/leads.functions";
 import {
@@ -39,7 +38,6 @@ function FalarComAVonix() {
   const [produto, setProduto] = useState<ProdutoId | null>(null);
   const [quando, setQuando] = useState<QuandoId | null>(null);
   const [nome, setNome] = useState("");
-  const [whats, setWhats] = useState("");
   const [isca, setIsca] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -50,13 +48,12 @@ function FalarComAVonix() {
     e.preventDefault();
     if (enviando || !perfil || !produto || !quando) return;
     if (nome.trim().length < 2) return setErro("Digite seu nome.");
-    if (!validWhatsapp(whats)) return setErro("Digite seu WhatsApp com DDD, por exemplo (31) 99999-9999.");
     setErro(null);
     setEnviando(true);
     const respostas = { perfil, produto, quando };
     const quente = qualificado(respostas);
     try {
-      await salvar({ data: { nome: nome.trim(), whatsapp: whats.trim(), ...respostas, ...(isca ? { empresa: isca } : {}) } });
+      await salvar({ data: { nome: nome.trim(), ...respostas, ...(isca ? { empresa: isca } : {}) } });
     } catch {
       /* melhor esforço: a pessoa segue mesmo se o registro falhar */
     }
@@ -157,8 +154,8 @@ function FalarComAVonix() {
 
             {passo === 4 && (
               <section className="mt-5">
-                <h1 className="font-display text-h2">Para quem falamos?</h1>
-                <p className="mt-1 text-body text-muted-foreground">Só nome e WhatsApp. Sem spam.</p>
+                <h1 className="font-display text-h2">Como você se chama?</h1>
+                <p className="mt-1 text-body text-muted-foreground">Só o seu nome. O vendedor te atende pelo WhatsApp.</p>
                 <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
                   <label>
                     Empresa
@@ -169,10 +166,6 @@ function FalarComAVonix() {
                   <label className="block">
                     <span className="sr-only">Seu nome</span>
                     <input className={input} placeholder="Seu nome" autoComplete="given-name" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={80} />
-                  </label>
-                  <label className="block">
-                    <span className="sr-only">Seu WhatsApp com DDD</span>
-                    <input className={input} type="tel" inputMode="tel" placeholder="Seu WhatsApp com DDD" autoComplete="tel" value={whats} onChange={(e) => setWhats(e.target.value)} maxLength={25} />
                   </label>
                   {erro && <p role="alert" className="text-small text-destructive">{erro}</p>}
                   <button type="submit" disabled={enviando} className="h-12 rounded-full bg-action px-6 font-medium text-action-foreground disabled:opacity-60">
