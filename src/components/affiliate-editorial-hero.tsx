@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AffiliateProgramShare } from "@/components/affiliate-program-share";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
+import reviews from "@/data/reviews.json";
 
 export type RecruitmentStatus = "loading" | "open" | "limited" | "closed" | "unavailable";
 
@@ -47,6 +48,35 @@ const products = [
     background: "bg-[#ece3df]",
   },
 ] as const;
+
+/** Fast first-fold visual preview; all three sources are official store product assets. */
+const previewProducts = [products[2], products[0], products[1]] as const;
+
+/** Only photographic media already published alongside CUSTOMER product reviews.
+ * Names and media paths are sourced from the actual reviews dataset.
+ * This is not affiliate UGC, purchase verification or creator income proof.
+ */
+const authenticReviewPosters = ["Mariana Andrade", "Ayla Muniz", "Ana Paula"]
+  .flatMap((author) =>
+    reviews
+      .filter((review) => review.slug === "botox-vonix" && review.author === author)
+      .slice(0, 1)
+      .map((review) => ({
+        author: review.author,
+        src:
+          review.media.type === "video"
+            ? "poster" in review.media
+              ? review.media.poster
+              : null
+            : "src" in review.media
+              ? review.media.src
+              : null,
+      })),
+  )
+  .filter(
+    (review): review is { author: string; src: string } =>
+      typeof review.src === "string" && review.src.startsWith("/depoimentos/"),
+  );
 
 function CatalogCard({
   item,
@@ -222,8 +252,9 @@ export function AffiliateEditorialHero({
             </div>
           </div>
           <p className="order-4 mt-2 max-w-xl text-sm leading-[1.55] text-[#5e4650] sm:mt-3 sm:text-base lg:order-2 lg:mt-2 lg:leading-[1.55]">
-            Cria conteúdo sobre cabelos ou quer começar? Apresente seu Instagram à Vonix Hair. A
-            candidatura é gratuita, sem compra obrigatória, e passa por análise individual.
+            Cria conteúdo sobre cabelos ou quer começar? Não precisa montar portfólio para dar o
+            primeiro passo. Apresente seu Instagram à Vonix Hair: candidatura gratuita, sem compra
+            obrigatória, com análise individual de cada perfil.
           </p>
           <div
             role="status"
@@ -333,16 +364,31 @@ export function AffiliateEditorialHero({
             className="mb-2 rounded-2xl border border-[#e1d1d1] bg-white p-2.5 shadow-[0_8px_24px_rgba(76,41,54,.06)] sm:p-3 lg:hidden"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <img
-                src="/images/products/botox-vonix.webp"
-                alt=""
+              <span
+                data-testid="affiliate-c128-product-peek"
                 aria-hidden="true"
-                width={76}
-                height={76}
-                loading="lazy"
-                decoding="async"
-                className="size-[3.5rem] shrink-0 rounded-xl bg-[#f1e5e8] object-contain p-1 sm:size-[4.25rem]"
-              />
+                className="flex shrink-0 -space-x-3 sm:-space-x-3.5"
+              >
+                {previewProducts.map((item) => (
+                  <span
+                    key={item.slug}
+                    className={
+                      "flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-white shadow-[0_3px_12px_rgba(75,39,54,.12)] sm:size-12 " +
+                      item.background
+                    }
+                  >
+                    <img
+                      src={`/images/products/${item.slug}-480.webp`}
+                      alt=""
+                      width={96}
+                      height={96}
+                      loading="lazy"
+                      decoding="async"
+                      className="size-full object-contain p-1"
+                    />
+                  </span>
+                ))}
+              </span>
               <button
                 type="button"
                 data-testid="affiliate-c98-mobile-catalog-toggle"
@@ -464,9 +510,30 @@ export function AffiliateEditorialHero({
               data-testid="vonix-c78-real-review-cta"
               className="group mt-2 flex min-h-14 items-center gap-2 rounded-2xl border border-[#e1c9c9] bg-white px-3 py-2 text-left text-[#593344] shadow-[0_8px_22px_rgba(78,43,54,.06)] transition-colors hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754153] lg:mt-4 lg:min-h-16 lg:gap-3 lg:px-4 lg:py-3"
             >
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#f3e3e1] text-[#854b5f]">
-                <Images aria-hidden="true" className="size-6" />
-              </span>
+              {authenticReviewPosters.length === 3 ? (
+                <span
+                  data-testid="affiliate-c128-authentic-review-mosaic"
+                  aria-hidden="true"
+                  className="flex shrink-0 -space-x-3.5 sm:-space-x-3"
+                >
+                  {authenticReviewPosters.map((review) => (
+                    <img
+                      key={review.author}
+                      src={review.src}
+                      alt=""
+                      width={80}
+                      height={80}
+                      loading="lazy"
+                      decoding="async"
+                      className="size-8 rounded-lg border-2 border-white bg-[#f3e3e1] object-cover shadow-[0_3px_12px_rgba(75,39,54,.14)] sm:size-10"
+                    />
+                  ))}
+                </span>
+              ) : (
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#f3e3e1] text-[#854b5f]">
+                  <Images aria-hidden="true" className="size-6" />
+                </span>
+              )}
               <span className="min-w-0 flex-1">
                 <strong className="block text-sm font-bold leading-snug">
                   {officialProductReviewCount} avaliações de clientes no catálogo Vonix

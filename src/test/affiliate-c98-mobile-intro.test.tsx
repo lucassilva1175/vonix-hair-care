@@ -23,7 +23,7 @@ describe("C98 — abertura mobile compacta sem perder produtos nem etapas", () =
     expect(panel).toHaveClass("hidden", "lg:block");
     expect(summary.querySelector("img")).toHaveAttribute(
       "src",
-      "/images/products/botox-vonix.webp",
+      "/images/products/botox-vonix-480.webp",
     );
     expect(summary).toHaveTextContent("não fotografias de afiliadas");
     expect(within(panel).getAllByTestId("affiliate-c61-catalog-link")).toHaveLength(3);
