@@ -76,15 +76,17 @@ function FalarComAVonix() {
               <>
                 <h1 className="font-display text-h2">Pronto, {nome.trim().split(" ")[0]}!</h1>
                 <p className="mt-2 text-body text-muted-foreground">
-                  Já anotamos o que você procura. Toque no botão para falar com a gente no WhatsApp.
+                  Já anotamos o que você procura. Agora vamos te passar para um vendedor da Vonix, que te atende pelo
+                  WhatsApp em 3 a 5 minutos.
                 </p>
+                <p className="mt-2 text-body text-muted-foreground">Toque no botão abaixo para começar a conversa.</p>
                 <a
                   href={resultado.link}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-whatsapp px-6 font-medium text-whatsapp-foreground"
                 >
-                  <WhatsAppIcon className="h-5 w-5" /> Chamar no WhatsApp
+                  <WhatsAppIcon className="h-5 w-5" /> Falar com o vendedor no WhatsApp
                 </a>
               </>
             ) : (

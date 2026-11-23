@@ -41,7 +41,7 @@ export const WHATSAPP_NUMERO = "5531971185662";
 /** Mensagem que já chega no WhatsApp com as respostas, para o atendimento começar sabendo o que a pessoa quer. */
 export function mensagemWhatsapp(nome: string, r: Respostas) {
   const linhas = [
-    `Olá! Sou ${nome.trim()}, vim pelo formulário da Vonix Hair.`,
+    `Olá! Sou ${nome.trim()}, respondi o formulário da Vonix Hair e quero falar com um vendedor.`,
     `Perfil: ${label(PERFIS, r.perfil)}`,
     `Procuro: ${label(PRODUTOS, r.produto)}`,
     `Quero comprar: ${label(QUANDO, r.quando).toLowerCase()}`,
