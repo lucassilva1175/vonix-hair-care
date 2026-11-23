@@ -11,6 +11,7 @@ import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
 import { AffiliateCreatorSpotlight } from "@/components/affiliate-creator-spotlight";
 import { AffiliateCustomerVoiceTeaser } from "@/components/affiliate-customer-voice-teaser";
+import { AffiliateApplicationBridge } from "@/components/affiliate-application-bridge";
 import { AffiliateDiscoveryGate } from "@/components/affiliate-discovery-gate";
 import { AffiliateMobileApplyBar } from "@/components/affiliate-mobile-apply-bar";
 import {
@@ -199,6 +200,7 @@ export function AffiliateApplicationPage() {
         {/* C117: authentic PRODUCT review remains before the single application.
             Optional step-by-step/creator inspiration is available immediately after it. */}
         <AffiliateCustomerVoiceTeaser />
+        <AffiliateApplicationBridge status={recruitment} />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
           <details

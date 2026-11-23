@@ -652,6 +652,8 @@ export function AffiliateSimpleForm({
       }
       setErrors(failures);
       setMessage("");
+      // Only a count of blocked attempts; no field names, values or preview events.
+      if (!preview) trackAffiliateFunnel("affiliate_form_invalid");
       setInvalidAttempt((previous) => previous + 1);
       return;
     }

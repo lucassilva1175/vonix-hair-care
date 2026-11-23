@@ -15,6 +15,7 @@ import {
 } from "@/components/affiliate-verified-review-preview";
 import { Button } from "@/components/ui/button";
 import { AffiliateProgramShare } from "@/components/affiliate-program-share";
+import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 
 export type RecruitmentStatus = "loading" | "open" | "limited" | "closed" | "unavailable";
 
@@ -254,7 +255,10 @@ export function AffiliateEditorialHero({
               asChild
               className="h-auto min-h-12 w-full justify-center whitespace-normal rounded-xl bg-[#713c51] px-6 py-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(88,41,60,.20)] transition-colors hover:bg-[#5e3145] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#713c51] sm:w-auto"
             >
-              <a href="#inscricao">
+              <a
+                href="#inscricao"
+                onClick={() => trackAffiliateFunnel("affiliate_application_interest")}
+              >
                 {isOpen ? "Quero ser afiliada Vonix" : "Conhecer a inscrição"}
                 <ArrowUpRight aria-hidden="true" className="size-4" />
               </a>
