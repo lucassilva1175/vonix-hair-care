@@ -1523,9 +1523,9 @@ function Checkout() {
             </a>
           </p>
           <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-small text-muted-foreground">
-            <Link to="/politica-de-privacidade" className="underline">Privacidade</Link>
-            <Link to="/termos-de-uso" className="underline">Termos de uso</Link>
-            <Link to="/politica-de-trocas-e-devolucoes" className="underline">Trocas e devoluções</Link>
+            <Link to="/$page" params={{ page: "politica-de-privacidade" }} className="underline">Privacidade</Link>
+            <Link to="/$page" params={{ page: "termos-de-uso" }} className="underline">Termos de uso</Link>
+            <Link to="/$page" params={{ page: "politica-de-trocas-e-devolucoes" }} className="underline">Trocas e devoluções</Link>
           </p>
         </div>
       </div>

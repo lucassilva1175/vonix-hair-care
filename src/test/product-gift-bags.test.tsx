@@ -31,12 +31,12 @@ describe("sacolinhas nas galerias do catálogo", () => {
     const images = productGalleryImagesFor(product.slug, product.images);
     const { container } = render(<ProductGallery name={product.name} images={images} videos={videos} />);
     expect(container.querySelector("video")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Ver imagem 2", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver imagem 2$/ }));
     expect(screen.getByRole("img", { name: product.name })).toHaveAttribute("src", images[1]);
-    fireEvent.click(screen.getByRole("button", { name: "Ver vídeo 1", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver vídeo 1$/ }));
     expect(container.querySelector("video")).toHaveAttribute("src", videos[0]!.src);
     expect(container.querySelector("video")).toHaveAttribute("autoplay");
-    fireEvent.click(screen.getByRole("button", { name: "Ver imagem 1", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Ver imagem 1$/ }));
     expect(container.querySelector("video")).toBeNull();
   });
 });
