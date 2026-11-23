@@ -72,7 +72,7 @@ describe("C100 — descoberta criativa compacta antes da inscrição", () => {
     expect(container.querySelectorAll("[aria-live='polite']")).toHaveLength(1);
   });
 
-  it("SSR estável e integração realmente anterior ao formulário na rota", () => {
+  it("SSR estável e exploração complementar após o formulário único na rota", () => {
     const markup = renderToStaticMarkup(<AffiliateCreatorSpotlight />);
     expect(markup).toContain("affiliate-c100-creator-spotlight");
     expect(markup).toContain("Rotina e comunidade");
@@ -83,6 +83,6 @@ describe("C100 — descoberta criativa compacta antes da inscrição", () => {
     const form = source.indexOf("<AffiliateSimpleForm");
     expect(step).toBeGreaterThan(-1);
     expect(spotlight).toBeGreaterThan(step);
-    expect(form).toBeGreaterThan(spotlight);
+    expect(form).toBeLessThan(step);
   });
 });

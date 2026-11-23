@@ -54,7 +54,7 @@ describe("C101 — depoimento de produto autêntico antes do formulário", () =>
     ).toBeInTheDocument();
   });
 
-  it("mantém SSR estável, depois do seletor C100 e antes do formulário", () => {
+  it("mantém SSR estável, prova real antes do formulário e estilos depois", () => {
     const markup = renderToStaticMarkup(<AffiliateCustomerVoiceTeaser />);
     expect(markup).toContain("affiliate-c101-customer-voice");
     expect(markup).not.toContain("Autoplay");
@@ -63,7 +63,7 @@ describe("C101 — depoimento de produto autêntico antes do formulário", () =>
     const c101 = source.indexOf("<AffiliateCustomerVoiceTeaser />");
     const form = source.indexOf("<AffiliateSimpleForm");
     expect(c100).toBeGreaterThan(-1);
-    expect(c101).toBeGreaterThan(c100);
-    expect(form).toBeGreaterThan(c101);
+    expect(c101).toBeLessThan(form);
+    expect(c100).toBeGreaterThan(form);
   });
 });

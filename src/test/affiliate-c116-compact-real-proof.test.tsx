@@ -76,7 +76,7 @@ describe("C116 — prova social autêntica compacta antes da inscrição", () =>
     expect(markup).toContain('aria-expanded="false"');
     expect(markup).not.toContain("<video");
     const route = readFileSync("src/routes/seja-afiliada.tsx", "utf8");
-    expect(route.indexOf("<AffiliateCustomerVoiceTeaser />")).toBeGreaterThan(
+    expect(route.indexOf("<AffiliateCustomerVoiceTeaser />")).toBeLessThan(
       route.indexOf("<AffiliateCreatorSpotlight />"),
     );
     expect(route.indexOf('id="inscricao"')).toBeGreaterThan(

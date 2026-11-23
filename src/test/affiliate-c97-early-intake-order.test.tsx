@@ -33,11 +33,12 @@ afterEach(() => {
 });
 
 describe("C97: candidatura antes de galerias e das condições completas", () => {
-  it("mantém formulário, próximos passos e FAQ antes de provas e ganhos detalhados", () => {
+  it("mantém formulário e próximos passos antes das explorações, FAQ e ganhos detalhados", () => {
     const { container } = render(<AffiliateApplicationPage />);
     const hero = screen.getByTestId("vonix-affiliate-hero");
     const facts = screen.getByTestId("affiliate-c61-eligibility-facts");
     const steps = screen.getByTestId("vonix-c66-application-steps");
+    const creator = screen.getByTestId("affiliate-c100-creator-spotlight");
     const form = container.querySelector("#inscricao");
     const next = screen.getByTestId("affiliate-c55-next-steps");
     const faq = container.querySelector("#duvidas");
@@ -48,10 +49,11 @@ describe("C97: candidatura antes de galerias e das condições completas", () =>
     if (!form || !faq) throw new Error("C97 essential form/FAQ not rendered");
     for (const [a, b] of [
       [hero, facts],
-      [facts, steps],
-      [steps, form],
+      [facts, form],
+      [next, steps],
       [form, next],
-      [next, faq],
+      [steps, creator],
+      [creator, faq],
       [faq, reviews],
       [reviews, earnings],
       [earnings, guide],

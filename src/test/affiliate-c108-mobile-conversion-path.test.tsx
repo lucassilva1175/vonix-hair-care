@@ -133,8 +133,9 @@ describe("C108 — descoberta opcional acessível, inscrição mais perto no cel
     const form = source.indexOf("<AffiliateSimpleForm");
     expect(steps).toBeGreaterThan(-1);
     expect(creator).toBeGreaterThan(steps);
-    expect(reviews).toBeGreaterThan(creator);
+    expect(reviews).toBeGreaterThan(-1);
     expect(prep).toBeGreaterThan(reviews);
     expect(form).toBeGreaterThan(prep);
+    expect(steps).toBeGreaterThan(form);
   });
 });

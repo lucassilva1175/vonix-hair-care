@@ -69,7 +69,7 @@ describe("C104 — percurso compacto mobile/tablet sem perder a explicação", (
     expect(document.activeElement).toBe(first);
   });
 
-  it("preserva SSR e o formulário único da rota, sem deslocar benefícios ou avaliações de produto", () => {
+  it("preserva SSR, prova de produto antes e etapas opcionais depois da inscrição", () => {
     const markup = renderToStaticMarkup(<AffiliateApplicationStepsPreview />);
     const source = readFileSync("src/routes/seja-afiliada.tsx", "utf8");
     const stepsIndex = source.indexOf("<AffiliateApplicationStepsPreview />");
@@ -78,7 +78,7 @@ describe("C104 — percurso compacto mobile/tablet sem perder a explicação", (
     const formIndex = source.indexOf('id="inscricao"');
     expect(stepsIndex).toBeGreaterThan(0);
     expect(stepsIndex).toBeLessThan(spotlightIndex);
-    expect(spotlightIndex).toBeLessThan(reviewIndex);
+    expect(formIndex).toBeLessThan(stepsIndex);
     expect(reviewIndex).toBeLessThan(formIndex);
     const root = document.createElement("div");
     root.innerHTML = markup;

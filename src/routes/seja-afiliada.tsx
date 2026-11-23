@@ -176,8 +176,8 @@ export function AffiliateApplicationPage() {
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
         <AffiliateLandingOffer recruitmentStatus={recruitment} placement="intro" />
         <AffiliateMobileApplyBar recruitmentStatus={recruitment} />
-        <AffiliateApplicationStepsPreview />
-        <AffiliateCreatorSpotlight />
+        {/* C117: authentic PRODUCT review remains before the single application.
+            Optional step-by-step/creator inspiration is available immediately after it. */}
         <AffiliateCustomerVoiceTeaser />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
@@ -256,6 +256,16 @@ export function AffiliateApplicationPage() {
                 >
                   Consultar meu status pelo código
                 </Link>
+              </p>
+              <p className="mt-2 text-xs leading-[1.6] text-[#725866]">
+                Prefere conhecer o processo antes de enviar seus dados?{" "}
+                <a
+                  href="#candidatura-etapas"
+                  data-testid="affiliate-c117-explore-steps"
+                  className="inline-flex min-h-11 items-center font-bold text-[#744256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                >
+                  Ver o passo a passo
+                </a>
               </p>
             </div>
             <AffiliateApplicationEditorialArt />
@@ -405,6 +415,10 @@ export function AffiliateApplicationPage() {
           )}
         </section>
         <AffiliateNextSteps recruitmentOpen={recruitment === "open" && !preview} />
+        {/* C117: keep editorial exploration AFTER the unique #inscricao form
+            and its immediate next-step guidance. Original anchors remain unique. */}
+        <AffiliateApplicationStepsPreview />
+        <AffiliateCreatorSpotlight />
         <AffiliateLandingFAQ />
         <AffiliateLandingOffer recruitmentStatus={recruitment} placement="details" />
         <nav

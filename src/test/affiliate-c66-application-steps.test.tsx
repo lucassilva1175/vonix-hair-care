@@ -42,7 +42,7 @@ describe("C66 application guidance without submission", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it("keeps guidance before signup, with authentic product reviews and detailed earnings after the FAQ", async () => {
+  it("keeps product trust and requirements before signup, optional guidance and full reviews after", async () => {
     const request = vi.fn().mockRejectedValue(new Error("Network forbidden in C66 route test"));
     vi.stubGlobal("fetch", request);
     render(<AffiliateApplicationPage />);
@@ -59,11 +59,12 @@ describe("C66 application guidance without submission", () => {
     ).toBeTruthy();
     const spotlight = screen.getByTestId("affiliate-c100-creator-spotlight");
     expect(preview.nextElementSibling).toBe(spotlight);
-    expect(spotlight.compareDocumentPosition(prep) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(prep.compareDocumentPosition(spotlight) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(spotlight).toHaveTextContent("Nenhum estilo garante aprovação");
     const signup = document.getElementById("inscricao");
     if (!signup) throw new Error("Missing application section");
     expect(prep.compareDocumentPosition(signup) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(signup.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(signup.compareDocumentPosition(reviews) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(preview).getByRole("link")).toHaveAttribute("href", "/consultar-candidatura");
     const ids = [...document.querySelectorAll("[id]")].map((node) => node.id);
