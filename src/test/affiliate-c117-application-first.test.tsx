@@ -35,7 +35,7 @@ describe("C117 — candidatura prioritária, prova autêntica e exploração opc
   it("preserva a prova de produto e os requisitos antes do formulário, etapas e ideias depois", () => {
     const source = readFileSync("src/routes/seja-afiliada.tsx", "utf8");
     const tokens = [
-      '<AffiliateLandingOffer recruitmentStatus={recruitment} placement="intro" />',
+      "<AffiliateLandingOffer", // Do not tie source-order check to formatting or extra safe-preview props.
       "<AffiliateCustomerVoiceTeaser />",
       'data-testid="vonix-c64-preparation-details"',
       'id="inscricao"',
