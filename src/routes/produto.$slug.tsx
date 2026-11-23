@@ -358,6 +358,17 @@ function ProductPage() {
             <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">5% OFF</span>
             <h1 className="mt-3 font-display text-h1">{p.name}</h1>
             <Stars slug={p.slug} />
+            {!galleryVideos && <ReviewStrip slug={p.slug} />}
+            <div className="mt-4" data-testid="product-price-block">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
+                <span className="text-body">no Pix</span>
+                <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
+              </div>
+              <p className="mt-1 text-small text-muted-foreground">
+                Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros
+              </p>
+            </div>
             <div className="mt-3">
               <ShareButton
                 compact
@@ -373,17 +384,6 @@ function ProductPage() {
                 <span className="leading-snug">{p.short}</span>
               </div>
             )}
-            {!galleryVideos && <ReviewStrip slug={p.slug} />}
-            <div className="mt-4" data-testid="product-price-block">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
-                <span className="text-body">no Pix</span>
-                <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
-              </div>
-              <p className="mt-1 text-small text-muted-foreground">
-                Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros
-              </p>
-            </div>
             {
               <div className="mt-6">
                 <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
