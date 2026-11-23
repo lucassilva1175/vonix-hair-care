@@ -219,8 +219,8 @@ export function AffiliateEditorialHero({
             </div>
           </div>
           <p className="order-4 mt-2 max-w-xl text-sm leading-[1.55] text-[#5e4650] sm:mt-3 sm:text-base lg:order-2 lg:mt-4 lg:text-lg lg:leading-[1.75]">
-            Sua criatividade e o universo dos cabelos podem se encontrar. Apresente seu perfil à
-            Vonix Hair e descubra como funciona a seleção para uma possível parceria.
+            Cria conteúdo sobre cabelos ou quer começar? Apresente seu Instagram à Vonix Hair. A
+            candidatura é gratuita, sem compra obrigatória, e passa por análise individual.
           </p>
           <div
             role="status"
@@ -252,7 +252,7 @@ export function AffiliateEditorialHero({
           <div className="order-3 mt-2 flex flex-wrap items-center gap-2 lg:order-4 lg:mt-5 lg:gap-3">
             <Button
               asChild
-              className="h-auto min-h-12 whitespace-normal rounded-lg px-6 py-3 text-sm"
+              className="h-auto min-h-12 w-full justify-center whitespace-normal rounded-xl bg-[#713c51] px-6 py-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(88,41,60,.20)] transition-colors hover:bg-[#5e3145] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#713c51] sm:w-auto"
             >
               <a href="#inscricao">
                 {isOpen ? "Quero ser afiliada Vonix" : "Conhecer a inscrição"}
@@ -268,17 +268,33 @@ export function AffiliateEditorialHero({
             <AffiliateProgramShare />
           </div>
           <ul
-            className="order-5 mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] font-medium text-[#553d47] sm:text-xs lg:mt-6 lg:gap-x-5 lg:gap-y-3"
-            aria-label="Informações da candidatura"
+            data-testid="affiliate-c118-hero-benefits"
+            aria-label="Condições e informações da candidatura"
+            className="order-5 mt-3 grid min-w-0 grid-cols-2 gap-2 text-[#553d47] sm:flex sm:flex-wrap sm:items-center sm:gap-2.5 lg:mt-6"
           >
-            {["8% sobre vendas após aprovação", "Sem estoque próprio", "Inscrição gratuita"].map(
-              (statement) => (
-                <li key={statement} className="inline-flex items-start gap-2">
-                  <Check aria-hidden="true" className="mt-px size-4 shrink-0 text-[#7f4256]" />
-                  {statement}
-                </li>
-              ),
-            )}
+            <li
+              data-testid="affiliate-c118-commission"
+              className="col-span-2 flex min-w-0 items-center gap-3 rounded-xl border border-[#804a5d] bg-gradient-to-r from-[#713d53] to-[#5d3449] px-3 py-2.5 text-white shadow-[0_8px_20px_rgba(71,35,49,.12)] sm:col-span-1 sm:px-4"
+            >
+              <strong className="shrink-0 font-display text-[2rem] leading-none tabular-nums">
+                8%
+              </strong>{" "}
+              <span className="min-w-0 text-[11px] font-semibold leading-[1.45] sm:text-xs">
+                sobre vendas após aprovação
+                <span className="mt-0.5 block text-[10px] font-normal text-[#f8dfe7]">
+                  Vendas elegíveis e confirmadas
+                </span>
+              </span>
+            </li>
+            {["Sem estoque próprio", "Inscrição gratuita"].map((statement) => (
+              <li
+                key={statement}
+                className="col-span-1 flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[#e3ccd0] bg-white px-2 py-2 text-center text-[11px] font-bold leading-tight text-[#704558] shadow-[0_5px_15px_rgba(76,42,54,.045)] sm:px-3 sm:text-xs"
+              >
+                <Check aria-hidden="true" className="size-4 shrink-0 text-[#80465c]" />
+                {statement}
+              </li>
+            ))}
           </ul>
           <p className="order-6 mt-1.5 max-w-lg text-[11px] leading-[1.5] text-[#65515a] sm:text-xs lg:mt-3 lg:leading-[1.7]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque

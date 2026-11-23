@@ -21,9 +21,7 @@ describe("C105 — CTA mais imediato sem omitir contexto da candidatura", () => 
       "sm:min-h-[19rem]",
       "lg:min-h-[25rem]",
     );
-    const intro = within(hero).getByText(
-      /Sua criatividade e o universo dos cabelos podem se encontrar/i,
-    );
+    const intro = within(hero).getByText(/Cria conteúdo sobre cabelos ou quer começar\?/i);
     const status = within(hero).getByTestId("affiliate-c94-intake-status");
     const action = within(hero).getByRole("link", { name: "Conhecer a inscrição" });
     expect(intro).toHaveClass("order-4", "lg:order-2");
