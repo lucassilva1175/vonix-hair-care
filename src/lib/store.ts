@@ -400,13 +400,13 @@ export function useAudience() {
 /** Home / salon indications, fixed explicitly so editing a product's copy never changes where it is listed. */
 const CASA_TEXT = new Set([
   "progressiva-fio-de-luz", "mascara-reparacao-nutri-repair", "kit-banana-e-mel", "kit-cronograma-capilar", "kit-whey-protein", "kit-desmaia",
-  "mascara-hidratacao-lanolina-karite", "mascara-efeito-teia-tomba-cabelo", "mascara-efeito-teia-coco-nutri", "mascara-efeito-teia-anabolizante",
+  "mascara-hidratacao-lanolina-karite", "mascara-efeito-teia-tomba-cabelo", "mascara-hidratante-argan-cartamo-coco", "mascara-efeito-teia-coco-nutri", "mascara-efeito-teia-anabolizante",
   "kit-coco-nutri", "mousse-flash", "mascara-efeito-teia-desmaia-cabelo", "kit-matizador-shampoo-e-mascara", "shampoo-hidratante-dep-toc",
   "kit-cachos", "reparador-de-pontas", "serum-argan",
 ]);
 const SALAO_TEXT = new Set([
   "progressiva-fio-de-luz", "botox-vonix", "mascara-reparacao-nutri-repair", "plex-vonix", "kit-cauterizacao", "mascara-hidratacao-lanolina-karite",
-  "botox-line-matizador", "mascara-efeito-teia-tomba-cabelo", "mascara-efeito-teia-coco-nutri", "mascara-efeito-teia-anabolizante", "botox-vonix-matizador",
+  "botox-line-matizador", "mascara-efeito-teia-tomba-cabelo", "mascara-hidratante-argan-cartamo-coco", "mascara-efeito-teia-coco-nutri", "mascara-efeito-teia-anabolizante", "botox-vonix-matizador",
   "mascara-whey-protein", "mousse-flash", "progressiva-diamond", "shampoo-diamond-anti-residuo", "mascara-efeito-teia-desmaia-cabelo",
   "kit-matizador-shampoo-e-mascara", "progressiva-lift-em-gel", "progressiva-vonix-special-matizadora", "kit-cachos", "defrizante", "serum-argan",
 ]);

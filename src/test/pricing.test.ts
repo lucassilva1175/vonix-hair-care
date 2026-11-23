@@ -55,7 +55,7 @@ describe("ambiente e preços dos cards", () => {
 });
 
 describe("regras comerciais", () => {
-  it("catálogo tem 74 produtos (42 + 29 avulsos + 4 perfumes separados − perfume antigo; Plex Vonix sem estoque)", () => expect(products.length).toBe(74));
+  it("catálogo tem 75 produtos (42 + 30 avulsos + 4 perfumes separados − perfume antigo; Plex Vonix sem estoque; inclui a Máscara Hidratante Argan, Cártamo e Coco)", () => expect(products.length).toBe(75));
   it("com o teste encerrado (14/11) valem os preços de products.json", () => {
     expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(145.9);
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([70.9, 155.9]);
