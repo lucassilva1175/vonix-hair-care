@@ -48,6 +48,7 @@ export function AffiliateCustomerVoiceTeaser() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [videoOpen, setVideoOpen] = useState(false);
   const [showSocialComments, setShowSocialComments] = useState(false);
+  const [mobileProofExpanded, setMobileProofExpanded] = useState(false);
   const videoTriggerRef = useRef<HTMLButtonElement>(null);
   const selected = selectedReviews[selectedIndex] ?? selectedReviews[0];
   if (!selected || selectedReviews.length !== reviewedAuthors.length) return null;
@@ -64,9 +65,60 @@ export function AffiliateCustomerVoiceTeaser() {
     <aside
       data-testid="affiliate-c101-customer-voice"
       aria-labelledby="affiliate-c101-title"
-      className="border-b border-[#e8d9d4] bg-[#f6eeea] px-5 py-3 text-[#543745] sm:py-6"
+      className="border-b border-[#e8d9d4] bg-[#f6eeea] px-5 py-2.5 text-[#543745] sm:py-6"
     >
-      <div className="mx-auto grid max-w-5xl min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-4 rounded-2xl border border-[#e3ccc9] bg-[#fffaf7] p-2.5 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-6 sm:px-5 sm:py-4">
+      <button
+        type="button"
+        data-testid="affiliate-c116-mobile-proof-toggle"
+        aria-expanded={mobileProofExpanded}
+        aria-controls="affiliate-c116-proof-content"
+        onClick={() => {
+          setMobileProofExpanded((expanded) => !expanded);
+          // Closing the panel must unmount a potentially playing video.
+          setVideoOpen(false);
+          setShowSocialComments(false);
+          setSelectedIndex(0);
+        }}
+        className="mx-auto flex min-h-[6.5rem] w-full max-w-5xl items-center gap-3 rounded-[1.15rem] border border-[#d8b9bf] bg-gradient-to-r from-[#fff9f6] to-[#f7e7e9] px-3 py-2.5 text-left shadow-[0_8px_24px_rgba(81,43,56,.08)] transition-colors hover:border-[#b78b99] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754357] sm:hidden"
+      >
+        <span
+          data-testid="affiliate-c116-mobile-review-poster"
+          aria-hidden="true"
+          style={{ backgroundImage: `url("${imageSrc}")` }}
+          className="block size-[4.5rem] shrink-0 rounded-xl border border-[#e6cfd0] bg-[#f1e2df] bg-contain bg-center bg-no-repeat"
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-bold uppercase tracking-[.08em] text-[#8a5367]">
+            Avaliações reais de produtos
+          </span>
+          <span className="mt-0.5 block font-display text-base leading-tight text-[#50313f]">
+            Veja o que clientes dizem sobre a Vonix
+          </span>
+          <span className="mt-1 block text-[11px] leading-snug text-[#745464]">
+            {mobileProofExpanded
+              ? "Recolher comentários e vídeos de clientes"
+              : `Ver ${selectedReviews.length} avaliações de produto com fotos e vídeos`}
+          </span>
+          <span className="mt-1 block text-[10px] leading-snug text-[#825f6d]">
+            Opiniões sobre produtos, não relatos de afiliadas
+          </span>
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={
+            "size-5 shrink-0 text-[#764459] transition-transform motion-reduce:transition-none " +
+            (mobileProofExpanded ? "rotate-180" : "")
+          }
+        />
+      </button>
+      <div
+        id="affiliate-c116-proof-content"
+        data-testid="affiliate-c116-proof-content"
+        className={
+          "mx-auto max-w-5xl min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-4 rounded-2xl border border-[#e3ccc9] bg-[#fffaf7] p-2.5 sm:grid sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-6 sm:px-5 sm:py-4 " +
+          (mobileProofExpanded ? "mt-3 grid" : "hidden")
+        }
+      >
         <div className="relative min-w-0">
           <a
             href="#avaliacoes-produtos"
