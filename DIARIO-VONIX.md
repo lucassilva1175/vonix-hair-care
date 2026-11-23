@@ -235,3 +235,8 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Gargalo: anúncio → produto. Nas gravações do celular, a maioria das visitas pagas ao Botox Vonix (Facebook/Instagram/WhatsApp Status) fica 1 página, 0 cliques. Imagem principal do Botox já é leve (28 KB), então não é peso de foto. Sem prova de causa nas gravações, nenhuma mudança publicada.
 - Próxima hipótese: reduzir o que vem antes do preço no celular (compartilhar/benefício) e medir rolagem; conferir mapa de rolagem do /produto/botox-vonix. Meta não aberta (ordem do dono).
 - Como desfazer: nada alterado além deste diário.
+
+## 23/11/2026 — dono do resultado (melhoria no site)
+- Clarity 3 dias: 330 sessões, 288 viram produto (214 no Botox), 17 checkout, 1 compra; LCP 3,3 s, INP 420 ms. Meta não aberta (ordem do dono).
+- Mudança (PR #281): na página de produto o preço vem antes de Compartilhar e do box de benefício. Só ordem; testes e tipos passam.
+- Próxima hipótese: reduzir LCP no celular. Como desfazer: git revert do PR #281.
