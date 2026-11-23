@@ -221,11 +221,11 @@ export function AffiliateApplicationPage() {
           data-ingress-check={backendDiagnostics.ingress ? "ok" : "unavailable"}
           data-encryption-check={backendDiagnostics.encryption ? "ok" : "unavailable"}
           data-email-provider={backendDiagnostics.emailConfigured ? "configured" : "unavailable"}
-          className="mx-auto max-w-5xl scroll-mt-36 px-5 py-11 sm:py-18"
+          className="mx-auto max-w-5xl scroll-mt-36 px-5 py-6 sm:py-14"
         >
           <div
             data-testid="affiliate-c115-form-intro"
-            className="mb-7 grid min-w-0 items-stretch gap-4 overflow-hidden rounded-[1.6rem] border border-[#e3ccce] bg-gradient-to-br from-[#fffaf7] via-[#fff4f2] to-[#f7e8e7] p-5 shadow-[0_20px_54px_rgba(78,42,56,.08)] sm:p-7 lg:mb-9 lg:grid-cols-[minmax(0,1.25fr)_minmax(15rem,.75fr)] lg:gap-8"
+            className="mb-4 grid min-w-0 items-stretch gap-3 overflow-hidden rounded-[1.6rem] border border-[#e3ccce] bg-gradient-to-br from-[#fffaf7] via-[#fff4f2] to-[#f7e8e7] p-4 shadow-[0_20px_54px_rgba(78,42,56,.08)] sm:mb-7 sm:p-7 lg:mb-9 lg:grid-cols-[minmax(0,1.25fr)_minmax(15rem,.75fr)] lg:gap-8"
           >
             <div className="min-w-0 text-left">
               <p className="inline-flex min-h-8 items-center rounded-full border border-[#e6c8d1] bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[.09em] text-[#86566a]">
@@ -237,19 +237,19 @@ export function AffiliateApplicationPage() {
                       ? "Disponibilidade não confirmada"
                       : "Programa de afiliados"}
               </p>
-              <h2 className="mt-3 max-w-2xl font-display text-[clamp(2rem,5vw,3rem)] leading-[1.12] tracking-tight text-[#4c3040]">
+              <h2 className="mt-2 max-w-2xl font-display text-[clamp(1.75rem,5vw,3rem)] leading-[1.12] tracking-tight text-[#4c3040] sm:mt-3">
                 Sua inscrição, de um jeito simples.
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-[1.7] text-[#725867] sm:text-base">
-                Apresente seu nome, contato, endereço e perfil do Instagram com número de
-                seguidores. O TikTok é opcional. A inscrição é gratuita, depende de disponibilidade
-                e não garante aprovação. Após um envio confirmado, guarde o código privado exibido
-                na tela.
+              <p className="mt-2 max-w-2xl text-sm leading-[1.6] text-[#725867] sm:mt-3 sm:text-base sm:leading-[1.7]">
+                Informe nome, telefone, e-mail válido, endereço e Instagram com número de
+                seguidores. TikTok é opcional; a inscrição é gratuita, depende de disponibilidade e
+                não garante aprovação. Após um envio confirmado, guarde o código privado exibido na
+                tela.
               </p>
               <div
                 data-testid="affiliate-c112-form-essentials"
                 aria-label="Requisitos principais da candidatura"
-                className="mt-4 flex max-w-3xl flex-wrap items-center gap-2"
+                className="mt-4 hidden max-w-3xl flex-wrap items-center gap-2 sm:flex"
               >
                 {[
                   "18 anos ou mais",
@@ -265,7 +265,7 @@ export function AffiliateApplicationPage() {
                   </span>
                 ))}
               </div>
-              <p className="mt-5 flex flex-wrap items-center gap-x-2 rounded-xl border border-[#e3c9cf] bg-white/95 px-3 py-2 text-sm text-[#765665] sm:px-4">
+              <p className="mt-3 flex flex-wrap items-center gap-x-2 rounded-xl border border-[#e3c9cf] bg-white/95 px-3 py-1 text-xs text-[#765665] sm:mt-5 sm:px-4 sm:py-2 sm:text-sm">
                 Já enviou uma candidatura?{" "}
                 <Link
                   to="/consultar-candidatura"
@@ -275,8 +275,8 @@ export function AffiliateApplicationPage() {
                   Consultar meu status pelo código
                 </Link>
               </p>
-              <p className="mt-2 text-xs leading-[1.6] text-[#725866]">
-                Prefere conhecer o processo antes de enviar seus dados?{" "}
+              <p className="mt-0 flex flex-wrap items-center gap-x-2 text-xs leading-[1.4] text-[#725866] sm:mt-2">
+                Quer entender a seleção primeiro?{" "}
                 <a
                   href="#candidatura-etapas"
                   data-testid="affiliate-c117-explore-steps"
