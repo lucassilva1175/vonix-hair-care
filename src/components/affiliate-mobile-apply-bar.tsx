@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
+import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 
 /**
  * Only a scroll shortcut to the EXISTING form. No personal data, tracking,
@@ -9,8 +10,10 @@ import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
  */
 export function AffiliateMobileApplyBar({
   recruitmentStatus,
+  onSafePreview,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  onSafePreview?: () => void;
 }) {
   const [visibility, setVisibility] = useState<{
     hero: boolean | null;
@@ -84,6 +87,10 @@ export function AffiliateMobileApplyBar({
         </div>
         <a
           href="#inscricao"
+          onClick={() => {
+            trackAffiliateFunnel("affiliate_application_interest");
+            if (!isOpen) onSafePreview?.();
+          }}
           className="inline-flex min-h-12 max-w-[55%] shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#723e52] px-4 py-3 text-center text-xs font-bold leading-snug text-white shadow-sm transition-colors motion-reduce:transition-none hover:bg-[#603345] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#723e52]"
         >
           {actionLabel}

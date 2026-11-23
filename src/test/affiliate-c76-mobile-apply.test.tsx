@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AffiliateMobileApplyBar } from "@/components/affiliate-mobile-apply-bar";
 
@@ -47,6 +47,22 @@ afterEach(() => {
 });
 
 describe("C76: CTA mobile do programa sem envio nem sobreposição", () => {
+  it("C126 abre a prévia apenas se não estiver OPEN, sem trocar disponibilidade", () => {
+    const { hero, form } = targets();
+    const onSafePreview = vi.fn();
+    const { rerender } = render(
+      <AffiliateMobileApplyBar recruitmentStatus="closed" onSafePreview={onSafePreview} />,
+    );
+    trigger(hero, false);
+    trigger(form, false);
+    fireEvent.click(screen.getByRole("link", { name: /conhecer o formulário/i }));
+    expect(onSafePreview).toHaveBeenCalledTimes(1);
+
+    rerender(<AffiliateMobileApplyBar recruitmentStatus="open" onSafePreview={onSafePreview} />);
+    fireEvent.click(screen.getByRole("link", { name: /fazer minha inscrição/i }));
+    expect(onSafePreview).toHaveBeenCalledTimes(1);
+  });
+
   it("aguarda a primeira medição e só aparece fora da hero e do formulário", () => {
     const { hero, form } = targets();
     const { rerender } = render(<AffiliateMobileApplyBar recruitmentStatus="loading" />);

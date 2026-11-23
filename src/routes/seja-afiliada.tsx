@@ -178,6 +178,12 @@ export function AffiliateApplicationPage() {
   const showWizard = preview || recruitment === "open" || liveFormStarted;
   const simulationOnly = preview || recruitment !== "open";
 
+  function openSafePreview() {
+    // Deliberate user action: opening the simulation never authorizes a POST.
+    setConfirmPreviewExit(false);
+    setPreview(true);
+  }
+
   function requestPreviewExit() {
     if (previewHasDraft) {
       setConfirmPreviewExit(true);
@@ -195,12 +201,16 @@ export function AffiliateApplicationPage() {
   return (
     <AffiliateShell recruitmentStatus={recruitment}>
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
-        <AffiliateLandingOffer recruitmentStatus={recruitment} placement="intro" />
-        <AffiliateMobileApplyBar recruitmentStatus={recruitment} />
+        <AffiliateLandingOffer
+          recruitmentStatus={recruitment}
+          placement="intro"
+          onSafePreview={openSafePreview}
+        />
+        <AffiliateMobileApplyBar recruitmentStatus={recruitment} onSafePreview={openSafePreview} />
         {/* C117: authentic PRODUCT review remains before the single application.
             Optional step-by-step/creator inspiration is available immediately after it. */}
         <AffiliateCustomerVoiceTeaser />
-        <AffiliateApplicationBridge status={recruitment} />
+        <AffiliateApplicationBridge status={recruitment} onSafePreview={openSafePreview} />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
           <details
@@ -349,8 +359,7 @@ export function AffiliateApplicationPage() {
                 type="button"
                 data-testid="affiliate-c122-safe-preview"
                 onClick={() => {
-                  setConfirmPreviewExit(false);
-                  setPreview(true);
+                  openSafePreview();
                 }}
                 className="h-auto whitespace-normal mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-primary px-7 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90"
               >

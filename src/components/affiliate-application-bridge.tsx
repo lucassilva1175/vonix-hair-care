@@ -24,7 +24,13 @@ const steps = [
   },
 ] as const;
 
-export function AffiliateApplicationBridge({ status }: { status: RecruitmentStatus }) {
+export function AffiliateApplicationBridge({
+  status,
+  onSafePreview,
+}: {
+  status: RecruitmentStatus;
+  onSafePreview?: () => void;
+}) {
   const canApply = status === "open";
   return (
     <section
@@ -48,10 +54,13 @@ export function AffiliateApplicationBridge({ status }: { status: RecruitmentStat
           <a
             href="#inscricao"
             data-testid="affiliate-c125-bridge-cta"
-            onClick={() => trackAffiliateFunnel("affiliate_application_interest")}
+            onClick={() => {
+              trackAffiliateFunnel("affiliate_application_interest");
+              if (!canApply) onSafePreview?.();
+            }}
             className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#703d52] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#583144] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#703d52]"
           >
-            {canApply ? "Começar candidatura" : "Conhecer o formulário"}
+            {canApply ? "Começar candidatura" : "Conhecer o formulário (prévia segura)"}
             <ArrowRight aria-hidden="true" className="size-4" />
           </a>
         </div>

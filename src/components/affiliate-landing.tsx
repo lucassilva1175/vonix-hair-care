@@ -223,9 +223,11 @@ function ProductImage({
 export function AffiliateLandingOffer({
   recruitmentStatus,
   placement = "all",
+  onSafePreview,
 }: {
   recruitmentStatus: RecruitmentStatus;
   placement?: "all" | "intro" | "details";
+  onSafePreview?: () => void;
 }) {
   const isOpen = recruitmentStatus === "open";
 
@@ -236,7 +238,10 @@ export function AffiliateLandingOffer({
     >
       {placement !== "details" && (
         <>
-          <AffiliateEditorialHero recruitmentStatus={recruitmentStatus} />
+          <AffiliateEditorialHero
+            recruitmentStatus={recruitmentStatus}
+            onSafePreview={onSafePreview}
+          />
 
           <AffiliateEarlyValueBand />
         </>

@@ -105,8 +105,10 @@ function CatalogCard({
  */
 export function AffiliateEditorialHero({
   recruitmentStatus,
+  onSafePreview,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
   const galleryRef = useRef<HTMLDivElement | null>(null);
@@ -257,7 +259,10 @@ export function AffiliateEditorialHero({
             >
               <a
                 href="#inscricao"
-                onClick={() => trackAffiliateFunnel("affiliate_application_interest")}
+                onClick={() => {
+                  trackAffiliateFunnel("affiliate_application_interest");
+                  if (!isOpen) onSafePreview?.();
+                }}
               >
                 {isOpen ? "Quero ser afiliada Vonix" : "Conhecer a inscrição"}
                 <ArrowUpRight aria-hidden="true" className="size-4" />
@@ -303,6 +308,12 @@ export function AffiliateEditorialHero({
           <p className="order-6 mt-1.5 max-w-lg text-[11px] leading-[1.5] text-[#65515a] sm:text-xs lg:mt-3 lg:leading-[1.7]">
             A candidatura não garante aprovação, benefícios ou vínculo comercial. Não exige estoque
             nem compra de produtos para se candidatar.{" "}
+            {!isOpen && (
+              <span className="font-semibold text-[#714458]">
+                Ao clicar em “Conhecer a inscrição”, você abre apenas uma prévia segura, sem enviar
+                dados.
+              </span>
+            )}{" "}
             <a
               href="#candidatura-etapas"
               className="font-semibold text-[#754153] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
