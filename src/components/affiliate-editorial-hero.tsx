@@ -165,7 +165,7 @@ export function AffiliateEditorialHero({
     <section
       data-testid="vonix-affiliate-hero"
       aria-labelledby="vonix-affiliate-title"
-      className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-5 sm:py-8 lg:py-16"
+      className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-5 sm:py-8 lg:py-10"
     >
       <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-12 xl:gap-16">
         <div className="flex min-w-0 flex-col lg:py-5">
@@ -197,14 +197,14 @@ export function AffiliateEditorialHero({
                   Acervo oficial Vonix Hair
                 </span>
               </div>
-              <div className="max-w-[28rem]">
+              <div className="max-w-[28rem] lg:max-w-[34rem]">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[.13em] text-white/90">
                   Vonix Hair · Programa de afiliadas
                 </p>
                 <h1
                   id="vonix-affiliate-title"
                   style={{ color: "#fff" }}
-                  className="font-display text-[clamp(2.1rem,5vw,4.25rem)] leading-[1.05] tracking-tight text-white sm:text-[clamp(2.5rem,5vw,4.25rem)]"
+                  className="font-display text-[clamp(2.1rem,5vw,4.25rem)] leading-[1.05] tracking-tight text-white sm:text-[clamp(2.5rem,5vw,4.25rem)] lg:text-[clamp(2.75rem,3.7vw,3.6rem)]"
                 >
                   Seu jeito de <span className="italic text-[#ffdae8]">criar.</span>
                   <span className="mt-1 block">Nossa paixão por cabelos.</span>
@@ -218,7 +218,7 @@ export function AffiliateEditorialHero({
               </div>
             </div>
           </div>
-          <p className="order-4 mt-2 max-w-xl text-sm leading-[1.55] text-[#5e4650] sm:mt-3 sm:text-base lg:order-2 lg:mt-4 lg:text-lg lg:leading-[1.75]">
+          <p className="order-4 mt-2 max-w-xl text-sm leading-[1.55] text-[#5e4650] sm:mt-3 sm:text-base lg:order-2 lg:mt-2 lg:leading-[1.55]">
             Cria conteúdo sobre cabelos ou quer começar? Apresente seu Instagram à Vonix Hair. A
             candidatura é gratuita, sem compra obrigatória, e passa por análise individual.
           </p>
@@ -226,7 +226,7 @@ export function AffiliateEditorialHero({
             role="status"
             aria-live="polite"
             data-testid="affiliate-c94-intake-status"
-            className="order-2 mt-3 mb-0 inline-flex max-w-lg flex-wrap items-center gap-2 self-start rounded-lg border border-[#e5d2cf] bg-white px-3 py-2 text-xs font-semibold leading-5 text-[#523740] sm:px-4 sm:py-3 lg:order-3 lg:mt-5 lg:mb-2"
+            className="order-2 mt-3 mb-0 inline-flex max-w-lg flex-wrap items-center gap-2 self-start rounded-lg border border-[#e5d2cf] bg-white px-3 py-2 text-xs font-semibold leading-5 text-[#523740] sm:px-4 sm:py-3 lg:order-3 lg:mt-3 lg:mb-0"
           >
             <span
               aria-hidden="true"
@@ -249,7 +249,7 @@ export function AffiliateEditorialHero({
                     ? "Não foi possível consultar a disponibilidade das inscrições"
                     : "Conheça o formulário enquanto as inscrições estão em preparação"}
           </div>
-          <div className="order-3 mt-2 flex flex-wrap items-center gap-2 lg:order-4 lg:mt-5 lg:gap-3">
+          <div className="order-3 mt-2 flex flex-wrap items-center gap-2 lg:order-4 lg:mt-2 lg:gap-3">
             <Button
               asChild
               className="h-auto min-h-12 w-full justify-center whitespace-normal rounded-xl bg-[#713c51] px-6 py-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(88,41,60,.20)] transition-colors hover:bg-[#5e3145] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#713c51] sm:w-auto"

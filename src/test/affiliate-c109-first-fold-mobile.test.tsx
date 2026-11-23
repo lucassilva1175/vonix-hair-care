@@ -16,7 +16,7 @@ describe("C109 — primeira dobra compacta do portal, sem apagar termos", () => 
     const visual = within(hero).getByTestId("affiliate-c89-hair-editorial");
     const photo = within(hero).getByTestId("affiliate-c94-editorial-photo");
     const heading = within(hero).getByRole("heading", { level: 1 });
-    expect(hero).toHaveClass("py-5", "sm:py-8", "lg:py-16");
+    expect(hero).toHaveClass("py-5", "sm:py-8", "lg:py-10");
     expect(visual).toHaveClass("min-h-[16rem]", "sm:min-h-[19rem]", "lg:min-h-[25rem]");
     expect(visual).toHaveClass("rounded-[1.6rem]", "lg:rounded-[1.8rem]");
     expect(photo).toHaveAttribute("src", "/images/categorias/cachos.jpg");
