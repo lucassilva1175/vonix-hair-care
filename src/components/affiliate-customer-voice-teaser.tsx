@@ -91,8 +91,17 @@ export function AffiliateCustomerVoiceTeaser() {
           <span className="block text-[10px] font-bold uppercase tracking-[.08em] text-[#8a5367]">
             Avaliações reais de produtos
           </span>
-          <span className="mt-0.5 block font-display text-base leading-tight text-[#50313f]">
-            Veja o que clientes dizem sobre a Vonix
+          <span
+            data-testid="affiliate-c121-real-review-quote"
+            className="mt-0.5 block line-clamp-2 font-display text-[15px] leading-[1.25] text-[#50313f]"
+          >
+            “{selected.comment}”
+          </span>
+          <span
+            data-testid="affiliate-c121-review-credit"
+            className="mt-1 block truncate text-[10px] font-bold leading-snug text-[#74465b]"
+          >
+            {selected.author} · cliente
           </span>
           <span className="mt-1 block text-[11px] leading-snug text-[#745464]">
             {mobileProofExpanded
