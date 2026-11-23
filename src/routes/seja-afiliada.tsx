@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import { AffiliateShell } from "@/components/affiliate-shell";
 import { getAffiliateRecruitmentStatus } from "@/lib/affiliate-functions";
 import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
@@ -183,11 +183,29 @@ export function AffiliateApplicationPage() {
         <div className="bg-card px-5 pt-8 sm:pt-10">
           <details
             data-testid="vonix-c64-preparation-details"
-            className="mx-auto max-w-5xl rounded-2xl border border-[#e5d5d2] bg-[#fcf7f4]"
+            className="group mx-auto max-w-5xl overflow-hidden rounded-2xl border border-[#dec5cb] bg-[#fcf7f4] shadow-[0_8px_28px_rgba(90,45,61,.06)]"
           >
-            <summary className="min-h-14 cursor-pointer px-5 py-5 text-sm font-semibold text-[#603746] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#744452] sm:px-8">
-              O que preciso para me candidatar? Nome, contato, endereço e Instagram. TikTok é
-              opcional.
+            <summary
+              data-testid="affiliate-c119-clarity-summary"
+              className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-[#fff8f4] to-[#f7e8eb] px-4 py-3 text-[#603746] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#744452] sm:px-6 [&::-webkit-details-marker]:hidden"
+            >
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold uppercase tracking-[.09em] text-[#8a5869]">
+                  Quem pode apresentar o perfil?
+                </span>
+                <span className="mt-0.5 block text-sm font-bold leading-snug">
+                  Não precisa ter portfólio para se candidatar
+                </span>
+                <span className="mt-1 block text-[11px] font-medium leading-snug text-[#725662]">
+                  18 anos ou mais · Instagram · TikTok opcional
+                </span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-[#dec5cb] bg-white text-[#7c465b]"
+              >
+                <ChevronDown className="size-4 transition-transform duration-200 motion-reduce:transition-none group-open:rotate-180" />
+              </span>
             </summary>
             <div className="border-t border-[#e5d5d2] px-3 pt-5 sm:px-6">
               <AffiliateApplicationPrep />
