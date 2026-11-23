@@ -6,6 +6,7 @@ import { AffiliateShell } from "@/components/affiliate-shell";
 import { getAffiliateRecruitmentStatus } from "@/lib/affiliate-functions";
 import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
 import { AffiliateApplicationPrep } from "@/components/affiliate-application-prep";
+import { AffiliateApplicationEditorialArt } from "@/components/affiliate-application-editorial-art";
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
 import { AffiliateCreatorSpotlight } from "@/components/affiliate-creator-spotlight";
@@ -204,53 +205,60 @@ export function AffiliateApplicationPage() {
           data-email-provider={backendDiagnostics.emailConfigured ? "configured" : "unavailable"}
           className="mx-auto max-w-5xl scroll-mt-36 px-5 py-11 sm:py-18"
         >
-          <div className="mb-10 text-center">
-            <p className="text-xs font-bold uppercase tracking-normal text-muted-foreground">
-              {recruitment === "open"
-                ? "Inscrições abertas"
-                : recruitment === "limited"
-                  ? "Programa aberto · acesso temporariamente limitado"
-                  : recruitment === "unavailable"
-                    ? "Disponibilidade não confirmada"
-                    : "Programa de afiliados"}
-            </p>
-            <h2 className="mt-3 font-display text-4xl sm:text-5xl">
-              Sua inscrição, de um jeito simples.
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Apresente seu nome, contato, endereço e perfil do Instagram com número de seguidores.
-              O TikTok é opcional. A inscrição é gratuita, depende de disponibilidade e não garante
-              aprovação. Após um envio confirmado, guarde o código privado exibido na tela.
-            </p>
-            <div
-              data-testid="affiliate-c112-form-essentials"
-              aria-label="Requisitos principais da candidatura"
-              className="mx-auto mt-4 flex max-w-3xl flex-wrap items-center justify-center gap-2"
-            >
-              {[
-                "18 anos ou mais",
-                "E-mail válido obrigatório",
-                "Instagram com seguidores",
-                "TikTok opcional",
-              ].map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full border border-[#e0c8ce] bg-[#fcf6f3] px-3 py-1.5 text-xs font-semibold text-[#76465a]"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-            <p className="mt-4 text-sm text-[#765665]">
-              Já enviou uma candidatura?{" "}
-              <Link
-                to="/consultar-candidatura"
-                data-testid="affiliate-c112-form-status"
-                className="inline-flex min-h-11 items-center font-bold text-[#744256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+          <div
+            data-testid="affiliate-c115-form-intro"
+            className="mb-7 grid min-w-0 items-stretch gap-4 overflow-hidden rounded-[1.6rem] border border-[#e3ccce] bg-gradient-to-br from-[#fffaf7] via-[#fff4f2] to-[#f7e8e7] p-5 shadow-[0_20px_54px_rgba(78,42,56,.08)] sm:p-7 lg:mb-9 lg:grid-cols-[minmax(0,1.25fr)_minmax(15rem,.75fr)] lg:gap-8"
+          >
+            <div className="min-w-0 text-left">
+              <p className="inline-flex min-h-8 items-center rounded-full border border-[#e6c8d1] bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[.09em] text-[#86566a]">
+                {recruitment === "open"
+                  ? "Inscrições abertas"
+                  : recruitment === "limited"
+                    ? "Programa aberto · acesso temporariamente limitado"
+                    : recruitment === "unavailable"
+                      ? "Disponibilidade não confirmada"
+                      : "Programa de afiliados"}
+              </p>
+              <h2 className="mt-3 max-w-2xl font-display text-[clamp(2rem,5vw,3rem)] leading-[1.12] tracking-tight text-[#4c3040]">
+                Sua inscrição, de um jeito simples.
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-[1.7] text-[#725867] sm:text-base">
+                Apresente seu nome, contato, endereço e perfil do Instagram com número de
+                seguidores. O TikTok é opcional. A inscrição é gratuita, depende de disponibilidade
+                e não garante aprovação. Após um envio confirmado, guarde o código privado exibido
+                na tela.
+              </p>
+              <div
+                data-testid="affiliate-c112-form-essentials"
+                aria-label="Requisitos principais da candidatura"
+                className="mt-4 flex max-w-3xl flex-wrap items-center gap-2"
               >
-                Consultar meu status pelo código
-              </Link>
-            </p>
+                {[
+                  "18 anos ou mais",
+                  "E-mail válido obrigatório",
+                  "Instagram com seguidores",
+                  "TikTok opcional",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex min-h-8 items-center rounded-full border border-[#e0c8ce] bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-[#76465a] sm:text-xs"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-5 flex flex-wrap items-center gap-x-2 rounded-xl border border-[#e3c9cf] bg-white/95 px-3 py-2 text-sm text-[#765665] sm:px-4">
+                Já enviou uma candidatura?{" "}
+                <Link
+                  to="/consultar-candidatura"
+                  data-testid="affiliate-c112-form-status"
+                  className="inline-flex min-h-11 items-center font-bold text-[#744256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                >
+                  Consultar meu status pelo código
+                </Link>
+              </p>
+            </div>
+            <AffiliateApplicationEditorialArt />
           </div>
 
           {!showWizard ? (
