@@ -117,7 +117,8 @@ export const registerLead = createServerFn({ method: "POST" })
 
 const whatsappLeadSchema = z.object({
   nome: z.string().trim().min(2).max(80),
-  whatsapp: z.string().trim().max(30),
+  /** O formulário só pede o nome: o número da pessoa chega sozinho quando ela toca no botão e manda a mensagem. */
+  whatsapp: z.string().trim().max(30).optional(),
   perfil: z.enum(["profissional", "casa"]),
   produto: z.enum(["fio-de-luz", "botox", "sos", "kits", "nao-sei"]),
   quando: z.enum(["hoje", "semana", "olhando"]),
@@ -134,13 +135,13 @@ export const registerWhatsappLead = createServerFn({ method: "POST" })
   .inputValidator(whatsappLeadSchema)
   .handler(async ({ data }) => {
     if (data.empresa) return { ok: false as const, saved: false };
-    const digits = data.whatsapp.replace(/\D/g, "");
-    if (digits.length < 10 || digits.length > 13) return { ok: false as const, saved: false };
+    const digits = (data.whatsapp ?? "").replace(/\D/g, "");
+    if (digits && (digits.length < 10 || digits.length > 13)) return { ok: false as const, saved: false };
     const qualificado = data.quando === "hoje" || data.quando === "semana";
     const lead = {
       origem: "formulario-whatsapp",
       nome: data.nome,
-      whatsapp: digits,
+      ...(digits ? { whatsapp: digits } : {}),
       perfil: data.perfil,
       produto: data.produto,
       quando: data.quando,
