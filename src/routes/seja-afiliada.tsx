@@ -306,7 +306,7 @@ export function AffiliateApplicationPage() {
               </h3>
               <p className="mt-4 leading-relaxed text-muted-foreground">
                 {recruitment === "loading"
-                  ? "Estamos verificando a disponibilidade do cadastro."
+                  ? "Estamos verificando a disponibilidade do cadastro. Enquanto isso, você pode explorar a prévia, que nunca envia nem armazena candidaturas."
                   : recruitment === "limited"
                     ? "O programa de afiliadas continua aberto, mas esta conexão não pode enviar novas candidaturas agora. Aguarde alguns minutos e tente novamente; a prévia não registra inscrições."
                     : recruitment === "unavailable"
@@ -323,18 +323,17 @@ export function AffiliateApplicationPage() {
                   Verificar novamente
                 </Button>
               )}
-              {recruitment !== "loading" && (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setConfirmPreviewExit(false);
-                    setPreview(true);
-                  }}
-                  className="h-auto whitespace-normal mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-primary px-7 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-                >
-                  Visualizar formulário (prévia) <ArrowRight className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                type="button"
+                data-testid="affiliate-c122-safe-preview"
+                onClick={() => {
+                  setConfirmPreviewExit(false);
+                  setPreview(true);
+                }}
+                className="h-auto whitespace-normal mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-primary px-7 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                Visualizar formulário (prévia) <ArrowRight className="h-4 w-4" />
+              </Button>
               <div className="mt-5">
                 <Link
                   to="/"
