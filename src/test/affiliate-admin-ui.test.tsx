@@ -916,11 +916,15 @@ describe("Vonix affiliate private panel", () => {
     try {
       render(<Page />);
       await waitFor(() => expect(server.getAffiliateApplications).toHaveBeenCalledTimes(1));
+      // Wait until the confidential view is actually mounted behind its privacy
+      // shield. Merely observing the network mock call can precede the effect
+      // that installs the visibility listener on a busy CI runner.
+      expect(await screen.findByText("Protegendo dados das candidatas")).toBeInTheDocument();
       expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
       expect(screen.queryByText("secret-candidate@example.invalid")).not.toBeInTheDocument();
       visibility = "visible";
       await act(async () => document.dispatchEvent(new Event("visibilitychange")));
-      expect(server.getAffiliateAdminSession).toHaveBeenCalledTimes(2);
+      await waitFor(() => expect(server.getAffiliateAdminSession).toHaveBeenCalledTimes(2));
       expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
     } finally {
       spy.mockRestore();

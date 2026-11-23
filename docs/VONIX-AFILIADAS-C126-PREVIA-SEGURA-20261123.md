@@ -13,7 +13,8 @@
 - A prévia é sempre simulação e **não realiza POST**, mesmo quando o status do recrutamento muda; usa controle existente de rascunho e descarte. Texto auxiliar esclarece explicitamente que a prévia não envia dados.
 - Mantidos eventos agregados anônimos de interesse: sem PII, sem número de inscrição, sem Meta Lead falso. Sem alegações de testemunhos de afiliadas ou renda garantida.
 - Reparo de teste C117 verifica a ordem real das seções por identificador do componente, não pela igualdade textual exata do JSX com props. Assertions do DOM e de prevenção de POST preservadas.
-- Arquivos alterados (8): `affiliate-application-bridge.tsx`, `affiliate-editorial-hero.tsx`, `affiliate-landing.tsx`, `affiliate-mobile-apply-bar.tsx`, `seja-afiliada.tsx`, `affiliate-c76-mobile-apply.test.tsx`, `affiliate-c126-safe-preview-shortcuts.test.tsx`, `affiliate-c117-application-first.test.tsx`.
+- Arquivos do fluxo C126 (8): `affiliate-application-bridge.tsx`, `affiliate-editorial-hero.tsx`, `affiliate-landing.tsx`, `affiliate-mobile-apply-bar.tsx`, `seja-afiliada.tsx`, `affiliate-c76-mobile-apply.test.tsx`, `affiliate-c126-safe-preview-shortcuts.test.tsx`, `affiliate-c117-application-first.test.tsx`.
+- Estabilização posterior de QA: `src/test/affiliate-admin-ui.test.tsx`, teste de aba inicialmente oculta. Aguarda o escudo de privacidade de dados aparecer antes de acionar o evento de reexibição; espera a confirmação assíncrona de sessão, sem afrouxar o requisito de privacidade. 53/53 testes direcionados de painel + C126 passaram. A CI do commit apenas documental havia mostrado uma falha de corrida nessa asserção, apesar do CI de código anterior integralmente verde.
 
 ## Evidências e limites
 - Testes focados novos + C125 + mobile: **13/13 PASS**; C117 + novos: **6/6 PASS**.
