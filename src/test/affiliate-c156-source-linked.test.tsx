@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const server = vi.hoisted(() => ({ status: vi.fn(), submit: vi.fn() }));
+const analytics = vi.hoisted(() => ({ track: vi.fn() }));
+vi.mock("@/lib/analytics", () => ({ track: analytics.track }));
 vi.mock("@/lib/affiliate-functions", () => ({
   getAffiliateRecruitmentStatus: server.status,
   submitAffiliateApplication: server.submit,
@@ -37,6 +39,7 @@ const forbidden =
 beforeEach(() => {
   server.status.mockReset().mockResolvedValue({ open: false });
   server.submit.mockReset();
+  analytics.track.mockReset();
 });
 afterEach(() => {
   cleanup();
@@ -62,6 +65,14 @@ describe("C156 public source-linked media release", () => {
       within(proof).getByRole("link", { name: /Ver avaliações na loja oficial/ }),
     ).toHaveAttribute("href", "/produto/botox-vonix");
     expect(proof).toHaveTextContent("não depoimentos de afiliadas");
+    expect(within(proof).getByTestId("affiliate-c157-review-count")).toHaveTextContent(
+      "4 avaliações publicadas",
+    );
+    const reviewLink = within(proof).getByRole("link", { name: /Ver avaliações na loja oficial/ });
+    expect(reviewLink).toHaveAttribute("target", "_blank");
+    expect(reviewLink).toHaveAttribute("rel", "noopener noreferrer");
+    fireEvent.click(reviewLink);
+    expect(analytics.track).toHaveBeenCalledExactlyOnceWith("affiliate_review_source_open");
     for (const id of [
       "inscricao",
       "avaliacoes-rapidas",
@@ -75,6 +86,19 @@ describe("C156 public source-linked media release", () => {
     const videos = screen.getByTestId("affiliate-c156-source-videos");
     expect(within(videos).getAllByRole("link")).toHaveLength(6);
     expect(videos.querySelectorAll("img")).toHaveLength(6);
+    expect(within(videos).getByTestId("affiliate-c157-video-count")).toHaveTextContent(
+      "6 linhas · 15 vínculos",
+    );
+    expect(videos).toHaveTextContent("6 vídeos associados");
+    expect(videos).toHaveTextContent("1 vídeo associado");
+    const videoLinks = within(videos).getAllByRole("link");
+    for (const link of videoLinks) {
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    fireEvent.click(videoLinks[0]!);
+    expect(analytics.track).toHaveBeenCalledWith("affiliate_catalog_source_open");
+    expect(analytics.track.mock.calls.every((call) => call.length === 1)).toBe(true);
     for (const image of videos.querySelectorAll("img"))
       expect(image.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+-480\.webp$/);
     for (const link of within(videos).getAllByRole("link"))

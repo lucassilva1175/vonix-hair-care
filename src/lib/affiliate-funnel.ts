@@ -9,7 +9,10 @@ export type AffiliateFunnelEvent =
   | "affiliate_application_interest"
   | "affiliate_form_visible"
   | "affiliate_form_started"
-  | "affiliate_form_invalid";
+  | "affiliate_form_invalid"
+  | "affiliate_application_confirmed"
+  | "affiliate_review_source_open"
+  | "affiliate_catalog_source_open";
 
 export function trackAffiliateFunnel(event: AffiliateFunnelEvent): void {
   track(event);

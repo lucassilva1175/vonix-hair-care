@@ -714,6 +714,7 @@ export function AffiliateSimpleForm({
           return;
         }
         discardUnconfirmedCode();
+        trackAffiliateFunnel("affiliate_application_confirmed");
         track("sign_up", { method: "affiliate_application" });
         setTrackingCode(receipt);
         setSent(true);
