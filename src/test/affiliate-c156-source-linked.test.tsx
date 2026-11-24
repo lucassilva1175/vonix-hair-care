@@ -74,6 +74,9 @@ describe("C156 public source-linked media release", () => {
     expect(gate.open).toBe(true);
     const videos = screen.getByTestId("affiliate-c156-source-videos");
     expect(within(videos).getAllByRole("link")).toHaveLength(6);
+    expect(videos.querySelectorAll("img")).toHaveLength(6);
+    for (const image of videos.querySelectorAll("img"))
+      expect(image.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+-480\.webp$/);
     for (const link of within(videos).getAllByRole("link"))
       expect(link.getAttribute("href")).toMatch(/^\/produto\/[a-z0-9-]+$/);
     expect(container.innerHTML).not.toMatch(forbidden);

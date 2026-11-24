@@ -56,12 +56,6 @@ const previewProducts = [products[2], products[0], products[1]] as const;
  * Names and media paths are sourced from the actual reviews dataset.
  * This is not affiliate UGC, purchase verification or creator income proof.
  */
-const optimizedReviewThumbnails: Record<string, string> = {
-  "/depoimentos/depoimento-1-poster.jpg": "/images/afiliadas/review-depoimento-1-112.jpg",
-  "/depoimentos/depoimento-2-poster.jpg": "/images/afiliadas/review-depoimento-2-112.jpg",
-  "/depoimentos/depoimento-4.jpg": "/images/afiliadas/review-depoimento-4-112.jpg",
-};
-
 const authenticReviewPosters = ["Mariana Andrade", "Ayla Muniz", "Ana Paula"]
   .flatMap((author) =>
     reviews
@@ -85,7 +79,7 @@ const authenticReviewPosters = ["Mariana Andrade", "Ayla Muniz", "Ana Paula"]
   )
   .map((review) => ({
     ...review,
-    thumb: optimizedReviewThumbnails[review.src] ?? review.src,
+    thumb: review.src,
   }));
 
 function CatalogCard({

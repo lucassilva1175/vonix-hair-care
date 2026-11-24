@@ -76,9 +76,23 @@ export function AffiliateOfficialEvidenceLinks({
               <a
                 key={slug}
                 href={"/produto/" + slug}
-                className="flex min-h-12 items-center justify-between gap-2 rounded-xl border border-[#e5d2d4] px-4 py-3 text-sm font-bold text-[#724155] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="flex min-h-24 items-center justify-between gap-3 rounded-xl border border-[#e5d2d4] p-3 text-sm font-bold text-[#724155] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                <span>{name}</span>
+                <img
+                  src={"/images/products/" + slug + "-480.webp"}
+                  alt=""
+                  width={80}
+                  height={80}
+                  loading="lazy"
+                  decoding="async"
+                  className="size-20 shrink-0 rounded-lg bg-[#fbf5f2] object-contain"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block">{name}</span>
+                  <span className="mt-1 block text-xs font-medium text-[#795e69]">
+                    Ver demonstrações na loja
+                  </span>
+                </span>
                 <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
               </a>
             ))}

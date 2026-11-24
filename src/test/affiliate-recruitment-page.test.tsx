@@ -299,12 +299,13 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
         expect(img.closest('[aria-hidden="true"]')).not.toBeNull();
         return;
       }
-      // C128: compressed crops are derived only from genuine, already-published
+      // C128: the explicit embedded QA variant uses genuine, already-published
       // CUSTOMER product-review media; never treat them as creator testimonials.
       if (img.closest('[data-testid="affiliate-c128-authentic-review-mosaic"]')) {
-        expect(src).toMatch(/^\/images\/afiliadas\/review-depoimento-(?:1|2|4)-112\.jpg$/);
+        expect(src).toMatch(/^\/depoimentos\/depoimento-(?:1|2|4)(?:-poster)?\.jpg$/);
         expect(alt).toBe("");
         const original = img.getAttribute("data-original-source");
+        expect(src).toBe(original);
         expect(original).toMatch(/^\/depoimentos\/depoimento-(?:1|2|4)(?:-poster)?\.jpg$/);
         const source = storeReviews.find(
           (item) =>
