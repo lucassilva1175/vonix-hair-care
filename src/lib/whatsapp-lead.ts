@@ -51,3 +51,8 @@ export function mensagemWhatsapp(nome: string, r: Respostas) {
 
 export const linkWhatsapp = (nome: string, r: Respostas) =>
   `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensagemWhatsapp(nome, r))}`;
+
+/** Formulário de duas opções: a pessoa só escolhe falar com o vendedor ou ficar olhando. */
+export const MENSAGEM_VENDEDOR = "Olá! Vim pelo anúncio da Vonix Hair e quero falar com um vendedor.";
+
+export const linkVendedor = () => `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(MENSAGEM_VENDEDOR)}`;

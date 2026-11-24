@@ -30,3 +30,13 @@ describe("formulário Falar com a Vonix", () => {
     }
   });
 });
+
+import { MENSAGEM_VENDEDOR, linkVendedor } from "@/lib/whatsapp-lead";
+
+describe("formulário de duas opções", () => {
+  it("o botão do vendedor abre o WhatsApp da Vonix com a mensagem pronta", () => {
+    const url = linkVendedor();
+    expect(url.startsWith("https://wa.me/5531971185662?text=")).toBe(true);
+    expect(decodeURIComponent(url.split("text=")[1] ?? "")).toBe(MENSAGEM_VENDEDOR);
+  });
+});
