@@ -152,6 +152,9 @@ describe("Vonix short single-page application form", () => {
       }),
     });
     expect(await screen.findByRole("status")).toHaveTextContent("Inscrição recebida!");
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toEqual([["affiliate_application_confirmed"]]);
     expect(confirmedSignUpCalls()).toEqual([
       [
         "sign_up",
@@ -440,6 +443,9 @@ describe("Vonix short single-page application form", () => {
       }),
     });
     expect(await screen.findByRole("status")).toHaveTextContent("Inscrição recebida!");
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toEqual([["affiliate_application_confirmed"]]);
     expect(confirmedSignUpCalls()).toEqual([
       [
         "sign_up",
@@ -460,6 +466,9 @@ describe("Vonix short single-page application form", () => {
     );
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
   });
 
   it("rejects an invalid-length receipt without sending conversion events", async () => {
@@ -469,6 +478,9 @@ describe("Vonix short single-page application form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível confirmar");
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
   });
 
@@ -501,6 +513,9 @@ describe("Vonix short single-page application form", () => {
     expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(pendingCode);
     expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível confirmar o envio");
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     const confirmed = await screen.findByLabelText("Código privado de acompanhamento");
     expect(confirmed).toHaveValue(pendingCode);
@@ -508,6 +523,9 @@ describe("Vonix short single-page application form", () => {
     expect(server.submit.mock.calls[0]![0].data.trackingCode).toBe(pendingCode);
     expect(server.submit.mock.calls[1]![0].data.trackingCode).toBe(pendingCode);
     expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toEqual([["affiliate_application_confirmed"]]);
     expect(confirmedSignUpCalls()).toEqual([
       [
         "sign_up",
@@ -551,6 +569,9 @@ describe("Vonix short single-page application form", () => {
     expect(link.getAttribute("href")).not.toContain(codeBefore);
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
   });
 
   it("does not report a Meta Lead if the server returns another private code", async () => {
@@ -564,6 +585,9 @@ describe("Vonix short single-page application form", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível confirmar o recebimento");
     expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
     fireEvent.click(
       screen.getByRole("button", { name: "Descartar código e iniciar nova tentativa" }),
     );
@@ -580,6 +604,9 @@ describe("Vonix short single-page application form", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("apenas uma prévia"));
     expect(server.submit).not.toHaveBeenCalled();
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
   });
 
   it("never reports a lead when the server rejects a candidature", async () => {
@@ -589,6 +616,9 @@ describe("Vonix short single-page application form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Inscrições indisponíveis.");
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
   });
 
   it("rejects a missing address number before any request", () => {
@@ -598,6 +628,9 @@ describe("Vonix short single-page application form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
     expect(server.submit).not.toHaveBeenCalled();
     expect(confirmedSignUpCalls()).toHaveLength(0);
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
+    ).toHaveLength(0);
   });
 
   it("accepts shared official Instagram and TikTok profile links with tracking query parameters", async () => {

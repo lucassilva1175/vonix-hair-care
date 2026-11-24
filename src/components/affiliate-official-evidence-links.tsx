@@ -1,16 +1,24 @@
 import { ArrowUpRight, Film, MessageSquareText } from "lucide-react";
 import { getProduct } from "@/lib/store";
 import publishedMedia from "@/data/provas-em-video.json";
+import reviews from "@/data/reviews.json";
+import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 
 /** Public release fallback: link to first-party source pages, do not republish
  * customer names, quotes, thumbnails, or video files until rights are documented. */
 const videoProducts = [
-  "kit-banana-e-mel",
-  "botox-vonix",
-  "progressiva-fio-de-luz",
-  "kit-desmaia",
-  "kit-monovonix",
-  "kit-cachos",
+  { slug: "kit-banana-e-mel", idea: "Apresente uma rotina de cuidados com shampoo e máscara." },
+  {
+    slug: "botox-vonix",
+    idea: "Explore a embalagem e explique como consultar as instruções oficiais.",
+  },
+  {
+    slug: "progressiva-fio-de-luz",
+    idea: "Mostre a linha profissional e incentive a leitura das orientações de uso.",
+  },
+  { slug: "kit-desmaia", idea: "Crie um roteiro sobre as etapas de uma rotina capilar." },
+  { slug: "kit-monovonix", idea: "Mostre os produtos da linha e suas apresentações." },
+  { slug: "kit-cachos", idea: "Inspire um conteúdo sobre a rotina de cuidados com cachos." },
 ] as const;
 
 export function AffiliateOfficialEvidenceLinks({
@@ -29,13 +37,13 @@ export function AffiliateOfficialEvidenceLinks({
           ? "catalogo-em-video"
           : undefined;
   const products = videos
-    ? videoProducts.flatMap((slug) => {
+    ? videoProducts.flatMap(({ slug, idea }) => {
         const product = getProduct(slug);
-        return product && publishedMedia.some((media) => media.slugs.includes(slug))
-          ? [{ slug, name: product.name }]
-          : [];
+        const count = publishedMedia.filter((media) => media.slugs.includes(slug)).length;
+        return product && count > 0 ? [{ slug, name: product.name, count, idea }] : [];
       })
     : [];
+  const reviewCount = reviews.filter((review) => review.slug === "botox-vonix").length;
   return (
     <section
       id={id}
@@ -71,39 +79,82 @@ export function AffiliateOfficialEvidenceLinks({
           </div>
         </div>
         {videos ? (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map(({ slug, name }) => (
-              <a
-                key={slug}
-                href={"/produto/" + slug}
-                className="flex min-h-24 items-center justify-between gap-3 rounded-xl border border-[#e5d2d4] p-3 text-sm font-bold text-[#724155] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                <img
-                  src={"/images/products/" + slug + "-480.webp"}
-                  alt=""
-                  width={80}
-                  height={80}
-                  loading="lazy"
-                  decoding="async"
-                  className="size-20 shrink-0 rounded-lg bg-[#fbf5f2] object-contain"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block">{name}</span>
-                  <span className="mt-1 block text-xs font-medium text-[#795e69]">
-                    Ver demonstrações na loja
+          <>
+            <p
+              className="mt-4 text-xs font-semibold text-[#795e69]"
+              data-testid="affiliate-c157-video-count"
+            >
+              {products.length} linhas ·{" "}
+              {products.reduce((total, product) => total + product.count, 0)} vínculos de vídeos no
+              acervo oficial. Abra a loja em outra aba para manter sua candidatura aqui.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map(({ slug, name, count, idea }) => (
+                <a
+                  key={slug}
+                  href={"/produto/" + slug}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
+                  className="flex min-h-24 items-center justify-between gap-3 rounded-xl border border-[#e5d2d4] p-3 text-sm font-bold text-[#724155] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <img
+                    src={"/images/products/" + slug + "-480.webp"}
+                    alt=""
+                    width={80}
+                    height={80}
+                    loading="lazy"
+                    decoding="async"
+                    className="size-20 shrink-0 rounded-lg bg-[#fbf5f2] object-contain"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block">{name}</span>
+                    <span className="mt-1 block text-[11px] font-semibold text-[#89586a]">
+                      {count} {count === 1 ? "vídeo associado" : "vídeos associados"}
+                    </span>
+                    <span className="mt-1 block text-xs font-normal leading-relaxed text-[#795e69]">
+                      {idea}
+                    </span>
+                    <span className="mt-2 block text-xs font-bold text-[#724155]">
+                      Ver demonstrações na loja (nova aba)
+                    </span>
                   </span>
-                </span>
-                <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
-              </a>
-            ))}
-          </div>
+                  <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+                </a>
+              ))}
+            </div>
+          </>
         ) : (
-          <a
-            href="/produto/botox-vonix"
-            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#784254] px-5 py-2 text-sm font-bold text-white hover:bg-[#603746] focus-visible:outline-2 focus-visible:outline-offset-4"
-          >
-            Ver avaliações na loja oficial <ArrowUpRight aria-hidden="true" className="size-4" />
-          </a>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span
+              className="inline-flex min-h-11 items-center gap-3 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] px-3 py-2 text-xs font-bold text-[#724155]"
+              data-testid="affiliate-c157-review-count"
+            >
+              <img
+                src="/images/products/botox-vonix-480.webp"
+                alt=""
+                width={44}
+                height={44}
+                loading="lazy"
+                decoding="async"
+                className="size-11 shrink-0 rounded-lg object-contain"
+              />
+              <span>
+                {reviewCount} {reviewCount === 1 ? "avaliação publicada" : "avaliações publicadas"}{" "}
+                no catálogo
+              </span>
+            </span>
+            <a
+              href="/produto/botox-vonix"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackAffiliateFunnel("affiliate_review_source_open")}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#784254] px-5 py-2 text-sm font-bold text-white hover:bg-[#603746] focus-visible:outline-2 focus-visible:outline-offset-4"
+            >
+              Ver avaliações na loja oficial (nova aba){" "}
+              <ArrowUpRight aria-hidden="true" className="size-4" />
+            </a>
+          </div>
         )}
       </div>
     </section>
