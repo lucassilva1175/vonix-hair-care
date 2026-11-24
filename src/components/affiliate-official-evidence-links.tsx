@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ArrowUpRight, Film, Images, MessageSquareText } from "lucide-react";
+import { ArrowUpRight, Film, Images, MessageSquareText, Star } from "lucide-react";
 import { getProduct, OUT_OF_STOCK } from "@/lib/store";
 import publishedMedia from "@/data/provas-em-video.json";
 import reviews from "@/data/reviews.json";
 import packagingImages from "@/data/sacolinhas.json";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
+import { summarizeAffiliateProductReviews } from "@/lib/affiliate-review-summary";
 
 /** Public release fallback: link to first-party source pages, do not republish
  * customer names, quotes, thumbnails, or video files until rights are documented. */
@@ -90,7 +91,12 @@ export function AffiliateOfficialEvidenceLinks({
   const products = videos ? catalogProducts(videoProducts) : [];
   const additionalProducts = videos ? catalogProducts(additionalVideoProducts) : [];
   const visibleProducts = expanded ? [...products, ...additionalProducts] : products;
-  const reviewCount = reviews.filter((review) => review.slug === "botox-vonix").length;
+  const summary = summarizeAffiliateProductReviews(reviews, "botox-vonix");
+  const reviewCount = summary.count;
+  const ratingLabel = summary.average?.toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   return (
     <section
       id={id}
@@ -234,7 +240,7 @@ export function AffiliateOfficialEvidenceLinks({
         ) : (
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <span
-              className="inline-flex min-h-11 items-center gap-3 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] px-3 py-2 text-xs font-bold text-[#724155]"
+              className="inline-flex min-h-11 flex-wrap items-center gap-3 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] px-3 py-2 text-xs font-bold text-[#724155]"
               data-testid="affiliate-c157-review-count"
             >
               <img
@@ -246,9 +252,23 @@ export function AffiliateOfficialEvidenceLinks({
                 decoding="async"
                 className="size-11 shrink-0 rounded-lg object-contain"
               />
-              <span>
-                {reviewCount} {reviewCount === 1 ? "avaliação publicada" : "avaliações publicadas"}{" "}
-                no catálogo
+              <span className="min-w-0">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide">
+                  Botox Vonix · avaliações do produto
+                </span>
+                {ratingLabel !== undefined && (
+                  <span
+                    data-testid="affiliate-c160-rating"
+                    className="mt-1 flex items-center gap-1.5 text-base font-bold"
+                  >
+                    <Star aria-hidden="true" className="size-4 fill-[#b48142] text-[#b48142]" />
+                    <span>{ratingLabel} de 5</span>
+                  </span>
+                )}
+                <span className="mt-0.5 block">
+                  {reviewCount}{" "}
+                  {reviewCount === 1 ? "avaliação publicada" : "avaliações publicadas"} no catálogo
+                </span>
               </span>
             </span>
             <a
@@ -261,6 +281,36 @@ export function AffiliateOfficialEvidenceLinks({
               Ver avaliações na loja oficial (nova aba){" "}
               <ArrowUpRight aria-hidden="true" className="size-4" />
             </a>
+            {!compact && summary.count > 0 && (
+              <div
+                data-testid="affiliate-c160-rating-distribution"
+                className="w-full rounded-xl border border-[#e5d2d4] bg-[#fffaf7] p-3 sm:p-4"
+              >
+                <p className="text-xs font-bold text-[#724155]">
+                  Distribuição das notas do catálogo
+                </p>
+                <div className="mt-2 grid gap-1.5">
+                  {summary.distribution.map(({ stars, count }) => (
+                    <div key={stars} className="flex items-center gap-2 text-xs text-[#755d66]">
+                      <span className="w-16 shrink-0">
+                        {stars} {stars === 1 ? "estrela" : "estrelas"}
+                      </span>
+                      <progress
+                        aria-label={stars + (stars === 1 ? " estrela" : " estrelas")}
+                        value={count}
+                        max={summary.count}
+                        className="h-2 min-w-0 flex-1 accent-[#784254]"
+                      />
+                      <span className="w-5 text-right tabular-nums">{count}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-[#795e69]">
+                  Resumo das avaliações de Botox Vonix incluídas no catálogo editorial. A página da
+                  loja pode ter avaliações adicionais. Não é uma avaliação do programa de afiliadas.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -159,7 +159,7 @@ const questions = [
   {
     question: "E-mail é obrigatório para se candidatar?",
     answer:
-      "Sim. Para enviar uma nova candidatura, informe nome completo, e-mail válido, telefone, endereço e Instagram com seguidores. O TikTok continua opcional. O e-mail serve para contato da equipe; seu código privado de acompanhamento não será enviado por e-mail e deve ser guardado ao finalizar.",
+      "Sim. Para enviar uma nova candidatura, informe nome completo, e-mail válido, telefone, endereço e Instagram com seguidores. O TikTok continua opcional. O e-mail serve para contato da equipe; seu código privado de acompanhamento não será enviado por e-mail e deve ser guardado ao finalizar. Se o envio ficar sem confirmação, guarde o código da tentativa e consulte a candidatura antes de reenviar os mesmos dados.",
   },
   {
     question: "Já posso enviar meu cadastro?",
