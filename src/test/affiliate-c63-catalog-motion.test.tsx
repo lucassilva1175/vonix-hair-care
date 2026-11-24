@@ -13,7 +13,7 @@ const expected = [
   { id: "botox-1", slug: "botox-vonix" },
   { id: "fio-1", slug: "progressiva-fio-de-luz" },
   { id: "desmaia", slug: "kit-desmaia" },
-  { id: "plex", slug: "plex-vonix" },
+  { id: "ig-07", slug: "kit-monovonix" },
   { id: "ig-05", slug: "kit-cachos" },
 ] as const;
 
@@ -59,7 +59,7 @@ describe("C63 authentic catalogue movie showcase", () => {
 
   it.each([
     [true, "Quero me candidatar"],
-    [false, "Conhecer a inscrição"],
+    [false, "Abrir prévia segura"],
   ] as const)(
     "keeps conversion action conditional on real program availability %s",
     (isOpen, text) => {

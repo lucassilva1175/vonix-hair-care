@@ -32,7 +32,7 @@ describe("C85 Vonix: imagens editoriais capilares existentes, sem prova social f
     }
     expect(section).toHaveTextContent("não representam participantes");
     expect(section).toHaveTextContent("resultados de parcerias");
-    expect(screen.getByRole("link", { name: "Apresentar meu perfil" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Abrir prévia segura" })).toHaveAttribute(
       "href",
       "#inscricao",
     );
@@ -107,8 +107,6 @@ describe("C85 Vonix: imagens editoriais capilares existentes, sem prova social f
     expect(content).not.toMatch(
       /15% no site|21% TikTok|R\$ ?30 de desconto|amostras grátis garantidas|renda garantida/i,
     );
-    expect(
-      screen.getAllByRole("link", { name: /Apresentar meu perfil|Conhecer a candidatura/i }).length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /Abrir prévia segura/i }).length).toBeGreaterThan(0);
   });
 });

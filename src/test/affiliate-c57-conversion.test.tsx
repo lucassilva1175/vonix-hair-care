@@ -31,7 +31,7 @@ describe("C57 premium Vonix affiliate conversion and brand accuracy", () => {
   it("does not advertise a live enrollment CTA when recruitment is disabled", () => {
     render(<AffiliateSellingFlow recruitmentOpen={false} />);
     const flow = screen.getByTestId("vonix-c57-selling-flow");
-    expect(within(flow).getByRole("link", { name: /Conhecer a inscrição/ })).toHaveAttribute(
+    expect(within(flow).getByRole("link", { name: /Abrir prévia segura/ })).toHaveAttribute(
       "href",
       "#inscricao",
     );

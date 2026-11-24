@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AffiliateMobileApplyBar } from "@/components/affiliate-mobile-apply-bar";
 
@@ -47,13 +47,33 @@ afterEach(() => {
 });
 
 describe("C76: CTA mobile do programa sem envio nem sobreposição", () => {
+  it("C126 abre a prévia apenas se não estiver OPEN, sem trocar disponibilidade", () => {
+    const { hero, form } = targets();
+    const onSafePreview = vi.fn();
+    const { rerender } = render(
+      <AffiliateMobileApplyBar recruitmentStatus="closed" onSafePreview={onSafePreview} />,
+    );
+    trigger(hero, false);
+    trigger(form, false);
+    fireEvent.click(screen.getByRole("link", { name: /conhecer o formulário/i }));
+    expect(onSafePreview).toHaveBeenCalledTimes(1);
+
+    rerender(<AffiliateMobileApplyBar recruitmentStatus="open" onSafePreview={onSafePreview} />);
+    fireEvent.click(screen.getByRole("link", { name: /fazer minha inscrição/i }));
+    expect(onSafePreview).toHaveBeenCalledTimes(1);
+  });
+
   it("aguarda a primeira medição e só aparece fora da hero e do formulário", () => {
     const { hero, form } = targets();
     const { rerender } = render(<AffiliateMobileApplyBar recruitmentStatus="loading" />);
     expect(screen.queryByRole("navigation", { name: /atalho mobile/i })).not.toBeInTheDocument();
     trigger(hero, false);
     trigger(form, false);
-    expect(screen.queryByTestId("affiliate-c76-mobile-apply")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ver prévia segura/i })).toHaveAttribute(
+      "href",
+      "#inscricao",
+    );
+    expect(screen.getByText("Consultando disponibilidade")).toBeInTheDocument();
     rerender(<AffiliateMobileApplyBar recruitmentStatus="open" />);
     expect(screen.getByRole("link", { name: /fazer minha inscrição/i })).toHaveAttribute(
       "href",
@@ -79,13 +99,13 @@ describe("C76: CTA mobile do programa sem envio nem sobreposição", () => {
       "#inscricao",
     );
     rerender(<AffiliateMobileApplyBar recruitmentStatus="limited" />);
-    expect(screen.getByRole("link", { name: /ver disponibilidade/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /ver prévia segura/i })).toHaveAttribute(
       "href",
       "#inscricao",
     );
     rerender(<AffiliateMobileApplyBar recruitmentStatus="unavailable" />);
     expect(screen.getByText("Disponibilidade não confirmada")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /ver disponibilidade/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /ver prévia segura/i })).toHaveAttribute(
       "href",
       "#inscricao",
     );

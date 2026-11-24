@@ -13,7 +13,10 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/components/affiliate-shell", () => ({
   AffiliateShell: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
-vi.mock("@/lib/store", () => ({ SITE_URL: "https://vonixhair.com" }));
+vi.mock("@/lib/store", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/store")>()),
+  SITE_URL: "https://vonixhair.com",
+}));
 vi.mock("@/components/affiliate-simple-form", () => ({
   AffiliateSimpleForm: ({ preview }: { preview: boolean }) => (
     <div data-testid="c65-form-mode">{preview ? "Prévia sem envio" : "Envio habilitado"}</div>
@@ -48,10 +51,10 @@ describe("C65 — compact published product reviews", () => {
     },
   );
 
-  it("keeps honest product-only labeling, three quotes, local links and no media playback or submission", () => {
+  it("keeps honest product-only labeling, four quotes, local links and no media playback or submission", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { container } = render(<AffiliateVerifiedReviewPreview />);
-    expect(container.querySelectorAll("blockquote")).toHaveLength(3);
+    expect(container.querySelectorAll("blockquote")).toHaveLength(4);
     expect(screen.getByText(/Não são depoimentos de afiliadas/)).toHaveTextContent(
       "não comprovam compra verificada, vendas, renda ou participação no programa",
     );
@@ -69,7 +72,7 @@ describe("C65 — compact published product reviews", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("shows product reviews before earnings without enabling candidate POST", async () => {
+  it("keeps candidate form before authentic product reviews and earnings, without POST", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     render(<AffiliateApplicationPage />);
     await screen.findByText("Inscrições em preparação");
@@ -77,10 +80,10 @@ describe("C65 — compact published product reviews", () => {
     if (!signup) throw new Error("Missing application anchor");
     const sequence = [
       screen.getByTestId("vonix-affiliate-hero"),
-      screen.getByTestId("vonix-c65-review-preview"),
-      screen.getByTestId("vonix-affiliate-earnings"),
       screen.getByTestId("vonix-c64-preparation-details"),
       signup,
+      screen.getByTestId("vonix-c65-review-preview"),
+      screen.getByTestId("vonix-affiliate-earnings"),
       screen.getByTestId("vonix-c53-real-product-reviews"),
     ];
     sequence.slice(0, -1).forEach((before, index) => {

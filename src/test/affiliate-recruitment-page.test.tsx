@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import storeReviews from "@/data/reviews.json";
 
 const server = vi.hoisted(() => ({ status: vi.fn() }));
 vi.mock("@/lib/affiliate-functions", () => ({
@@ -12,7 +13,10 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/components/affiliate-shell", () => ({
   AffiliateShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
 }));
-vi.mock("@/lib/store", () => ({ SITE_URL: "https://vonixhair.com" }));
+vi.mock("@/lib/store", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/store")>()),
+  SITE_URL: "https://vonixhair.com",
+}));
 vi.mock("@/components/affiliate-simple-form", () => ({
   AffiliateSimpleForm: ({
     preview,
@@ -233,7 +237,14 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
     expect(text).toContain("Vonix Hair");
     expect(text).toContain("Inscrição gratuita");
     expect(text).toContain("A candidatura não garante aprovação");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Seu jeito de criar.");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Seja afiliada Vonix Hair.",
+    );
+    // Complementary editorial sections are still present, but now expand on demand.
+    const discovery = screen.getByTestId("affiliate-c96-discovery-gate");
+    expect(discovery).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByTestId("affiliate-c96-discovery-summary"));
+    expect(discovery).toHaveAttribute("open");
     expect(screen.getByRole("heading", { name: /Não procuramos uma fórmula/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Crie do seu jeito/i })).toBeInTheDocument();
 
@@ -265,9 +276,59 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
       "/images/categorias/reconstrucao.jpg",
     ]);
     images.forEach((img) => {
-      if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
       const src = img.getAttribute("src") ?? "";
       const alt = img.getAttribute("alt") ?? "";
+      if (img.closest('[data-testid="vonix-c65-review-preview"]')) return;
+      if (img.closest('[data-testid="affiliate-c101-customer-voice"]')) {
+        const source = storeReviews.find(
+          (item) => item.slug === "botox-vonix" && item.author === "Mariana Andrade",
+        );
+        if (!source || source.media.type !== "video") throw new Error("C101 source review missing");
+        expect(src).toBe(source.media.poster);
+        expect(alt).toContain(source.author);
+        expect(alt).toContain("Botox Vonix");
+        return;
+      }
+      // C128: verify exactly the approved decorative product thumbnails.
+      // A blank alt is intentional because the nearby button names the catalog.
+      if (img.closest('[data-testid="affiliate-c128-product-peek"]')) {
+        expect(src).toMatch(
+          /^\/images\/products\/(?:botox-vonix|kit-banana-e-mel|mascara-reparacao-nutri-repair)-480\.webp$/,
+        );
+        expect(alt).toBe("");
+        expect(img.closest('[aria-hidden="true"]')).not.toBeNull();
+        return;
+      }
+      // C128: compressed crops are derived only from genuine, already-published
+      // CUSTOMER product-review media; never treat them as creator testimonials.
+      if (img.closest('[data-testid="affiliate-c128-authentic-review-mosaic"]')) {
+        expect(src).toMatch(/^\/images\/afiliadas\/review-depoimento-(?:1|2|4)-112\.jpg$/);
+        expect(alt).toBe("");
+        const original = img.getAttribute("data-original-source");
+        expect(original).toMatch(/^\/depoimentos\/depoimento-(?:1|2|4)(?:-poster)?\.jpg$/);
+        const source = storeReviews.find(
+          (item) =>
+            item.slug === "botox-vonix" &&
+            (item.media.type === "video"
+              ? item.media.poster === original
+              : item.media.src === original),
+        );
+        expect(source).toBeDefined();
+        return;
+      }
+      // The preview images inside <summary> are decorative, not creator portraits.
+      if (img.closest('[data-testid="affiliate-c96-discovery-summary"]')) {
+        expect(existingStoreCategoryPhotos.has(src)).toBe(true);
+        expect(alt).toBe("");
+        return;
+      }
+      if (
+        img.closest('[data-testid="vonix-c53-real-product-reviews"]') &&
+        src === "/depoimentos/depoimento-4.jpg"
+      ) {
+        expect(alt).toBe("Foto publicada junto à avaliação de Ana Paula sobre Botox Vonix");
+        return;
+      }
       if (src.startsWith("/images/categorias/")) {
         // Only the six already-used store category photos are allowed, never
         // third-party creators or images falsely attributed to affiliates.
@@ -292,10 +353,13 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
   it("explica etapas e condições sem inventar comissões ou garantir aprovação", async () => {
     server.status.mockResolvedValue({ open: false });
     render(<Page />);
-    const heading = await screen.findByRole("heading", { name: /Três momentos/i });
+    const heading = await screen.findByRole("heading", { name: /Da sua ideia à sua candidatura/i });
     expect(heading).toBeInTheDocument();
-    for (const step of ["Apresente seu perfil", "Análise individual", "Próximos passos"]) {
-      expect(screen.getByRole("heading", { name: step })).toBeInTheDocument();
+    const originalSteps = screen.getByTestId("vonix-c66-application-steps");
+    expect(originalSteps.querySelectorAll('[data-testid="vonix-c79-step-card"]')).toHaveLength(3);
+    expect(originalSteps.querySelector("#como-funciona")).not.toBeNull();
+    for (const text of ["Apresente seu perfil", "Guarde seu acesso", "Acompanhe a seleção"]) {
+      expect(originalSteps).toHaveTextContent(text);
     }
     const landing = screen.getByTestId("vonix-affiliate-editorial");
     expect(landing.querySelectorAll('a[href="#inscricao"]').length).toBeGreaterThanOrEqual(3);
@@ -349,9 +413,9 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
 
     if (!app) throw new Error("Missing real application section");
     for (const [before, after] of [
-      [hero, earnings],
-      [earnings, app],
-      [app, brand],
+      [hero, app],
+      [app, earnings],
+      [earnings, brand],
       [brand, reviews],
       [reviews, selling],
       [selling, clips],

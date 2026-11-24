@@ -44,11 +44,12 @@ describe("C79: convite editorial com provas de produto e navegação sem coleta 
     render(<AffiliateSimpleForm preview />);
     const progress = screen.getByTestId("affiliate-c70-form-progress");
     const links = within(progress).getAllByTestId("vonix-c79-group-jump");
-    expect(links).toHaveLength(3);
+    expect(links).toHaveLength(4);
     expect(links.map((el) => el.getAttribute("href"))).toEqual([
       "#simple-contact-heading",
-      "#simple-address-heading",
       "#simple-social-heading",
+      "#simple-address-heading",
+      "#simple-privacyAccepted",
     ]);
     for (const link of links) {
       const target = document.querySelector(link.getAttribute("href") ?? "");
@@ -57,7 +58,7 @@ describe("C79: convite editorial com provas de produto e navegação sem coleta 
       expect(link).toHaveClass("min-h-14");
     }
     expect(progress).toHaveTextContent("não validação");
-    expect(within(progress).getAllByText("Pendente")).toHaveLength(3);
+    expect(within(progress).getAllByText("Pendente")).toHaveLength(4);
     fireEvent.change(screen.getByLabelText(/Nome completo/), {
       target: { value: "Candidata Teste Privada" },
     });
