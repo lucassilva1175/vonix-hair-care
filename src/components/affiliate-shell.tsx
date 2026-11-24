@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Instagram } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowLeft, ArrowRight, Instagram, Menu } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
 import logoUrl from "@/assets/vonix-logo.webp";
 import { INSTAGRAM } from "@/lib/store";
+import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
 
 /**
  * Dedicated recruitment chrome: the store's search, product audiences, sales
@@ -13,11 +14,30 @@ export function AffiliateShell({
   children,
   mode = "landing",
   recruitmentStatus = "loading",
+  onSafePreview,
 }: {
   children: ReactNode;
   mode?: "landing" | "account";
   recruitmentStatus?: "loading" | "open" | "limited" | "closed" | "unavailable";
+  onSafePreview?: (() => void) | undefined;
 }) {
+  const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
+  const closeMobileMenu = () => {
+    if (mobileMenuRef.current) mobileMenuRef.current.open = false;
+  };
+
+  useEffect(() => {
+    if (mode !== "landing") return;
+    const dismissOutside = (event: PointerEvent) => {
+      const menu = mobileMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+      }
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    return () => document.removeEventListener("pointerdown", dismissOutside);
+  }, [mode]);
+
   return (
     <div
       data-testid="vonix-affiliate-shell"
@@ -58,7 +78,7 @@ export function AffiliateShell({
         Pular para o conteúdo
       </a>
       <header className="sticky top-0 z-50 border-b border-border bg-background shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-4">
             <Link
               to="/"
@@ -68,7 +88,7 @@ export function AffiliateShell({
               <img
                 src={logoUrl}
                 alt="Vonix Hair"
-                className="h-[2.6rem] w-auto object-contain"
+                className="h-8 w-auto object-contain sm:h-[2.6rem]"
                 width={109}
                 height={43}
               />
@@ -82,56 +102,115 @@ export function AffiliateShell({
           {mode === "landing" && (
             <nav
               aria-label="Navegação da seleção de afiliadas"
-              className="hidden items-center gap-5 xl:flex"
+              className="hidden items-center gap-4 xl:flex"
             >
+              <Link
+                to="/consultar-candidatura"
+                data-testid="affiliate-c112-returning-desktop"
+                className="inline-flex min-h-11 items-center rounded-full border border-[#d7bec4] bg-[#faf2ef] px-3 text-xs font-bold text-[#754256] transition hover:bg-[#f1e5e6] focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                Já me inscrevi
+              </Link>
               <a
                 href="#ganhos"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
-                Ganhos
-              </a>
-              <Link
-                to="/consultar-candidatura"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
-              >
-                Status
-              </Link>
-              <a
-                href="#perfis"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
-              >
-                Ideias de conteúdo
-              </a>
-              <a
-                href="#criterios"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
-              >
-                Para quem é
+                Comissão e bônus
               </a>
               <a
                 href="#como-funciona"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
                 Como funciona
               </a>
               <a
                 href="#avaliacoes-rapidas"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
-                Avaliações
+                Avaliações de produtos
               </a>
               <a
                 href="#duvidas"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground transition hover:text-muted-foreground focus-visible:underline"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
                 Dúvidas
               </a>
             </nav>
           )}
 
+          {mode === "landing" && (
+            <details
+              ref={mobileMenuRef}
+              data-testid="affiliate-c138-mobile-menu"
+              className="relative shrink-0 sm:hidden"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.currentTarget.open = false;
+                  event.currentTarget.querySelector("summary")?.focus();
+                }
+              }}
+            >
+              <summary
+                data-testid="affiliate-c138-mobile-menu-trigger"
+                aria-label="Explorar seções do programa"
+                className="flex size-11 cursor-pointer list-none items-center justify-center rounded-xl border border-[#d7bec4] bg-[#faf2ef] text-[#754256] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
+              >
+                <Menu aria-hidden="true" className="size-5" />
+              </summary>
+              <nav
+                data-testid="affiliate-c138-mobile-menu-links"
+                aria-label="Seções da seleção no celular"
+                className="fixed inset-x-3 top-[4.75rem] z-[70] grid gap-1 rounded-2xl border border-[#dac6c8] bg-[#fffaf7] p-2 text-sm font-semibold text-[#754256] shadow-[0_18px_40px_rgba(65,36,49,.18)]"
+              >
+                <Link
+                  to="/consultar-candidatura"
+                  onClick={closeMobileMenu}
+                  className="flex items-center rounded-xl bg-[#f0e2e4] px-4 py-3"
+                >
+                  Já me inscrevi
+                </Link>
+                <a
+                  href="#ganhos"
+                  onClick={closeMobileMenu}
+                  className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
+                >
+                  Comissão e bônus
+                </a>
+                <a
+                  href="#como-funciona"
+                  onClick={closeMobileMenu}
+                  className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
+                >
+                  Como funciona
+                </a>
+                <a
+                  href="#avaliacoes-rapidas"
+                  onClick={closeMobileMenu}
+                  className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
+                >
+                  Avaliações de produtos
+                </a>
+                <a
+                  href="#duvidas"
+                  onClick={closeMobileMenu}
+                  className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
+                >
+                  Dúvidas
+                </a>
+              </nav>
+            </details>
+          )}
+
           {mode === "landing" ? (
-            <a
-              href="#inscricao"
+            <AffiliateApplyLink
+              recruitmentOpen={recruitmentStatus === "open"}
+              onSafePreview={onSafePreview}
+              data-testid="affiliate-c127-header-apply"
+              title={
+                recruitmentStatus === "open"
+                  ? "Ir à candidatura"
+                  : "Abrir uma prévia segura do formulário"
+              }
               className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-5 sm:text-sm"
             >
               <span className="sm:hidden">
@@ -141,7 +220,10 @@ export function AffiliateShell({
                 {recruitmentStatus === "open" ? "Enviar candidatura" : "Conhecer a inscrição"}
               </span>
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </a>
+              {recruitmentStatus !== "open" && (
+                <span className="sr-only"> (abre prévia segura, sem enviar dados)</span>
+              )}
+            </AffiliateApplyLink>
           ) : (
             <Link
               to="/seja-afiliada"
@@ -154,45 +236,40 @@ export function AffiliateShell({
         {mode === "landing" && (
           <nav
             aria-label="Acesso rápido ao programa"
-            className="flex w-full max-w-full snap-x snap-proximity items-center justify-start gap-5 overflow-x-auto overscroll-x-contain border-t border-border px-4 text-xs xl:hidden"
+            className="hidden w-full max-w-full snap-x snap-proximity items-center justify-start gap-3 overflow-x-auto overscroll-x-contain border-t border-border px-4 text-xs sm:flex xl:hidden"
             tabIndex={0}
           >
+            <Link
+              to="/consultar-candidatura"
+              data-testid="affiliate-c112-returning-mobile"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center rounded-lg bg-[#f0e2e4] px-3 font-bold text-[#754256]"
+            >
+              Já me inscrevi
+            </Link>
             <a
               href="#ganhos"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 font-semibold text-primary"
             >
-              Ganhos
+              Comissão e bônus
             </a>
             <a
               href="#como-funciona"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
             >
               Como funciona
             </a>
             <a
-              href="#perfis"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
-            >
-              Ideias de conteúdo
-            </a>
-            <a
               href="#avaliacoes-rapidas"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
             >
-              Avaliações
+              Avaliações de produtos
             </a>
             <a
               href="#duvidas"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center text-primary"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 pr-2 text-primary"
             >
               Dúvidas
             </a>
-            <Link
-              to="/consultar-candidatura"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center pr-2 text-primary"
-            >
-              Status da candidatura
-            </Link>
           </nav>
         )}
       </header>

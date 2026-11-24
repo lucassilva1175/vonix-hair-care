@@ -1,13 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import { AffiliateShell } from "@/components/affiliate-shell";
 import { getAffiliateRecruitmentStatus } from "@/lib/affiliate-functions";
 import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
 import { AffiliateApplicationPrep } from "@/components/affiliate-application-prep";
+import { AffiliateApplicationEditorialArt } from "@/components/affiliate-application-editorial-art";
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
+import { AffiliateCreatorSpotlight } from "@/components/affiliate-creator-spotlight";
+import { AffiliateCustomerVoiceTeaser } from "@/components/affiliate-customer-voice-teaser";
+import { AffiliateProductDiscoveryStrip } from "@/components/affiliate-product-discovery-strip";
+import { AffiliateApplicationBridge } from "@/components/affiliate-application-bridge";
+import { AffiliateDiscoveryGate } from "@/components/affiliate-discovery-gate";
 import { AffiliateMobileApplyBar } from "@/components/affiliate-mobile-apply-bar";
 import {
   AffiliateLandingOffer,
@@ -78,8 +84,10 @@ export function AffiliateApplicationPage() {
   useEffect(() => {
     let active = true;
     let latestRequest = 0;
+    const statusTimeouts = new Set<number>();
     async function refreshStatus() {
       const requestId = ++latestRequest;
+      let timeoutId: number | undefined;
       // Never trust a previously OPEN session while the next GET is pending.
       // Keep the existing draft mounted, but pause any submission.
       setRecruitment("loading");
@@ -102,7 +110,20 @@ export function AffiliateApplicationPage() {
           cfConnectingIpPresent,
           encryptionReady,
           transactionalEmailConfigured,
-        } = await getAffiliateRecruitmentStatus();
+        } = await Promise.race([
+          getAffiliateRecruitmentStatus(),
+          new Promise<never>((_, reject) => {
+            // GETs can hang on unreliable connections. Never leave applicants
+            // in a permanent loading state or assume recruitment is OPEN.
+            // The sequential server probes have up to 19s of configured
+            // network deadlines (6.5 + 4 + 4 + 4.5s). Allow transport margin.
+            timeoutId = window.setTimeout(() => {
+              if (timeoutId !== undefined) statusTimeouts.delete(timeoutId);
+              reject(new Error("affiliate_status_timeout"));
+            }, 25_000);
+            statusTimeouts.add(timeoutId);
+          }),
+        ]);
         if (!active || requestId !== latestRequest) return;
         setBackendDiagnostics({
           storage: storageReachable,
@@ -130,6 +151,11 @@ export function AffiliateApplicationPage() {
           });
           setRecruitment("unavailable");
         }
+      } finally {
+        if (timeoutId !== undefined) {
+          window.clearTimeout(timeoutId);
+          statusTimeouts.delete(timeoutId);
+        }
       }
     }
     void refreshStatus();
@@ -145,6 +171,8 @@ export function AffiliateApplicationPage() {
     return () => {
       active = false;
       latestRequest += 1;
+      statusTimeouts.forEach((timeout) => window.clearTimeout(timeout));
+      statusTimeouts.clear();
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };
@@ -152,6 +180,12 @@ export function AffiliateApplicationPage() {
 
   const showWizard = preview || recruitment === "open" || liveFormStarted;
   const simulationOnly = preview || recruitment !== "open";
+
+  function openSafePreview() {
+    // Deliberate user action: opening the simulation never authorizes a POST.
+    setConfirmPreviewExit(false);
+    setPreview(true);
+  }
 
   function requestPreviewExit() {
     if (previewHasDraft) {
@@ -168,23 +202,54 @@ export function AffiliateApplicationPage() {
   }
 
   return (
-    <AffiliateShell recruitmentStatus={recruitment}>
+    <AffiliateShell recruitmentStatus={recruitment} onSafePreview={openSafePreview}>
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
-        <AffiliateLandingOffer recruitmentStatus={recruitment} />
-        <AffiliateMobileApplyBar recruitmentStatus={recruitment} />
-        <AffiliateApplicationStepsPreview />
+        <AffiliateLandingOffer
+          recruitmentStatus={recruitment}
+          placement="intro"
+          onSafePreview={openSafePreview}
+        />
+        <AffiliateMobileApplyBar recruitmentStatus={recruitment} onSafePreview={openSafePreview} />
+        {/* C117: authentic PRODUCT review remains before the single application.
+            Optional step-by-step/creator inspiration is available immediately after it. */}
+        <AffiliateCustomerVoiceTeaser
+          recruitmentOpen={recruitment === "open"}
+          onSafePreview={openSafePreview}
+        />
+        <AffiliateApplicationBridge status={recruitment} onSafePreview={openSafePreview} />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
           <details
             data-testid="vonix-c64-preparation-details"
-            className="mx-auto max-w-5xl rounded-2xl border border-[#e5d5d2] bg-[#fcf7f4]"
+            className="group mx-auto max-w-5xl overflow-hidden rounded-2xl border border-[#dec5cb] bg-[#fcf7f4] shadow-[0_8px_28px_rgba(90,45,61,.06)]"
           >
-            <summary className="min-h-14 cursor-pointer px-5 py-5 text-sm font-semibold text-[#603746] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#744452] sm:px-8">
-              O que preciso para me candidatar? Nome, contato, endereço e Instagram. TikTok é
-              opcional.
+            <summary
+              data-testid="affiliate-c119-clarity-summary"
+              className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-[#fff8f4] to-[#f7e8eb] px-4 py-3 text-[#603746] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#744452] sm:px-6 [&::-webkit-details-marker]:hidden"
+            >
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold uppercase tracking-[.09em] text-[#8a5869]">
+                  Quem pode apresentar o perfil?
+                </span>
+                <span className="mt-0.5 block text-sm font-bold leading-snug">
+                  Não precisa ter portfólio para se candidatar
+                </span>
+                <span className="mt-1 block text-[11px] font-medium leading-snug text-[#725662]">
+                  18 anos ou mais · Instagram · TikTok opcional
+                </span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-[#dec5cb] bg-white text-[#7c465b]"
+              >
+                <ChevronDown className="size-4 transition-transform duration-200 motion-reduce:transition-none group-open:rotate-180" />
+              </span>
             </summary>
             <div className="border-t border-[#e5d5d2] px-3 pt-5 sm:px-6">
-              <AffiliateApplicationPrep />
+              <AffiliateApplicationPrep
+                recruitmentOpen={recruitment === "open"}
+                onSafePreview={openSafePreview}
+              />
             </div>
           </details>
         </div>
@@ -197,28 +262,72 @@ export function AffiliateApplicationPage() {
           data-ingress-check={backendDiagnostics.ingress ? "ok" : "unavailable"}
           data-encryption-check={backendDiagnostics.encryption ? "ok" : "unavailable"}
           data-email-provider={backendDiagnostics.emailConfigured ? "configured" : "unavailable"}
-          className="mx-auto max-w-5xl scroll-mt-36 px-5 py-11 sm:py-18"
+          className="mx-auto max-w-5xl scroll-mt-36 px-5 py-6 sm:py-14"
         >
-          <div className="mb-10 text-center">
-            <p className="text-xs font-bold uppercase tracking-normal text-muted-foreground">
-              {recruitment === "open"
-                ? "Inscrições abertas"
-                : recruitment === "limited"
-                  ? "Programa aberto · acesso temporariamente limitado"
-                  : recruitment === "unavailable"
-                    ? "Disponibilidade não confirmada"
-                    : "Programa de afiliados"}
-            </p>
-            <h2 className="mt-3 font-display text-4xl sm:text-5xl">
-              Sua inscrição, de um jeito simples.
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Só precisamos do seu nome completo, e-mail válido, telefone, endereço com CEP e
-              número, do seu perfil no Instagram e da quantidade de seguidores. TikTok e seguidores
-              no TikTok são opcionais. A inscrição é gratuita e não garante aprovação. Se sua
-              candidatura não for selecionada, você poderá se inscrever novamente com o mesmo
-              Instagram. Guarde o código de acompanhamento.
-            </p>
+          <div
+            data-testid="affiliate-c115-form-intro"
+            className="mb-4 grid min-w-0 items-stretch gap-3 overflow-hidden rounded-[1.6rem] border border-[#e3ccce] bg-gradient-to-br from-[#fffaf7] via-[#fff4f2] to-[#f7e8e7] p-4 shadow-[0_20px_54px_rgba(78,42,56,.08)] sm:mb-7 sm:p-7 lg:mb-9 lg:grid-cols-[minmax(0,1.25fr)_minmax(15rem,.75fr)] lg:gap-8"
+          >
+            <div className="min-w-0 text-left">
+              <p className="inline-flex min-h-8 items-center rounded-full border border-[#e6c8d1] bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[.09em] text-[#86566a]">
+                {recruitment === "open"
+                  ? "Inscrições abertas"
+                  : recruitment === "limited"
+                    ? "Programa aberto · acesso temporariamente limitado"
+                    : recruitment === "unavailable"
+                      ? "Disponibilidade não confirmada"
+                      : "Programa de afiliados"}
+              </p>
+              <h2 className="mt-2 max-w-2xl font-display text-[clamp(1.75rem,5vw,3rem)] leading-[1.12] tracking-tight text-[#4c3040] sm:mt-3">
+                Sua inscrição, de um jeito simples.
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-[1.6] text-[#725867] sm:mt-3 sm:text-base sm:leading-[1.7]">
+                Informe nome, telefone, e-mail válido, endereço e Instagram com número de
+                seguidores. TikTok é opcional; a inscrição é gratuita, depende de disponibilidade e
+                não garante aprovação. Após um envio confirmado, guarde o código privado exibido na
+                tela.
+              </p>
+              <div
+                data-testid="affiliate-c112-form-essentials"
+                aria-label="Requisitos principais da candidatura"
+                className="mt-4 hidden max-w-3xl flex-wrap items-center gap-2 sm:flex"
+              >
+                {[
+                  "18 anos ou mais",
+                  "E-mail válido obrigatório",
+                  "Instagram com seguidores",
+                  "TikTok opcional",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex min-h-8 items-center rounded-full border border-[#e0c8ce] bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-[#76465a] sm:text-xs"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-3 flex flex-wrap items-center gap-x-2 rounded-xl border border-[#e3c9cf] bg-white/95 px-3 py-1 text-xs text-[#765665] sm:mt-5 sm:px-4 sm:py-2 sm:text-sm">
+                Já enviou uma candidatura?{" "}
+                <Link
+                  to="/consultar-candidatura"
+                  data-testid="affiliate-c112-form-status"
+                  className="inline-flex min-h-11 items-center font-bold text-[#744256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                >
+                  Consultar meu status pelo código
+                </Link>
+              </p>
+              <p className="mt-0 flex flex-wrap items-center gap-x-2 text-xs leading-[1.4] text-[#725866] sm:mt-2">
+                Quer entender a seleção primeiro?{" "}
+                <a
+                  href="#candidatura-etapas"
+                  data-testid="affiliate-c117-explore-steps"
+                  className="inline-flex min-h-11 items-center font-bold text-[#744256] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
+                >
+                  Ver o passo a passo
+                </a>
+              </p>
+            </div>
+            <AffiliateApplicationEditorialArt />
           </div>
 
           {!showWizard ? (
@@ -238,7 +347,7 @@ export function AffiliateApplicationPage() {
               </h3>
               <p className="mt-4 leading-relaxed text-muted-foreground">
                 {recruitment === "loading"
-                  ? "Estamos verificando a disponibilidade do cadastro."
+                  ? "Estamos verificando a disponibilidade do cadastro. Enquanto isso, você pode explorar a prévia, que nunca envia nem armazena candidaturas."
                   : recruitment === "limited"
                     ? "O programa de afiliadas continua aberto, mas esta conexão não pode enviar novas candidaturas agora. Aguarde alguns minutos e tente novamente; a prévia não registra inscrições."
                     : recruitment === "unavailable"
@@ -255,18 +364,16 @@ export function AffiliateApplicationPage() {
                   Verificar novamente
                 </Button>
               )}
-              {recruitment !== "loading" && (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setConfirmPreviewExit(false);
-                    setPreview(true);
-                  }}
-                  className="h-auto whitespace-normal mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-primary px-7 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-                >
-                  Visualizar formulário (prévia) <ArrowRight className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                type="button"
+                data-testid="affiliate-c122-safe-preview"
+                onClick={() => {
+                  openSafePreview();
+                }}
+                className="h-auto whitespace-normal mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-primary px-7 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                Visualizar formulário (prévia) <ArrowRight className="h-4 w-4" />
+              </Button>
               <div className="mt-5">
                 <Link
                   to="/"
@@ -365,8 +472,69 @@ export function AffiliateApplicationPage() {
           )}
         </section>
         <AffiliateNextSteps recruitmentOpen={recruitment === "open" && !preview} />
-        <AffiliateLandingDiscovery recruitmentStatus={recruitment} />
-        <AffiliateLandingFAQ />
+        {/* C136: the optional catalog-ideas gallery belongs after the application.
+            The hero and real product-review teaser remain BEFORE the form. */}
+        <AffiliateProductDiscoveryStrip
+          recruitmentOpen={recruitment === "open"}
+          onSafePreview={openSafePreview}
+        />
+        {/* C117: keep editorial exploration AFTER the unique #inscricao form
+            and its immediate next-step guidance. Original anchors remain unique. */}
+        <AffiliateApplicationStepsPreview />
+        <AffiliateCreatorSpotlight
+          recruitmentStatus={recruitment}
+          onSafePreview={openSafePreview}
+        />
+        <AffiliateLandingFAQ recruitmentStatus={recruitment} onSafePreview={openSafePreview} />
+        <AffiliateLandingOffer
+          recruitmentStatus={recruitment}
+          placement="details"
+          onSafePreview={openSafePreview}
+        />
+        <nav
+          data-testid="affiliate-c91-explore-paths"
+          aria-label="Continue explorando o universo Vonix Hair"
+          className="border-y border-[#e8d8d6] bg-[#fbf5f2] px-5 py-7 sm:py-9"
+        >
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5">
+            <div className="max-w-xl">
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#845268]">
+                Depois de conhecer a candidatura
+              </p>
+              <h2 className="mt-2 font-display text-2xl leading-tight text-[#533240] sm:text-3xl">
+                Explore mais do universo Vonix.
+              </h2>
+              <p className="mt-2 text-xs leading-[1.65] text-[#755a64]">
+                Avaliações são de clientes sobre produtos; vídeos e exemplos de conteúdo são
+                materiais editoriais da loja, não relatos de afiliadas aprovadas.
+              </p>
+            </div>
+            <div className="flex min-w-0 flex-wrap gap-2.5">
+              {[
+                { href: "#avaliacoes-produtos", label: "Avaliações de produtos" },
+                { href: "#catalogo-em-video", label: "Vídeos do catálogo" },
+                { href: "#perfis", label: "Ideias de conteúdo" },
+              ].map(({ href, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="inline-flex min-h-11 items-center rounded-full border border-[#d3b6bd] bg-white px-4 py-2 text-xs font-bold text-[#754353] transition-colors hover:bg-[#f1e4e5] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754353]"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </nav>
+        <AffiliateDiscoveryGate
+          recruitmentOpen={recruitment === "open"}
+          onSafePreview={openSafePreview}
+        >
+          <AffiliateLandingDiscovery
+            recruitmentStatus={recruitment}
+            onSafePreview={openSafePreview}
+          />
+        </AffiliateDiscoveryGate>
       </div>
     </AffiliateShell>
   );

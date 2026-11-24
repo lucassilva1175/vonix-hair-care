@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -17,6 +17,9 @@ import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
 import { AffiliateProductProof } from "@/components/affiliate-product-proof";
 import { AffiliateVerifiedReviewPreview } from "@/components/affiliate-verified-review-preview";
+import { AffiliateEarlyValueBand } from "@/components/affiliate-early-value-band";
+import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
+import { AffiliateCreativeKitAction } from "@/components/affiliate-creative-kit-action";
 import {
   AffiliateEditorialHero,
   type RecruitmentStatus,
@@ -221,165 +224,174 @@ function ProductImage({
  */
 export function AffiliateLandingOffer({
   recruitmentStatus,
+  placement = "all",
+  onSafePreview,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  placement?: "all" | "intro" | "details";
+  onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
 
   return (
-    <div data-testid="vonix-c64-early-offer" className="min-w-0">
-      <AffiliateEditorialHero recruitmentStatus={recruitmentStatus} />
+    <div
+      data-testid={placement === "details" ? "vonix-c97-offer-details" : "vonix-c64-early-offer"}
+      className="min-w-0"
+    >
+      {placement !== "details" && (
+        <>
+          <AffiliateEditorialHero
+            recruitmentStatus={recruitmentStatus}
+            onSafePreview={onSafePreview}
+          />
 
-      <div
-        data-testid="affiliate-c61-eligibility-facts"
-        aria-label="Informações essenciais da candidatura Vonix Hair"
-        className="border-b border-[#754558] bg-[#663448] px-5 py-4 text-[#fff9f6]"
-      >
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-4 text-xs font-medium sm:grid-cols-4 sm:gap-8 sm:text-sm">
-          <span>Candidatura gratuita</span>
-          <span>Seleção individual</span>
-          <span>Maiores de 18 anos</span>
-          <span>TikTok opcional</span>
-        </div>
-      </div>
+          <AffiliateEarlyValueBand
+            recruitmentOpen={recruitmentStatus === "open"}
+            onSafePreview={onSafePreview}
+          />
+        </>
+      )}
+      {placement !== "intro" && (
+        <>
+          <AffiliateVerifiedReviewPreview recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
-      <AffiliateVerifiedReviewPreview />
-
-      <section
-        id="ganhos"
-        data-testid="vonix-affiliate-earnings"
-        aria-labelledby="vonix-affiliate-earnings-title"
-        className="scroll-mt-24 bg-card px-5 py-12 sm:py-20"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <Eyebrow>Quanto você ganha</Eyebrow>
-            <h2
-              id="vonix-affiliate-earnings-title"
-              className="mt-5 font-display text-4xl leading-tight tracking-normal text-foreground sm:text-5xl"
-            >
-              Para afiliadas aprovadas.{" "}
-              <span className="italic text-primary">Condições claras, desde o começo.</span>
-            </h2>
-            <p className="mt-5 text-base leading-[1.8] text-muted-foreground">
-              Após aprovação e definição das condições, você divulga pelo seu link. A Vonix Hair
-              cuida da venda, entrega e atendimento. A candidatura é gratuita, sem estoque ou compra
-              obrigatória para se candidatar.
-            </p>
-          </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {[
-              {
-                big: "8%",
-                title: "Comissão de 8% em cada venda",
-                text: "Sobre vendas confirmadas e pagas. A comissão depende de aprovação e das condições aplicáveis à parceria.",
-                image: "/images/products/botox-vonix.webp",
-              },
-              {
-                big: "+ R$ 500",
-                title: "Bônus a cada R$ 10 mil vendidos",
-                text: "Bônus anunciado de R$ 500 por cada R$ 10.000 vendidos, condicionado às regras de elegibilidade. Não é garantido pela candidatura.",
-                image: "/images/products/kit-banana-e-mel.webp",
-              },
-              {
-                big: "Supervisora",
-                title: "Cresça para supervisora",
-                text: "Possibilidade de se tornar supervisora conforme metas e avaliação da equipe. A condição anunciada inclui, em média, 4% sobre o valor bruto vendido pela equipe, além das próprias comissões. Não há promoção automática.",
-                image: "/images/products/kit-cronograma-capilar.webp",
-              },
-            ].map(({ big, title, text, image }) => (
-              <article
-                key={title}
-                data-testid="vonix-c77-benefit-editorial"
-                className="min-w-0 overflow-hidden rounded-[1.4rem] border border-[#e8d5d4] bg-[#fffaf7] p-5 shadow-[0_9px_28px_rgba(75,42,53,.05)] sm:p-6"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <p className="min-w-0 pt-1 font-display text-3xl leading-tight text-[#783c53] sm:text-4xl">
-                    {big}
-                  </p>
-                  <span className="flex size-[5.5rem] shrink-0 items-center justify-center rounded-2xl border border-[#f0e0dc] bg-[#f9ebe8]">
-                    <img
-                      src={image}
-                      alt=""
-                      aria-hidden="true"
-                      loading="lazy"
-                      decoding="async"
-                      width={96}
-                      height={96}
-                      className="size-full object-contain p-1.5"
-                    />
-                  </span>
-                </div>
-                <h3 className="mt-3 font-display text-xl leading-snug text-[#462f39] sm:text-2xl">
-                  {title}
-                </h3>
-                <p className="mt-3 text-sm leading-[1.75] text-[#6e5660]">{text}</p>
-              </article>
-            ))}
-          </div>
-          <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-            Valores sobre vendas confirmadas e pagas. As metas da supervisora são combinadas pela
-            equipe com cada afiliada aprovada. Bônus e supervisão dependem de elegibilidade. Fotos
-            ilustrativas de produtos oficiais Vonix: não representam ganhos ou depoimentos de
-            afiliadas.
-          </p>
-          <details
-            data-testid="vonix-c69-optional-simulator"
-            className="group/simulator mt-7 rounded-2xl border border-[#dfd0cd] bg-background"
+          <section
+            id="ganhos"
+            data-testid="vonix-affiliate-earnings"
+            aria-labelledby="vonix-affiliate-earnings-title"
+            className="scroll-mt-24 bg-card px-5 py-12 sm:py-20"
           >
-            <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-7 [&::-webkit-details-marker]:hidden">
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-primary">
-                  Explorar um cálculo ilustrativo de comissões
-                </span>
-                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                  Opcional: não é previsão nem garantia de ganhos.
-                </span>
-              </span>
-              <ChevronDown
-                aria-hidden="true"
-                className="size-5 shrink-0 text-primary transition-transform motion-reduce:transition-none group-open/simulator:rotate-180"
-              />
-            </summary>
-            <div className="border-t border-border px-5 pb-2 sm:px-7">
-              <AffiliateEarningsSimulator compact />
-            </div>
-          </details>
-          <div
-            data-testid="vonix-c64-immediate-signup"
-            className="mt-8 flex flex-col gap-4 rounded-2xl border border-[#dec8cd] bg-[#fbf2f0] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8"
-          >
-            <div className="min-w-0">
-              <p className="font-display text-xl text-[#51303e] sm:text-2xl">
-                Gostou da proposta? Seu próximo passo é a candidatura.
-              </p>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#70505e]">
-                Gratuita e sujeita à análise individual. Antes de enviar, você pode conferir{" "}
-                <a href="#como-funciona" className="font-semibold underline underline-offset-4">
-                  como funciona a seleção
-                </a>{" "}
-                e{" "}
-                <a
-                  href="#avaliacoes-produtos"
-                  className="font-semibold underline underline-offset-4"
+            <div className="mx-auto max-w-7xl">
+              <div className="max-w-3xl">
+                <Eyebrow>Quanto você ganha</Eyebrow>
+                <h2
+                  id="vonix-affiliate-earnings-title"
+                  className="mt-5 font-display text-4xl leading-tight tracking-normal text-foreground sm:text-5xl"
                 >
-                  avaliações de produtos
-                </a>
-                .
+                  Para afiliadas aprovadas.{" "}
+                  <span className="italic text-primary">Condições claras, desde o começo.</span>
+                </h2>
+                <p className="mt-5 text-base leading-[1.8] text-muted-foreground">
+                  Após aprovação e definição das condições, você divulga pelo seu link. A Vonix Hair
+                  cuida da venda, entrega e atendimento. A candidatura é gratuita, sem estoque ou
+                  compra obrigatória para se candidatar.
+                </p>
+              </div>
+              <div className="mt-10 grid gap-4 md:grid-cols-3">
+                {[
+                  {
+                    big: "8%",
+                    title: "Comissão de 8% em cada venda",
+                    text: "Sobre vendas confirmadas e pagas. A comissão depende de aprovação e das condições aplicáveis à parceria.",
+                    image: "/images/products/botox-vonix.webp",
+                  },
+                  {
+                    big: "+ R$ 500",
+                    title: "Bônus a cada R$ 10 mil vendidos",
+                    text: "Bônus anunciado de R$ 500 por cada R$ 10.000 vendidos, condicionado às regras de elegibilidade. Não é garantido pela candidatura.",
+                    image: "/images/products/kit-banana-e-mel.webp",
+                  },
+                  {
+                    big: "Supervisora",
+                    title: "Cresça para supervisora",
+                    text: "Possibilidade de se tornar supervisora conforme metas e avaliação da equipe. A condição anunciada inclui, em média, 4% sobre o valor bruto vendido pela equipe, além das próprias comissões. Não há promoção automática.",
+                    image: "/images/products/kit-cronograma-capilar.webp",
+                  },
+                ].map(({ big, title, text, image }) => (
+                  <article
+                    key={title}
+                    data-testid="vonix-c77-benefit-editorial"
+                    className="min-w-0 overflow-hidden rounded-[1.4rem] border border-[#e8d5d4] bg-[#fffaf7] p-5 shadow-[0_9px_28px_rgba(75,42,53,.05)] sm:p-6"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 pt-1 font-display text-3xl leading-tight text-[#783c53] sm:text-4xl">
+                        {big}
+                      </p>
+                      <span className="flex size-[5.5rem] shrink-0 items-center justify-center rounded-2xl border border-[#f0e0dc] bg-[#f9ebe8]">
+                        <img
+                          src={image}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                          width={96}
+                          height={96}
+                          className="size-full object-contain p-1.5"
+                        />
+                      </span>
+                    </div>
+                    <h3 className="mt-3 font-display text-xl leading-snug text-[#462f39] sm:text-2xl">
+                      {title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-[1.75] text-[#6e5660]">{text}</p>
+                  </article>
+                ))}
+              </div>
+              <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
+                Valores sobre vendas confirmadas e pagas. As metas da supervisora são combinadas
+                pela equipe com cada afiliada aprovada. Bônus e supervisão dependem de
+                elegibilidade. Fotos ilustrativas de produtos oficiais Vonix: não representam ganhos
+                ou depoimentos de afiliadas.
               </p>
+              <details
+                data-testid="vonix-c69-optional-simulator"
+                className="group/simulator mt-7 rounded-2xl border border-[#dfd0cd] bg-background"
+              >
+                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-7 [&::-webkit-details-marker]:hidden">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-primary">
+                      Explorar um cálculo ilustrativo de comissões
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                      Opcional: não é previsão nem garantia de ganhos.
+                    </span>
+                  </span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-primary transition-transform motion-reduce:transition-none group-open/simulator:rotate-180"
+                  />
+                </summary>
+                <div className="border-t border-border px-5 pb-2 sm:px-7">
+                  <AffiliateEarningsSimulator compact />
+                </div>
+              </details>
+              <div
+                data-testid="vonix-c64-immediate-signup"
+                className="mt-8 flex flex-col gap-4 rounded-2xl border border-[#dec8cd] bg-[#fbf2f0] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8"
+              >
+                <div className="min-w-0">
+                  <p className="font-display text-xl text-[#51303e] sm:text-2xl">
+                    Gostou da proposta? Seu próximo passo é a candidatura.
+                  </p>
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#70505e]">
+                    Gratuita e sujeita à análise individual. Antes de enviar, você pode conferir{" "}
+                    <a href="#como-funciona" className="font-semibold underline underline-offset-4">
+                      como funciona a seleção
+                    </a>{" "}
+                    e{" "}
+                    <a
+                      href="#avaliacoes-produtos"
+                      className="font-semibold underline underline-offset-4"
+                    >
+                      avaliações de produtos
+                    </a>
+                    .
+                  </p>
+                </div>
+                <Button
+                  asChild
+                  className="h-auto min-h-12 shrink-0 rounded-lg px-6 py-3 text-sm font-bold"
+                >
+                  <AffiliateApplyLink recruitmentOpen={isOpen} onSafePreview={onSafePreview}>
+                    {isOpen ? "Quero me candidatar" : "Abrir prévia segura"}
+                    <ArrowRight aria-hidden="true" className="size-4" />
+                  </AffiliateApplyLink>
+                </Button>
+              </div>
             </div>
-            <Button
-              asChild
-              className="h-auto min-h-12 shrink-0 rounded-lg px-6 py-3 text-sm font-bold"
-            >
-              <a href="#inscricao">
-                {isOpen ? "Quero me candidatar" : "Ver a inscrição"}
-                <ArrowRight aria-hidden="true" className="size-4" />
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
+          </section>
+        </>
+      )}
     </div>
   );
 }
@@ -391,153 +403,89 @@ export function AffiliateLandingOffer({
  */
 export function AffiliateLandingDiscovery({
   recruitmentStatus,
+  onSafePreview,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
 
   return (
     <div data-testid="vonix-c64-discovery" className="min-w-0">
-      <AffiliateBrandTrust recruitmentOpen={isOpen} />
+      <AffiliateBrandTrust recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
       <AffiliateProductProof />
 
-      <AffiliateSellingFlow recruitmentOpen={isOpen} />
+      <AffiliateSellingFlow recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
-      <AffiliateCatalogInMotion recruitmentOpen={isOpen} />
+      <AffiliateCatalogInMotion recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
-      <section id="criterios" className="scroll-mt-24 bg-card px-5 py-20 sm:py-28">
+      <section
+        id="criterios"
+        data-testid="affiliate-c95-fit-section"
+        className="scroll-mt-24 border-y border-[#e8d8d6] bg-[#fbf5f1] px-5 py-10 sm:py-14"
+      >
         <div className="mx-auto max-w-7xl">
-          <div className="grid items-end gap-6 lg:grid-cols-[1.1fr_.9fr]">
+          <div className="grid items-end gap-4 lg:grid-cols-[1.1fr_.9fr] lg:gap-8">
             <div>
               <Eyebrow>O universo Vonix Hair</Eyebrow>
-              <h2 className="mt-5 max-w-3xl font-display text-4xl leading-[1.12] tracking-normal text-foreground sm:text-5xl lg:text-5xl">
+              <h2 className="mt-3 max-w-3xl font-display text-3xl leading-[1.14] text-[#523342] sm:text-4xl">
                 Não procuramos uma fórmula.{" "}
-                <span className="italic text-primary">Queremos conhecer você.</span>
+                <span className="italic text-[#9a5a70]">Queremos conhecer você.</span>
               </h2>
             </div>
-            <p className="max-w-xl text-sm leading-[1.9] text-muted-foreground sm:text-base lg:pb-2">
-              Cada criadora tem uma forma própria de falar sobre beleza. Esses são alguns dos temas
-              que ajudam a equipe a conhecer seu perfil — não uma lista de vantagens garantidas ou
-              requisitos de aprovação automática.
+            <p className="max-w-xl text-sm leading-[1.65] text-[#755d66]">
+              Cada pessoa tem sua linguagem e seu público. Estes quatro temas ajudam a apresentar
+              seu perfil à equipe — não são exigências fixas nem promessa de aprovação.
             </p>
           </div>
 
-          <p className="mt-8 text-xs font-semibold uppercase tracking-normal text-muted-foreground sm:hidden">
-            Deslize para conhecer os temas <span aria-hidden="true">→</span>
+          <p className="mt-5 text-xs font-semibold text-[#82566b] sm:hidden">
+            Deslize para conhecer os quatro temas <span aria-hidden="true">→</span>
           </p>
           <div
             role="region"
-            aria-label="Temas da seleção Vonix Hair; deslize horizontalmente em telas pequenas"
+            aria-label="Quatro aspectos de afinidade Vonix Hair, deslize horizontalmente em telas pequenas"
             tabIndex={0}
-            className="-mx-5 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-6 scroll-px-5 focus-visible:outline-2 focus-visible:outline-ring sm:mx-0 sm:mt-12 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4"
+            data-testid="affiliate-c95-fit-rail"
+            className="-mx-5 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#875468] sm:mx-0 sm:mt-7 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4"
           >
             {experiences.map((item) => (
               <article
                 key={item.id}
-                className="group flex min-w-[78vw] max-w-[21rem] snap-start flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm sm:min-w-0 sm:max-w-none"
+                data-testid="affiliate-c95-fit-card"
+                className="flex min-w-[80vw] max-w-[19rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.25rem] border border-[#e4d3d0] bg-white shadow-[0_10px_24px_rgba(82,43,57,.06)] sm:min-w-0 sm:max-w-none"
               >
-                <div className={"relative aspect-[4/3] overflow-hidden " + item.background}>
-                  <ProductImage
-                    src={item.image}
-                    alt={item.alt}
-                    className="p-5 transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none"
-                  />
-                  <span className="absolute left-4 top-4 rounded-full border border-border bg-background/95 px-3 py-1 text-[10px] font-bold tracking-wide text-primary">
-                    {item.id}
-                  </span>
+                <div className="flex items-center gap-3 border-b border-[#eee1dc] px-4 py-3.5">
+                  <div className="relative flex size-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f3e8e4]">
+                    <ProductImage src={item.image} alt={item.alt} className="p-1.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[.08em] text-[#97586e]">
+                      {item.id} · {item.tag}
+                    </p>
+                    <h3 className="mt-1.5 font-display text-lg leading-tight text-[#553745] sm:text-xl">
+                      {item.title}
+                    </h3>
+                  </div>
                 </div>
-                <div className="flex flex-1 flex-col px-5 pb-6 pt-6 sm:px-6">
-                  <p className="text-[10px] font-extrabold tracking-normal text-muted-foreground">
-                    {item.tag}
-                  </p>
-                  <h3 className="mt-3 font-display text-2xl leading-tight text-foreground">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 flex-1 text-sm leading-[1.75] text-muted-foreground">
-                    {item.description}
-                  </p>
-                </div>
+                <p className="flex-1 px-4 py-4 text-xs leading-[1.7] text-[#765e68] sm:text-sm">
+                  {item.description}
+                </p>
               </article>
             ))}
           </div>
-          <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
-            Imagens dos próprios produtos Vonix Hair, utilizadas como apresentação de catálogo. Não
-            representam candidatas, depoimentos ou colaborações realizadas.
+          <p className="mt-4 max-w-4xl text-[11px] leading-[1.65] text-[#806874]">
+            Fotos de produtos do catálogo oficial Vonix Hair, apenas como contexto da marca. Não
+            retratam candidatas ou parcerias realizadas. A inscrição gratuita exige 18 anos ou mais;
+            o TikTok é opcional e a aprovação depende da análise individual.
           </p>
         </div>
       </section>
 
-      <section
-        id="como-funciona"
-        className="scroll-mt-24 relative overflow-hidden bg-primary px-5 py-20 text-primary-foreground sm:py-28"
-      >
-        <div className="relative mx-auto max-w-7xl">
-          <div className="grid gap-7 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
-            <div>
-              <Eyebrow light>Como funciona</Eyebrow>
-              <h2 className="mt-5 max-w-xl font-display text-4xl leading-tight sm:text-5xl lg:text-5xl">
-                Três momentos.{" "}
-                <span className="italic text-primary-foreground">Seu primeiro passo é aqui.</span>
-              </h2>
-            </div>
-            <p className="max-w-lg text-base leading-[1.85] text-primary-foreground">
-              A seleção começa pelo cadastro, passa por uma análise da equipe e pode evoluir para
-              uma conversa sobre possibilidades. Não existe aprovação instantânea nem condição
-              comercial automática.
-            </p>
-          </div>
-          <div className="mt-12 grid gap-4 md:grid-cols-3">
-            {[
-              {
-                number: "01",
-                title: "Apresente seu perfil",
-                text: "Preencha nome, e-mail, telefone, endereço e Instagram com seguidores. TikTok é opcional.",
-                Icon: ClipboardList,
-              },
-              {
-                number: "02",
-                title: "Análise individual",
-                text: "Quando as inscrições estiverem abertas, as informações serão avaliadas pela equipe responsável pela seleção.",
-                Icon: UsersRound,
-              },
-              {
-                number: "03",
-                title: "Próximos passos",
-                text: "Se houver avanço, a equipe poderá entrar em contato pelos canais informados e apresentar as condições aplicáveis.",
-                Icon: MessageCircleHeart,
-              },
-            ].map(({ number, title, text, Icon }) => (
-              <article key={number} className="relative border-t border-border py-7 sm:py-9">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="font-display text-5xl text-primary-foreground">{number}</span>
-                  <Icon aria-hidden="true" className="h-7 w-7 text-primary-foreground" />
-                </div>
-                <h3 className="mt-9 font-display text-2xl">{title}</h3>
-                <p className="mt-4 text-sm leading-[1.8] text-primary-foreground">{text}</p>
-              </article>
-            ))}
-          </div>
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-5 border-t border-border py-6">
-            <p className="max-w-2xl text-sm leading-[1.75] text-primary-foreground">
-              <strong>Inscrições em preparação?</strong> Você pode visualizar o formulário simples
-              em uma prévia segura, sem enviar ou armazenar seus dados.
-            </p>
-            <Button asChild variant="link" className="h-auto min-h-11 max-w-full whitespace-normal">
-              <a
-                href="#inscricao"
-                className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-card px-5 py-2.5 text-sm font-bold text-primary transition hover:bg-accent"
-              >
-                Ver disponibilidade <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <AffiliateCreatorPaths recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
-      <AffiliateCreatorPaths />
-
-      <AffiliateCreatorOpportunity recruitmentOpen={isOpen} />
+      <AffiliateCreatorOpportunity recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
       <section id="formatos" className="scroll-mt-24 bg-card px-5 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl">
@@ -636,6 +584,13 @@ export function AffiliateLandingDiscovery({
                         Modelo educativo, não é conteúdo de afiliada nem orientação para simular uso
                         ou resultado. Identifique publicidade quando houver parceria.
                       </p>
+                      <AffiliateCreativeKitAction
+                        name={idea.name}
+                        opening={idea.opening}
+                        takes={idea.takes}
+                        recruitmentOpen={isOpen}
+                        onSafePreview={onSafePreview}
+                      />
                     </div>
                   </details>
                 </div>
@@ -657,12 +612,14 @@ export function AffiliateLandingDiscovery({
               </div>
             </div>
             <Button asChild variant="link" className="h-auto min-h-11 max-w-full whitespace-normal">
-              <a
-                href="#inscricao"
+              <AffiliateApplyLink
+                recruitmentOpen={isOpen}
+                onSafePreview={onSafePreview}
                 className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-accent"
               >
-                Conhecer a candidatura <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </a>
+                {isOpen ? "Conhecer a candidatura" : "Abrir prévia segura"}
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </AffiliateApplyLink>
             </Button>
           </div>
         </div>
@@ -674,18 +631,32 @@ export function AffiliateLandingDiscovery({
 /** Backward-compatible complete editorial composition for embedded uses. */
 export function AffiliateLandingIntro({
   recruitmentStatus,
+  onSafePreview,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  onSafePreview?: (() => void) | undefined;
 }) {
   return (
     <div data-testid="vonix-affiliate-editorial" className="min-w-0">
-      <AffiliateLandingOffer recruitmentStatus={recruitmentStatus} />
-      <AffiliateLandingDiscovery recruitmentStatus={recruitmentStatus} />
+      <AffiliateLandingOffer recruitmentStatus={recruitmentStatus} onSafePreview={onSafePreview} />
+      <AffiliateLandingDiscovery
+        recruitmentStatus={recruitmentStatus}
+        onSafePreview={onSafePreview}
+      />
     </div>
   );
 }
 
-export function AffiliateLandingFAQ() {
+export function AffiliateLandingFAQ({
+  recruitmentStatus = "loading",
+  onSafePreview,
+}: {
+  recruitmentStatus?: RecruitmentStatus;
+  onSafePreview?: (() => void) | undefined;
+} = {}) {
+  const isOpen = recruitmentStatus === "open";
+  const [interactive, setInteractive] = useState(false);
+  useEffect(() => setInteractive(true), []);
   const [faqQuery, setFaqQuery] = useState("");
   const normalizedQuery = normalizeFaqSearch(faqQuery);
   const matchingQuestions = normalizedQuery
@@ -738,6 +709,7 @@ export function AffiliateLandingFAQ() {
                 id="vonix-c84-faq-search"
                 type="search"
                 value={faqQuery}
+                disabled={!interactive}
                 maxLength={80}
                 autoComplete="off"
                 onChange={(event) => setFaqQuery(event.target.value)}
@@ -752,6 +724,7 @@ export function AffiliateLandingFAQ() {
                   key={topic}
                   type="button"
                   aria-pressed={faqQuery === topic}
+                  disabled={!interactive}
                   onClick={() => setFaqQuery((current) => (current === topic ? "" : topic))}
                   className={
                     "min-h-11 rounded-full border px-4 py-2 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7b4857] " +
@@ -767,6 +740,7 @@ export function AffiliateLandingFAQ() {
                 <button
                   type="button"
                   onClick={() => setFaqQuery("")}
+                  disabled={!interactive}
                   className="min-h-11 px-2 text-xs font-semibold text-[#734558] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   Limpar busca
@@ -790,9 +764,13 @@ export function AffiliateLandingFAQ() {
             >
               Não encontramos uma pergunta com esse termo. Tente buscar por inscrição, Instagram ou
               comissão. Você também pode{" "}
-              <a href="#inscricao" className="font-bold underline underline-offset-4">
-                conhecer o formulário
-              </a>
+              <AffiliateApplyLink
+                recruitmentOpen={isOpen}
+                onSafePreview={onSafePreview}
+                className="font-bold underline underline-offset-4"
+              >
+                {isOpen ? "conhecer o formulário" : "abrir a prévia segura"}
+              </AffiliateApplyLink>
               .
             </div>
           )}
@@ -830,12 +808,14 @@ export function AffiliateLandingFAQ() {
           Preencha o formulário simples e acompanhe a disponibilidade oficial da seleção.
         </p>
         <Button asChild variant="link" className="h-auto min-h-11 max-w-full whitespace-normal">
-          <a
-            href="#inscricao"
+          <AffiliateApplyLink
+            recruitmentOpen={isOpen}
+            onSafePreview={onSafePreview}
             className="mt-7 inline-flex min-h-12 items-center gap-3 rounded-full bg-card px-7 py-3 text-sm font-bold text-primary transition hover:bg-accent"
           >
-            Ir para a inscrição <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
-          </a>
+            {isOpen ? "Ir para a inscrição" : "Abrir prévia segura"}
+            <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+          </AffiliateApplyLink>
         </Button>
       </div>
     </section>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
 import { illustrativeEarnings } from "@/lib/affiliate-marketing-math";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -91,89 +92,55 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
   );
 }
 
-const catalog = [
-  {
-    slug: "kit-banana-e-mel",
-    title: "Kit Banana e Mel",
-    text: "Rotina e cuidado",
-    alt: "Embalagens oficiais do Kit Banana e Mel comercializado na loja Vonix Hair",
-  },
-  {
-    slug: "mascara-reparacao-nutri-repair",
-    title: "Máscara Nutri Repair",
-    text: "Texturas e detalhes",
-    alt: "Embalagem oficial da Máscara de Reparação Nutri Repair da Vonix Hair",
-  },
-  {
-    slug: "botox-vonix",
-    title: "Botox Vonix",
-    text: "Universo profissional",
-    alt: "Pote original do Botox Vonix da loja oficial Vonix Hair",
-  },
-];
-
 export function AffiliateCreatorOpportunity({
   recruitmentOpen = false,
+  onSafePreview,
 }: {
   recruitmentOpen?: boolean;
+  onSafePreview?: (() => void) | undefined;
 }) {
   return (
-    <section aria-labelledby="creator-stories-title" className="bg-card px-5 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
-        <p className="text-xs font-semibold uppercase text-primary">
-          O catálogo como ponto de partida
-        </p>
-        <h2
-          id="creator-stories-title"
-          className="mt-4 max-w-3xl font-display text-4xl leading-tight sm:text-5xl"
-        >
-          Uma marca para conhecer.{" "}
-          <span className="italic text-primary">Muitas histórias para criar.</span>
-        </h2>
-        <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Conheça os produtos, suas indicações e o universo da marca. Sua experiência pessoal pode
-          inspirar uma rotina, uma resenha ou um olhar sobre os detalhes — sempre com sinceridade e
-          respeito às orientações de uso.
-        </p>
-        <div className="mt-10 grid min-w-0 gap-8 sm:grid-cols-3">
-          {catalog.map((product) => (
-            <figure key={product.slug} className="min-w-0">
-              <picture className="block aspect-square bg-background">
-                <source srcSet={`/images/products/${product.slug}.webp`} type="image/webp" />
-                <img
-                  src={`/images/products/${product.slug}.jpg`}
-                  alt={product.alt}
-                  width={768}
-                  height={768}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-contain p-6"
-                />
-              </picture>
-              <figcaption className="mt-5 border-t border-border pt-4">
-                <p className="text-xs uppercase text-muted-foreground">{product.text}</p>
-                <h3 className="mt-2 font-display text-2xl">{product.title}</h3>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-
-        <div className="mt-9 flex flex-wrap items-center justify-between gap-6 border-t border-border pt-7">
-          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Galeria de produtos reais da loja oficial. Não são depoimentos de afiliadas,
-            experiências de creators ou evidências de ganhos do programa.{" "}
-            <a href="/loja" className="font-semibold text-primary underline underline-offset-4">
-              Conheça o catálogo na loja oficial
-            </a>
-            .
+    <section
+      data-testid="affiliate-c90-creator-bridge"
+      aria-labelledby="creator-stories-title"
+      className="border-y border-[#e7d8d3] bg-[#fcf7f3] px-5 py-9 sm:py-12"
+    >
+      <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-12">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#875166]">
+            Conheça antes de compartilhar
           </p>
-          <Button asChild className="min-h-12 h-auto whitespace-normal px-6 py-3">
-            <a href="#inscricao">
-              {recruitmentOpen ? "Preencher candidatura" : "Conhecer a candidatura"}{" "}
-              <ArrowUpRight aria-hidden="true" />
-            </a>
-          </Button>
+          <h2
+            id="creator-stories-title"
+            className="mt-3 max-w-3xl font-display text-3xl leading-tight text-[#4d3040] sm:text-4xl"
+          >
+            Explore a marca.{" "}
+            <span className="italic text-[#874f62]">Depois apresente seu perfil.</span>
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-[1.75] text-[#705b65]">
+            Conheça os produtos no catálogo oficial e suas orientações de uso. Não é preciso criar
+            um portfólio para se candidatar, mas o envio não garante aprovação, parceria, produtos
+            gratuitos ou remuneração.
+          </p>
         </div>
+        <nav
+          aria-label="Próximos passos para conhecer a Vonix Hair"
+          className="flex w-full flex-wrap items-center gap-3 lg:w-auto lg:max-w-[24rem] lg:justify-end"
+        >
+          <a
+            href="/loja"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#d9bec3] bg-white px-5 py-3 text-sm font-bold text-[#754258] transition-colors hover:bg-[#f7e8eb] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754258]"
+          >
+            Conhecer o catálogo na loja oficial
+            <ArrowUpRight aria-hidden="true" className="size-4" />
+          </a>
+          <Button asChild className="h-auto min-h-12 rounded-xl px-5 py-3 text-sm font-bold">
+            <AffiliateApplyLink recruitmentOpen={recruitmentOpen} onSafePreview={onSafePreview}>
+              {recruitmentOpen ? "Preencher candidatura" : "Abrir prévia segura"}
+              <ArrowUpRight aria-hidden="true" className="size-4" />
+            </AffiliateApplyLink>
+          </Button>
+        </nav>
       </div>
     </section>
   );
