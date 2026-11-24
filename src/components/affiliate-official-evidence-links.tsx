@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ArrowUpRight, Film, MessageSquareText } from "lucide-react";
+import { ArrowUpRight, Film, Images, MessageSquareText } from "lucide-react";
 import { getProduct, OUT_OF_STOCK } from "@/lib/store";
 import publishedMedia from "@/data/provas-em-video.json";
 import reviews from "@/data/reviews.json";
+import packagingImages from "@/data/sacolinhas.json";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 
 /** Public release fallback: link to first-party source pages, do not republish
@@ -52,6 +53,8 @@ export function AffiliateOfficialEvidenceLinks({
   variant: "teaser" | "preview" | "reviews" | "videos";
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [packagingView, setPackagingView] = useState(false);
+  const [failedPackaging, setFailedPackaging] = useState<string[]>([]);
   const videos = variant === "videos";
   const compact = variant === "teaser";
   const id =
@@ -67,7 +70,21 @@ export function AffiliateOfficialEvidenceLinks({
       const product = getProduct(slug);
       const count = publishedMedia.filter((media) => media.slugs.includes(slug)).length;
       return product && !OUT_OF_STOCK.has(slug) && count > 0
-        ? [{ slug, name: product.name, count, idea }]
+        ? [
+            {
+              slug,
+              name: product.name,
+              category: product.categoryLabel,
+              count,
+              idea,
+              // The official Kit Monovonix bag shows different label colors than the
+              // current product photo. Keep the catalog photo until the brand confirms it.
+              packaging:
+                slug === "kit-monovonix"
+                  ? undefined
+                  : (packagingImages as Record<string, string>)[slug],
+            },
+          ]
         : [];
     });
   const products = videos ? catalogProducts(videoProducts) : [];
@@ -118,43 +135,87 @@ export function AffiliateOfficialEvidenceLinks({
               {visibleProducts.reduce((total, product) => total + product.count, 0)} vínculos de
               vídeos no acervo oficial. Abra a loja em outra aba para manter sua candidatura aqui.
             </p>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e5d2d4] bg-[#fff9f6] p-3 sm:p-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[#724155]">
+                  Explore a apresentação dos produtos
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-[#795e69]">
+                  Fotos de catálogo ou embalagens oficiais, para inspirar sua criação.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-pressed={packagingView}
+                aria-controls="affiliate-c158-catalog-grid"
+                data-testid="affiliate-c159-packaging"
+                onClick={() => setPackagingView((value) => !value)}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d8bfc5] bg-white px-4 py-2 text-xs font-bold text-[#724155] focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <Images aria-hidden="true" className="size-4" />
+                {packagingView ? "Ver fotos dos produtos" : "Ver embalagens oficiais"}
+              </button>
+              {packagingView && (
+                <p role="status" className="w-full text-xs leading-relaxed text-[#795e69]">
+                  Imagens de apresentação da loja. Produtos sem uma embalagem correspondente mantêm
+                  a foto original. Não são kits de afiliadas, brindes ou promessa de recebimento.
+                </p>
+              )}
+            </div>
             <div
               id="affiliate-c158-catalog-grid"
               className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
             >
-              {visibleProducts.map(({ slug, name, count, idea }) => (
-                <a
-                  key={slug}
-                  href={"/produto/" + slug}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
-                  className="flex min-h-24 items-center justify-between gap-3 rounded-xl border border-[#e5d2d4] p-3 text-sm font-bold text-[#724155] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2"
-                >
-                  <img
-                    src={"/images/products/" + slug + "-480.webp"}
-                    alt=""
-                    width={80}
-                    height={80}
-                    loading="lazy"
-                    decoding="async"
-                    className="size-20 shrink-0 rounded-lg bg-[#fbf5f2] object-contain"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block">{name}</span>
-                    <span className="mt-1 block text-[11px] font-semibold text-[#89586a]">
-                      {count} {count === 1 ? "vídeo associado" : "vídeos associados"}
+              {visibleProducts.map(({ slug, name, category, count, idea, packaging }) => {
+                const productPhoto = "/images/products/" + slug + "-480.webp";
+                const showPackaging =
+                  packagingView &&
+                  typeof packaging === "string" &&
+                  /^\/images\/sacolinhas\/[a-z0-9-]+\.webp$/.test(packaging) &&
+                  !failedPackaging.includes(slug);
+                return (
+                  <a
+                    key={slug}
+                    href={"/produto/" + slug}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
+                    className="group flex min-h-24 min-w-0 items-start gap-3 overflow-hidden rounded-2xl border border-[#e5d2d4] bg-white p-3 text-sm font-bold text-[#724155] shadow-[0_6px_20px_rgba(83,42,58,.05)] hover:border-[#b98b9c] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-col sm:gap-2 sm:p-4"
+                  >
+                    <img
+                      src={showPackaging ? packaging : productPhoto}
+                      onError={() => {
+                        if (showPackaging)
+                          setFailedPackaging((previous) =>
+                            previous.includes(slug) ? previous : [...previous, slug],
+                          );
+                      }}
+                      alt=""
+                      width={480}
+                      height={480}
+                      loading="lazy"
+                      decoding="async"
+                      className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-[#89586a]">
+                        {category}
+                      </span>
+                      <span className="mt-1 block leading-tight sm:text-base">{name}</span>
+                      <span className="mt-1 block text-[11px] font-semibold text-[#89586a]">
+                        {count} {count === 1 ? "vídeo associado" : "vídeos associados"}
+                      </span>
+                      <span className="mt-1 block text-xs font-normal leading-relaxed text-[#795e69]">
+                        {idea}
+                      </span>
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#724155] underline underline-offset-4">
+                        Ver demonstrações na loja (nova aba){" "}
+                        <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+                      </span>
                     </span>
-                    <span className="mt-1 block text-xs font-normal leading-relaxed text-[#795e69]">
-                      {idea}
-                    </span>
-                    <span className="mt-2 block text-xs font-bold text-[#724155]">
-                      Ver demonstrações na loja (nova aba)
-                    </span>
-                  </span>
-                  <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
-                </a>
-              ))}
+                  </a>
+                );
+              })}
             </div>
             {additionalProducts.length > 0 && (
               <button

@@ -120,6 +120,32 @@ describe("C156 public source-linked media release", () => {
           .map((a) => a.getAttribute("href")),
       ).size,
     ).toBe(14);
+    const packaging = within(videos).getByTestId("affiliate-c159-packaging");
+    expect(packaging).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(packaging);
+    expect(packaging).toHaveAttribute("aria-pressed", "true");
+    expect(within(videos).getByRole("status")).toHaveTextContent("Não são kits de afiliadas");
+    const packaged = Array.from(videos.querySelectorAll("img"));
+    expect(packaged).toHaveLength(14);
+    expect(
+      packaged.filter((image) => image.getAttribute("src")?.startsWith("/images/sacolinhas/")),
+    ).toHaveLength(13);
+    expect(videos.querySelector('a[href="/produto/kit-monovonix"] img')).toHaveAttribute(
+      "src",
+      "/images/products/kit-monovonix-480.webp",
+    );
+    const first = packaged[0]!;
+    fireEvent.error(first);
+    expect(first).toHaveAttribute("src", "/images/products/kit-banana-e-mel-480.webp");
+    expect(packaged[1]).toHaveAttribute("src", "/images/sacolinhas/botox-vonix.webp");
+    fireEvent.click(packaging);
+    for (const image of packaged)
+      expect(image.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+-480\.webp$/);
+    const returnLink = screen.getByTestId("affiliate-c159-catalog-return");
+    expect(returnLink).toHaveAttribute("href", "#inscricao");
+    fireEvent.click(returnLink);
+    expect(await screen.findByTestId("c156-form")).toHaveTextContent("Simulação protegida");
+    expect(server.submit).not.toHaveBeenCalled();
     fireEvent.click(more);
     expect(within(videos).getAllByRole("link")).toHaveLength(6);
     expect(more).toHaveAttribute("aria-expanded", "false");
