@@ -127,8 +127,13 @@ describe("C156 public source-linked media release", () => {
     expect(within(videos).getByRole("status")).toHaveTextContent("Não são kits de afiliadas");
     const packaged = Array.from(videos.querySelectorAll("img"));
     expect(packaged).toHaveLength(14);
-    for (const image of packaged)
-      expect(image.getAttribute("src")).toMatch(/^\/images\/sacolinhas\/[a-z0-9-]+\.webp$/);
+    expect(
+      packaged.filter((image) => image.getAttribute("src")?.startsWith("/images/sacolinhas/")),
+    ).toHaveLength(13);
+    expect(videos.querySelector('a[href="/produto/kit-monovonix"] img')).toHaveAttribute(
+      "src",
+      "/images/products/kit-monovonix-480.webp",
+    );
     const first = packaged[0]!;
     fireEvent.error(first);
     expect(first).toHaveAttribute("src", "/images/products/kit-banana-e-mel-480.webp");

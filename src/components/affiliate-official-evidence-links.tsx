@@ -77,7 +77,12 @@ export function AffiliateOfficialEvidenceLinks({
               category: product.categoryLabel,
               count,
               idea,
-              packaging: (packagingImages as Record<string, string>)[slug],
+              // The official Kit Monovonix bag shows different label colors than the
+              // current product photo. Keep the catalog photo until the brand confirms it.
+              packaging:
+                slug === "kit-monovonix"
+                  ? undefined
+                  : (packagingImages as Record<string, string>)[slug],
             },
           ]
         : [];
@@ -152,8 +157,8 @@ export function AffiliateOfficialEvidenceLinks({
               </button>
               {packagingView && (
                 <p role="status" className="w-full text-xs leading-relaxed text-[#795e69]">
-                  Imagens de apresentação da loja. Não são kits de afiliadas, brindes ou promessa de
-                  recebimento.
+                  Imagens de apresentação da loja. Produtos sem uma embalagem correspondente mantêm
+                  a foto original. Não são kits de afiliadas, brindes ou promessa de recebimento.
                 </p>
               )}
             </div>
