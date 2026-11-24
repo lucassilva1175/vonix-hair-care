@@ -240,3 +240,10 @@ Cuidado: itens baratos subiram 30% ou mais; acompanhar conversão. Custo do anú
 - Clarity 3 dias: 330 sessões, 288 viram produto (214 no Botox), 17 checkout, 1 compra; LCP 3,3 s, INP 420 ms. Meta não aberta (ordem do dono).
 - Mudança (PR #281): na página de produto o preço vem antes de Compartilhar e do box de benefício. Só ordem; testes e tipos passam.
 - Próxima hipótese: reduzir LCP no celular. Como desfazer: git revert do PR #281.
+
+## 24/11/2026 — dono do resultado (melhoria no site)
+- Clarity 3 dias: 307 sessões (154 bots excluídos); LCP 3,2 s, INP 350 ms, CLS 0; Instagram/Facebook são a maior parte do tráfego. BM não aberta (ordem do dono). Gravações e GA4 não abertos nesta rodada.
+- Medição ao vivo (computador): LCP 1,4 s; a imagem principal já tem preload e prioridade alta. A foto grande do bloco de descrição carregava em JPG (386 KB) antes de ser vista.
+- Mudança: essa foto passa a usar a versão WebP (cerca de 30% mais leve). Só imagem, sem preço/frete/pagamento; testes e tipos passam.
+- Próxima hipótese: LCP no celular depende de JS (~440 KB) e scripts de terceiros; medir no celular real antes de mexer.
+- Como desfazer: git revert do PR.
