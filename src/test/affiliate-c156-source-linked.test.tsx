@@ -103,6 +103,26 @@ describe("C156 public source-linked media release", () => {
       expect(image.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+-480\.webp$/);
     for (const link of within(videos).getAllByRole("link"))
       expect(link.getAttribute("href")).toMatch(/^\/produto\/[a-z0-9-]+$/);
+    const more = within(videos).getByRole("button", { name: "Explorar mais 8 produtos do acervo" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+    expect(within(videos).getAllByRole("link")).toHaveLength(14);
+    expect(videos.querySelectorAll("img")).toHaveLength(14);
+    expect(within(videos).getByTestId("affiliate-c157-video-count")).toHaveTextContent(
+      "14 linhas · 28 vínculos",
+    );
+    expect(videos.querySelector('a[href="/produto/plex-vonix"]')).toBeNull();
+    expect(
+      new Set(
+        within(videos)
+          .getAllByRole("link")
+          .map((a) => a.getAttribute("href")),
+      ).size,
+    ).toBe(14);
+    fireEvent.click(more);
+    expect(within(videos).getAllByRole("link")).toHaveLength(6);
+    expect(more).toHaveAttribute("aria-expanded", "false");
     expect(container.innerHTML).not.toMatch(forbidden);
     expect(container.querySelectorAll("video,iframe,blockquote")).toHaveLength(0);
     expect(server.submit).not.toHaveBeenCalled();

@@ -63,6 +63,26 @@ const validationOrder: ValidationKey[] = [
 ];
 
 const pendingReceiptSessionKey = "vonix-affiliate-unconfirmed-code";
+// A deadline only ends the local wait, not the server transaction. The private
+// receipt and exact payload remain available for a safe retry or status lookup.
+const submissionWaitMs = 45000;
+
+async function waitForSubmission<T>(request: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error("affiliate-submission-wait-expired")),
+          submissionWaitMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
 
 /** Resolve visibility at callback time, not from TypeScript's earlier narrowing.
  * Clipboard and visibility events can complete between awaited operations.
@@ -235,6 +255,9 @@ export function AffiliateSimpleForm({
   const [downloadFeedback, setDownloadFeedback] = useState("");
 
   useEffect(() => {
+    // A non-submitting preview must not read or modify a live private receipt.
+    // Do not reinterpret this page's own retry as a recovered visit.
+    if (preview || attemptCode.current) return;
     try {
       const pending = window.sessionStorage.getItem(pendingReceiptSessionKey) ?? "";
       if (/^[A-Za-z0-9_-]{32}$/.test(pending)) {
@@ -248,7 +271,7 @@ export function AffiliateSimpleForm({
       // The form still works when browser storage is denied; the user must
       // keep this page open to copy the pending code after a network failure.
     }
-  }, []);
+  }, [preview]);
 
   // The receipt is a bearer token. Mask it again if a shared device changes tabs.
   useEffect(() => {
@@ -600,7 +623,7 @@ export function AffiliateSimpleForm({
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (sending || submitting.current || sent) return;
-    if (recoveredAttempt) {
+    if (!preview && recoveredAttempt) {
       setMessage(
         "Esta tentativa foi recuperada de outra visita. Consulte o código anterior e descarte-o antes de iniciar uma nova inscrição.",
       );
@@ -694,9 +717,11 @@ export function AffiliateSimpleForm({
           // Secure in-memory fallback; show the code after any uncertain reply.
         }
       }
-      const result = await submitSimpleAffiliateApplication({
-        data: { ...parsed.data, trackingCode: attemptCode.current },
-      });
+      const result = await waitForSubmission(
+        submitSimpleAffiliateApplication({
+          data: { ...parsed.data, trackingCode: attemptCode.current },
+        }),
+      );
       if (result.ok) {
         // A honeypot can acknowledge without saving a real application.
         // Never confirm success or fire a Meta Lead without a private receipt.
@@ -1272,15 +1297,25 @@ export function AffiliateSimpleForm({
               Prévia: não envia nem armazena candidaturas.
             </p>
           ) : null}
+          {sending && (
+            <p
+              role="status"
+              data-testid="affiliate-c158-wait-guidance"
+              className="mt-4 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] p-3 text-xs leading-relaxed text-[#72515f]"
+            >
+              Aguarde a confirmação. Se a conexão não responder em até 45 segundos, você poderá
+              consultar o código da tentativa antes de reenviar.
+            </p>
+          )}
           <button
             type="submit"
-            disabled={sending || recoveredAttempt}
+            disabled={sending || (!preview && recoveredAttempt)}
             className="mt-6 flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-[#633846] px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#7e4e5c] disabled:opacity-50"
           >
             <Send aria-hidden="true" className="h-5 w-5" />
             {sending
               ? "Enviando candidatura..."
-              : recoveredAttempt
+              : !preview && recoveredAttempt
                 ? "Resolva a tentativa anterior para continuar"
                 : preview
                   ? "Simular envio"
