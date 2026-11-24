@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { ArrowUpRight, Film, MessageSquareText } from "lucide-react";
-import { getProduct } from "@/lib/store";
+import { getProduct, OUT_OF_STOCK } from "@/lib/store";
 import publishedMedia from "@/data/provas-em-video.json";
 import reviews from "@/data/reviews.json";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
@@ -21,11 +22,36 @@ const videoProducts = [
   { slug: "kit-cachos", idea: "Inspire um conteúdo sobre a rotina de cuidados com cachos." },
 ] as const;
 
+// Additional first-party catalog pages, not customer media republication.
+const additionalVideoProducts = [
+  {
+    slug: "shampoo-fio-de-luz-anti-residuo",
+    idea: "Mostre a apresentação e as instruções oficiais da linha.",
+  },
+  {
+    slug: "botox-vonix-matizador",
+    idea: "Apresente a versão matizadora e oriente a leitura do rótulo.",
+  },
+  { slug: "botox-line", idea: "Explore a embalagem e a página de informações." },
+  { slug: "botox-line-matizador", idea: "Mostre as apresentações disponíveis no catálogo." },
+  {
+    slug: "mascara-efeito-teia-desmaia-cabelo",
+    idea: "Crie um roteiro de apresentação da máscara.",
+  },
+  {
+    slug: "shampoo-hidratante-desmaia-cabelo",
+    idea: "Apresente o shampoo e os cuidados indicados na loja.",
+  },
+  { slug: "shampoo-monovonix", idea: "Mostre a apresentação do shampoo da linha." },
+  { slug: "mascara-monovonix", idea: "Explore a apresentação da máscara e as instruções de uso." },
+] as const;
+
 export function AffiliateOfficialEvidenceLinks({
   variant,
 }: {
   variant: "teaser" | "preview" | "reviews" | "videos";
 }) {
+  const [expanded, setExpanded] = useState(false);
   const videos = variant === "videos";
   const compact = variant === "teaser";
   const id =
@@ -36,13 +62,17 @@ export function AffiliateOfficialEvidenceLinks({
         : videos
           ? "catalogo-em-video"
           : undefined;
-  const products = videos
-    ? videoProducts.flatMap(({ slug, idea }) => {
-        const product = getProduct(slug);
-        const count = publishedMedia.filter((media) => media.slugs.includes(slug)).length;
-        return product && count > 0 ? [{ slug, name: product.name, count, idea }] : [];
-      })
-    : [];
+  const catalogProducts = (items: readonly { slug: string; idea: string }[]) =>
+    items.flatMap(({ slug, idea }) => {
+      const product = getProduct(slug);
+      const count = publishedMedia.filter((media) => media.slugs.includes(slug)).length;
+      return product && !OUT_OF_STOCK.has(slug) && count > 0
+        ? [{ slug, name: product.name, count, idea }]
+        : [];
+    });
+  const products = videos ? catalogProducts(videoProducts) : [];
+  const additionalProducts = videos ? catalogProducts(additionalVideoProducts) : [];
+  const visibleProducts = expanded ? [...products, ...additionalProducts] : products;
   const reviewCount = reviews.filter((review) => review.slug === "botox-vonix").length;
   return (
     <section
@@ -84,12 +114,15 @@ export function AffiliateOfficialEvidenceLinks({
               className="mt-4 text-xs font-semibold text-[#795e69]"
               data-testid="affiliate-c157-video-count"
             >
-              {products.length} linhas ·{" "}
-              {products.reduce((total, product) => total + product.count, 0)} vínculos de vídeos no
-              acervo oficial. Abra a loja em outra aba para manter sua candidatura aqui.
+              {visibleProducts.length} linhas ·{" "}
+              {visibleProducts.reduce((total, product) => total + product.count, 0)} vínculos de
+              vídeos no acervo oficial. Abra a loja em outra aba para manter sua candidatura aqui.
             </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map(({ slug, name, count, idea }) => (
+            <div
+              id="affiliate-c158-catalog-grid"
+              className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {visibleProducts.map(({ slug, name, count, idea }) => (
                 <a
                   key={slug}
                   href={"/produto/" + slug}
@@ -123,6 +156,19 @@ export function AffiliateOfficialEvidenceLinks({
                 </a>
               ))}
             </div>
+            {additionalProducts.length > 0 && (
+              <button
+                type="button"
+                aria-expanded={expanded}
+                aria-controls="affiliate-c158-catalog-grid"
+                onClick={() => setExpanded((value) => !value)}
+                className="mt-4 min-h-12 w-full rounded-full border border-[#d8bfc5] bg-[#fff8f6] px-5 py-3 text-sm font-bold text-[#724155] focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                {expanded
+                  ? "Mostrar apenas as linhas em destaque"
+                  : `Explorar mais ${additionalProducts.length} produtos do acervo`}
+              </button>
+            )}
           </>
         ) : (
           <div className="mt-4 flex flex-wrap items-center gap-3">

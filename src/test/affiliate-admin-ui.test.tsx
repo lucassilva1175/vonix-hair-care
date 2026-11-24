@@ -1033,12 +1033,16 @@ describe("Vonix affiliate private panel", () => {
     let state: DocumentVisibilityState = "visible";
     visibility.mockImplementation(() => state);
     try {
+      const listener = vi.spyOn(window, "addEventListener");
       render(<Page />);
       expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
+      await waitFor(() => expect(listener).toHaveBeenCalledWith("focus", expect.any(Function)));
+      listener.mockRestore();
       server.getAffiliateAdminSession
         .mockReturnValueOnce(oldSession)
         .mockReturnValueOnce(freshSession);
       act(() => window.dispatchEvent(new Event("focus")));
+      await waitFor(() => expect(server.getAffiliateAdminSession).toHaveBeenCalledTimes(2));
       state = "hidden";
       act(() => document.dispatchEvent(new Event("visibilitychange")));
       await act(async () => {

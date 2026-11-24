@@ -111,6 +111,79 @@ describe("Vonix short single-page application form", () => {
     await waitFor(() => expect(server.submit).toHaveBeenCalledOnce());
   });
 
+  it("C158 releases a hung request at 45 seconds, preserves its receipt and ignores a late success", async () => {
+    let finish!: (result: { ok: true; trackingCode: string }) => void;
+    server.submit.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    render(<AffiliateSimpleForm />);
+    fill();
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      expect(server.submit).toHaveBeenCalledTimes(1);
+      const code = server.submit.mock.calls[0]![0].data.trackingCode;
+      expect(screen.getByTestId("affiliate-c158-wait-guidance")).toHaveTextContent("45 segundos");
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(44999);
+      });
+      expect(screen.getByRole("button", { name: "Enviando candidatura..." })).toBeDisabled();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(screen.getByLabelText("Código privado da tentativa não confirmada")).toHaveValue(code);
+      expect(screen.getByRole("button", { name: "Enviar minha inscrição" })).toBeEnabled();
+      expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
+      expect(confirmedSignUpCalls()).toHaveLength(0);
+      await act(async () => {
+        finish({ ok: true, trackingCode: code });
+      });
+      expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
+      expect(confirmedSignUpCalls()).toHaveLength(0);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      });
+      expect(server.submit).toHaveBeenCalledTimes(2);
+      expect(server.submit.mock.calls[1]![0].data.trackingCode).toBe(code);
+      expect(screen.getByLabelText("Código privado de acompanhamento")).toHaveValue(code);
+      expect(confirmedSignUpCalls()).toHaveLength(1);
+      expect(
+        analytics.track.mock.calls.filter(([event]) => event === "affiliate_application_confirmed"),
+      ).toEqual([["affiliate_application_confirmed"]]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("C158 previews neither read nor erase an earlier private receipt; live intake recovers it", async () => {
+    const previous = "A".repeat(32);
+    window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", previous);
+    const storageRead = vi.spyOn(Storage.prototype, "getItem");
+    const { unmount } = render(<AffiliateSimpleForm preview />);
+    expect(
+      storageRead.mock.calls.filter(([key]) => key === "vonix-affiliate-unconfirmed-code"),
+    ).toHaveLength(0);
+    expect(
+      screen.queryByLabelText("Código privado da tentativa não confirmada"),
+    ).not.toBeInTheDocument();
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Simular envio" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Nenhuma candidatura foi enviada");
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(previous);
+    unmount();
+    render(<AffiliateSimpleForm />);
+    expect(await screen.findByLabelText("Código privado da tentativa não confirmada")).toHaveValue(
+      previous,
+    );
+    expect(
+      screen.getByRole("button", { name: "Resolva a tentativa anterior para continuar" }),
+    ).toBeDisabled();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
+  });
+
   it("locks applicant fields while the private receipt is being committed and unlocks on failure", async () => {
     let finish!: (result: { ok: false; reason: string }) => void;
     server.submit.mockReturnValueOnce(
