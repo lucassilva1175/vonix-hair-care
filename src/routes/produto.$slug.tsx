@@ -3,7 +3,7 @@ import { Check, Heart, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ProductGallery } from "@/components/product-gallery";
-import { thumb } from "@/lib/images";
+import { thumb, webp } from "@/lib/images";
 import { ProductDetails } from "@/components/product-details";
 import { ProductReviews, ReviewStrip, reviewsFor } from "@/components/reviews";
 import { ProvasEmVideo } from "@/components/provas-em-video";
@@ -592,7 +592,7 @@ function ProductPage() {
         {p.description && (
           <section className="mt-16 grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-2" data-testid="product-description-block">
             <div className="hidden bg-muted lg:block">
-              <img src={p.images[1] ?? p.images[0]} alt={p.name} loading="lazy" className="sticky top-24 h-auto max-h-[560px] w-full object-contain" />
+              <img src={webp(p.images[1] ?? p.images[0]!)} alt={p.name} loading="lazy" decoding="async" className="sticky top-24 h-auto max-h-[560px] w-full object-contain" />
             </div>
             <div className="p-4 md:p-8">
               <ProductDetails p={p} />
