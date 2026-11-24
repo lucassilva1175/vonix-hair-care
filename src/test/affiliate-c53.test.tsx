@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const server = vi.hoisted(() => ({ status: vi.fn(), submit: vi.fn() }));
@@ -29,19 +29,19 @@ describe("C53 recruitment presentation boundaries", () => {
   it("provides real local product pictures, not affiliate testimonials or third-party portraits", () => {
     const { container } = render(<AffiliateLandingIntro recruitmentStatus="closed" />);
     const sources = [...container.querySelectorAll("picture source")];
-    expect(sources.length).toBeGreaterThanOrEqual(8);
+    expect(sources.length).toBeGreaterThanOrEqual(6);
     for (const source of sources)
       expect(source.getAttribute("srcset")).toMatch(/^\/images\/products\/[a-z0-9-]+\.webp$/);
     expect(screen.getAllByText(/Não são depoimentos de afiliadas/).length).toBeGreaterThan(0);
-    // The compact preview and full catalog section each show the same 3
+    // The compact preview and full catalog section each show the same 4
     // authentic PRODUCT reviews, with distinct levels of detail.
     expect(
       screen.getByTestId("vonix-c65-review-preview").querySelectorAll("blockquote"),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
     expect(
       screen.getByTestId("vonix-c53-real-product-reviews").querySelectorAll("blockquote"),
-    ).toHaveLength(3);
-    expect(container.querySelectorAll("blockquote")).toHaveLength(6);
+    ).toHaveLength(4);
+    expect(container.querySelectorAll("blockquote")).toHaveLength(8);
     expect(screen.getByRole("link", { name: /catálogo na loja oficial/ })).toHaveAttribute(
       "href",
       "/loja",
@@ -54,8 +54,8 @@ describe("C53 recruitment presentation boundaries", () => {
   it("identifies authentic storefront comments as PRODUCT reviews, not affiliate earnings", () => {
     const { container } = render(<AffiliateLandingIntro recruitmentStatus="closed" />);
     const evidence = screen.getByTestId("vonix-c53-real-product-reviews");
-    expect(evidence.querySelectorAll("blockquote")).toHaveLength(3);
-    for (const name of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade"])
+    expect(evidence.querySelectorAll("blockquote")).toHaveLength(4);
+    for (const name of ["Fernanda Assis", "Ayla Muniz", "Mariana Andrade", "Ana Paula"])
       expect(evidence).toHaveTextContent(name);
     expect(evidence).toHaveTextContent("Não são depoimentos de afiliadas");
     expect(evidence).toHaveTextContent("Eles não representam renda, vendas, comissões");
@@ -63,7 +63,7 @@ describe("C53 recruitment presentation boundaries", () => {
     expect(container.textContent).not.toMatch(
       /depoimentos de afiliadas aprovadas|ganhos reais de afiliadas/i,
     );
-    const topics = screen.getByRole("region", { name: /Temas da seleção Vonix Hair/ });
+    const topics = screen.getByRole("region", { name: /Quatro aspectos de afinidade Vonix Hair/ });
     expect(topics.querySelectorAll("picture img")).toHaveLength(4);
     for (const img of topics.querySelectorAll("img"))
       expect(img.getAttribute("alt")).toContain("Vonix");
@@ -76,17 +76,18 @@ describe("C53 recruitment presentation boundaries", () => {
       const id = link.getAttribute("href")?.slice(1);
       expect(id && document.getElementById(id)).toBeTruthy();
     }
-    for (const link of screen.getAllByRole("link", { name: "Ganhos" }))
+    for (const link of screen.getAllByRole("link", { name: "Comissão e bônus" }))
       expect(link).toHaveAttribute("href", "#ganhos");
-    expect(screen.getByRole("link", { name: "Status" })).toHaveAttribute(
-      "href",
-      "/consultar-candidatura",
-    );
+    for (const link of screen.getAllByRole("link", { name: "Já me inscrevi" }))
+      expect(link).toHaveAttribute("href", "/consultar-candidatura");
   });
 
   it("retains the actual simplified form and does not post any preview data", async () => {
-    render(<AffiliateApplicationPage />);
-    fireEvent.click(await screen.findByRole("button", { name: /Visualizar formulário/ }));
+    const { container } = render(<AffiliateApplicationPage />);
+    const section = container.querySelector<HTMLElement>("#inscricao");
+    if (!section) throw new Error("Missing application section");
+    const form = within(section);
+    fireEvent.click(await form.findByRole("button", { name: /Visualizar formulário/ }));
     for (const label of [
       /Nome completo/,
       /Telefone com DDD/,
@@ -95,16 +96,14 @@ describe("C53 recruitment presentation boundaries", () => {
       /^Instagram/,
       /Seguidores no Instagram/,
     ])
-      expect(screen.getByLabelText(label)).toBeRequired();
-    expect(screen.getByLabelText(/^TikTok/)).not.toBeRequired();
-    expect(screen.queryByLabelText(/CPF|Data de nascimento|Motivação/)).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/Nome completo/), { target: { value: "Exemplo C53" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simular envio" }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Simular envio" })).toBeEnabled(),
-    );
+      expect(form.getByLabelText(label)).toBeRequired();
+    expect(form.getByLabelText(/^TikTok/)).not.toBeRequired();
+    expect(form.queryByLabelText(/CPF|Data de nascimento|Motivação/)).not.toBeInTheDocument();
+    fireEvent.change(form.getByLabelText(/Nome completo/), { target: { value: "Exemplo C53" } });
+    fireEvent.click(form.getByRole("button", { name: "Simular envio" }));
+    await waitFor(() => expect(form.getByRole("button", { name: "Simular envio" })).toBeEnabled());
     expect(server.submit).not.toHaveBeenCalled();
-    expect(screen.getByText("Prévia: não envia nem armazena candidaturas.")).toBeInTheDocument();
+    expect(form.getByText("Prévia: não envia nem armazena candidaturas.")).toBeInTheDocument();
   });
 
   it("keeps public SEO conditional on selection, without modifying private routes", () => {

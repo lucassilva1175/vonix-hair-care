@@ -46,23 +46,24 @@ function fillSocial() {
 }
 
 describe("C70 form progress — presence only, no applicant data", () => {
-  it("starts at 0/3 and identifies missing groups without claiming validation", () => {
+  it("starts at 0/4 and identifies missing groups without claiming validation", () => {
     render(<AffiliateSimpleForm />);
     expect(value()).toHaveAttribute("aria-valuemin", "0");
-    expect(value()).toHaveAttribute("aria-valuemax", "3");
+    expect(value()).toHaveAttribute("aria-valuemax", "4");
     expect(value()).toHaveAttribute("aria-valuenow", "0");
-    expect(within(progress()).getByText("0 de 3 grupos informados")).toBeInTheDocument();
-    expect(within(progress()).getAllByText("Pendente")).toHaveLength(3);
+    expect(within(progress()).getByText("0 de 4 itens preparados")).toBeInTheDocument();
+    expect(within(progress()).getAllByText("Pendente")).toHaveLength(4);
     expect(progress()).toHaveTextContent("não validação");
-    expect(progress()).toHaveTextContent("aceite de privacidade é separado");
+    expect(progress()).toHaveTextContent("Indica campos informados e aceite, não validação");
     expect(server.submit).not.toHaveBeenCalled();
   });
 
-  it("counts required contact, address and Instagram once; TikTok and consent are separate", () => {
+  it("counts contact, address, Instagram and privacy consent; TikTok remains separate", () => {
     render(<AffiliateSimpleForm />);
     fillSocial();
     expect(value()).toHaveAttribute("aria-valuenow", "1");
-    expect(within(progress()).getByText("1 de 3 grupos informados")).toBeInTheDocument();
+    expect(within(progress()).getByText("1 de 4 itens preparados")).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/Também tem TikTok\?/));
     change(/^TikTok/, "@perfilopcional");
     change(/Seguidores no TikTok/, "800");
     expect(value()).toHaveAttribute("aria-valuenow", "1");
@@ -71,7 +72,12 @@ describe("C70 form progress — presence only, no applicant data", () => {
     fillAddress();
     expect(value()).toHaveAttribute("aria-valuenow", "3");
     expect(within(progress()).getAllByText("Informado")).toHaveLength(3);
-    expect(screen.getByRole("checkbox", { name: /Autorizo o uso destes dados/ })).not.toBeChecked();
+    const consent = screen.getByRole("checkbox", { name: /Autorizo o uso destes dados/ });
+    expect(consent).not.toBeChecked();
+    fireEvent.click(consent);
+    expect(consent).toBeChecked();
+    expect(value()).toHaveAttribute("aria-valuenow", "4");
+    expect(within(progress()).getAllByText("Informado")).toHaveLength(4);
     const progressText = progress().textContent ?? "";
     expect(progressText).not.toMatch(
       /Pessoa Exemplo|pessoa@example.invalid|99999|Rua Exemplo|perfilteste|1250/,

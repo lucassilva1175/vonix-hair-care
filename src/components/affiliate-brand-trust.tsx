@@ -1,5 +1,6 @@
-import { ArrowUpRight, Headset, PackageCheck, ShieldCheck, Truck } from "lucide-react";
+import { ArrowUpRight, Headset, PackageCheck, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
 
 /**
  * Factual brand credibility for prospects, sourced from the official
@@ -33,118 +34,118 @@ const brandFacts = [
   },
 ] as const;
 
-export function AffiliateBrandTrust({ recruitmentOpen }: { recruitmentOpen: boolean }) {
+export function AffiliateBrandTrust({
+  recruitmentOpen,
+  onSafePreview,
+}: {
+  recruitmentOpen: boolean;
+  onSafePreview?: (() => void) | undefined;
+}) {
   return (
     <section
       id="conheca-a-vonix"
       data-testid="affiliate-c58-brand-trust"
       aria-labelledby="vonix-c58-brand-title"
-      className="scroll-mt-28 overflow-hidden border-y border-[#eadbd7] bg-[#fbf5f1] px-5 py-16 sm:py-24"
+      className="scroll-mt-28 overflow-hidden border-y border-[#eadbd7] bg-[#fbf5f1] px-5 py-10 sm:py-16"
     >
-      <div className="mx-auto max-w-7xl">
-        <div className="grid min-w-0 items-center gap-9 lg:grid-cols-[.88fr_1.12fr] lg:gap-16">
-          <figure className="relative min-w-0">
-            <div
-              className="absolute -left-8 -top-8 h-44 w-44 rounded-full bg-[#f2d9d4]/70 blur-3xl"
-              aria-hidden="true"
-            />
-            <div className="relative overflow-hidden rounded-[2.2rem] border border-[#e9d2cd] bg-gradient-to-br from-[#f9e8e4] via-[#fffaf6] to-[#ebd5d2] p-5 shadow-[0_24px_70px_rgba(71,34,48,.10)] sm:p-8">
-              <div className="grid grid-cols-[1.1fr_.9fr] items-center gap-3 sm:gap-6">
-                <picture className="block aspect-[.9] overflow-hidden rounded-[1.5rem] bg-[#fffaf7]">
-                  <source srcSet="/images/products/kit-cronograma-capilar.webp" type="image/webp" />
-                  <img
-                    src="/images/products/kit-cronograma-capilar.jpg"
-                    alt="Kit Cronograma Capilar do catálogo oficial Vonix Hair"
-                    width={640}
-                    height={720}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-contain p-3 sm:p-5"
-                  />
-                </picture>
-                <picture className="block aspect-[.72] overflow-hidden rounded-[1.5rem] bg-white">
-                  <source srcSet="/images/products/botox-vonix.webp" type="image/webp" />
-                  <img
-                    src="/images/products/botox-vonix.jpg"
-                    alt="Embalagem do Botox Vonix do catálogo oficial"
-                    width={500}
-                    height={700}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-contain p-3 sm:p-5"
-                  />
-                </picture>
-              </div>
-              <figcaption className="mt-5 flex items-start gap-3 rounded-[1.1rem] border border-[#ead7d2] bg-white/90 px-4 py-4 text-xs leading-relaxed text-[#674e59] sm:text-sm">
-                <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-[#844c5c]" />
-                Fotos dos próprios produtos Vonix Hair. Não são imagens de candidatas, creators ou
-                resultados de parcerias.
-              </figcaption>
-            </div>
-          </figure>
+      <div className="mx-auto grid max-w-7xl min-w-0 gap-6 lg:grid-cols-[.75fr_1.25fr] lg:items-center lg:gap-10">
+        <figure
+          data-testid="affiliate-c92-brand-photo"
+          className="relative h-56 min-w-0 overflow-hidden rounded-[1.7rem] border border-[#e2c7c5] bg-[#e8d8d1] shadow-[0_16px_42px_rgba(71,34,48,.10)] sm:h-72 lg:h-[32rem]"
+        >
+          <img
+            src="/images/categorias/frizz.jpg"
+            alt="Fotografia editorial de cabelos da categoria Frizz do catálogo oficial Vonix Hair; não retrata afiliadas"
+            width={480}
+            height={480}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <span className="absolute left-4 top-4 rounded-full border border-white/70 bg-[#fffaf7]/95 px-4 py-2 text-[11px] font-bold uppercase tracking-[.08em] text-[#633c4d]">
+            Acervo oficial Vonix Hair
+          </span>
+          <figcaption className="absolute inset-x-3 bottom-3 rounded-xl border border-white/70 bg-[#fffaf7]/95 px-4 py-3 text-[11px] leading-[1.55] text-[#634a54] backdrop-blur-sm sm:inset-x-5 sm:bottom-5">
+            Fotografia ilustrativa de cabelos da loja. Não retrata uma afiliada, criadora
+            participante ou resultado de parceria.
+          </figcaption>
+        </figure>
 
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[.16em] text-[#874959]">
-              Conheça a marca por trás do convite
-            </p>
-            <h2
-              id="vonix-c58-brand-title"
-              className="mt-4 font-display text-4xl leading-[1.12] text-[#442b35] sm:text-5xl"
-            >
-              Uma loja real.{" "}
-              <span className="italic text-[#9b5a6c]">Uma parceria que começa com confiança.</span>
-            </h2>
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-[#715c64] sm:text-base sm:leading-8">
-              Antes de apresentar seu perfil, explore quem é a Vonix Hair: seus produtos, seu
-              atendimento e as condições de compra divulgadas na loja oficial. Ter informações
-              confiáveis ajuda você a decidir se a marca combina com a sua audiência.
-            </p>
-            <div className="mt-7 grid min-w-0 gap-3">
-              {brandFacts.map(({ title, description, Icon, href, link }) => (
-                <article
-                  key={title}
-                  className="flex min-w-0 items-start gap-4 rounded-[1.15rem] border border-[#e9dbd6] bg-white/90 p-4 sm:p-5"
-                >
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#f5e7e6] text-[#834d5b]">
-                    <Icon aria-hidden="true" className="size-5" />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="font-display text-xl leading-tight text-[#442b35]">{title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#715c64]">{description}</p>
-                    <a
-                      href={href}
-                      className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-[#7e4152] underline underline-offset-4"
-                    >
-                      {link} <ArrowUpRight aria-hidden="true" className="size-4" />
-                    </a>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-[#e4d3cf] pt-6">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#874959]">
+            Conheça a marca por trás do convite
+          </p>
+          <h2
+            id="vonix-c58-brand-title"
+            className="mt-3 font-display text-3xl leading-tight text-[#442b35] sm:text-4xl lg:text-5xl"
+          >
+            Uma loja real. <span className="italic text-[#9b5a6c]">Uma marca para conhecer.</span>
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-[1.7] text-[#715c64]">
+            Antes de apresentar seu perfil, veja a história, os produtos e os canais oficiais da
+            Vonix. Conhecer a marca ajuda você a decidir se combina com o que deseja compartilhar
+            com sua audiência.
+          </p>
+          <div
+            data-testid="affiliate-c92-public-store-fact"
+            className="mt-5 grid items-center gap-3 rounded-2xl border border-[#e5cecb] bg-white/95 px-5 py-4 shadow-sm sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-5"
+          >
+            <strong className="font-display text-4xl leading-none text-[#763f54] sm:text-5xl">
+              480+
+            </strong>
+            <div className="text-xs leading-[1.65] text-[#725762] sm:text-sm">
+              <p>
+                Produtos vendidos entre o site e o atendimento por WhatsApp,
+                <strong> segundo a página institucional da Vonix Hair</strong>. Não é número de
+                afiliadas, vendas por criadoras ou ganhos do programa.
+              </p>
               <a
-                href="#avaliacoes-produtos"
-                className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#7e4152] underline underline-offset-4"
+                href="/sobre"
+                className="mt-1 inline-flex min-h-9 items-center gap-1.5 font-bold text-[#814759] underline underline-offset-4"
               >
-                Ver avaliações reais de produtos{" "}
-                <ArrowUpRight aria-hidden="true" className="size-4" />
+                Conferir a fonte oficial <ArrowUpRight aria-hidden="true" className="size-4" />
               </a>
-              <Button
-                asChild
-                className="h-auto min-h-12 rounded-full px-6 py-3 text-sm font-semibold"
-              >
-                <a href="#inscricao">
-                  {recruitmentOpen ? "Quero apresentar meu perfil" : "Ver como se candidatar"}
-                  <ArrowUpRight aria-hidden="true" className="size-4" />
-                </a>
-              </Button>
             </div>
-            <p className="mt-4 max-w-xl text-xs leading-relaxed text-[#806b72]">
-              Avaliações citadas neste portal são de clientes sobre produtos, não de afiliadas
-              participantes. A candidatura não garante aprovação ou remuneração.
-            </p>
           </div>
+
+          <div className="mt-4 grid min-w-0 gap-2.5 sm:grid-cols-3">
+            {brandFacts.map(({ title, description, Icon, href, link }) => (
+              <article
+                key={title}
+                className="min-w-0 rounded-xl border border-[#e7d9d5] bg-white/90 px-4 py-4"
+              >
+                <Icon aria-hidden="true" className="size-5 text-[#814759]" />
+                <h3 className="mt-2 font-display text-lg leading-tight text-[#442b35]">{title}</h3>
+                <p className="mt-2 text-xs leading-[1.65] text-[#715c64]">{description}</p>
+                <a
+                  href={href}
+                  className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-xs font-bold text-[#7e4152] underline underline-offset-4"
+                >
+                  {link} <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                </a>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[#e4d3cf] pt-4">
+            <a
+              href="#avaliacoes-produtos"
+              className="inline-flex min-h-11 items-center gap-2 text-xs font-bold text-[#7e4152] underline underline-offset-4"
+            >
+              Ver avaliações reais de produtos
+              <ArrowUpRight aria-hidden="true" className="size-4" />
+            </a>
+            <Button asChild className="h-auto min-h-11 rounded-full px-5 py-2.5 text-xs font-bold">
+              <AffiliateApplyLink recruitmentOpen={recruitmentOpen} onSafePreview={onSafePreview}>
+                {recruitmentOpen ? "Quero apresentar meu perfil" : "Abrir prévia segura"}
+                <ArrowUpRight aria-hidden="true" className="size-4" />
+              </AffiliateApplyLink>
+            </Button>
+          </div>
+          <p className="mt-3 text-[11px] leading-[1.55] text-[#806b72]">
+            Avaliações deste portal são de clientes sobre produtos, não de afiliadas participantes.
+            A candidatura não garante aprovação ou remuneração.
+          </p>
         </div>
       </div>
     </section>

@@ -10,7 +10,10 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/components/affiliate-shell", () => ({
   AffiliateShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
 }));
-vi.mock("@/lib/store", () => ({ SITE_URL: "https://vonixhair.com" }));
+vi.mock("@/lib/store", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/store")>()),
+  SITE_URL: "https://vonixhair.com",
+}));
 vi.mock("@/components/affiliate-simple-form", () => ({
   AffiliateSimpleForm: ({
     preview,

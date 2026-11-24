@@ -30,7 +30,7 @@ describe("C80 Vonix: três estilos de conteúdo sem prometer vínculo ou ganhos"
     expect(panel).toHaveTextContent("sem prometer resultados");
     expect(panel).toHaveTextContent("informação do fabricante");
     expect(container.querySelectorAll("form,input,textarea,video,audio")).toHaveLength(0);
-    expect(within(panel).getByRole("link", { name: /Apresentar meu perfil/i })).toHaveAttribute(
+    expect(within(panel).getByRole("link", { name: /Abrir prévia segura/i })).toHaveAttribute(
       "href",
       "#inscricao",
     );

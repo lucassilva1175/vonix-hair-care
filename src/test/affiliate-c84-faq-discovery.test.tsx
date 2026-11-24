@@ -80,7 +80,7 @@ describe("C84 Vonix: perguntas frequentes encontráveis sem coleta de dados", ()
     expect(faq.querySelectorAll("details")).toHaveLength(0);
     const empty = within(faq).getByTestId("vonix-c84-faq-empty");
     expect(empty).toHaveTextContent("Não encontramos uma pergunta");
-    expect(within(empty).getByRole("link", { name: /conhecer o formulário/i })).toHaveAttribute(
+    expect(within(empty).getByRole("link", { name: /abrir a prévia segura/i })).toHaveAttribute(
       "href",
       "#inscricao",
     );

@@ -43,7 +43,24 @@ const validationLabels: Record<ValidationKey, string> = {
   privacyAccepted: "Aceite da Política de Privacidade",
 };
 
-const validationOrder = Object.keys(validationLabels) as ValidationKey[];
+// The error summary follows the visible contact, social and address order.
+const validationOrder: ValidationKey[] = [
+  "fullName",
+  "email",
+  "phone",
+  "instagram",
+  "instagramFollowers",
+  "tiktok",
+  "tiktokFollowers",
+  "postalCode",
+  "street",
+  "number",
+  "district",
+  "city",
+  "state",
+  "complement",
+  "privacyAccepted",
+];
 
 const pendingReceiptSessionKey = "vonix-affiliate-unconfirmed-code";
 
@@ -373,6 +390,7 @@ export function AffiliateSimpleForm({
   );
   const submitting = useRef(false);
   const formElement = useRef<HTMLFormElement | null>(null);
+  const optionalTikTokRef = useRef<HTMLDetailsElement | null>(null);
   const formSeen = useRef(false);
   const formStarted = useRef(false);
   const dirty = Object.values(values).some(Boolean) || accepted || !!trap;
@@ -394,6 +412,13 @@ export function AffiliateSimpleForm({
       ),
     },
     {
+      label: "Instagram",
+      href: "#simple-social-heading",
+      filled: (["instagram", "instagramFollowers"] as const).every(
+        (key) => values[key].trim().length > 0,
+      ),
+    },
+    {
       label: "Endereço",
       href: "#simple-address-heading",
       filled: (["postalCode", "street", "number", "district", "city", "state"] as const).every(
@@ -401,11 +426,9 @@ export function AffiliateSimpleForm({
       ),
     },
     {
-      label: "Instagram",
-      href: "#simple-social-heading",
-      filled: (["instagram", "instagramFollowers"] as const).every(
-        (key) => values[key].trim().length > 0,
-      ),
+      label: "Privacidade",
+      href: "#simple-privacyAccepted",
+      filled: accepted,
     },
   ];
   const filledGroups = completionGroups.filter(({ filled }) => filled).length;
@@ -628,8 +651,14 @@ export function AffiliateSimpleForm({
       if (!values.email.trim() && !failures.email) {
         failures.email = "Informe seu e-mail para contato sobre a candidatura.";
       }
+      // Invalid optional fields must be revealed so the applicant can correct them.
+      if (failures.tiktok || failures.tiktokFollowers) {
+        if (optionalTikTokRef.current) optionalTikTokRef.current.open = true;
+      }
       setErrors(failures);
       setMessage("");
+      // Only a count of blocked attempts; no field names, values or preview events.
+      if (!preview) trackAffiliateFunnel("affiliate_form_invalid");
       setInvalidAttempt((previous) => previous + 1);
       return;
     }
@@ -820,6 +849,7 @@ export function AffiliateSimpleForm({
   return (
     <form
       ref={formElement}
+      aria-label="Formulário de candidatura Vonix Hair"
       noValidate
       aria-busy={sending}
       onSubmit={(e) => void submit(e)}
@@ -838,23 +868,26 @@ export function AffiliateSimpleForm({
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-[#65414b]">
             <span>Seu preenchimento</span>
             <span aria-live="polite" data-testid="affiliate-c70-progress-count">
-              {filledGroups} de 3 grupos informados
+              {filledGroups} de {completionGroups.length} itens preparados
             </span>
           </div>
           <div
             role="progressbar"
             aria-label="Progresso de preenchimento dos campos obrigatórios"
             aria-valuemin={0}
-            aria-valuemax={3}
+            aria-valuemax={completionGroups.length}
             aria-valuenow={filledGroups}
             className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0dfe1]"
           >
             <div
               className="h-full rounded-full bg-[#784452] transition-[width] duration-200 motion-reduce:transition-none"
-              style={{ width: (filledGroups / 3) * 100 + "%" }}
+              style={{ width: (filledGroups / completionGroups.length) * 100 + "%" }}
             />
           </div>
-          <ul className="mt-3 grid grid-cols-3 gap-2" aria-label="Etapas de preenchimento">
+          <ul
+            className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
+            aria-label="Etapas de preenchimento"
+          >
             {completionGroups.map(({ label, href, filled }) => (
               <li key={label} className="min-w-0">
                 <a
@@ -872,8 +905,8 @@ export function AffiliateSimpleForm({
             ))}
           </ul>
           <p className="mt-2 text-[11px] leading-relaxed text-[#7c6269]">
-            Toque em uma etapa para ir aos campos. Indica campos preenchidos, não validação. O
-            aceite de privacidade é separado e necessário para enviar.
+            Toque em uma etapa para ir aos campos. Indica campos informados e aceite, não validação.
+            A prévia nunca envia candidaturas.
           </p>
         </div>
       </div>
@@ -942,6 +975,67 @@ export function AffiliateSimpleForm({
         </section>
 
         <section
+          aria-labelledby="simple-social-heading"
+          className="space-y-5 border-t border-[#f0e2df] pt-8"
+        >
+          <div className="flex items-center gap-3">
+            <Instagram aria-hidden="true" className="h-6 w-6 text-[#8a5864]" />
+            <div>
+              <h4 id="simple-social-heading" className={heading}>
+                Redes sociais
+              </h4>
+              <p className={help}>
+                Comece pelo Instagram e seus seguidores. O TikTok é opcional e pode ser informado
+                abaixo, caso você tenha um perfil.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-[1.4fr_1fr]">
+            {field("instagram", "Instagram", {
+              placeholder: "@seuperfil",
+              maxLength: 240,
+              autoComplete: "off",
+            })}
+            {field("instagramFollowers", "Seguidores no Instagram", {
+              placeholder: "Ex.: 2500",
+              inputMode: "numeric",
+              maxLength: 10,
+            })}
+          </div>
+          <details
+            ref={optionalTikTokRef}
+            data-testid="affiliate-c103-tiktok-optional"
+            className="group rounded-xl border border-[#e8d4d4] bg-[#fff9f6]"
+          >
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[#663b4e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#784452]">
+              <span>Também tem TikTok? Adicione seu perfil, se quiser.</span>
+              <span className="shrink-0 rounded-full border border-[#dec1c9] px-2.5 py-1 text-[11px] font-semibold">
+                Opcional
+              </span>
+            </summary>
+            <div className="border-t border-[#ead9d6] px-4 py-4">
+              <div className="grid gap-4 sm:grid-cols-[1.4fr_1fr]">
+                {field("tiktok", "TikTok (opcional)", {
+                  placeholder: "@seuperfil (se tiver)",
+                  maxLength: 240,
+                  autoComplete: "off",
+                  required: false,
+                })}
+                {field("tiktokFollowers", "Seguidores no TikTok (opcional)", {
+                  placeholder: "Ex.: 900 (se tiver)",
+                  required: false,
+                  inputMode: "numeric",
+                  maxLength: 10,
+                })}
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-[#80666a]">
+                Estes campos não são obrigatórios e não alteram o progresso da sua inscrição.
+              </p>
+            </div>
+          </details>
+        </section>
+
+        <section
           aria-labelledby="simple-address-heading"
           className="space-y-5 border-t border-[#f0e2df] pt-8"
         >
@@ -952,8 +1046,8 @@ export function AffiliateSimpleForm({
                 Endereço completo
               </h4>
               <p className={help}>
-                Inclua CEP e número do imóvel. Usaremos esses dados somente para a análise e contato
-                relacionado à seleção.
+                Por último, informe CEP e número do imóvel. Os dados serão usados somente para
+                análise e contato relacionados à seleção.
               </p>
             </div>
           </div>
@@ -1032,50 +1126,6 @@ export function AffiliateSimpleForm({
               placeholder: "Apto, bloco, casa...",
               maxLength: 120,
               autoComplete: "address-line2",
-            })}
-          </div>
-        </section>
-
-        <section
-          aria-labelledby="simple-social-heading"
-          className="space-y-5 border-t border-[#f0e2df] pt-8"
-        >
-          <div className="flex items-center gap-3">
-            <Instagram aria-hidden="true" className="h-6 w-6 text-[#8a5864]" />
-            <div>
-              <h4 id="simple-social-heading" className={heading}>
-                Redes sociais
-              </h4>
-              <p className={help}>
-                Instagram e seus seguidores são obrigatórios. TikTok e seus seguidores são
-                opcionais.
-              </p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[1.4fr_1fr]">
-            {field("instagram", "Instagram", {
-              placeholder: "@seuperfil",
-              maxLength: 240,
-              autoComplete: "off",
-            })}
-            {field("instagramFollowers", "Seguidores no Instagram", {
-              placeholder: "Ex.: 2500",
-              inputMode: "numeric",
-              maxLength: 10,
-            })}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[1.4fr_1fr]">
-            {field("tiktok", "TikTok (opcional)", {
-              placeholder: "@seuperfil (se tiver)",
-              maxLength: 240,
-              autoComplete: "off",
-              required: false,
-            })}
-            {field("tiktokFollowers", "Seguidores no TikTok (opcional)", {
-              placeholder: "Ex.: 900 (se tiver)",
-              required: false,
-              inputMode: "numeric",
-              maxLength: 10,
             })}
           </div>
         </section>

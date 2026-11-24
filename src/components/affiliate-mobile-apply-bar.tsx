@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
+import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
 
 /**
  * Only a scroll shortcut to the EXISTING form. No personal data, tracking,
@@ -9,8 +10,10 @@ import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
  */
 export function AffiliateMobileApplyBar({
   recruitmentStatus,
+  onSafePreview,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  onSafePreview?: () => void;
 }) {
   const [visibility, setVisibility] = useState<{
     hero: boolean | null;
@@ -45,24 +48,27 @@ export function AffiliateMobileApplyBar({
     return () => observer.disconnect();
   }, []);
 
-  const show =
-    recruitmentStatus !== "loading" && visibility.hero === false && visibility.form === false;
+  const show = visibility.hero === false && visibility.form === false;
 
   if (!show) return null;
 
   const isOpen = recruitmentStatus === "open";
   const statusText = isOpen
     ? "Candidaturas abertas para análise"
-    : recruitmentStatus === "limited"
-      ? "Acesso temporariamente limitado"
-      : recruitmentStatus === "unavailable"
-        ? "Disponibilidade não confirmada"
-        : "Inscrições em preparação";
+    : recruitmentStatus === "loading"
+      ? "Consultando disponibilidade"
+      : recruitmentStatus === "limited"
+        ? "Acesso temporariamente limitado"
+        : recruitmentStatus === "unavailable"
+          ? "Disponibilidade não confirmada"
+          : "Inscrições em preparação";
   const actionLabel = isOpen
     ? "Fazer minha inscrição"
-    : recruitmentStatus === "limited" || recruitmentStatus === "unavailable"
-      ? "Ver disponibilidade"
-      : "Conhecer o formulário";
+    : recruitmentStatus === "loading"
+      ? "Ver prévia segura"
+      : recruitmentStatus === "limited" || recruitmentStatus === "unavailable"
+        ? "Ver prévia segura"
+        : "Conhecer o formulário";
 
   return (
     <nav
@@ -79,13 +85,14 @@ export function AffiliateMobileApplyBar({
           </p>
           <p className="mt-1 text-[11px] leading-snug text-[#775d67]">{statusText}</p>
         </div>
-        <a
-          href="#inscricao"
+        <AffiliateApplyLink
+          recruitmentOpen={isOpen}
+          onSafePreview={onSafePreview}
           className="inline-flex min-h-12 max-w-[55%] shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#723e52] px-4 py-3 text-center text-xs font-bold leading-snug text-white shadow-sm transition-colors motion-reduce:transition-none hover:bg-[#603345] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#723e52]"
         >
           {actionLabel}
           <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
-        </a>
+        </AffiliateApplyLink>
       </div>
     </nav>
   );

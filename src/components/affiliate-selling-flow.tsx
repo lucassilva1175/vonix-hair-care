@@ -1,5 +1,6 @@
 import { ArrowUpRight, Check, Link2, ShoppingBag, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
 
 /**
  * Educational illustration of the published Vonix affiliate terms.
@@ -42,7 +43,13 @@ const steps = [
   },
 ] as const;
 
-export function AffiliateSellingFlow({ recruitmentOpen }: { recruitmentOpen: boolean }) {
+export function AffiliateSellingFlow({
+  recruitmentOpen,
+  onSafePreview,
+}: {
+  recruitmentOpen: boolean;
+  onSafePreview?: (() => void) | undefined;
+}) {
   return (
     <section
       id="jornada-afiliada"
@@ -128,10 +135,10 @@ export function AffiliateSellingFlow({ recruitmentOpen }: { recruitmentOpen: boo
             asChild
             className="h-auto min-h-12 shrink-0 rounded-full bg-white px-6 py-3 font-bold text-[#593140] hover:bg-[#f6e6e8]"
           >
-            <a href="#inscricao">
-              {recruitmentOpen ? "Quero me candidatar" : "Conhecer a inscrição"}
+            <AffiliateApplyLink recruitmentOpen={recruitmentOpen} onSafePreview={onSafePreview}>
+              {recruitmentOpen ? "Quero me candidatar" : "Abrir prévia segura"}
               <ArrowUpRight aria-hidden="true" className="size-4" />
-            </a>
+            </AffiliateApplyLink>
           </Button>
         </div>
       </div>

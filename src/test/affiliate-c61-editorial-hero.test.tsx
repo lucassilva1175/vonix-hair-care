@@ -30,7 +30,13 @@ describe("C61 public recruitment hero with real Vonix catalogue", () => {
         `/images/products/${slug}.webp`,
       );
     }
-    expect(links[0]?.querySelector("img")).toHaveAttribute("fetchpriority", "high");
+    // The first catalogue item is behind a mobile disclosure; the portrait is LCP.
+    expect(screen.getByTestId("affiliate-c94-editorial-photo")).toHaveAttribute(
+      "fetchpriority",
+      "high",
+    );
+    expect(links[0]?.querySelector("img")).toHaveAttribute("fetchpriority", "low");
+    expect(links[0]?.querySelector("img")).toHaveAttribute("loading", "lazy");
     expect(within(photoGallery).getByRole("link", { name: /Ver catálogo/ })).toHaveAttribute(
       "href",
       "/loja",
@@ -60,7 +66,7 @@ describe("C61 public recruitment hero with real Vonix catalogue", () => {
       "#inscricao",
     );
     expect(within(hero).getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Seu jeito de criar.",
+      "Seja afiliada Vonix Hair.",
     );
     expect(within(hero).getByRole("link", { name: /Conhecer as condições/ })).toHaveAttribute(
       "href",

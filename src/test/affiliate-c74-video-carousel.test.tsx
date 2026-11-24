@@ -8,13 +8,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const ids = ["banana-mel", "botox-1", "fio-1", "desmaia", "plex", "ig-05"];
+const ids = ["banana-mel", "botox-1", "fio-1", "desmaia", "ig-07", "ig-05"];
 const slugs = [
   "kit-banana-e-mel",
   "botox-vonix",
   "progressiva-fio-de-luz",
   "kit-desmaia",
-  "plex-vonix",
+  "kit-monovonix",
   "kit-cachos",
 ];
 
@@ -118,7 +118,7 @@ describe("C74 — six real product videos with one accessible carousel", () => {
   it.each([true, false])("retains status-based application CTA, when intake open=%s", (open) => {
     render(<AffiliateCatalogInMotion recruitmentOpen={open} />);
     expect(
-      screen.getByRole("link", { name: open ? "Quero me candidatar" : "Conhecer a inscrição" }),
+      screen.getByRole("link", { name: open ? "Quero me candidatar" : "Abrir prévia segura" }),
     ).toHaveAttribute("href", "#inscricao");
     expect(screen.getByTestId("vonix-c63-catalog-motion")).toHaveTextContent(
       "Inscrição sem compra obrigatória",

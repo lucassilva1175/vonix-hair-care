@@ -18,7 +18,7 @@ describe("Vonix Afiliadas C54: escolha de estilo sem criar promessa comercial", 
     expect(within(section).getByRole("tabpanel")).toHaveAttribute("aria-labelledby", tabs[0]!.id);
     expect(section).toHaveTextContent(/sem precisar de um portfólio profissional/);
     expect(section).toHaveTextContent(/Não são categorias de aprovação/);
-    expect(within(section).getByRole("link", { name: /apresentar meu perfil/i })).toHaveAttribute(
+    expect(within(section).getByRole("link", { name: /Abrir prévia segura/i })).toHaveAttribute(
       "href",
       "#inscricao",
     );
@@ -72,7 +72,12 @@ describe("Vonix Afiliadas C54: escolha de estilo sem criar promessa comercial", 
     expect(guide).not.toHaveTextContent(
       /taxa de inscrição|aprovada automaticamente|receber produtos grátis/i,
     );
-    expect(guide.querySelector("input")).toBeNull();
+    expect(within(guide).getAllByRole("checkbox")).toHaveLength(4);
+    expect(guide.querySelector('input:not([type="checkbox"])')).toBeNull();
+    expect(within(guide).getByRole("link", { name: /Abrir prévia segura/i })).toHaveAttribute(
+      "href",
+      "#inscricao",
+    );
   });
 
   it.each([

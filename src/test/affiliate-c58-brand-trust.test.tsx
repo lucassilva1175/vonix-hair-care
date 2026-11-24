@@ -39,34 +39,45 @@ describe("C58 genuine Vonix credibility before applying", () => {
     expect(
       within(section).getByRole("link", { name: /Ver avaliações reais de produtos/ }),
     ).toHaveAttribute("href", "#avaliacoes-produtos");
-    expect(within(section).getByRole("link", { name: /Ver como se candidatar/ })).toHaveAttribute(
+    expect(within(section).getByRole("link", { name: /Abrir prévia segura/ })).toHaveAttribute(
       "href",
       "#inscricao",
     );
-    expect(section).toHaveTextContent("Não são imagens de candidatas, creators");
+    expect(section).toHaveTextContent("Não retrata uma afiliada");
     expect(section).toHaveTextContent("não de afiliadas participantes");
     expect(section.textContent).not.toMatch(
       /3 milh[õo]es|depoimentos de afiliadas aprovadas|cupom garantido|20% de comissão|ganhos garantidos/i,
     );
   });
 
-  it("uses two authentic lazy-loaded catalog photos, not stock creator portraits", () => {
-    render(<AffiliateBrandTrust recruitmentOpen={true} />);
+  it("usa uma fotografia editorial real e prova institucional rastreável, sem inventar criadoras", () => {
+    render(<AffiliateBrandTrust recruitmentOpen />);
     const section = screen.getByTestId("affiliate-c58-brand-trust");
-    const pictures = section.querySelectorAll("picture");
-    expect(pictures).toHaveLength(2);
-    for (const picture of pictures) {
-      const image = picture.querySelector("img");
-      const source = picture.querySelector("source");
-      expect(image?.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+\.jpg$/);
-      expect(image?.getAttribute("alt")).toContain("Vonix");
-      expect(image?.getAttribute("loading")).toBe("lazy");
-      expect(source?.getAttribute("srcset")).toMatch(/^\/images\/products\/[a-z0-9-]+\.webp$/);
-    }
+    const figure = screen.getByTestId("affiliate-c92-brand-photo");
+    const image = within(figure).getByRole("img");
+    expect(image).toHaveAttribute("src", "/images/categorias/frizz.jpg");
+    expect(image).toHaveAttribute("width", "480");
+    expect(image).toHaveAttribute("height", "480");
+    expect(image).toHaveAttribute("loading", "lazy");
+    expect(image).toHaveAttribute("alt", expect.stringContaining("catálogo oficial Vonix Hair"));
+    expect(figure).toHaveTextContent("Não retrata uma afiliada");
+    expect(section.querySelectorAll("picture")).toHaveLength(0);
+
+    const publicFact = screen.getByTestId("affiliate-c92-public-store-fact");
+    expect(publicFact).toHaveTextContent("480+");
+    expect(publicFact).toHaveTextContent(
+      "Produtos vendidos entre o site e o atendimento por WhatsApp",
+    );
+    expect(publicFact).toHaveTextContent("segundo a página institucional da Vonix Hair");
+    expect(publicFact).toHaveTextContent("Não é número de afiliadas");
     expect(
-      within(section).getByRole("link", { name: /Quero apresentar meu perfil/ }),
+      within(publicFact).getByRole("link", { name: /Conferir a fonte oficial/i }),
+    ).toHaveAttribute("href", "/sobre");
+    expect(
+      within(section).getByRole("link", { name: /Quero apresentar meu perfil/i }),
     ).toHaveAttribute("href", "#inscricao");
-    expect(within(section).queryByRole("link", { name: /Ver como se candidatar/ })).toBeNull();
+    expect(within(section).queryByRole("link", { name: /Abrir prévia segura/i })).toBeNull();
+    expect(publicFact).not.toHaveTextContent(/resultado de afiliadas|renda garantida|15%|21%/i);
   });
 
   it("keeps verified store content after clear earnings and product reviews reachable", () => {
