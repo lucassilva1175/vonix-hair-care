@@ -37,7 +37,7 @@ afterEach(() => {
 
 describe("C97: candidatura antes de galerias e das condições completas", () => {
   it("mantém formulário e próximos passos antes das explorações, FAQ e ganhos detalhados", () => {
-    const { container } = render(<AffiliateApplicationPage />);
+    const { container } = render(<AffiliateApplicationPage sourceLinked={false} />);
     const hero = screen.getByTestId("vonix-affiliate-hero");
     const facts = screen.getByTestId("affiliate-c61-eligibility-facts");
     const steps = screen.getByTestId("vonix-c66-application-steps");
@@ -70,7 +70,7 @@ describe("C97: candidatura antes de galerias e das condições completas", () =>
   });
 
   it("conserva os benefícios reais, 4 avaliações distintas e todos os destinos originais", () => {
-    const { container } = render(<AffiliateApplicationPage />);
+    const { container } = render(<AffiliateApplicationPage sourceLinked={false} />);
     const hero = screen.getByTestId("vonix-affiliate-hero");
     const details = screen.getByTestId("vonix-c97-offer-details");
     const cards = within(details).getAllByTestId("vonix-c72-review-card");
@@ -126,7 +126,7 @@ describe("C97: candidatura antes de galerias e das condições completas", () =>
   });
 
   it("entrega HTML inicial com H1, regras e fonte oficial sem submissão externa", () => {
-    const html = renderToStaticMarkup(<AffiliateApplicationPage />);
+    const html = renderToStaticMarkup(<AffiliateApplicationPage sourceLinked={false} />);
     const host = document.createElement("div");
     host.innerHTML = html;
     const hero = host.querySelector("#vonix-affiliate-title");

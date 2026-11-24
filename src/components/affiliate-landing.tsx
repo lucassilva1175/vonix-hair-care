@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
+import { AffiliateOfficialEvidenceLinks } from "@/components/affiliate-official-evidence-links";
 import { AffiliateProductProof } from "@/components/affiliate-product-proof";
 import { AffiliateVerifiedReviewPreview } from "@/components/affiliate-verified-review-preview";
 import { AffiliateEarlyValueBand } from "@/components/affiliate-early-value-band";
@@ -226,9 +227,11 @@ export function AffiliateLandingOffer({
   recruitmentStatus,
   placement = "all",
   onSafePreview,
+  sourceLinked = false,
 }: {
   recruitmentStatus: RecruitmentStatus;
   placement?: "all" | "intro" | "details";
+  sourceLinked?: boolean;
   onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
@@ -243,6 +246,7 @@ export function AffiliateLandingOffer({
           <AffiliateEditorialHero
             recruitmentStatus={recruitmentStatus}
             onSafePreview={onSafePreview}
+            sourceLinked={sourceLinked}
           />
 
           <AffiliateEarlyValueBand
@@ -253,7 +257,14 @@ export function AffiliateLandingOffer({
       )}
       {placement !== "intro" && (
         <>
-          <AffiliateVerifiedReviewPreview recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
+          {sourceLinked ? (
+            <AffiliateOfficialEvidenceLinks variant="preview" />
+          ) : (
+            <AffiliateVerifiedReviewPreview
+              recruitmentOpen={isOpen}
+              onSafePreview={onSafePreview}
+            />
+          )}
 
           <section
             id="ganhos"
@@ -404,8 +415,10 @@ export function AffiliateLandingOffer({
 export function AffiliateLandingDiscovery({
   recruitmentStatus,
   onSafePreview,
+  sourceLinked = false,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  sourceLinked?: boolean;
   onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
@@ -414,11 +427,19 @@ export function AffiliateLandingDiscovery({
     <div data-testid="vonix-c64-discovery" className="min-w-0">
       <AffiliateBrandTrust recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
-      <AffiliateProductProof />
+      {sourceLinked ? (
+        <AffiliateOfficialEvidenceLinks variant="reviews" />
+      ) : (
+        <AffiliateProductProof />
+      )}
 
       <AffiliateSellingFlow recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
-      <AffiliateCatalogInMotion recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
+      {sourceLinked ? (
+        <AffiliateOfficialEvidenceLinks variant="videos" />
+      ) : (
+        <AffiliateCatalogInMotion recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
+      )}
 
       <section
         id="criterios"

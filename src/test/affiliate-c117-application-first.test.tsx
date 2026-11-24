@@ -61,7 +61,7 @@ describe("C117 — candidatura prioritária, prova autêntica e exploração opc
   it("mantém navegação contextual e conteúdo de fonte própria no fluxo", async () => {
     const blocked = vi.fn().mockRejectedValue(new Error("C117 blocks all external requests"));
     vi.stubGlobal("fetch", blocked);
-    render(<AffiliateApplicationPage />);
+    render(<AffiliateApplicationPage sourceLinked={false} />);
     await screen.findByText("Inscrições em preparação");
     const proof = screen.getByTestId("affiliate-c101-customer-voice");
     const prep = screen.getByTestId("vonix-c64-preparation-details");

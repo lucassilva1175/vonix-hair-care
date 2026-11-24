@@ -146,8 +146,10 @@ function CatalogCard({
 export function AffiliateEditorialHero({
   recruitmentStatus,
   onSafePreview,
+  sourceLinked = false,
 }: {
   recruitmentStatus: RecruitmentStatus;
+  sourceLinked?: boolean;
   onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
@@ -517,7 +519,7 @@ export function AffiliateEditorialHero({
               data-testid="vonix-c78-real-review-cta"
               className="group mt-2 flex min-h-14 items-center gap-2 rounded-2xl border border-[#e1c9c9] bg-white px-3 py-2 text-left text-[#593344] shadow-[0_8px_22px_rgba(78,43,54,.06)] transition-colors hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#754153] lg:mt-4 lg:min-h-16 lg:gap-3 lg:px-4 lg:py-3"
             >
-              {authenticReviewPosters.length === 3 ? (
+              {!sourceLinked && authenticReviewPosters.length === 3 ? (
                 <span
                   data-testid="affiliate-c128-authentic-review-mosaic"
                   aria-hidden="true"

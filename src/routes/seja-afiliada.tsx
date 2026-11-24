@@ -10,6 +10,7 @@ import { AffiliateApplicationEditorialArt } from "@/components/affiliate-applica
 import { AffiliateNextSteps } from "@/components/affiliate-next-steps";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
 import { AffiliateCreatorSpotlight } from "@/components/affiliate-creator-spotlight";
+import { AffiliateOfficialEvidenceLinks } from "@/components/affiliate-official-evidence-links";
 import { AffiliateCustomerVoiceTeaser } from "@/components/affiliate-customer-voice-teaser";
 import { AffiliateProductDiscoveryStrip } from "@/components/affiliate-product-discovery-strip";
 import { AffiliateApplicationBridge } from "@/components/affiliate-application-bridge";
@@ -54,10 +55,11 @@ export const Route = createFileRoute("/seja-afiliada")({
     ],
     links: [{ rel: "canonical", href: SITE_URL + "/seja-afiliada" }],
   }),
-  component: AffiliateApplicationPage,
+  component: () => <AffiliateApplicationPage />,
 });
 
-export function AffiliateApplicationPage() {
+// Embedded editorial candidate is only selectable by explicit code in QA, never by URL.
+export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked?: boolean } = {}) {
   const [recruitment, setRecruitment] = useState<RecruitmentStatus>("loading");
   const [retryAvailability, setRetryAvailability] = useState(0);
 
@@ -207,15 +209,20 @@ export function AffiliateApplicationPage() {
         <AffiliateLandingOffer
           recruitmentStatus={recruitment}
           placement="intro"
+          sourceLinked={sourceLinked}
           onSafePreview={openSafePreview}
         />
         <AffiliateMobileApplyBar recruitmentStatus={recruitment} onSafePreview={openSafePreview} />
         {/* C117: authentic PRODUCT review remains before the single application.
             Optional step-by-step/creator inspiration is available immediately after it. */}
-        <AffiliateCustomerVoiceTeaser
-          recruitmentOpen={recruitment === "open"}
-          onSafePreview={openSafePreview}
-        />
+        {sourceLinked ? (
+          <AffiliateOfficialEvidenceLinks variant="teaser" />
+        ) : (
+          <AffiliateCustomerVoiceTeaser
+            recruitmentOpen={recruitment === "open"}
+            onSafePreview={openSafePreview}
+          />
+        )}
         <AffiliateApplicationBridge status={recruitment} onSafePreview={openSafePreview} />
 
         <div className="bg-card px-5 pt-8 sm:pt-10">
@@ -489,6 +496,7 @@ export function AffiliateApplicationPage() {
         <AffiliateLandingOffer
           recruitmentStatus={recruitment}
           placement="details"
+          sourceLinked={sourceLinked}
           onSafePreview={openSafePreview}
         />
         <nav
@@ -532,6 +540,7 @@ export function AffiliateApplicationPage() {
         >
           <AffiliateLandingDiscovery
             recruitmentStatus={recruitment}
+            sourceLinked={sourceLinked}
             onSafePreview={openSafePreview}
           />
         </AffiliateDiscoveryGate>

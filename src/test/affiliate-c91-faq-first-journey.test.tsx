@@ -52,7 +52,7 @@ describe("C91: perguntas da candidatura antes de conteúdo editorial opcional", 
   });
 
   it("mantém inscrição → próximos passos → FAQ → exploração → Discovery, com todos os links", () => {
-    const { container } = render(<AffiliateApplicationPage />);
+    const { container } = render(<AffiliateApplicationPage sourceLinked={false} />);
     const signup = container.querySelector("#inscricao");
     const next = screen.getByTestId("affiliate-c55-next-steps");
     const faq = container.querySelector("#duvidas");
@@ -85,7 +85,7 @@ describe("C91: perguntas da candidatura antes de conteúdo editorial opcional", 
   });
 
   it("FAQ mantém descoberta local por termo e conteúdo de inscrição gratuita", () => {
-    const { container } = render(<AffiliateApplicationPage />);
+    const { container } = render(<AffiliateApplicationPage sourceLinked={false} />);
     const faq = container.querySelector("#duvidas");
     if (!(faq instanceof HTMLElement)) throw new Error("Missing HTML FAQ");
     const find = within(faq).getByRole("searchbox", { name: "Encontre sua resposta" });
@@ -103,7 +103,7 @@ describe("C91: perguntas da candidatura antes de conteúdo editorial opcional", 
   });
 
   it("continua apresentando caminho real e não inventa benefícios do programa", () => {
-    render(<AffiliateApplicationPage />);
+    render(<AffiliateApplicationPage sourceLinked={false} />);
     const guide = screen.getByTestId("affiliate-c91-explore-paths");
     const catalog = screen.getByTestId("vonix-c53-real-product-reviews");
     expect(guide.compareDocumentPosition(catalog) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -74,7 +74,7 @@ describe("C65 — compact published product reviews", () => {
 
   it("keeps candidate form before authentic product reviews and earnings, without POST", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    render(<AffiliateApplicationPage />);
+    render(<AffiliateApplicationPage sourceLinked={false} />);
     await screen.findByText("Inscrições em preparação");
     const signup = document.getElementById("inscricao");
     if (!signup) throw new Error("Missing application anchor");

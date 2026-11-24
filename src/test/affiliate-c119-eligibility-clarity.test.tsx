@@ -55,7 +55,7 @@ describe("C119 — requisitos acolhedores sem promessa de aprovação", () => {
   it("mostra elegibilidade e portfólio dispensado sem esconder requisitos na abertura", async () => {
     const network = vi.fn();
     vi.stubGlobal("fetch", network);
-    render(<AffiliateApplicationPage />);
+    render(<AffiliateApplicationPage sourceLinked={false} />);
     await screen.findByText("Inscrições em preparação");
     const panel = screen.getByTestId("vonix-c64-preparation-details") as HTMLDetailsElement;
     const summary = within(panel).getByTestId("affiliate-c119-clarity-summary");
@@ -86,7 +86,7 @@ describe("C119 — requisitos acolhedores sem promessa de aprovação", () => {
   });
 
   it("preserva avaliações de produto e a indisponibilidade real sem sugerir aceite", async () => {
-    render(<AffiliateApplicationPage />);
+    render(<AffiliateApplicationPage sourceLinked={false} />);
     await screen.findByText("Inscrições em preparação");
     expect(screen.getByTestId("affiliate-c101-customer-voice")).toHaveTextContent(
       "não relatos de afiliadas",

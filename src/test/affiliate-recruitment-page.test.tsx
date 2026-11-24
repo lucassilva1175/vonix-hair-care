@@ -229,7 +229,7 @@ describe("Página pública de inscrições da Vonix", () => {
 describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verificáveis", () => {
   it("usa exclusivamente produtos Vonix sem importar prova social ou benefícios da marca-referência", async () => {
     server.status.mockResolvedValue({ open: false });
-    render(<Page />);
+    render(<Page sourceLinked={false} />);
     expect(await screen.findByText("Inscrições em preparação")).toBeInTheDocument();
     const landing = screen.getByTestId("vonix-affiliate-editorial");
     const text = landing.textContent ?? "";
@@ -400,7 +400,7 @@ describe("Landing editorial Vonix Hair — conteúdo próprio e promessas verifi
   });
   it("C64 keeps the real application before optional brand and video exploration", async () => {
     server.status.mockResolvedValue({ open: false });
-    render(<Page />);
+    render(<Page sourceLinked={false} />);
     expect(await screen.findByText("Inscrições em preparação")).toBeInTheDocument();
 
     const hero = screen.getByTestId("vonix-affiliate-hero");

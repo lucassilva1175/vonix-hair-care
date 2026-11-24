@@ -48,7 +48,7 @@ describe("C66 application guidance without submission", () => {
   it("keeps product trust and requirements before signup, optional guidance and full reviews after", async () => {
     const request = vi.fn().mockRejectedValue(new Error("Network forbidden in C66 route test"));
     vi.stubGlobal("fetch", request);
-    render(<AffiliateApplicationPage />);
+    render(<AffiliateApplicationPage sourceLinked={false} />);
     await screen.findByText("Inscrições em preparação");
     const preview = screen.getByTestId("vonix-c66-application-steps");
     const reviews = screen.getByTestId("vonix-c65-review-preview");
