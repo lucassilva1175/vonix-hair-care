@@ -526,7 +526,11 @@ export function AffiliateLandingDiscovery({
 
       <AffiliateCreatorPaths recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
-      <AffiliateCreatorOpportunity recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
+      <AffiliateCreatorOpportunity
+        recruitmentOpen={isOpen}
+        onSafePreview={onSafePreview}
+        sourceLinked={sourceLinked}
+      />
 
       <section id="formatos" className="scroll-mt-24 bg-card px-5 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl">
