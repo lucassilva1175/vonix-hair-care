@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { AffiliateProgramShare } from "@/components/affiliate-program-share";
 import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
 import reviews from "@/data/reviews.json";
+import { vitrine } from "@/lib/store";
 
 export type RecruitmentStatus = "loading" | "open" | "limited" | "closed" | "unavailable";
 
@@ -50,7 +51,34 @@ const products = [
 ] as const;
 
 /** Fast first-fold visual preview; all three sources are official store product assets. */
-const previewProducts = [products[2], products[0], products[1]] as const;
+type CatalogItem = {
+  name: string;
+  caption: string;
+  slug: string;
+  href: string;
+  background: string;
+};
+const currentChoices = [
+  {
+    slug: "combo-botox-vonix-nutri-repair",
+    caption: "Combinação de cuidados",
+    background: "bg-[#f3e1d5]",
+  },
+  {
+    slug: "combo-fio-de-luz-completo",
+    caption: "Catálogo profissional",
+    background: "bg-[#f1e5e8]",
+  },
+  {
+    slug: "combo-finalizacao-serum",
+    caption: "Finalização e apresentação",
+    background: "bg-[#ece3df]",
+  },
+];
+const currentProducts: CatalogItem[] = currentChoices.flatMap((choice) => {
+  const item = vitrine.find((product) => product.slug === choice.slug);
+  return item ? [{ ...choice, name: item.name, href: "/produto/" + item.slug }] : [];
+});
 
 /** Only photographic media already published alongside CUSTOMER product reviews.
  * Names and media paths are sourced from the actual reviews dataset.
@@ -82,16 +110,12 @@ const authenticReviewPosters = ["Mariana Andrade", "Ayla Muniz", "Ana Paula"]
     thumb: review.src,
   }));
 
-function CatalogCard({
-  item,
-  featured = false,
-}: {
-  item: (typeof products)[number];
-  featured?: boolean;
-}) {
+function CatalogCard({ item, featured = false }: { item: CatalogItem; featured?: boolean }) {
   return (
     <a
       href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
       data-testid="affiliate-c61-catalog-link"
       className={
         "group flex w-[68vw] max-w-[17.5rem] shrink-0 snap-start min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e2d4d1] bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6f3b4d] lg:w-auto lg:max-w-none lg:shrink " +
@@ -147,6 +171,8 @@ export function AffiliateEditorialHero({
   onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
+  const heroProducts = sourceLinked && currentProducts.length === 3 ? currentProducts : products;
+  const previewProducts = [heroProducts[2]!, heroProducts[0]!, heroProducts[1]!];
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoNext, setCanGoNext] = useState(false);
@@ -430,10 +456,14 @@ export function AffiliateEditorialHero({
           >
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <p className="font-display text-xl text-[#5d3546] sm:text-2xl">
-                Conheça produtos e inspirações Vonix
+                {sourceLinked
+                  ? "Conheça os combos atuais da Vonix"
+                  : "Conheça produtos e inspirações Vonix"}
               </p>
               <a
                 href="/loja"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-[#764355] underline underline-offset-4 focus-visible:outline-2"
               >
                 Ver catálogo <ArrowUpRight aria-hidden="true" className="size-4" />
@@ -492,9 +522,9 @@ export function AffiliateEditorialHero({
               data-testid="vonix-c73-hero-products-region"
               className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-[1.03fr_.97fr] lg:grid-rows-2 lg:gap-4 lg:overflow-visible lg:pb-0"
             >
-              <CatalogCard item={products[0]} featured />
-              <CatalogCard item={products[1]} />
-              <CatalogCard item={products[2]} />
+              <CatalogCard item={heroProducts[0]!} featured />
+              <CatalogCard item={heroProducts[1]!} />
+              <CatalogCard item={heroProducts[2]!} />
             </div>
             <figcaption className="mt-4 text-xs leading-relaxed text-[#6d5660]">
               Fotos reais dos produtos à venda na loja oficial. Não são imagens de afiliadas,
