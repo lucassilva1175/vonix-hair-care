@@ -839,7 +839,8 @@ export async function processAffiliateEmails(limit = 5, applicationId?: string) 
   if (!apiKey || !from) return { sent: 0, failed: 0, configured: false };
   let sent = 0;
   let failed = 0;
-  for (let i = 0; i < Math.min(Math.max(limit, 0), 10); i++) {
+  const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(Math.trunc(limit), 0), 10) : 0;
+  for (let i = 0; i < safeLimit; i++) {
     const mail = await claimAffiliateMail(applicationId);
     if (!mail) break;
     let successful = false;
@@ -868,6 +869,8 @@ export async function processAffiliateEmails(limit = 5, applicationId?: string) 
           subject: message.subject,
           text: message.text,
         }),
+        // Never forward credentials or recipient data to a redirected host.
+        redirect: "manual",
         signal: AbortSignal.timeout(10000),
       });
       if (response.ok) {
@@ -880,9 +883,15 @@ export async function processAffiliateEmails(limit = 5, applicationId?: string) 
           unknown = true;
         }
       } else {
-        // 409 can mean a concurrent idempotent request or conflicting content.
-        unknown = response.status === 409 || response.status >= 500;
-        permanent = [400, 401, 403, 404, 409, 422].includes(response.status);
+        // A redirect, timeout or conflict can conceal an already accepted send.
+        // Keep the existing idempotency key and reconcile uncertain outcomes.
+        const redirected = response.status >= 300 && response.status < 400;
+        unknown =
+          redirected ||
+          response.status === 408 ||
+          response.status === 409 ||
+          response.status >= 500;
+        permanent = redirected || [400, 401, 403, 404, 409, 422].includes(response.status);
       }
     } catch {
       // A timeout after the outbound request is ambiguous; a failed local
