@@ -159,7 +159,7 @@ const questions = [
   {
     question: "E-mail é obrigatório para se candidatar?",
     answer:
-      "Sim. Para enviar uma nova candidatura, informe nome completo, e-mail válido, telefone, endereço e Instagram com seguidores. O TikTok continua opcional. O e-mail serve para contato da equipe; seu código privado de acompanhamento não será enviado por e-mail e deve ser guardado ao finalizar.",
+      "Sim. Para enviar uma nova candidatura, informe nome completo, e-mail válido, telefone, endereço e Instagram com seguidores. O TikTok continua opcional. O e-mail serve para contato da equipe; seu código privado de acompanhamento não será enviado por e-mail e deve ser guardado ao finalizar. Se o envio ficar sem confirmação, guarde o código da tentativa e consulte a candidatura antes de reenviar os mesmos dados.",
   },
   {
     question: "Já posso enviar meu cadastro?",
@@ -436,7 +436,25 @@ export function AffiliateLandingDiscovery({
       <AffiliateSellingFlow recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
 
       {sourceLinked ? (
-        <AffiliateOfficialEvidenceLinks variant="videos" />
+        <>
+          <AffiliateOfficialEvidenceLinks variant="videos" />
+          <div className="bg-[#fbf5f2] px-5 pb-8 sm:pb-12">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e5d2d4] bg-white p-4 sm:p-6">
+              <p className="max-w-lg text-sm leading-relaxed text-[#755d66]">
+                Gostou do acervo? Apresente seu perfil à equipe Vonix. Você não precisa comprar
+                produtos para se candidatar.
+              </p>
+              <AffiliateApplyLink
+                data-testid="affiliate-c159-catalog-return"
+                recruitmentOpen={isOpen}
+                onSafePreview={onSafePreview}
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#784254] px-6 py-3 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                {isOpen ? "Voltar à inscrição" : "Conhecer o formulário"}
+              </AffiliateApplyLink>
+            </div>
+          </div>
+        </>
       ) : (
         <AffiliateCatalogInMotion recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
       )}
