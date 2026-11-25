@@ -50,10 +50,28 @@ describe("C160 catalog-only review summary", () => {
     );
     expect(container.querySelectorAll("video,iframe,blockquote")).toHaveLength(0);
   });
-  it("keeps the first impression compact without distribution or extra links", () => {
+  it("puts attributed brand evidence and official catalog inspiration beside the product rating", () => {
     render(<AffiliateOfficialEvidenceLinks variant="teaser" />);
     expect(screen.getByTestId("affiliate-c160-rating")).toHaveTextContent("5,0 de 5");
     expect(screen.queryByTestId("affiliate-c160-rating-distribution")).toBeNull();
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    const evidence = screen.getByTestId("affiliate-c170-early-brand-evidence");
+    expect(evidence).toHaveTextContent("480+");
+    expect(evidence).toHaveTextContent("segundo a marca. Não é número de afiliadas");
+    expect(evidence).toHaveTextContent("14 linhas do acervo");
+    expect(evidence).toHaveTextContent("28 vínculos de vídeos");
+    expect(within(evidence).getByRole("link", { name: /Conhecer a história/ })).toHaveAttribute(
+      "href",
+      "/sobre",
+    );
+    expect(within(evidence).getByRole("link", { name: /Conhecer a história/ })).toHaveAttribute(
+      "rel",
+      "noopener noreferrer",
+    );
+    expect(within(evidence).getByRole("link", { name: /Explorar inspirações/ })).toHaveAttribute(
+      "href",
+      "#catalogo-em-video",
+    );
+    expect(screen.getAllByRole("link")).toHaveLength(3);
+    expect(evidence.querySelectorAll("video,iframe,blockquote")).toHaveLength(0);
   });
 });

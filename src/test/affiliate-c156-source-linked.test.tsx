@@ -81,6 +81,11 @@ describe("C156 public source-linked media release", () => {
     ])
       expect(container.querySelectorAll("#" + id)).toHaveLength(1);
     const gate = screen.getByTestId("affiliate-c96-discovery-gate") as HTMLDetailsElement;
+    const brandEvidence = within(proof).getByTestId("affiliate-c170-early-brand-evidence");
+    expect(brandEvidence).toHaveTextContent("480+");
+    fireEvent.click(within(brandEvidence).getByRole("link", { name: /Explorar inspirações/ }));
+    expect(gate.open).toBe(true);
+    gate.open = false;
     fireEvent.click(screen.getByTestId("affiliate-c152-video-link"));
     expect(gate.open).toBe(true);
     const videos = screen.getByTestId("affiliate-c156-source-videos");

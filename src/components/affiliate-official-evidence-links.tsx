@@ -7,6 +7,7 @@ import reviews from "@/data/reviews.json";
 import packagingImages from "@/data/sacolinhas.json";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 import { summarizeAffiliateProductReviews } from "@/lib/affiliate-review-summary";
+import { affiliateInstitutionalEvidence } from "@/lib/affiliate-brand-evidence";
 
 /** Public release fallback: link to first-party source pages, do not republish
  * customer names, quotes, thumbnails, or video files until rights are documented. */
@@ -91,8 +92,8 @@ export function AffiliateOfficialEvidenceLinks({
           ]
         : [];
     });
-  const products = videos ? catalogProducts(videoProducts) : [];
-  const additionalProducts = videos ? catalogProducts(additionalVideoProducts) : [];
+  const products = videos || compact ? catalogProducts(videoProducts) : [];
+  const additionalProducts = videos || compact ? catalogProducts(additionalVideoProducts) : [];
   const allProducts = [...products, ...additionalProducts];
   const categories = [...new Set(allProducts.map((product) => product.category))].sort((a, b) =>
     a.localeCompare(b, "pt-BR"),
@@ -120,7 +121,7 @@ export function AffiliateOfficialEvidenceLinks({
       data-testid={"affiliate-c156-source-" + variant}
       className={
         compact
-          ? "bg-card px-5 py-4"
+          ? "bg-[#fbf5f2] px-5 py-5 sm:py-8"
           : "scroll-mt-32 border-y border-[#e8d8d6] bg-[#fbf5f2] px-5 py-8 sm:py-12"
       }
       aria-label={
@@ -139,12 +140,16 @@ export function AffiliateOfficialEvidenceLinks({
             <h2 className="mt-1 font-display text-xl text-[#523342] sm:text-2xl">
               {videos
                 ? "Inspire-se com os produtos em ação"
-                : "Conheça as avaliações de quem usa Vonix"}
+                : compact
+                  ? "Uma marca real para seu próximo conteúdo"
+                  : "Conheça as avaliações de quem usa Vonix"}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[#755d66]">
               {videos
                 ? "Explore as demonstrações disponíveis nas páginas oficiais dos produtos, inclusive materiais de linhas anteriores. Consulte a vitrine atual para conhecer os combos disponíveis. São conteúdos de produto, não resultados de afiliadas."
-                : "Confira as avaliações de produto na página oficial do Botox Vonix. São opiniões de clientes sobre produtos, não depoimentos de afiliadas nem promessa de ganhos."}
+                : compact
+                  ? "Conheça o catálogo, a história da marca e as avaliações de clientes sobre produtos — não depoimentos de afiliadas nem promessa de ganhos."
+                  : "Confira as avaliações de produto na página oficial do Botox Vonix. São opiniões de clientes sobre produtos, não depoimentos de afiliadas nem promessa de ganhos."}
             </p>
           </div>
         </div>
@@ -361,6 +366,77 @@ export function AffiliateOfficialEvidenceLinks({
               Ver avaliações na loja oficial (nova aba){" "}
               <ArrowUpRight aria-hidden="true" className="size-4" />
             </a>
+            {compact && (
+              <div
+                data-testid="affiliate-c170-early-brand-evidence"
+                className="grid w-full min-w-0 gap-3 sm:grid-cols-2"
+              >
+                <article className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e4d1d1] bg-gradient-to-br from-[#f7e8e7] to-[#fffaf7] p-3 sm:p-4">
+                  <img
+                    src="/images/sacolinhas/botox-vonix-480.webp"
+                    alt=""
+                    width={480}
+                    height={480}
+                    loading="lazy"
+                    decoding="async"
+                    className="size-20 shrink-0 rounded-xl bg-white/80 object-contain sm:size-28"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#89586a]">
+                      A história da Vonix
+                    </p>
+                    <strong className="mt-1 block font-display text-3xl leading-none text-[#784254] sm:text-4xl">
+                      {affiliateInstitutionalEvidence.minimumLabel}
+                    </strong>
+                    <p className="mt-1 text-xs leading-relaxed text-[#755d66]">
+                      {affiliateInstitutionalEvidence.description}, segundo a marca. Não é número de
+                      afiliadas.
+                    </p>
+                    <a
+                      href={affiliateInstitutionalEvidence.sourceHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-flex min-h-11 items-center gap-1 text-xs font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
+                    >
+                      Conhecer a história (nova aba)
+                      <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+                    </a>
+                  </div>
+                </article>
+                {allProducts.length > 0 && (
+                  <article className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e4d1d1] bg-[#fff9f6] p-3 sm:p-4">
+                    <img
+                      src="/images/products/combo-finalizacao-serum-480.webp"
+                      alt=""
+                      width={480}
+                      height={480}
+                      loading="lazy"
+                      decoding="async"
+                      className="size-20 shrink-0 rounded-xl bg-white object-contain sm:size-28"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#89586a]">
+                        Inspiração para criar
+                      </p>
+                      <strong className="mt-1 block font-display text-2xl leading-tight text-[#784254] sm:text-3xl">
+                        {allProducts.length} linhas do acervo
+                      </strong>
+                      <p className="mt-1 text-xs leading-relaxed text-[#755d66]">
+                        {allProducts.reduce((total, product) => total + product.count, 0)} vínculos
+                        de vídeos nas páginas de produtos, para explorar ideias.
+                      </p>
+                      <a
+                        href="#catalogo-em-video"
+                        className="mt-1 inline-flex min-h-11 items-center gap-1 text-xs font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
+                      >
+                        Explorar inspirações
+                        <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+                      </a>
+                    </div>
+                  </article>
+                )}
+              </div>
+            )}
             {!compact && summary.count > 0 && (
               <div
                 data-testid="affiliate-c160-rating-distribution"
