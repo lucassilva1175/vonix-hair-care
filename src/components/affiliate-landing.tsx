@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
 import { AffiliateOfficialEvidenceLinks } from "@/components/affiliate-official-evidence-links";
+import { AffiliateCurrentCombos } from "@/components/affiliate-current-combos";
 import { AffiliateProductProof } from "@/components/affiliate-product-proof";
 import { AffiliateVerifiedReviewPreview } from "@/components/affiliate-verified-review-preview";
 import { AffiliateEarlyValueBand } from "@/components/affiliate-early-value-band";
@@ -437,6 +438,7 @@ export function AffiliateLandingDiscovery({
 
       {sourceLinked ? (
         <>
+          <AffiliateCurrentCombos />
           <AffiliateOfficialEvidenceLinks variant="videos" />
           <div className="bg-[#fbf5f2] px-5 pb-8 sm:pb-12">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e5d2d4] bg-white p-4 sm:p-6">
