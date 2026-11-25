@@ -1,25 +1,23 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Barcode, CreditCard, QrCode, Truck } from "lucide-react";
+import { ArrowRight, CreditCard, QrCode, Truck } from "lucide-react";
 import "./home-gift-banner.css";
 
-/** One fixed campaign; text remains readable and selectable on every screen. */
+/** Banner da home: só os produtos que a Vonix vende, em combos. */
 export function HomeGiftBanner() {
   return (
-    <section className="gift-banner" data-testid="home-gift-banner" aria-label="Todos os pedidos acompanham sacolinha Vonix">
-      <img className="gift-banner-photo" src="/images/banners/vonix-sacolinhas-fixo.webp" alt="Mulher com o queixo apoiado nas duas mãos e sacolinhas Vonix de Banana e Mel, Coco Nutri e Whey Protein à frente" width={1942} height={809} fetchPriority="high" />
-      <div className="gift-banner-shade" aria-hidden="true" />
+    <section className="gift-banner" data-testid="home-gift-banner" aria-label="Combos Vonix Hair para donas de salão">
       <div className="gift-banner-copy">
-        <p className="gift-banner-brand font-display">VONIX <span>HAIR</span></p>
-        <h2 className="gift-banner-heading font-display">Seu pedido<span className="gift-banner-break"> </span>já vai com<span className="gift-banner-break"> </span><em>sacolinha.</em></h2>
+        <p className="gift-banner-brand font-display">SITE FEITO PARA CABELEIREIRAS</p>
+        <h2 className="gift-banner-heading font-display">Combos do salão com <em>até 10% OFF</em></h2>
+        <p className="gift-banner-sub">Site feito para quem vive de cabelo: cabeleireiras e donas de salão. Leve a Progressiva Fio de Luz, a mais vendida em São Paulo e Minas Gerais, já com o shampoo anti-resíduo certo: 5% OFF no combo e mais 5% no Pix, direto no preço, sem cupom.</p>
         <ul className="gift-banner-benefits" aria-label="Condições de pagamento e entrega" data-testid="home-banner-benefits">
-          <li className="gift-banner-pix"><QrCode aria-hidden="true" /><strong>5% OFF no Pix</strong></li>
-          <li><CreditCard aria-hidden="true" /><span>Até <strong>6x sem juros</strong> no cartão</span></li>
+          <li><QrCode aria-hidden="true" /><strong>5% OFF no combo + 5% no Pix</strong></li>
+          <li><CreditCard aria-hidden="true" /><span>Até <strong>6x sem juros</strong></span></li>
           <li><Truck aria-hidden="true" /><strong>Frete grátis</strong></li>
-          <li><Barcode aria-hidden="true" /><span>Pagamento no <strong>boleto</strong></span></li>
         </ul>
-        <Link to="/loja" className="gift-banner-cta">Conheça os produtos <ArrowRight aria-hidden="true" /></Link>
+        <Link to="/loja" search={{ tiposProduto: "Kits" }} className="gift-banner-cta">Quero o meu combo <ArrowRight aria-hidden="true" /></Link>
       </div>
-      <p className="gift-banner-terms">Sacolinha inclusa em todos os pedidos. Desconto no Pix para itens sem outra oferta.</p>
+      <img className="gift-banner-photo" src="/images/products/combo-fio-de-luz-completo.jpg" alt="Combo Fio de Luz completo: progressiva, shampoo anti-resíduo e Repair" width={1000} height={1000} fetchPriority="high" />
     </section>
   );
 }

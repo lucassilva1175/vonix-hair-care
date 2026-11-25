@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Grid, Shell } from "@/components/site";
-import { BEST_SELLERS, NEEDS, SITE_URL, products, TYPES, forAudience, resolveAudience, useAudience } from "@/lib/store";
+import { BEST_SELLERS, NEEDS, SITE_URL, products, vitrine, TYPES, forAudience, resolveAudience, useAudience } from "@/lib/store";
 
 type S = { q?: string | undefined; secao?: string | undefined; tiposProduto?: string | undefined; necessidades?: string | undefined; uso?: string | undefined; categoria?: string | undefined; ordem?: string | undefined };
 
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/loja")({
   component: Loja,
 });
 
-const CATS = Array.from(new Map(products.map((p) => [p.category, p.categoryLabel])));
+const CATS = Array.from(new Map(vitrine.map((p) => [p.category, p.categoryLabel])));
 
 /** Produtos que aparecem também em outra seção (a categoria deles não muda, para o kit e os avulsos continuarem ligados). */
 const ALSO_IN: Record<string, string> = {
@@ -45,7 +45,7 @@ function Loja() {
   const uso = resolveAudience(audience, s.uso);
   const nav = useNavigate({ from: "/loja" });
   const set = (patch: Partial<S>) => nav({ search: (old: S) => ({ ...old, ...patch }) });
-  let list = products.filter((p) => {
+  let list = vitrine.filter((p) => {
     if (s.secao === "mais-vendidos" && !BEST_SELLERS.includes(p.slug)) return false;
     if (s.categoria && p.category !== s.categoria && ALSO_IN[p.slug] !== s.categoria) return false;
     if (s.tiposProduto && TYPES[s.tiposProduto] && !TYPES[s.tiposProduto]!(p)) return false;

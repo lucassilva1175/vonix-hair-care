@@ -44,6 +44,26 @@ export const products = (raw as unknown as Product[])
   .map(comPrecoDeTeste);
 export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
 
+/** Slugs dos produtos que já vêm dentro dos combos do carrinho (lidos da lista "O QUE VEM NO COMBO"). */
+export function incluidosNosCombos(cartSlugs: string[]): Set<string> {
+  const out = new Set<string>();
+  for (const s of cartSlugs) {
+    const c = products.find((p) => p.slug === s);
+    if (!c || !c.slug.startsWith("combo-")) continue;
+    for (const m of c.description.matchAll(/^\*\*(.+?) — /gm)) {
+      const item = products.find((p) => p.name === m[1] && !p.slug.startsWith("combo-"));
+      if (item) out.add(item.slug);
+    }
+  }
+  return out;
+}
+
+/** Vitrine: combos novos + produtos solos (os kits antigos e as unidades avulsas deles ficam fora; o endereço de cada um continua valendo). */
+const SOLTOS_OCULTOS = (p: Product) => p.category === "avulsos" || (p.category === "kits" && !p.slug.startsWith("combo-"));
+/** Linha Whey Protein fora da vitrine (24/11/2026): o dono não vende mais. */
+const SEM_WHEY = (p: Product) => !/whey/i.test(p.slug);
+export const vitrine = products.filter((p) => !SOLTOS_OCULTOS(p) && SEM_WHEY(p));
+
 export const FREE_SHIPPING_ABOVE = 0; // 0 = frete grátis em todos os produtos e em qualquer valor de pedido (ordem do Lucas, 19/11/2026). Para exigir um mínimo, ponha o valor aqui
 export const MAX_INSTALLMENTS = 6;
 /** Desconto no Pix: 5% (volta em 16/11/2026), só em itens sem outra oferta e sem cupom por cima. */
@@ -112,6 +132,7 @@ export const discountPct =(compare: number | null, price: number) =>
  * Everything else is "both" (home + professional).
  */
 export const PRO_ONLY = new Set([
+  "combo-fio-de-luz-shampoo-anti-residuo", "combo-fio-de-luz-completo", "combo-fio-de-luz-serum", "combo-diamond-shampoo-anti-residuo", "combo-diamond-defrizante", "combo-lift-em-gel-shampoo", "combo-lift-em-gel-serum", "combo-special-matizadora-shampoo", "combo-special-matizadora-reparador", "combo-selagem-diamond-shampoo", "combo-botox-vonix-shampoo", "combo-botox-vonix-nutri-repair",
   "progressiva-fio-de-luz",
   "progressiva-diamond",
   "progressiva-lift-em-gel",
@@ -136,26 +157,32 @@ export const OFFER_LABEL: Record<Offer, string> = {
  */
 export const volumePct = (qty: number) => (qty >= 3 ? 15 : qty === 2 ? 12 : 0);
 
-/** Desconto que vale na linha: o maior entre o "leve mais" e a Black Friday do produto (nunca somam). */
-export const linePct = (qty: number, slug?: string, now?: Date) => Math.max(volumePct(qty), bfPct(slug, now));
+/** Desconto automático dos combos (25/11/2026): 5% no preço, e o Pix soma mais 5% por cima (total 10% no Pix). Vale para combo pronto e para combo montado (5% em cada item). */
+export const COMBO_PCT = 5;
+export const comboPct = (slug?: string) => (slug?.startsWith("combo-") ? COMBO_PCT : 0);
+
+/** Desconto que vale na linha: o maior entre o "leve mais", o do combo e a Black Friday do produto (nunca somam). */
+export const linePct = (qty: number, slug?: string, now?: Date) => Math.max(volumePct(qty), bfPct(slug, now), comboPct(slug));
 
 /** Line totals in cents-safe math. Without an offer the volume discount follows qty; kit2/kit3 (old carts) count kits, comp5 is the 5% cart complement. */
 export function lineTotals(price: number, qty: number, offer?: Offer, slug?: string, now?: Date) {
   const u = cents(price);
+  /** Linha de combo (pronto ou montado): o Pix soma 5% por cima. Se o "leve mais" ou a Black Friday for maior, vale só o maior, sem Pix. */
+  const combo = offer === "comp5" || (comboPct(slug) > 0 && comboPct(slug) >= Math.max(volumePct(qty), bfPct(slug, now)));
   if (offer === "kit2") {
     const kit = Math.round((u * 2 * 88) / 100);
-    return { gross: (u * 2 * qty) / 100, net: (kit * qty) / 100, units: 2 * qty };
+    return { gross: (u * 2 * qty) / 100, net: (kit * qty) / 100, units: 2 * qty, combo: false };
   }
   if (offer === "kit3") {
     const kit = Math.round((u * 3 * 85) / 100);
-    return { gross: (u * 3 * qty) / 100, net: (kit * qty) / 100, units: 3 * qty };
+    return { gross: (u * 3 * qty) / 100, net: (kit * qty) / 100, units: 3 * qty, combo: false };
   }
   if (offer === "comp5") {
     const unit = Math.round((u * 95) / 100);
-    return { gross: (u * qty) / 100, net: (unit * qty) / 100, units: qty };
+    return { gross: (u * qty) / 100, net: (unit * qty) / 100, units: qty, combo };
   }
   const gross = u * qty;
-  return { gross: gross / 100, net: Math.round((gross * (100 - linePct(qty, slug, now))) / 100) / 100, units: qty };
+  return { gross: gross / 100, net: Math.round((gross * (100 - linePct(qty, slug, now))) / 100) / 100, units: qty, combo };
 }
 
 /** A line is "on offer" when it carries a line offer OR the volume discount made it cheaper: then Pix 5% and coupons do not stack. */
@@ -240,7 +267,7 @@ export function useCart() {
       if (!p || !v) return null;
       const t = lineTotals(v.price, i.qty, i.offer, p.slug);
       const pct = t.gross > 0 ? Math.round((1 - t.net / t.gross) * 100) : 0;
-      return { ...i, product: p, price: v.price, gross: t.gross, net: t.net, units: t.units, total: t.net, pct };
+      return { ...i, product: p, price: v.price, gross: t.gross, net: t.net, units: t.units, total: t.net, pct, combo: t.combo };
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
   const subtotal = cents(lines.reduce((s, l) => s + l.gross, 0)) / 100;
@@ -301,7 +328,7 @@ export const TYPES: Record<string, (p: Product) => boolean> = {
   Avulsos: (p) => p.category === "avulsos",
   Finalizadores: (p) => p.category === "finalizadores",
 };
-export const BEST_SELLERS = ["progressiva-fio-de-luz", "kit-banana-e-mel", "kit-coco-nutri", "botox-vonix", "botox-line", "mascara-efeito-teia-coco-nutri"];
+export const BEST_SELLERS = ["combo-fio-de-luz-shampoo-anti-residuo", "combo-sos-shampoo", "combo-botox-vonix-shampoo", "combo-botox-vonix-nutri-repair", "combo-botox-line-shampoo", "mascara-efeito-teia-coco-nutri"];
 
 export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compareBase, p.variants[0].price)));
 
@@ -313,16 +340,18 @@ export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compar
  *   are NEVER cumulative: Pix 5% and coupons apply only to lines without an offer.
  */
 export function checkoutTotals(
-  lines: { gross: number; net: number; offer?: Offer | undefined }[],
+  lines: { gross: number; net: number; offer?: Offer | undefined; combo?: boolean | undefined }[],
   method: "pix" | "card" | "boleto",
   couponPct = 0,
 ) {
   const gross = cents(lines.reduce((s, l) => s + l.gross, 0));
   const net = cents(lines.reduce((s, l) => s + l.net, 0));
   const eligible = cents(lines.reduce((s, l) => s + (lineHasOffer(l) ? 0 : l.net), 0));
+  // Linhas de combo aceitam o Pix por cima do desconto do combo (cupom continua só nas linhas sem oferta).
+  const pixBase = eligible + cents(lines.reduce((s, l) => s + (l.combo && lineHasOffer(l) ? l.net : 0), 0));
   const couponDisc = Math.round(eligible * couponPct);
   const pixDisc =
-    method === "pix" && couponPct === 0 ? Math.round(((eligible - couponDisc) * (100 - PIX_DISCOUNT * 100)) / 100) - (eligible - couponDisc) : 0;
+    method === "pix" && couponPct === 0 ? Math.round(((pixBase - couponDisc) * (100 - PIX_DISCOUNT * 100)) / 100) - (pixBase - couponDisc) : 0;
   const total = net - couponDisc + pixDisc;
   return {
     gross: gross / 100,
@@ -382,9 +411,9 @@ export const bySales = <T extends Product>(items: T[]): T[] =>
   items.map((p, i) => [p, i] as const).sort((a, b) => saleRank(b[0]) - saleRank(a[0]) || a[1] - b[1]).map(([p]) => p);
 
 /** "Mais desejados" da home: o que mais vende (sem as unidades avulsas), já na ordem da área escolhida. */
-export const HOME_FIRST = ["botox-vonix", "progressiva-fio-de-luz"]; // sempre os dois primeiros em "Mais desejados" (ordem do Lucas, 19/11/2026)
+export const HOME_FIRST = ["progressiva-fio-de-luz", "botox-vonix"]; // sempre os dois primeiros em "Mais desejados", só produtos solos (ordem do Lucas, 24/11/2026)
 export const homeBestSellers = (audience: Audience, max = 8): Product[] => {
-  const list = forAudience(bySales(products.filter((p) => p.category !== "avulsos")), audience);
+  const list = forAudience(bySales(vitrine.filter((p) => p.category !== "avulsos" && p.category !== "kits")), audience);
   // Em "Para mim" (casa) a regra antiga continua: química por último; nas demais telas os dois entram na frente.
   const pins = audience === "casa" ? [] : HOME_FIRST;
   const first = pins.map((slug) => list.find((p) => p.slug === slug)).filter((p): p is Product => !!p);
@@ -433,6 +462,10 @@ export const professionalRelevance = (items: Product[]) =>
  * Never suggests a product already in the cart (any variant) nor kits
  * (kits don't get the 5% complement offer).
  */
+/** Quem leva qualquer progressiva (solta ou em combo) sempre recebe shampoo, defrizante, finalizador e perfume (ordem do Lucas, 24/11/2026). */
+const PROGRESSIVA_NO_CARRINHO = /progressiva|combo-(fio-de-luz|diamond|lift-em-gel|special-matizadora)/;
+const shampooDaProgressiva = (cartSlugs: string[]) => (cartSlugs.some((s) => /fio-de-luz/.test(s)) ? "shampoo-fio-de-luz-anti-residuo" : "shampoo-diamond-anti-residuo");
+
 const COMPLEMENT_RULES: [RegExp, string[]][] = [
   [/progressiva-fio-de-luz/, ["shampoo-fio-de-luz-anti-residuo", "serum-argan", "reparador-de-pontas"]],
   [/progressiva|botox|selagem|cauterizacao/, ["shampoo-diamond-anti-residuo", "defrizante", "mascara-efeito-teia-tomba-cabelo"]],
@@ -443,8 +476,12 @@ const COMPLEMENT_RULES: [RegExp, string[]][] = [
 ];
 
 export function complementsFor(cartSlugs: string[], max = 3): Product[] {
-  const inCart = new Set(cartSlugs);
+  const inCart = new Set([...cartSlugs, ...incluidosNosCombos(cartSlugs)]);
   const ordered: string[] = [];
+  if (cartSlugs.some((s) => PROGRESSIVA_NO_CARRINHO.test(s))) {
+    ordered.push(shampooDaProgressiva(cartSlugs), "defrizante", "reparador-de-pontas", "serum-argan", "perfume-capilar-vonix-rubi");
+    max = Math.max(max, 5);
+  }
   for (const [re, slugs] of COMPLEMENT_RULES) if (cartSlugs.some((s) => re.test(s))) ordered.push(...slugs);
   ordered.push(...BEST_SELLERS);
   const seen = new Set<string>();

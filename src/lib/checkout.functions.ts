@@ -6,7 +6,7 @@ import { isValidCpf } from "./cpf";
 import { env } from "./env.server";
 import { calculateShipping, unitWeightKg } from "./melhorenvio.server";
 import { pickFreeShipping, pickThreeShipping } from "./shipping-pick";
-import { isFreeShippingCep } from "./free-shipping-region";
+import { ENTREGA_SOMENTE_MSG, cepAtendido, isFreeShippingCep } from "./free-shipping-region";
 import { normalizeRef, refCampaign } from "./affiliate-ref";
 import { notifyAffiliateSale } from "./affiliate-notify.server";
 import { checkoutTotals, getProduct, lineTotals, type Offer } from "./store";
@@ -65,6 +65,7 @@ async function shippingOptions(cep: string, lines: ReturnType<typeof buildLines>
 export const quoteShipping = createServerFn({ method: "POST" })
   .inputValidator(z.object({ cep: cepSchema, items: z.array(itemSchema).min(1).max(40), coupon: couponSchema }))
   .handler(async ({ data }) => {
+    if (!cepAtendido(data.cep)) return { ok: false as const, message: ENTREGA_SOMENTE_MSG };
     try {
       return { ok: true as const, options: await shippingOptions(data.cep, buildLines(data.items), data.coupon) };
     } catch (e) {
@@ -123,6 +124,7 @@ export const createPayment = createServerFn({ method: "POST" })
     if (!env("APPMAX_CLIENT_ID") || !env("APPMAX_CLIENT_SECRET")) return { ok: false as const, message: "Os pagamentos desta loja estão sendo ativados. Fale com a gente no WhatsApp para comprar agora." };
     if (data.method === "boleto" && env("APPMAX_BOLETO_ENABLED", "true") === "false")
       return { ok: false as const, message: "Boleto indisponível no momento. Escolha cartão ou Pix." };
+    if (!cepAtendido(data.address.cep)) return { ok: false as const, message: ENTREGA_SOMENTE_MSG };
     try {
       const lines = buildLines(data.items);
       const option = (await shippingOptions(data.address.cep, lines, data.coupon)).find((o) => o.id === data.serviceId);

@@ -11,3 +11,7 @@ export function isFreeShippingCep(cep: string): boolean {
   const n = Number(d.slice(0, 5));
   return (n >= 1000 && n <= 19999) || (n >= 30000 && n <= 39999);
 }
+
+/** Entrega só em São Paulo e Minas Gerais (decisão do Lucas, 24/11/2026): CEP fora dessas faixas não finaliza compra. */
+export const ENTREGA_SOMENTE_MSG = "No momento entregamos somente em São Paulo e Minas Gerais. Use um CEP desses estados para continuar.";
+export const cepAtendido = isFreeShippingCep;

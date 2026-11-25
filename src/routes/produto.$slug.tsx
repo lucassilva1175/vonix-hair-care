@@ -1,14 +1,15 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { Check, Heart, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
+import { BadgeCheck, Check, Heart, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ProductGallery } from "@/components/product-gallery";
 import { thumb, webp } from "@/lib/images";
 import { ProductDetails } from "@/components/product-details";
 import { ProductReviews, ReviewStrip, reviewsFor } from "@/components/reviews";
-import { ProvasEmVideo } from "@/components/provas-em-video";
+import { ProvaSocial } from "@/components/prova-social";
+import { CepCheck } from "@/components/cep-check";
+import { provaDe } from "@/lib/prova-social";
 import { productGalleryImagesFor, productGalleryVideosFor } from "@/lib/product-media";
-import { ComentariosInstagram } from "@/components/comentarios-instagram";
 import { ShareButton } from "@/components/share-button";
 import { Grid, PaymentMethods, SecuritySeal, Shell, Stars } from "@/components/site";
 import { toItem, track } from "@/lib/analytics";
@@ -34,12 +35,14 @@ import {
   lineTotals,
   maskCep,
   products,
+  vitrine,
   saveCep,
   shippingText,
   useAudience,
   useCart,
   useFavorites,
   linePct,
+  comboPct,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$slug")({
@@ -305,7 +308,7 @@ function KitCross({ p }: { p: NonNullable<ReturnType<typeof getProduct>> }) {
           </p>
         </div>
       </div>
-      <Link to="/produto/$slug" params={{ slug: kit.slug }} className="mt-4 block rounded-md bg-emerald-600 py-3 text-center font-bold text-white transition hover:bg-emerald-700">
+      <Link to="/produto/$slug" params={{ slug: kit.slug }} className="mt-4 block rounded-md bg-black py-3 text-center font-bold text-white transition hover:bg-neutral-800">
         Ver o kit completo
       </Link>
     </section>
@@ -314,7 +317,6 @@ function KitCross({ p }: { p: NonNullable<ReturnType<typeof getProduct>> }) {
 
 function ProductPage() {
   const p = Route.useLoaderData();
-  const galleryVideos = productGalleryVideosFor(p.slug);
   const cart = useCart();
   const fav = useFavorites();
   const { audience } = useAudience();
@@ -325,7 +327,7 @@ function ProductPage() {
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
   const related = forAudience(
-    products.filter((x) => x.category === p.category && x.slug !== p.slug),
+    vitrine.filter((x) => x.category === p.category && x.slug !== p.slug),
     audience,
   ).slice(0, 4);
   const sel = lineTotals(v.price, qty, undefined, p.slug);
@@ -341,6 +343,8 @@ function ProductPage() {
       items: [toItem(p, v.label, unitPrice, sel.units)],
     });
   };
+  const galleryVideos = productGalleryVideosFor(p.slug);
+  const isComboLine = sel.combo;
   const total = sel.net;
   return (
     <Shell>
@@ -355,20 +359,38 @@ function ProductPage() {
         <div className="grid gap-10 lg:grid-cols-2">
           <ProductGallery key={p.slug} images={productGalleryImagesFor(p.slug, p.images)} name={p.name} {...(galleryVideos ? { videos: galleryVideos } : {})} />
           <div className="min-w-0">
-            <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">5% OFF</span>
+            <span className="inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-body font-bold text-white">{comboPct(p.slug) > 0 ? `${comboPct(p.slug)}% OFF no combo` : "5% OFF"}</span>
             <h1 className="mt-3 font-display text-h1">{p.name}</h1>
             <Stars slug={p.slug} />
-            {!galleryVideos && <ReviewStrip slug={p.slug} />}
+            <ReviewStrip slug={p.slug} />
             <div className="mt-4" data-testid="product-price-block">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
-                <span className="text-body">no Pix</span>
-                <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
+                {comboPct(p.slug) > 0 ? (
+                  <>
+                    <span className="text-body text-muted-foreground line-through">{brl(v.price)}</span>
+                    <span className="money text-h1 font-bold leading-none">{brl(pixPrice(lineTotals(v.price, 1, undefined, p.slug).net))}</span>
+                    <span className="text-body">no Pix</span>
+                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">{comboPct(p.slug)}% + 5% OFF</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
+                    <span className="text-body">no Pix</span>
+                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
+                  </>
+                )}
               </div>
               <p className="mt-1 text-small text-muted-foreground">
-                Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros
+                {comboPct(p.slug) > 0 ? <>Ou <b className="font-semibold">{brl(lineTotals(v.price, 1, undefined, p.slug).net)}</b> em até <b className="font-semibold">{installments(lineTotals(v.price, 1, undefined, p.slug).net).count}x de {brl(installments(lineTotals(v.price, 1, undefined, p.slug).net).value)}</b> sem juros. O desconto de 5% do combo já está no preço e o Pix dá mais 5%.</> : <>Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros</>}
               </p>
             </div>
+            {provaDe(p).selo && (
+              <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-1 text-small font-semibold text-white" data-testid="prova-selo">
+                <BadgeCheck className="h-4 w-4" aria-hidden="true" /> {provaDe(p).selo}{provaDe(p).vendidos >= 10 && !provaDe(p).selo?.includes("unidades") ? ` · ${provaDe(p).vendidos} unidades vendidas` : ""}
+              </p>
+            )}
+            {galleryVideos && <p className="mt-2 text-small text-muted-foreground">Vários influenciadores estão usando este produto. Veja os vídeos na galeria.</p>}
+            <CepCheck className="mt-3" />
             <div className="mt-3">
               <ShareButton
                 compact
@@ -538,7 +560,7 @@ function ProductPage() {
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <button
-                className="rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] py-3.5"
+                className="rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5"
                 onClick={() => {
                   add();
                   nav({ to: "/carrinho" });
@@ -581,11 +603,7 @@ function ProductPage() {
                 </a>
               </li>
             </ul>
-            {!galleryVideos && <div className="mt-8">
-              <p className="mb-2 text-small font-semibold">Veja em vídeo quem usa</p>
-              <ProvasEmVideo slug={p.slug} seed={p.slug} />
-            </div>}
-            <ComentariosInstagram slug={p.slug} max={4} />
+            <div className="mt-8"><ProvaSocial p={p} /></div>
           </div>
         </div>
         <KitCross p={p} />
@@ -624,10 +642,10 @@ function ProductPage() {
       </div>
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-background p-3 lg:px-[max(1rem,calc((100vw-1400px)/2+2rem))]">
         <div className="min-w-0 leading-tight">
-          <div className="text-small text-muted-foreground line-through">{brl(total)}</div>
+          <div className="text-small text-muted-foreground line-through">{brl(discounted ? sel.gross : total)}</div>
           <div className="flex flex-wrap items-center gap-x-2">
-            <span className="text-h2 font-bold leading-tight">{brl(pixPrice(total))}</span>
-            <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">-5% PIX</span>
+            <span className="text-h2 font-bold leading-tight">{brl(discounted && !isComboLine ? total : pixPrice(total))}</span>
+            <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">{discounted && !isComboLine ? `-${linePct(qty, p.slug)}%` : "-5% PIX"}</span>
           </div>
         </div>
         <button

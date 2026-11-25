@@ -23,6 +23,7 @@ import { Route as EsquentaBlackFridayRouteImport } from './routes/esquenta-black
 import { Route as FalarComAVonixRouteImport } from './routes/falar-com-a-vonix'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as LojaRouteImport } from './routes/loja'
+import { Route as MonteSeuComboRouteImport } from './routes/monte-seu-combo'
 import { Route as PainelRouteImport } from './routes/painel'
 import { Route as SejaAfiliadaRouteImport } from './routes/seja-afiliada'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -104,6 +105,11 @@ const LojaRoute = LojaRouteImport.update({
   path: '/loja',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonteSeuComboRoute = MonteSeuComboRouteImport.update({
+  id: '/monte-seu-combo',
+  path: '/monte-seu-combo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PainelRoute = PainelRouteImport.update({
   id: '/painel',
   path: '/painel',
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/falar-com-a-vonix': typeof FalarComAVonixRoute
   '/favoritos': typeof FavoritosRoute
   '/loja': typeof LojaRoute
+  '/monte-seu-combo': typeof MonteSeuComboRoute
   '/painel': typeof PainelRoute
   '/seja-afiliada': typeof SejaAfiliadaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/falar-com-a-vonix': typeof FalarComAVonixRoute
   '/favoritos': typeof FavoritosRoute
   '/loja': typeof LojaRoute
+  '/monte-seu-combo': typeof MonteSeuComboRoute
   '/painel': typeof PainelRoute
   '/seja-afiliada': typeof SejaAfiliadaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/falar-com-a-vonix': typeof FalarComAVonixRoute
   '/favoritos': typeof FavoritosRoute
   '/loja': typeof LojaRoute
+  '/monte-seu-combo': typeof MonteSeuComboRoute
   '/painel': typeof PainelRoute
   '/seja-afiliada': typeof SejaAfiliadaRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/falar-com-a-vonix'
     | '/favoritos'
     | '/loja'
+    | '/monte-seu-combo'
     | '/painel'
     | '/seja-afiliada'
     | '/sitemap.xml'
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/falar-com-a-vonix'
     | '/favoritos'
     | '/loja'
+    | '/monte-seu-combo'
     | '/painel'
     | '/seja-afiliada'
     | '/sitemap.xml'
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/falar-com-a-vonix'
     | '/favoritos'
     | '/loja'
+    | '/monte-seu-combo'
     | '/painel'
     | '/seja-afiliada'
     | '/sitemap.xml'
@@ -331,6 +343,7 @@ export interface RootRouteChildren {
   FalarComAVonixRoute: typeof FalarComAVonixRoute
   FavoritosRoute: typeof FavoritosRoute
   LojaRoute: typeof LojaRoute
+  MonteSeuComboRoute: typeof MonteSeuComboRoute
   PainelRoute: typeof PainelRoute
   SejaAfiliadaRoute: typeof SejaAfiliadaRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -443,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LojaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/monte-seu-combo': {
+      id: '/monte-seu-combo'
+      path: '/monte-seu-combo'
+      fullPath: '/monte-seu-combo'
+      preLoaderRoute: typeof MonteSeuComboRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/painel': {
       id: '/painel'
       path: '/painel'
@@ -531,6 +551,7 @@ const rootRouteChildren: RootRouteChildren = {
   FalarComAVonixRoute: FalarComAVonixRoute,
   FavoritosRoute: FavoritosRoute,
   LojaRoute: LojaRoute,
+  MonteSeuComboRoute: MonteSeuComboRoute,
   PainelRoute: PainelRoute,
   SejaAfiliadaRoute: SejaAfiliadaRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

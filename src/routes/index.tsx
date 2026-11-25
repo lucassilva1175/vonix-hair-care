@@ -3,10 +3,11 @@ import { ArrowRight, Atom, FlaskConical, ShowerHead, Sparkles } from "lucide-rea
 import { ReviewCard, reviews } from "@/components/reviews";
 import { FaqSection } from "@/components/faq";
 import { FAQ_LOJA } from "@/lib/faq";
+import { ProvaSocial } from "@/components/prova-social";
 import { ProvasEmVideo } from "@/components/provas-em-video";
-import { ComentariosInstagram } from "@/components/comentarios-instagram";
-import { Grid, Shell } from "@/components/site";
-import { SITE_URL, bySales, forAudience, homeBestSellers, products, useAudience } from "@/lib/store";
+import { CepCheck } from "@/components/cep-check";
+import { Benefits, Grid, Shell } from "@/components/site";
+import { SITE_URL, bySales, forAudience, homeBestSellers, products, useAudience, vitrine } from "@/lib/store";
 import { HomeGiftBanner } from "@/components/home-gift-banner";
 
 /** Faixa de valores da marca que passa devagar embaixo do banner (ícone de traço + frase curta). Não repete frete, parcelamento nem Pix. */
@@ -37,9 +38,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { name: "description", content: "Progressivas, botox, máscaras e kits Vonix Hair. Até 6x sem juros e frete grátis em todos os produtos." },
+      { name: "description", content: "Site feito para cabeleireiras e donas de salão: progressivas, botox e combos profissionais. Fio de Luz, a mais vendida em São Paulo e Minas Gerais. Até 6x sem juros e frete grátis." },
       { property: "og:title", content: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { property: "og:description", content: "Até 6x sem juros e frete grátis em todos os produtos." },
+      { property: "og:description", content: "Para donas de salão de São Paulo e Minas Gerais. Até 6x sem juros e frete grátis." },
       { property: "og:url", content: SITE_URL },
       { property: "og:image", content: `${SITE_URL}/og-vonix.jpg` },
       { name: "twitter:image", content: `${SITE_URL}/og-vonix.jpg` },
@@ -74,11 +75,15 @@ function Home() {
     out.forEach((p) => seen.add(p.slug));
     return out;
   };
-  const kits = take(forAudience(bySales(products.filter((p) => p.category === "kits")), audience));
-  const hidratacao = take(forAudience(bySales(products.filter((p) => p.category === "hidratacao")), audience));
-  const lavatorio = take(forAudience(bySales(products.filter((p) => p.category === "lavatorio")), audience));
-  const avulsos = take(bySales(products.filter((p) => p.category === "avulsos")), 12);
-  const finalizadores = take(forAudience(bySales(products.filter((p) => p.category === "finalizadores")), audience));
+  // Combos: começam pelos de Fio de Luz, depois os de Botox Vonix, depois o resto (mais vendidos).
+  const ordemCombo = (p: { slug: string }) => (p.slug.startsWith("combo-fio-de-luz") ? 0 : p.slug.startsWith("combo-botox-vonix") ? 1 : 2);
+  const kits = take(forAudience(bySales(vitrine.filter((p) => p.category === "kits")), audience)).sort((a, b) => ordemCombo(a) - ordemCombo(b));
+  const hidratacao = take(forAudience(bySales(vitrine.filter((p) => p.category === "hidratacao")), audience));
+  const lavatorio = take(forAudience(bySales(vitrine.filter((p) => p.category === "lavatorio")), audience));
+  const avulsos = take(bySales(vitrine.filter((p) => p.category === "avulsos")), 12);
+  const PROVAS_HOME = ["progressiva-fio-de-luz", "botox-vonix", "progressiva-lift-em-gel", "progressiva-vonix-special-matizadora", "botox-vonix-matizador", "shampoo-fio-de-luz-anti-residuo"];
+  const provas = PROVAS_HOME.map((slug) => products.find((p) => p.slug === slug)).filter((p): p is NonNullable<typeof p> => !!p);
+  const finalizadores = take(forAudience(bySales(vitrine.filter((p) => p.category === "finalizadores")), audience));
   return (
     <Shell>
       <h1 className="sr-only">Vonix Hair — Cosméticos Capilares Profissionais</h1>
@@ -86,45 +91,41 @@ function Home() {
         <HomeGiftBanner />
       </div>
 
+      <div className="container-site mt-3">
+        <CepCheck />
+      </div>
+      <Benefits />
+
       <FaixaMarca />
+
+      {/* Monte o seu kit: progressiva + shampoo anti-resíduo + o que ela quiser */}
+      <section className="container-site mt-10" data-testid="home-monte-kit" aria-label="Monte o seu kit de progressiva">
+        <div className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-[#faf6f1] p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="max-w-xl">
+            <h2 className="font-display text-h2">Monte o kit de progressiva do seu salão</h2>
+            <p className="mt-2 text-body text-muted-foreground">Escolha a progressiva, o shampoo anti-resíduo, o defrizante e o perfume, na quantidade que o seu salão precisa. Tudo em um só pedido, com frete grátis.</p>
+          </div>
+          <Link to="/monte-seu-combo" search={{ cat: "quimica" }} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-foreground px-6 font-medium text-background">
+            Montar meu kit <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
 
       {/* 1) O que mais vende, logo abaixo da oferta principal */}
       <section className="mt-12 bg-[#091413] py-10 text-white [&_a.border-foreground]:border-white [&_h2]:text-white" data-testid="home-vitrine-escura">
         <div className="container-site">
-          <Title a="Mais" b="Desejados" to={{ secao: "mais-vendidos" }} />
+          <Title a="Mais pedidos pelas" b="donas de salão" to={{ secao: "mais-vendidos" }} />
           <Grid carousel items={bestSellers} />
         </div>
       </section>
 
-      {/* O que o cabelo precisa hoje: atalhos por necessidade */}
-      <section className="container-site mt-14" data-testid="home-necessidades" aria-label="O que seu cabelo precisa hoje?">
-        <h2 className="mb-8 text-center">O que seu cabelo precisa hoje?</h2>
-        <div className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] md:grid md:grid-cols-6 md:gap-6 md:overflow-visible [&::-webkit-scrollbar]:hidden">
-          {(
-            [
-              ["Hidratação", "hidratacao"],
-              ["Reconstrução", "reconstrucao"],
-              ["Controle de Frizz", "frizz"],
-              ["Definição de Cachos", "cachos"],
-              ["Cabelos com Química", "quimica"],
-              ["Nutrição", "nutricao"],
-            ] as const
-          ).map(([n, img]) => (
-            <Link key={n} to="/loja" search={{ necessidades: n }} className="group flex w-[132px] shrink-0 flex-col items-center gap-3 text-center md:w-auto">
-              <span className="block aspect-square w-[132px] overflow-hidden rounded-full bg-muted md:w-full md:max-w-[168px]">
-                <img src={`/images/categorias/${img}.jpg`} alt="" width={336} height={336} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-              </span>
-              <span className="text-body leading-snug">{n}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       {/* 2) Kits: a rotina completa aumenta o valor do pedido */}
       {kits.length > 0 && (
         <section className="container-site mt-16" data-testid="home-kits">
-          <Title a="Rotina Completa em" b="Kits" to={{ tiposProduto: "Kits" }} />
-          <p className="-mt-4 mb-4 text-body text-muted-foreground">Todos os passos do cuidado em um só pedido. Leve 2 e ganhe 12% OFF, leve 3 e ganhe 15% OFF.</p>
+          <Title a="Combos para o" b="seu salão" to={{ tiposProduto: "Kits" }} />
+          <p className="-mt-4 mb-4 text-body text-muted-foreground">Progressiva já com o shampoo anti-resíduo certo: você compra uma vez e atende sem improviso. Leve 2 e ganhe 12% OFF, leve 3 e ganhe 15% OFF.</p>
+          <Link to="/monte-seu-combo" className="mb-4 inline-flex h-11 items-center rounded-full border border-foreground px-5 text-small font-semibold">Monte o seu próprio combo</Link>
           <Grid carousel items={kits} />
         </section>
       )}
@@ -167,18 +168,21 @@ function Home() {
         </section>
       )}
 
-      {/* 7) Prova social num bloco só: vídeos, depoimentos e comentários escritos */}
+      {/* 7) Prova social em texto: uma por produto, para donas de salão */}
       <section className="container-site mt-20" data-testid="home-prova-social">
-        <Title a="Quem usa" b="Aprova" to={{ q: "botox vonix" }} />
-        <p className="-mt-4 mb-4 text-body text-muted-foreground">Veja quem usa os produtos da Vonix Hair. Toque para assistir.</p>
-        <ProvasEmVideo all seed="home" max={16} />
-        <h3 className="mb-3 mt-10 font-display text-h2">Resultados que falam por si</h3>
-        <p className="mb-4 text-body text-muted-foreground">Depoimentos reais de cabeleireiras que usam o Botox Vonix.</p>
+        <Title a="As donas de salão" b="aprovam" to={{ secao: "mais-vendidos" }} />
+        <p className="-mt-4 mb-6 text-body text-muted-foreground">O que cada produto resolve no seu salão, com a quantidade de cada um e os números reais de venda da Vonix.</p>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {provas.map((p) => <ProvaSocial key={p.slug} p={p} link />)}
+        </div>
+        <h3 className="mb-2 mt-12 font-display text-h2">Vários influenciadores estão usando a Vonix</h3>
+        <p className="mb-4 text-body text-muted-foreground">Veja o Fio de Luz e o Botox Vonix na mão de quem mostra o resultado. Toque para assistir.</p>
+        <ProvasEmVideo slug="progressiva-fio-de-luz" max={6} seed="home-fio" />
+        <ProvasEmVideo slug="botox-vonix" max={2} seed="home-botox" className="mt-2" />
+        <h3 className="mb-3 mt-12 font-display text-h2">O que dizem as cabeleireiras</h3>
+        <p className="mb-4 text-body text-muted-foreground">Depoimentos de cabeleireiras que usam o Botox Vonix.</p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {reviews.map((r) => <ReviewCard key={r.author + r.date} r={r} />)}
-        </div>
-        <div data-testid="home-comentarios">
-          <ComentariosInstagram max={10} />
         </div>
       </section>
 

@@ -82,7 +82,7 @@ export function CartDrawer() {
             <ul className="divide-y divide-border rounded-xl border border-border">
               {c.lines.map((l) => (
                 <li key={l.slug + l.variant + (l.offer ?? "")} className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 p-3">
-                  <img src={thumb(l.product.images[0]!)} alt={l.product.name} width={72} height={72} className="h-[72px] w-[72px] rounded-lg bg-muted object-contain p-1" />
+                  <img src={thumb(l.product.images[0]!)} alt={l.product.name} width={72} height={72} className="h-[72px] w-[72px] rounded-lg bg-white object-contain p-1" />
                   <div className="min-w-0">
                     <b className="line-clamp-2 text-body font-semibold leading-snug">
                       {l.product.name} <span className="font-normal text-muted-foreground">• {l.variant}</span>
@@ -118,7 +118,7 @@ export function CartDrawer() {
                   const v = p.variants[0]!;
                   return (
                     <div key={p.slug} className="flex w-[260px] shrink-0 items-center gap-2 rounded-xl border border-border p-2">
-                      <img src={webp(p.images[0]!)} alt="" width={56} height={56} loading="lazy" className="h-14 w-14 shrink-0 rounded-lg bg-muted object-contain p-1" />
+                      <img src={webp(p.images[0]!)} alt="" width={56} height={56} loading="lazy" className="h-14 w-14 shrink-0 rounded-lg bg-white object-contain p-1" />
                       <div className="min-w-0 flex-1 leading-tight">
                         <Link to="/produto/$slug" params={{ slug: p.slug }} onClick={closeCartDrawer} className="line-clamp-2 text-small font-semibold">
                           {p.name}

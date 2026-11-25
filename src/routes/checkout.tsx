@@ -28,6 +28,7 @@ import {
   useCart,
   useHydrated,
 } from "@/lib/store";
+import { OrderBump } from "@/components/order-bump";
 import { couponCheck, couponPercent, findCoupon, getPrize, isAffiliateCouponCode, type Coupon } from "@/lib/coupons";
 
 export const Route = createFileRoute("/checkout")({
@@ -931,7 +932,7 @@ function Checkout() {
                 </div>
                 {t.offerDiscount > 0 && (
                   <div className="flex justify-between text-[#2c6e55]">
-                    <span>Economia das ofertas</span>
+                    <span>Desconto do combo e das ofertas</span>
                     <span>− {brl(t.offerDiscount)}</span>
                   </div>
                 )}
@@ -1448,6 +1449,7 @@ function Checkout() {
             )}
           </div>
 
+          {step === 2 && <OrderBump />}
           {step === 2 && totalsCard}
           <details hidden={step !== 2} data-testid="checkout-review" className="rounded-xl border border-border px-3 py-2.5">
             <summary className="cursor-pointer text-body font-medium">Ver itens do pedido ({c.lines.length})</summary>
