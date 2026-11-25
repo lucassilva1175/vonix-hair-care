@@ -53,7 +53,12 @@ describe("C102 — benefícios transparentes antes da candidatura", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { container } = render(<AffiliateEarlyValueBand />);
     expect(container.querySelector("form, input, button, video, iframe")).toBeNull();
-    expect(container.querySelectorAll("a")).toHaveLength(2);
+    const links = Array.from(container.querySelectorAll("a"));
+    expect(links.map((link) => link.getAttribute("href")).sort()).toEqual([
+      "#ganhos",
+      "#inscricao",
+      "#simular-comissoes",
+    ]);
     expect(container.querySelectorAll("img")).toHaveLength(0);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
