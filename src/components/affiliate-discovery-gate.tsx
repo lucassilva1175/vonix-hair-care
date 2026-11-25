@@ -35,13 +35,23 @@ export function AffiliateDiscoveryGate({
       return target && node.contains(target) ? target : null;
     };
 
+    let pendingScroll: number | undefined;
+    const cancelScroll = () => {
+      if (pendingScroll !== undefined) {
+        window.cancelAnimationFrame(pendingScroll);
+        pendingScroll = undefined;
+      }
+    };
     const reveal = (hash: string, scroll: boolean) => {
+      cancelScroll();
       const target = targetForHash(hash);
       if (!target) return;
       node.open = true;
       if (scroll) {
-        window.requestAnimationFrame(() => {
-          if (node.isConnected && node.open) target.scrollIntoView({ block: "start" });
+        pendingScroll = window.requestAnimationFrame(() => {
+          pendingScroll = undefined;
+          if (node.isConnected && node.open && target.isConnected && window.location.hash === hash)
+            target.scrollIntoView({ block: "start" });
         });
       }
     };
@@ -84,6 +94,7 @@ export function AffiliateDiscoveryGate({
     onHash();
 
     return () => {
+      cancelScroll();
       node.removeAttribute("data-interactive");
       document.removeEventListener("click", onClick);
       window.removeEventListener("hashchange", onHash);

@@ -102,6 +102,27 @@ describe("C96 — conteúdo extra opcional sem perder links existentes", () => {
     expect(gate.open).toBe(true);
   });
 
+  it("cancels a queued discovery scroll when the user returns to the application", () => {
+    const callbacks = new Map<number, FrameRequestCallback>();
+    let id = 0;
+    const cancel = vi.spyOn(window, "cancelAnimationFrame").mockImplementation((key) => {
+      callbacks.delete(key);
+    });
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callbacks.set(++id, callback);
+      return id;
+    });
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    window.history.replaceState(null, "", "/seja-afiliada#formatos");
+    render(<AffiliateDiscoveryGate>{fixture}</AffiliateDiscoveryGate>);
+    expect(callbacks.size).toBe(1);
+    window.history.replaceState(null, "", "/seja-afiliada#inscricao");
+    fireEvent(window, new Event("hashchange"));
+    expect(cancel).toHaveBeenCalled();
+    expect(callbacks.size).toBe(0);
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
   it("mantém conteúdo acessível e atribuições transparentes quando aberto", () => {
     render(<AffiliateDiscoveryGate>{fixture}</AffiliateDiscoveryGate>);
     const gate = screen.getByTestId("affiliate-c96-discovery-gate") as HTMLDetailsElement;

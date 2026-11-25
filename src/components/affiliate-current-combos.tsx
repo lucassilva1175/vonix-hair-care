@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { affiliateSearchTerms, matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
 import { ArrowUpRight, Search, PackageOpen } from "lucide-react";
 import { vitrine } from "@/lib/store";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
@@ -11,12 +12,6 @@ const featured = [
   "combo-trio-shampoos-hidratantes",
   "combo-teia-coco-nutri-shampoo",
 ];
-const normalize = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
 
 export function AffiliateCurrentCombos() {
   const [open, setOpen] = useState(false);
@@ -32,8 +27,9 @@ export function AffiliateCurrentCombos() {
       featured.includes(slug) ? featured.indexOf(slug) : featured.length;
     return rank(a.slug) - rank(b.slug);
   });
-  const search = normalize(query);
-  const matches = ordered.filter((p) => normalize(p.name + " " + p.slug).includes(search));
+  const searchRef = useRef<HTMLInputElement>(null);
+  const search = affiliateSearchTerms(query).length > 0;
+  const matches = ordered.filter((p) => matchesAffiliateSearch(p.name + " " + p.slug, query));
   const visible = all || search ? matches : matches.slice(0, 6);
   if (!combos.length) return null;
   return (
@@ -81,6 +77,7 @@ export function AffiliateCurrentCombos() {
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#d8bfc5] px-3">
                 <Search aria-hidden="true" className="size-4 shrink-0 text-[#89586a]" />
                 <input
+                  ref={searchRef}
                   id="affiliate-c161-combo-search"
                   type="search"
                   maxLength={80}
@@ -92,7 +89,10 @@ export function AffiliateCurrentCombos() {
                 {query && (
                   <button
                     type="button"
-                    onClick={() => setQuery("")}
+                    onClick={() => {
+                      setQuery("");
+                      searchRef.current?.focus();
+                    }}
                     className="min-h-11 px-2 text-xs font-bold text-[#724155]"
                   >
                     Limpar
@@ -124,7 +124,7 @@ export function AffiliateCurrentCombos() {
                     <span className="min-w-0 text-sm font-bold text-[#724155]">
                       <span className="block">{p.name}</span>
                       <span className="mt-2 inline-flex items-center gap-1 text-xs underline underline-offset-4">
-                        Ver composição{" "}
+                        Ver composição (nova aba){" "}
                         <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
                       </span>
                     </span>
