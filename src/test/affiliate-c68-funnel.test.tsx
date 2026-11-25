@@ -91,6 +91,18 @@ describe("C68 anonymous affiliate application funnel", () => {
     expect(server.submit).not.toHaveBeenCalled();
   });
 
+  it("ignores a queued observer after live intake changes to a protected preview", () => {
+    const { rerender } = render(<AffiliateSimpleForm />);
+    const stale = notify;
+    rerender(<AffiliateSimpleForm preview />);
+    stale?.([{ isIntersecting: true }]);
+    expect(analytics.track).not.toHaveBeenCalled();
+    rerender(<AffiliateSimpleForm />);
+    notify?.([{ isIntersecting: true }]);
+    expect(analytics.track).toHaveBeenCalledExactlyOnceWith("affiliate_form_visible");
+    expect(server.submit).not.toHaveBeenCalled();
+  });
+
   it("does not claim a visible form in browsers without IntersectionObserver", () => {
     vi.stubGlobal("IntersectionObserver", undefined);
     render(<AffiliateSimpleForm />);

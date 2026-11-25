@@ -803,6 +803,33 @@ describe("Vonix short single-page application form", () => {
     }
   });
 
+  it("clears only validated address errors after a successful CEP lookup", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          logradouro: "Rua Primeira",
+          bairro: "C",
+          localidade: "Belo Horizonte",
+          uf: "MG",
+        }),
+      ),
+    );
+    render(<AffiliateSimpleForm />);
+    fireEvent.change(screen.getByLabelText(/CEP/), { target: { value: "30110012" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveAttribute("aria-invalid", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Buscar CEP" }));
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveAttribute("aria-invalid", "false"),
+    );
+    expect(screen.getByLabelText(/Cidade/)).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByLabelText(/Estado/)).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByLabelText(/Bairro/)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/Número/)).toHaveAttribute("aria-invalid", "true");
+    expect(server.submit).not.toHaveBeenCalled();
+  });
+
   it("provides a manual fallback when the CEP provider is unavailable", async () => {
     vi.stubGlobal(
       "fetch",

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { ArrowRight, CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "lucide-react";
-import { affiliateSimpleSchema } from "@/lib/affiliate-simple";
+import { affiliateSimpleBaseSchema, affiliateSimpleSchema } from "@/lib/affiliate-simple";
 import { downloadAffiliatePrivateReceipt } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
@@ -467,9 +467,10 @@ export function AffiliateSimpleForm({
       typeof IntersectionObserver === "undefined"
     )
       return;
+    let active = true;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (formSeen.current || document.visibilityState !== "visible") return;
+        if (!active || formSeen.current || document.visibilityState !== "visible") return;
         if (entries.some((entry) => entry.isIntersecting)) {
           formSeen.current = true;
           trackAffiliateFunnel("affiliate_form_visible");
@@ -479,8 +480,28 @@ export function AffiliateSimpleForm({
       { threshold: 0.1 },
     );
     observer.observe(formElement.current);
-    return () => observer.disconnect();
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
   }, [preview, sent]);
+
+  // A successful CEP lookup must clear errors for the address fields it actually
+  // resolved, but leave unrelated or still-invalid fields for manual correction.
+  useEffect(() => {
+    const resolved = (["street", "district", "city", "state"] as const).filter(
+      (key) =>
+        zipAutoFilled.current[key] === values[key] &&
+        affiliateSimpleBaseSchema.shape[key].safeParse(values[key]).success,
+    );
+    if (!resolved.length) return;
+    setErrors((previous) => {
+      if (!resolved.some((key) => previous[key])) return previous;
+      const next = { ...previous };
+      for (const key of resolved) delete next[key];
+      return next;
+    });
+  }, [values]);
 
   // Address data returned by a third-party CEP provider must not silently
   // update a private application draft while the page is backgrounded.
