@@ -73,6 +73,9 @@ describe("Vonix affiliate V2 editorial journey", () => {
     expect(screen.getByTestId("illustrative-commission").textContent?.replace(/\s/g, " ")).toBe(
       "R$ 800,00",
     );
+    expect(screen.getByTestId("illustrative-bonus")).toHaveTextContent("R$ 0,00");
+    expect(screen.getByTestId("illustrative-total")).toHaveTextContent("R$ 800,00");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Simular bônus, se elegível/ }));
     expect(screen.getByTestId("illustrative-bonus").textContent?.replace(/\s/g, " ")).toBe(
       "R$ 500,00",
     );
@@ -81,5 +84,17 @@ describe("Vonix affiliate V2 editorial journey", () => {
     );
     expect(screen.getByText(/Não é promessa de ganhos/)).toBeInTheDocument();
     expect(screen.getByText(/Sem elegibilidade, o bônus não se aplica/)).toBeInTheDocument();
+    const scenarios = screen.getByRole("group", { name: "Cenários ilustrativos de vendas" });
+    fireEvent.click(within(scenarios).getByRole("button", { name: /R\$\s*20\.000,00/ }));
+    expect(slider).toHaveValue("20000");
+    expect(screen.getByTestId("illustrative-total")).toHaveTextContent("R$ 2.600,00");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Simular bônus, se elegível/ }));
+    expect(screen.getByTestId("illustrative-total")).toHaveTextContent("R$ 1.600,00");
+    expect(within(scenarios).getByRole("button", { name: /R\$\s*20\.000,00/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(within(scenarios).getByRole("button", { name: /R\$\s*5\.000,00/ }));
+    expect(screen.getByTestId("illustrative-total")).toHaveTextContent("R$ 400,00");
   });
 });

@@ -8,7 +8,10 @@ const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL
 
 export function AffiliateEarningsSimulator({ compact = false }: { compact?: boolean }) {
   const [sales, setSales] = useState(2500);
+  const [includeBonus, setIncludeBonus] = useState(false);
   const result = illustrativeEarnings(sales);
+  const bonus = includeBonus ? result.bonus : 0;
+  const total = includeBonus ? result.total : result.commission;
   return (
     <div
       className={compact ? "py-5 sm:py-7" : "mt-12 border-y border-border py-8 sm:py-12"}
@@ -51,6 +54,43 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
             <span>R$ 0</span>
             <span>R$ 20.000</span>
           </div>
+          <div
+            role="group"
+            aria-label="Cenários ilustrativos de vendas"
+            className="mt-4 flex flex-wrap gap-2"
+          >
+            {[2500, 5000, 10000, 20000].map((amount) => (
+              <button
+                key={amount}
+                type="button"
+                aria-pressed={sales === amount}
+                onClick={() => setSales(amount)}
+                className={
+                  "min-h-11 rounded-full border px-3 py-2 text-xs font-bold focus-visible:outline-2 focus-visible:outline-offset-2 " +
+                  (sales === amount
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-primary")
+                }
+              >
+                {money.format(amount)}
+              </button>
+            ))}
+          </div>
+          <label className="mt-5 flex min-h-12 cursor-pointer items-start gap-3 rounded-xl border border-[#dfccd0] bg-[#fff8f6] p-3 text-sm text-[#573443]">
+            <input
+              type="checkbox"
+              checked={includeBonus}
+              onChange={(event) => setIncludeBonus(event.target.checked)}
+              className="mt-0.5 size-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2"
+              aria-describedby="simulator-bonus-condition"
+            />
+            <span>
+              <span className="block font-bold">Simular bônus, se elegível</span>
+              <span id="simulator-bonus-condition" className="mt-1 block text-xs leading-relaxed">
+                Apenas hipótese de cálculo. O bônus depende das regras e metas aplicáveis.
+              </span>
+            </span>
+          </label>
         </div>
         <output
           htmlFor="illustrative-sales"
@@ -66,25 +106,27 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
               </dd>
             </div>
             <div className="flex flex-wrap justify-between gap-2">
-              <dt>Bônus condicional*</dt>
+              <dt>Bônus condicional* {includeBonus ? "(simulado)" : "(não incluído)"}</dt>
               <dd data-testid="illustrative-bonus" className="font-semibold tabular-nums">
-                {money.format(result.bonus)}
+                {money.format(bonus)}
               </dd>
             </div>
             <div className="flex flex-wrap justify-between gap-2 border-t border-border pt-5">
-              <dt className="self-center font-semibold">Soma demonstrativa*</dt>
+              <dt className="self-center font-semibold">
+                {includeBonus ? "Soma demonstrativa*" : "Somente comissão"}
+              </dt>
               <dd
                 data-testid="illustrative-total"
                 className="font-display text-4xl text-primary tabular-nums"
               >
-                {money.format(result.total)}
+                {money.format(total)}
               </dd>
             </div>
           </dl>
           <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-            *Inclui R$ 500 por cada R$ 10.000 apenas como hipótese de bônus elegível. Sem
-            elegibilidade, o bônus não se aplica. Não representa pagamento, saldo ou previsão de
-            renda.
+            *A simulação pode incluir R$ 500 por cada R$ 10.000 apenas como hipótese de bônus
+            elegível. Sem elegibilidade, o bônus não se aplica. Não representa pagamento, saldo ou
+            previsão de renda.
           </p>
         </output>
       </div>

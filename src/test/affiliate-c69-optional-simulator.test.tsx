@@ -41,6 +41,11 @@ describe("C69 — exemplo de ganhos opcional antes da candidatura", () => {
     const slider = within(optional).getByRole("slider", { name: /Valor hipotético de vendas/ });
     fireEvent.change(slider, { target: { value: "10000" } });
     expect(within(optional).getByTestId("illustrative-commission")).toHaveTextContent("R$ 800,00");
+    expect(within(optional).getByTestId("illustrative-bonus")).toHaveTextContent("R$ 0,00");
+    expect(within(optional).getByTestId("illustrative-total")).toHaveTextContent("R$ 800,00");
+    const bonus = within(optional).getByRole("checkbox", { name: /Simular bônus, se elegível/ });
+    expect(bonus).not.toBeChecked();
+    fireEvent.click(bonus);
     expect(within(optional).getByTestId("illustrative-bonus")).toHaveTextContent("R$ 500,00");
     expect(within(optional).getByTestId("illustrative-total")).toHaveTextContent("R$ 1.300,00");
     expect(optional).toHaveTextContent("Não é promessa de ganhos");
