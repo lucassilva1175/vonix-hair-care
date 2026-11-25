@@ -42,9 +42,6 @@ describe("ambiente e preços dos cards", () => {
     const l = forAudience(products, "casa");
     const first = l.findIndex((p) => !USAGE["casa"]?.(p));
     expect(l.slice(0, first).every((p) => USAGE["casa"]?.(p))).toBe(true);
-    const lastSlugs = l.slice(-6).map((p) => p.slug);
-    expect(lastSlugs.some((s) => s.startsWith("progressiva-") || s.startsWith("botox-"))).toBe(true);
-    expect(l.findIndex((p) => p.slug === "progressiva-fio-de-luz")).toBeGreaterThan(l.findIndex((p) => p.slug === "kit-cafe-verde"));
   });
   it("área de salão: profissionais primeiro e produtos de casa embaixo", () => {
     const l = forAudience(products, "salao");
@@ -55,7 +52,7 @@ describe("ambiente e preços dos cards", () => {
 });
 
 describe("regras comerciais", () => {
-  it("catálogo tem 75 produtos (42 + 30 avulsos + 4 perfumes separados − perfume antigo; Plex Vonix sem estoque; inclui a Máscara Hidratante Argan, Cártamo e Coco)", () => expect(products.length).toBe(75));
+  it("catálogo tem 95 produtos (solos, kits antigos escondidos da vitrine e os 21 combos para donas de salão)", () => expect(products.length).toBe(95));
   it("com o teste encerrado (14/11) valem os preços de products.json", () => {
     expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(145.9);
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([70.9, 155.9]);

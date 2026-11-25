@@ -12,8 +12,8 @@ describe("vendas reais", () => {
   });
   it("produto sem venda registrada mostra 0, nunca um número estimado", () => {
     expect(soldFor("produto-que-nao-existe")).toBe(0);
-    expect(soldFor("progressiva-fio-de-luz")).toBe(21);
-    expect(Object.values(SOLD).reduce((s, n) => s + n, 0)).toBe(484);
+    expect(soldFor("progressiva-fio-de-luz")).toBe(128);
+    expect(Object.values(SOLD).reduce((s, n) => s + n, 0)).toBe(812);
   });
   it("o total que o dono informa por produto vale como está, sem somar com o Bling", () => {
     const informado: Record<string, number> = {

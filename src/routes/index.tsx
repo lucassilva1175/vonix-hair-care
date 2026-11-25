@@ -175,6 +175,22 @@ function Home() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {provas.map((p) => <ProvaSocial key={p.slug} p={p} link />)}
         </div>
+        <h3 className="mb-2 mt-12 font-display text-h2">A Vonix no dia a dia do salão</h3>
+        <p className="mb-4 text-body text-muted-foreground">Imagens ilustrativas dos combos em um salão de bairro. Toque na foto para ver o combo.</p>
+        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-6 md:overflow-visible md:px-0" data-testid="home-fotos-salao">
+          {[
+            "combo-fio-de-luz-completo-3",
+            "combo-fio-de-luz-shampoo-anti-residuo-2",
+            "combo-botox-vonix-shampoo-3",
+            "combo-diamond-shampoo-anti-residuo-2",
+            "combo-sos-reconstrutor-4",
+            "combo-queratina-em-massa-shampoo-3",
+          ].map((img) => (
+            <Link key={img} to="/produto/$slug" params={{ slug: img.replace(/-\d+$/, "") }} className="w-44 shrink-0 snap-start overflow-hidden rounded-xl md:w-auto">
+              <img src={`/images/products/${img}-480.webp`} alt="Cabeleireira com os produtos da Vonix em um salão" loading="lazy" className="aspect-[4/5] w-full object-cover" />
+            </Link>
+          ))}
+        </div>
         <h3 className="mb-2 mt-12 font-display text-h2">Vários influenciadores estão usando a Vonix</h3>
         <p className="mb-4 text-body text-muted-foreground">Veja o Fio de Luz e o Botox Vonix na mão de quem mostra o resultado. Toque para assistir.</p>
         <ProvasEmVideo slug="progressiva-fio-de-luz" max={6} seed="home-fio" />

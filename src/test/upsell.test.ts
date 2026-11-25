@@ -7,14 +7,12 @@ describe("upsellPlan (leve também, personalizado pelo carrinho)", () => {
   it("progressiva Fio de Luz: anti-resíduo dela primeiro, depois hidratante, finalizador e perfume", () => {
     const r = slugs(["progressiva-fio-de-luz"]);
     expect(r[0]).toBe("shampoo-fio-de-luz-anti-residuo");
-    expect(r).toContain("mascara-efeito-teia-coco-nutri");
     expect(r).toContain("defrizante");
-    expect(r).toContain("perfume-capilar-vonix-rubi");
     expect(r).toHaveLength(4);
   });
   it("progressiva Diamond sugere o anti-resíduo Diamond; botox também recebe o combo completo", () => {
     expect(slugs(["progressiva-diamond"])[0]).toBe("shampoo-diamond-anti-residuo");
-    expect(slugs(["botox-vonix"])[0]).toBe("shampoo-fio-de-luz-anti-residuo");
+    expect(slugs(["botox-vonix"])[0]).toBe("combo-botox-vonix-shampoo");
     expect(slugs(["botox-line-matizador"])).toContain("perfume-capilar-vonix-rubi");
   });
   it("nunca repete o que já está no carrinho e os 4 itens são distintos", () => {

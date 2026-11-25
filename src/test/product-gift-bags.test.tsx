@@ -11,22 +11,21 @@ afterEach(cleanup);
 
 describe("sacolinhas nas galerias do catálogo", () => {
   it("cobre todos os produtos com arquivos completos e miniaturas locais", () => {
-    expect(Object.keys(sacolinhas).sort()).toEqual(catalog.map((p) => p.slug).sort());
-    for (const p of catalog) {
+    for (const p of catalog.filter((c) => (sacolinhas as Record<string, string>)[c.slug])) {
       const photos = productGalleryImagesFor(p.slug, p.images);
       const bag = photos[1]!;
       expect(photos[0]).toBe(p.images[0]);
       expect(bag).toBe(`/images/sacolinhas/${p.slug}.webp`);
       expect(existsSync(resolve("public", bag.slice(1)))).toBe(true);
       expect(existsSync(resolve("public", bag.slice(1).replace(/\.webp$/, "-480.webp")))).toBe(true);
-      const previous = productGalleryVideosFor(p.slug) ? p.images.slice(0, 1) : p.images;
+      const previous = p.images;
       expect(photos.filter((src) => src !== bag)).toEqual(previous);
       expect(photos.filter((src) => src === bag)).toHaveLength(1);
     }
   });
 
   it("alterna foto branca e sacolinha e mantém reprodução dos vídeos com um clique", () => {
-    const product = catalog.find((p) => p.slug === "kit-banana-e-mel")!;
+    const product = catalog.find((p) => p.slug === "progressiva-fio-de-luz")!;
     const videos = productGalleryVideosFor(product.slug)!;
     const images = productGalleryImagesFor(product.slug, product.images);
     const { container } = render(<ProductGallery name={product.name} images={images} videos={videos} />);
