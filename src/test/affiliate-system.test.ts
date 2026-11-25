@@ -1013,6 +1013,40 @@ describe("Tratamento de resultados ambíguos do Resend", () => {
     const finish = JSON.parse(String(mock.mock.calls[2]![1].body));
     expect(finish).toMatchObject({ p_success: false, p_unknown: true, p_permanent: true });
   });
+  it.each([301, 302, 307, 308, 408, 503])(
+    "classifies HTTP %i as uncertain and blocks credential-forwarding redirects",
+    async (status) => {
+      const mock = vi
+        .fn()
+        .mockResolvedValueOnce(Response.json([claimed]))
+        .mockResolvedValueOnce(
+          new Response(null, { status, headers: { Location: "https://untrusted.example/" } }),
+        )
+        .mockResolvedValueOnce(Response.json(true));
+      vi.stubGlobal("fetch", mock);
+      expect(await processAffiliateEmails(10)).toMatchObject({ sent: 0, failed: 1 });
+      expect(mock).toHaveBeenCalledTimes(3);
+      expect(mock.mock.calls[1]![0]).toBe("https://api.resend.com/emails");
+      expect(mock.mock.calls[1]![1].redirect).toBe("manual");
+      expect(JSON.parse(String(mock.mock.calls[2]![1].body))).toMatchObject({
+        p_success: false,
+        p_unknown: true,
+        p_permanent: status >= 300 && status < 400,
+        p_provider_id: null,
+      });
+    },
+  );
+
+  it.each([NaN, Infinity, -Infinity, -1, 0, 0.5])(
+    "does not claim mail for an invalid or sub-unit worker limit %s",
+    async (limit) => {
+      const mock = vi.fn();
+      vi.stubGlobal("fetch", mock);
+      expect(await processAffiliateEmails(limit)).toEqual({ sent: 0, failed: 0, configured: true });
+      expect(mock).not.toHaveBeenCalled();
+    },
+  );
+
   it("erro 401 do provedor é falha definitiva, não timeout", async () => {
     const mock = vi
       .fn()
