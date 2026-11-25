@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { catalogId, metaCatalogId } from "@/lib/analytics";
-import { products, SITE_URL } from "@/lib/store";
+import { SITE_URL, vitrine } from "@/lib/store";
 
 const HEADERS = [
   "id", "title", "description", "availability", "condition", "price", "sale_price",
@@ -14,7 +14,8 @@ export const Route = createFileRoute("/api/public/meta-catalog")({
   server: {
     handlers: {
       GET: () => {
-        const rows = products.flatMap((product) => {
+        // Mesma lista da vitrine do site: solos que vendem e os combos (sem kits antigos, avulsas e Whey).
+        const rows = vitrine.flatMap((product) => {
           const image = product.images[0];
           if (!image) return [];
 
