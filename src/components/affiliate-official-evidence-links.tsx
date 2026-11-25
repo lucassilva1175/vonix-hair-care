@@ -126,7 +126,7 @@ export function AffiliateOfficialEvidenceLinks({
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[#755d66]">
               {videos
-                ? "Explore as demonstrações disponíveis nas páginas oficiais dos produtos. São conteúdos de produto, não resultados de afiliadas."
+                ? "Explore as demonstrações disponíveis nas páginas oficiais dos produtos, inclusive materiais de linhas anteriores. Consulte a vitrine atual para conhecer os combos disponíveis. São conteúdos de produto, não resultados de afiliadas."
                 : "Confira as avaliações de produto na página oficial do Botox Vonix. São opiniões de clientes sobre produtos, não depoimentos de afiliadas nem promessa de ganhos."}
             </p>
           </div>
