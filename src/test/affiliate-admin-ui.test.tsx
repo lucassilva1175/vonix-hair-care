@@ -985,11 +985,15 @@ describe("Vonix affiliate private panel", () => {
       resolveFresh = resolve;
     });
     const visibility = vi.spyOn(document, "visibilityState", "get");
+    const listener = vi.spyOn(window, "addEventListener");
     let state: DocumentVisibilityState = "visible";
     visibility.mockImplementation(() => state);
     try {
       render(<Page />);
       expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
+      // The data can render before the passive focus listener is registered.
+      await waitFor(() => expect(listener).toHaveBeenCalledWith("focus", expect.any(Function)));
+      listener.mockRestore();
       server.getAffiliateAdminSession
         .mockReturnValueOnce(oldSession)
         .mockReturnValueOnce(freshSession);
@@ -1016,6 +1020,7 @@ describe("Vonix affiliate private panel", () => {
       expect(screen.getByText("Acesso da equipe")).toBeInTheDocument();
       expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
     } finally {
+      listener.mockRestore();
       visibility.mockRestore();
     }
   });

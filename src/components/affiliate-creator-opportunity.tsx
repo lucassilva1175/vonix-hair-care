@@ -92,13 +92,129 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
   );
 }
 
+const editorialBenefits = [
+  {
+    title: "Crie com a sua identidade",
+    detail: "Rotinas, fotos e resenhas sinceras: explore formatos que combinem com você.",
+    image: "/images/categorias/nutricao.jpg",
+    href: "#formatos",
+    action: "Ver ideias de conteúdo",
+  },
+  {
+    title: "Conheça o que pode divulgar",
+    detail: "Explore os produtos Vonix e suas orientações oficiais antes de criar.",
+    image: "/images/products/combo-sos-reconstrutor-480.webp",
+    href: "/produto/combo-sos-reconstrutor",
+    action: "Conhecer o combo",
+  },
+  {
+    title: "Uma parceria sem estoque",
+    detail: "Após aprovação, você divulga pelo seu link; a Vonix cuida da venda e entrega.",
+    image: "/images/products/combo-fio-de-luz-completo-480.webp",
+    href: "#ganhos",
+    action: "Entender as condições",
+  },
+] as const;
+
 export function AffiliateCreatorOpportunity({
   recruitmentOpen = false,
   onSafePreview,
+  sourceLinked = false,
 }: {
   recruitmentOpen?: boolean;
   onSafePreview?: (() => void) | undefined;
+  sourceLinked?: boolean;
 }) {
+  if (sourceLinked) {
+    return (
+      <section
+        data-testid="affiliate-c90-creator-bridge"
+        aria-labelledby="creator-stories-title"
+        className="border-y border-[#e7d8d3] bg-[#fcf7f3] px-5 py-9 sm:py-14"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="grid items-end gap-3 lg:grid-cols-[1fr_.8fr] lg:gap-10">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#875166]">
+                Seu espaço no universo Vonix
+              </p>
+              <h2
+                id="creator-stories-title"
+                className="mt-2 font-display text-3xl leading-tight text-[#4d3040] sm:text-4xl"
+              >
+                Cabelo, criatividade e{" "}
+                <span className="italic text-[#874f62]">novas possibilidades.</span>
+              </h2>
+            </div>
+            <p className="max-w-lg text-sm leading-relaxed text-[#705b65]">
+              Você não precisa de portfólio pronto para se candidatar. Conheça a marca e descubra
+              como seu estilo de conteúdo pode se conectar ao cuidado com os fios.
+            </p>
+          </div>
+          <div
+            data-testid="affiliate-c163-editorial-benefits"
+            className="mt-5 grid min-w-0 gap-3 sm:grid-cols-3 sm:gap-4"
+          >
+            {editorialBenefits.map((item, index) => (
+              <article
+                key={item.title}
+                className="group grid min-w-0 grid-cols-[5.5rem_minmax(0,1fr)] overflow-hidden rounded-2xl border border-[#e2cfd0] bg-white shadow-[0_8px_24px_rgba(76,41,54,.06)] sm:grid-cols-1"
+              >
+                <div className="relative min-h-28 overflow-hidden bg-[#f0e0df] sm:aspect-[16/10]">
+                  <img
+                    src={item.image}
+                    alt=""
+                    width={480}
+                    height={480}
+                    loading="lazy"
+                    decoding="async"
+                    className={
+                      "absolute inset-0 size-full " +
+                      (index === 0 ? "object-cover" : "object-contain p-2 sm:p-4")
+                    }
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold text-[#754258]"
+                  >
+                    0{index + 1}
+                  </span>
+                </div>
+                <div className="flex min-w-0 flex-col p-3 sm:p-5">
+                  <h3 className="font-display text-lg leading-tight text-[#523342] sm:text-xl">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[#705b65] sm:text-sm">
+                    {item.detail}
+                  </p>
+                  <a
+                    href={item.href}
+                    target={item.href.startsWith("/produto/") ? "_blank" : undefined}
+                    rel={item.href.startsWith("/produto/") ? "noopener noreferrer" : undefined}
+                    className="mt-auto inline-flex min-h-11 items-center gap-1.5 pt-2 text-xs font-bold text-[#754258] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    {item.action} <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#f2e5e4] p-4 sm:p-5">
+            <p className="max-w-xl text-xs leading-relaxed text-[#705b65] sm:text-sm">
+              Imagens do catálogo oficial, não depoimentos de afiliadas. Candidatura gratuita e
+              sujeita à análise individual, sem garantia de parceria ou remuneração.
+            </p>
+            <Button asChild className="h-auto min-h-12 rounded-xl px-5 py-3 text-sm font-bold">
+              <AffiliateApplyLink recruitmentOpen={recruitmentOpen} onSafePreview={onSafePreview}>
+                {recruitmentOpen ? "Preencher candidatura" : "Abrir prévia segura"}
+                <ArrowUpRight aria-hidden="true" className="size-4" />
+              </AffiliateApplyLink>
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section
       data-testid="affiliate-c90-creator-bridge"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUpRight, Film, Images, MessageSquareText, Star } from "lucide-react";
+import { ArrowUpRight, Film, Images, MessageSquareText, Search, Star } from "lucide-react";
 import { getProduct, OUT_OF_STOCK } from "@/lib/store";
 import publishedMedia from "@/data/provas-em-video.json";
 import reviews from "@/data/reviews.json";
@@ -54,6 +54,8 @@ export function AffiliateOfficialEvidenceLinks({
   variant: "teaser" | "preview" | "reviews" | "videos";
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
   const [packagingView, setPackagingView] = useState(false);
   const [failedPackaging, setFailedPackaging] = useState<string[]>([]);
   const videos = variant === "videos";
@@ -90,7 +92,26 @@ export function AffiliateOfficialEvidenceLinks({
     });
   const products = videos ? catalogProducts(videoProducts) : [];
   const additionalProducts = videos ? catalogProducts(additionalVideoProducts) : [];
-  const visibleProducts = expanded ? [...products, ...additionalProducts] : products;
+  const allProducts = [...products, ...additionalProducts];
+  const categories = [...new Set(allProducts.map((product) => product.category))].sort((a, b) =>
+    a.localeCompare(b, "pt-BR"),
+  );
+  const normalize = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  const searching = Boolean(normalize(query) || category);
+  const visibleProducts = searching
+    ? allProducts.filter(
+        (product) =>
+          (!category || product.category === category) &&
+          normalize(product.name + " " + product.category).includes(normalize(query)),
+      )
+    : expanded
+      ? allProducts
+      : products;
   const summary = summarizeAffiliateProductReviews(reviews, "botox-vonix");
   const reviewCount = summary.count;
   const ratingLabel = summary.average?.toLocaleString("pt-BR", {
@@ -133,8 +154,64 @@ export function AffiliateOfficialEvidenceLinks({
         </div>
         {videos ? (
           <>
+            <div className="mt-5 grid gap-3 rounded-2xl border border-[#e5d2d4] bg-[#fff9f6] p-3 sm:grid-cols-[1fr_auto] sm:p-4">
+              <div className="min-w-0">
+                <label
+                  htmlFor="affiliate-media-search"
+                  className="block text-xs font-bold text-[#724155]"
+                >
+                  Encontre inspirações por produto
+                </label>
+                <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#d8bfc5] bg-white px-3">
+                  <Search aria-hidden="true" className="size-4 shrink-0 text-[#89586a]" />
+                  <input
+                    id="affiliate-media-search"
+                    type="search"
+                    value={query}
+                    maxLength={80}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Ex.: cachos, Botox, shampoo"
+                    className="min-h-12 w-full min-w-0 bg-transparent text-sm text-[#523342] focus-visible:outline-2"
+                  />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <label
+                  htmlFor="affiliate-media-category"
+                  className="block text-xs font-bold text-[#724155]"
+                >
+                  Categoria do catálogo
+                </label>
+                <select
+                  id="affiliate-media-category"
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                  className="mt-2 min-h-12 w-full max-w-full rounded-xl border border-[#d8bfc5] bg-white px-3 text-sm text-[#523342] focus-visible:outline-2"
+                >
+                  <option value="">Todas as categorias</option>
+                  {categories.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {searching && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setCategory("");
+                  }}
+                  className="min-h-11 justify-self-start text-sm font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
+                >
+                  Limpar filtros do acervo
+                </button>
+              )}
+            </div>
             <p
               className="mt-4 text-xs font-semibold text-[#795e69]"
+              aria-live="polite"
               data-testid="affiliate-c157-video-count"
             >
               {visibleProducts.length} linhas ·{" "}
@@ -223,7 +300,12 @@ export function AffiliateOfficialEvidenceLinks({
                 );
               })}
             </div>
-            {additionalProducts.length > 0 && (
+            {searching && visibleProducts.length === 0 && (
+              <p className="mt-4 rounded-xl bg-[#fff8f6] p-4 text-sm text-[#755d66]">
+                Nenhuma inspiração encontrada. Tente outro produto ou categoria.
+              </p>
+            )}
+            {!searching && additionalProducts.length > 0 && (
               <button
                 type="button"
                 aria-expanded={expanded}
