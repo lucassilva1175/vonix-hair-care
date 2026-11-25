@@ -47,6 +47,23 @@ describe("C161 current official combo catalog", () => {
     }
     expect(screen.queryByText(/Combo Perfume Capilar/)).toBeNull();
   });
+  it("matches reordered words with punctuation and restores focus after clearing", () => {
+    render(<AffiliateCurrentCombos />);
+    fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+    const search = screen.getByRole("searchbox");
+    fireEvent.change(search, { target: { value: "LUZ, fio" } });
+    const links = screen.getAllByRole("link");
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every((link) => link.getAttribute("href")?.includes("fio-de-luz"))).toBe(true);
+    expect(links[0]).toHaveTextContent("nova aba");
+    const clear = screen.getByRole("button", { name: "Limpar" });
+    clear.focus();
+    fireEvent.click(clear);
+    expect(search).toHaveFocus();
+    expect(screen.getAllByRole("link")).toHaveLength(6);
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
+
   it("searches all combos without accents, handles empty results and resets search", () => {
     render(<AffiliateCurrentCombos />);
     fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));

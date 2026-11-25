@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { affiliateSearchTerms, matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
 import { ArrowUpRight, Film, Images, MessageSquareText, Search, Star } from "lucide-react";
 import { getProduct, OUT_OF_STOCK } from "@/lib/store";
 import publishedMedia from "@/data/provas-em-video.json";
@@ -96,18 +97,13 @@ export function AffiliateOfficialEvidenceLinks({
   const categories = [...new Set(allProducts.map((product) => product.category))].sort((a, b) =>
     a.localeCompare(b, "pt-BR"),
   );
-  const normalize = (value: string) =>
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
-  const searching = Boolean(normalize(query) || category);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searching = Boolean(affiliateSearchTerms(query).length || category);
   const visibleProducts = searching
     ? allProducts.filter(
         (product) =>
           (!category || product.category === category) &&
-          normalize(product.name + " " + product.category).includes(normalize(query)),
+          matchesAffiliateSearch(product.name + " " + product.category + " " + product.slug, query),
       )
     : expanded
       ? allProducts
@@ -165,6 +161,7 @@ export function AffiliateOfficialEvidenceLinks({
                 <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#d8bfc5] bg-white px-3">
                   <Search aria-hidden="true" className="size-4 shrink-0 text-[#89586a]" />
                   <input
+                    ref={searchRef}
                     id="affiliate-media-search"
                     type="search"
                     value={query}
@@ -202,6 +199,7 @@ export function AffiliateOfficialEvidenceLinks({
                   onClick={() => {
                     setQuery("");
                     setCategory("");
+                    searchRef.current?.focus();
                   }}
                   className="min-h-11 justify-self-start text-sm font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
                 >

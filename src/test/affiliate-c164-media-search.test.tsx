@@ -31,6 +31,22 @@ describe("C164 official media discovery", () => {
     expect(section.innerHTML).not.toMatch(/<video|\/depoimentos\/|\/provas\//);
     expect(analytics.track).not.toHaveBeenCalled();
   });
+  it("matches reordered words and punctuation and returns keyboard focus to search", () => {
+    render(<AffiliateOfficialEvidenceLinks variant="videos" />);
+    const section = screen.getByTestId("affiliate-c156-source-videos");
+    const search = within(section).getByRole("searchbox");
+    fireEvent.change(search, { target: { value: "LUZ, fio" } });
+    const links = within(section).getAllByRole("link");
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every((link) => link.getAttribute("href")?.includes("fio-de-luz"))).toBe(true);
+    const clear = within(section).getByRole("button", { name: "Limpar filtros do acervo" });
+    clear.focus();
+    fireEvent.click(clear);
+    expect(search).toHaveFocus();
+    expect(within(section).getAllByRole("link")).toHaveLength(6);
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
+
   it("combines filters and preserves the expanded state after reset", () => {
     render(<AffiliateOfficialEvidenceLinks variant="videos" />);
     const section = screen.getByTestId("affiliate-c156-source-videos");
