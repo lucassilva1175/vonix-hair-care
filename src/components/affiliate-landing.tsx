@@ -237,6 +237,37 @@ export function AffiliateLandingOffer({
 }) {
   const isOpen = recruitmentStatus === "open";
 
+  useEffect(() => {
+    if (placement === "intro") return;
+    const simulator = document.getElementById("simular-comissoes");
+    if (!(simulator instanceof HTMLDetailsElement)) return;
+    const hash = "#simular-comissoes";
+    const reveal = () => {
+      if (window.location.hash === hash) simulator.open = true;
+    };
+    const onClick = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      if (event.target instanceof Element && event.target.closest('a[href="#simular-comissoes"]')) {
+        simulator.open = true;
+      }
+    };
+    document.addEventListener("click", onClick);
+    window.addEventListener("hashchange", reveal);
+    reveal();
+    return () => {
+      document.removeEventListener("click", onClick);
+      window.removeEventListener("hashchange", reveal);
+    };
+  }, [placement]);
+
   return (
     <div
       data-testid={placement === "details" ? "vonix-c97-offer-details" : "vonix-c64-early-offer"}
@@ -259,7 +290,9 @@ export function AffiliateLandingOffer({
       {placement !== "intro" && (
         <>
           {sourceLinked ? (
-            <AffiliateOfficialEvidenceLinks variant="preview" />
+            placement === "all" ? (
+              <AffiliateOfficialEvidenceLinks variant="preview" />
+            ) : null
           ) : (
             <AffiliateVerifiedReviewPreview
               recruitmentOpen={isOpen}
@@ -346,8 +379,9 @@ export function AffiliateLandingOffer({
                 ou depoimentos de afiliadas.
               </p>
               <details
+                id="simular-comissoes"
                 data-testid="vonix-c69-optional-simulator"
-                className="group/simulator mt-7 rounded-2xl border border-[#dfd0cd] bg-background"
+                className="group/simulator mt-7 scroll-mt-32 rounded-2xl border border-[#dfd0cd] bg-background"
               >
                 <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:px-7 [&::-webkit-details-marker]:hidden">
                   <span className="min-w-0">

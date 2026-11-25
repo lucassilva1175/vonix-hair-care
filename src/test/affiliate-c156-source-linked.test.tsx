@@ -60,6 +60,21 @@ describe("C156 public source-linked media release", () => {
     await screen.findByText("Inscrições em preparação");
     const proof = screen.getByTestId("affiliate-c156-source-teaser");
     const form = container.querySelector("#inscricao")!;
+    expect(proof).toHaveAttribute("id", "avaliacoes-rapidas");
+    expect(screen.queryByTestId("affiliate-c156-source-preview")).not.toBeInTheDocument();
+    const simulator = screen.getByTestId("vonix-c69-optional-simulator") as HTMLDetailsElement;
+    const simulatorLink = screen.getByRole("link", { name: "Simular comissão" });
+    expect(simulatorLink).toHaveAttribute("href", "#simular-comissoes");
+    expect(simulator.open).toBe(false);
+    fireEvent.click(simulatorLink, { ctrlKey: true });
+    expect(simulator.open).toBe(false);
+    fireEvent.click(simulatorLink);
+    expect(simulator.open).toBe(true);
+    const journey = screen.getByTestId("affiliate-c135-steps-list");
+    const steps = within(journey).getAllByRole("listitem", { hidden: true });
+    expect(steps[0]).toHaveTextContent("Apresente seu perfil");
+    expect(steps[1]).toHaveTextContent("Guarde seu código");
+    expect(steps[2]).toHaveTextContent("Acompanhe a seleção");
     expect(proof.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(
       within(proof).getByRole("link", { name: /Ver avaliações na loja oficial/ }),

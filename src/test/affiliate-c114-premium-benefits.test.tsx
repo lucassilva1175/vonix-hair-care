@@ -64,7 +64,11 @@ describe("C114 — condições legíveis e hierarquia responsável no mobile", (
     ]) {
       expect(band).toHaveTextContent(fact);
     }
-    expect(container.querySelectorAll("a")).toHaveLength(2);
+    expect(container.querySelectorAll("a")).toHaveLength(3);
+    expect(within(band).getByRole("link", { name: "Simular comissão" })).toHaveAttribute(
+      "href",
+      "#simular-comissoes",
+    );
     expect(container.querySelectorAll("img, form, input, button, video, iframe")).toHaveLength(0);
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(band).not.toHaveTextContent(
