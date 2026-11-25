@@ -98,12 +98,11 @@ export function ReviewStrip({ slug }: { slug: string }) {
   const withMedia = all.filter((r) => r.media).slice(0, 4);
   const [playing, setPlaying] = useState<number | null>(null);
   if (withMedia.length === 0) return null;
-  const avg = all.reduce((s, r) => s + r.rating, 0) / all.length;
   return (
     <section aria-label="Clientes reais usando" className="mt-4 rounded-2xl border border-border bg-card p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <p className="text-small font-semibold">
-          <span className="text-star">★</span> {avg.toFixed(1).replace(".", ",")} · {all.length} {all.length === 1 ? "avaliação" : "avaliações"} de clientes reais
+          {all.length} {all.length === 1 ? "depoimento" : "depoimentos"} de clientes reais
         </p>
         <a href="#avaliacoes" className="text-small underline">Ver todas</a>
       </div>
