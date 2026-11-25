@@ -515,6 +515,8 @@ export function PriceBlock({ price, compare, big }: { price: number; compare?: n
  * Real average rating (from src/data/reviews.json): gold stars filled in proportion to the score, plus the number.
  * A product with no reviews yet shows the five empty stars, never an invented score.
  */
+/** Decisão do dono (25/11/2026): as páginas mostram só a quantidade de vendidos; as estrelas ficam desligadas até haver avaliações suficientes. */
+const SHOW_STARS = false;
 const NO_STARS = new Set<string>();
 
 export function Stars({ slug, big = false, hideEmpty = false }: { slug: string; big?: boolean; hideEmpty?: boolean }) {
@@ -536,7 +538,7 @@ export function Stars({ slug, big = false, hideEmpty = false }: { slug: string; 
   // Nos cards, produto sem nota não mostra as cinco estrelas vazias (parecem "ninguém gostou"); fica só o número de vendidos.
   // Produtos em que a loja prefere não exibir a nota em estrelas (só o número de vendidos).
   const noRating = NO_STARS.has(slug);
-  const showStars = !noRating && (count > 0 || !hideEmpty);
+  const showStars = SHOW_STARS && !noRating && (count > 0 || !hideEmpty);
   return (
     <div className="flex min-h-[1.25rem] items-center gap-2 text-small" role="img" aria-label={count ? `Nota ${label} de 5` : "Ainda sem avaliações"}>
       {showStars && (
@@ -549,7 +551,7 @@ export function Stars({ slug, big = false, hideEmpty = false }: { slug: string; 
           )}
         </span>
       )}
-      {count > 0 && !noRating && <b className="text-body">{label}</b>}
+      {SHOW_STARS && count > 0 && !noRating && <b className="text-body">{label}</b>}
       {sold > 0 && <span className="text-muted-foreground">{showStars ? "· " : ""}{sold} {sold === 1 ? "vendido" : "vendidos"}</span>}
     </div>
   );
