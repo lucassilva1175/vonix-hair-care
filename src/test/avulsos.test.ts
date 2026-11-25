@@ -51,7 +51,7 @@ describe("vitrine na ordem do curso (mais vendidos primeiro)", () => {
     const casa = homeBestSellers("casa");
     expect(casa.length).toBe(8);
     expect(casa.every((p) => p.category !== "avulsos")).toBe(true);
-    expect(casa[0]!.slug).toBe("kit-banana-e-mel");
+    expect(casa.every((p) => p.category !== "kits")).toBe(true);
     const kits = bySales(products.filter((p) => p.category === "kits")).map((p) => p.slug);
     expect(kits[0]).toBe("kit-banana-e-mel");
     expect(kits[1]).toBe("kit-cronograma-capilar");
@@ -61,8 +61,8 @@ describe("vitrine na ordem do curso (mais vendidos primeiro)", () => {
     const { homeBestSellers } = await import("@/lib/store");
     for (const a of [null, "salao"] as const) {
       const l = homeBestSellers(a);
-      expect(l[0]!.slug).toBe("botox-vonix");
-      expect(l[1]!.slug).toBe("progressiva-fio-de-luz");
+      expect(l[0]!.slug).toBe("progressiva-fio-de-luz");
+      expect(l[1]!.slug).toBe("botox-vonix");
     }
   });
 });

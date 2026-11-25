@@ -1,30 +1,18 @@
 import provas from "@/data/provas-em-video.json";
-import reviews from "@/data/reviews.json";
 import sacolinhas from "@/data/sacolinhas.json";
 
 /** Keep the original lead photo and insert the matching gift-bag photo second. */
 export function productGalleryImagesFor(slug: string, images: string[]) {
-  const existing = productGalleryVideosFor(slug) ? images.slice(0, 1) : images;
+  const existing = images;
   const bag = (sacolinhas as Record<string, string>)[slug];
   if (!bag || !existing.length) return existing;
   return [existing[0]!, bag, ...existing.slice(1).filter((src) => src !== bag)];
 }
 
-/** Only product-specific videos; other products keep their existing galleries. */
+/** Vídeos de quem usa, só nos produtos que têm (Fio de Luz, shampoo, Botox). Os do kit Banana e Mel ficam de fora. */
+const COM_VIDEO = new Set(["progressiva-fio-de-luz", "shampoo-fio-de-luz-anti-residuo", "botox-vonix", "botox-vonix-matizador", "botox-line", "botox-line-matizador"]);
 export function productGalleryVideosFor(slug: string) {
-  if (!["progressiva-fio-de-luz", "botox-vonix", "kit-banana-e-mel"].includes(slug)) return undefined;
-  return [
-    ...provas.filter((video) => video.slugs.includes(slug)).map((video) => ({
-      id: video.id,
-      src: video.src,
-      poster: video.poster,
-      own: true,
-    })),
-    ...reviews.filter((review) => review.slug === slug && review.media.type === "video").map((review) => ({
-      id: `review:${review.media.src}`,
-      src: review.media.src,
-      poster: review.media.poster ?? "",
-      own: true,
-    })),
-  ];
+  if (!COM_VIDEO.has(slug)) return undefined;
+  const list = provas.filter((v) => v.slugs.includes(slug) && !v.slugs.includes("kit-banana-e-mel")).map((v) => ({ id: v.id, src: v.src, poster: v.poster, own: true }));
+  return list.length ? list : undefined;
 }

@@ -20,7 +20,8 @@ import {
 } from "@/lib/store";
 import { quoteShipping } from "@/lib/checkout.functions";
 import { Summary } from "@/components/cart-summary";
-import { ProvasEmVideo } from "@/components/provas-em-video";
+import { OrderBump } from "@/components/order-bump";
+import { ProvaSocial } from "@/components/prova-social";
 
 export const Route = createFileRoute("/carrinho")({
   head: () => ({
@@ -86,6 +87,7 @@ function CartShipping({
         <Truck className="h-4 w-4" strokeWidth={1.5} />
         Calcule o frete antes de finalizar
       </div>
+      <p className="mt-1 text-small text-muted-foreground">Entregamos somente em São Paulo e Minas Gerais.</p>
       <div className="mt-2 flex gap-2">
         <input
           inputMode="numeric"
@@ -181,7 +183,7 @@ function Suggestions() {
                 <img
                   src={p.images[0]}
                   alt=""
-                  className="h-24 w-full rounded-lg bg-card-image object-contain"
+                  className="h-24 w-full rounded-lg bg-white object-contain"
                 />
               </Link>
               <Link
@@ -270,7 +272,7 @@ function Cart() {
                         </div>
                       ) : l.pct > 0 ? (
                         <div className="mt-1 inline-block rounded-full bg-[#eef8f2] px-2.5 py-0.5 text-small font-medium text-[#2c6e55]">
-                          {l.pct}% OFF por levar {l.qty} unidades
+                          {l.slug.startsWith("combo-") && l.qty < 2 ? `Desconto do combo: ${l.pct}% OFF` : `${l.pct}% OFF por levar ${l.qty} unidades`}
                         </div>
                       ) : (
                         <div className="mt-1 text-small text-[#2c6e55]">
@@ -281,17 +283,17 @@ function Cart() {
                         <button
                           aria-label="Diminuir"
                           onClick={() => c.setQty(l.slug, l.variant, l.qty - 1, l.offer)}
-                          className="rounded-full border border-border p-1.5"
+                          className="grid h-10 w-10 place-items-center rounded-full border border-border"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-4 w-4" />
                         </button>
                         <span className="w-6 text-center">{l.qty}</span>
                         <button
                           aria-label="Aumentar"
                           onClick={() => c.setQty(l.slug, l.variant, l.qty + 1, l.offer)}
-                          className="rounded-full border border-border p-1.5"
+                          className="grid h-10 w-10 place-items-center rounded-full border border-border"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-4 w-4" />
                         </button>
                         <button
                           aria-label="Remover"
@@ -313,13 +315,11 @@ function Cart() {
                   </li>
                 ))}
               </ul>
+              <div className="mt-6"><OrderBump /></div>
               <Suggestions />
-              <section aria-label="Quem já usa Vonix" className="mt-6 rounded-2xl border border-border bg-card p-3">
-                <p className="mb-2 text-small font-semibold">Quem já usa Vonix. Toque para assistir.</p>
-                <ProvasEmVideo all seed="carrinho" max={8} />
-              </section>
             </div>
             <aside className="space-y-4">
+              {c.lines[0] && <ProvaSocial p={c.lines[0].product} compact />}
               <FreeShippingFillers />
               <CartShipping
                 items={c.lines.map((l) => ({
@@ -332,7 +332,7 @@ function Cart() {
               <Summary lines={c.lines} />
               <Link
                 to="/checkout"
-                className="hidden rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] py-3.5 text-center lg:block"
+                className="hidden rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5 text-center lg:block"
               >
                 Finalizar minha compra
               </Link>
@@ -347,7 +347,7 @@ function Cart() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background p-3 lg:hidden">
           <Link
             to="/checkout"
-            className="block rounded-md bg-emerald-600 font-bold text-white shadow-[0_10px_22px_-12px_rgba(5,150,105,0.9)] transition hover:bg-emerald-700 active:scale-[0.99] py-3.5 text-center"
+            className="block rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5 text-center"
           >
             Finalizar minha compra
           </Link>

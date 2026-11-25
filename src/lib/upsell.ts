@@ -1,4 +1,4 @@
-import { getProduct, products, type Product } from "@/lib/store";
+import { getProduct, incluidosNosCombos, products, type Product } from "@/lib/store";
 
 const ANTI_RESIDUO: Record<string, string> = {
   "progressiva-diamond": "shampoo-diamond-anti-residuo",
@@ -24,6 +24,22 @@ const REASON: Record<string, string> = {
   "perfume-capilar-vonix-verde": "Perfume para o cabelo, em frasco verde: fragrância oriental e amadeirada.",
 };
 
+/** Vitrine só de combos (24/11/2026): quem leva uma progressiva, selagem ou o SOS solto recebe o combo montado; quem já leva um combo recebe um finalizador. */
+const COMBOS_DO_ITEM: Record<string, string[]> = {
+  "progressiva-fio-de-luz": ["combo-fio-de-luz-shampoo-anti-residuo", "combo-fio-de-luz-completo", "combo-fio-de-luz-serum"],
+  "progressiva-diamond": ["combo-diamond-shampoo-anti-residuo", "combo-diamond-defrizante"],
+  "progressiva-lift-em-gel": ["combo-lift-em-gel-shampoo", "combo-lift-em-gel-serum"],
+  "progressiva-vonix-special-matizadora": ["combo-special-matizadora-shampoo", "combo-special-matizadora-reparador"],
+  "selagem-termica-diamond": ["combo-selagem-diamond-shampoo", "combo-diamond-defrizante"],
+  "sos-reconstrutor-capilar": ["combo-sos-shampoo", "combo-sos-reconstrutor"],
+  "botox-vonix": ["combo-botox-vonix-shampoo", "combo-botox-vonix-nutri-repair"],
+  "botox-line": ["combo-botox-line-shampoo", "combo-botox-vonix-nutri-repair"],
+};
+const FINALIZACAO = ["combo-finalizacao-serum", "combo-perfume-e-serum", "combo-trio-shampoos-hidratantes"];
+
+/** Combos de progressiva (o que leva progressiva recebe sempre a mesma oferta de acabamento). */
+const COMBO_PROGRESSIVA = /^combo-(fio-de-luz|diamond|lift-em-gel|special-matizadora)/;
+
 export type Extra = { product: Product; reason: string };
 export type UpsellPlan = { title: string; subtitle: string; items: Extra[] };
 
@@ -44,7 +60,26 @@ export function upsellPlan(cartSlugs: string[], count = 4): UpsellPlan {
   let title = "Complete o seu pedido";
   let subtitle = main ? `Combina com ${main.name}` : "Escolhidos para combinar";
 
-  if (chem) {
+  const temProgressiva = cartSlugs.some((s) => s.startsWith("progressiva-") || COMBO_PROGRESSIVA.test(s));
+  if (temProgressiva) {
+    const solta = cartSlugs.find((s) => s.startsWith("progressiva-"));
+    picks = [ANTI_RESIDUO[solta ?? ""] ?? "shampoo-fio-de-luz-anti-residuo", "defrizante", "reparador-de-pontas", "serum-argan", PERFUMES[0]!];
+    title = "Complete a sua progressiva";
+    subtitle = "Shampoo anti-resíduo, defrizante, finalizador e perfume";
+  }
+  const soltoComCombo = cartSlugs.find((s) => COMBOS_DO_ITEM[s]);
+  const temCombo = cartSlugs.some((s) => s.startsWith("combo-"));
+  if (temProgressiva) {
+    // oferta de progressiva definida acima
+  } else if (soltoComCombo && !temCombo) {
+    picks = COMBOS_DO_ITEM[soltoComCombo]!;
+    title = "Leve o combo completo";
+    subtitle = "Shampoo anti-resíduo e finalizador já no mesmo pedido";
+  } else if (temCombo) {
+    picks = FINALIZACAO;
+    title = "Complete com mais um combo";
+    subtitle = "Finalização e cuidado para fechar o resultado";
+  } else if (chem) {
     const anti = ANTI_RESIDUO[chem.slug] ?? "shampoo-fio-de-luz-anti-residuo";
     picks = ANTI_RESIDUO_ANY.some((s) => inCart.has(s)) ? [] : [anti];
     picks.push("mascara-efeito-teia-coco-nutri", "defrizante", PERFUMES[0]!, "serum-argan", "mascara-reparacao-nutri-repair");
@@ -70,10 +105,11 @@ export function upsellPlan(cartSlugs: string[], count = 4): UpsellPlan {
     picks = ["serum-argan", "defrizante", PERFUMES[0]!];
   }
 
+  const incluidos = incluidosNosCombos(cartSlugs);
   const items: Extra[] = [];
   for (const slug of picks) {
     const p = getProduct(slug);
-    if (!p || inCart.has(p.slug) || !p.images[0] || items.some((i) => i.product.slug === p.slug)) continue;
+    if (!p || inCart.has(p.slug) || incluidos.has(p.slug) || !p.images[0] || items.some((i) => i.product.slug === p.slug)) continue;
     items.push({ product: p, reason: REASON[slug] ?? p.short });
     if (items.length >= count) break;
   }

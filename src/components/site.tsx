@@ -21,6 +21,9 @@ import {
   installments,
   TESTE_FIM,
   cardPricing,
+  pixPrice,
+  comboPct,
+  lineTotals,
   useAudience,
   useCart,
   useFavorites,
@@ -58,8 +61,9 @@ function GoldLogo({ className = "h-12" }: { className?: string }) {
 }
 
 const MARQUEE = [
+  "SITE FEITO PARA CABELEIREIRAS E DONAS DE SALÃO · COMBOS: 5% OFF + 5% NO PIX",
   "LEVE 2 UNIDADES: 12% OFF · LEVE 3: 15% OFF",
-  "FRETE GRÁTIS EM TODOS OS PRODUTOS · ENTREGA DE 3 A 5 DIAS ÚTEIS",
+  "FRETE GRÁTIS · ENTREGAMOS EM SÃO PAULO E MINAS GERAIS",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
   "PIX COM 5% OFF NOS ITENS SEM OUTRA OFERTA",
 ];
@@ -93,12 +97,10 @@ function TesteRelogio() {
 }
 
 const NAV = [
-  { label: "Mais vendidos", search: { secao: "mais-vendidos" } },
+  { label: "Combos", search: { tiposProduto: "Kits" } },
   { label: "Produtos", search: {} },
   { label: "Progressiva", search: { tiposProduto: "Progressiva" } },
   { label: "Máscara", search: { tiposProduto: "Máscara" } },
-  { label: "Kits", search: { tiposProduto: "Kits" } },
-  { label: "Cachos", search: { q: "cachos" } },
 ];
 
 /** Simplified WhatsApp mark: speech bubble with a handset (lucide has no brand icons). */
@@ -158,7 +160,7 @@ export function SecuritySeal({ dark = false }: { dark?: boolean }) {
 /** Reassurance strip: only conditions the store already advertises. */
 export function Benefits() {
   const items = [
-    { Icon: Truck, title: "Frete grátis", text: "em todos os produtos · entrega de 3 a 5 dias úteis" },
+    { Icon: Truck, title: "Frete grátis", text: "entregamos em São Paulo e Minas Gerais" },
     { Icon: CreditCard, title: "Até 6x sem juros", text: "no cartão de crédito" },
     { Icon: QrCode, title: "Pix com 5% OFF", text: "nos itens sem outra oferta" },
     { Icon: ShieldCheck, title: "Compra segura", text: "seus dados protegidos" },
@@ -255,7 +257,7 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
             // No checkout o topo é mínimo: o espaço do menu fica reservado para o logo continuar centralizado.
             <span aria-hidden="true" className="h-6 w-6 justify-self-start lg:hidden" />
           ) : (
-            <button className="-m-2 justify-self-start p-2" aria-label="Abrir menu" onClick={() => setOpen(true)}>
+            <button className="-m-3 justify-self-start p-3" aria-label="Abrir menu" onClick={() => setOpen(true)}>
               <Menu className="h-6 w-6" />
             </button>
           )}
@@ -263,7 +265,7 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
             <img src={LOGO} alt="Vonix Hair" width={420} height={163} className="h-8 w-auto sm:h-11" />
           </Link>
           {!isCheckout && (
-            <nav aria-label="Menu principal" className="mx-4 hidden min-w-0 flex-1 items-center justify-center gap-x-6 text-small font-medium uppercase tracking-[0.12em] lg:flex xl:gap-x-8">
+            <nav aria-label="Menu principal" className="mx-4 hidden min-w-0 flex-1 items-center justify-center gap-x-5 text-small font-medium uppercase tracking-[0.08em] lg:flex xl:gap-x-8">
               {NAV.map((n) => (
                 <Link key={n.label} to="/loja" search={n.search} className="shrink-0 whitespace-nowrap border-b border-transparent py-2 transition-colors hover:border-foreground">
                   {n.label}
@@ -296,7 +298,7 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
               </button>
             )}
             {!isCheckout && (
-              <Link to="/favoritos" aria-label="Favoritos" className="-m-2 p-2">
+              <Link to="/favoritos" aria-label="Favoritos" className="-m-3 p-3">
                 <Heart className="h-5 w-5" />
               </Link>
             )}
@@ -305,7 +307,7 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
                 <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="max-[359px]:hidden">Entrar</span>
               </Link>
             )}
-            <Link to="/carrinho" aria-label="Carrinho" className="relative -m-2 p-2">
+            <Link to="/carrinho" aria-label="Carrinho" className="relative -m-3 p-3">
               <ShoppingCart className="h-5 w-5" />
               {count > 0 && (
                 <span className="absolute -right-0 -top-0 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-small text-background">
@@ -429,7 +431,7 @@ function Footer() {
   return (
     <footer className="mt-10 bg-marquee text-marquee-foreground">
       <div className="container-site grid gap-6 border-b border-marquee-foreground/15 py-6 text-center text-body sm:grid-cols-4">
-        <span>Entrega para todo o Brasil</span>
+        <span>Entregamos em São Paulo e Minas Gerais</span>
         <span>Compra 100% segura</span>
         <span>Até 6x sem juros no cartão</span>
         <span>Frete grátis · entrega de 3 a 5 dias úteis</span>
@@ -438,7 +440,7 @@ function Footer() {
         <div>
           <div className="mb-4"><GoldLogo className="h-14" /></div>
           <p className="opacity-80">
-            Cosméticos capilares profissionais, com entrega para todo o Brasil.
+            Cosméticos capilares profissionais, com entrega em São Paulo e Minas Gerais.
           </p>
         </div>
         <div className="flex flex-col gap-1 [&_a]:py-1.5">
@@ -557,10 +559,12 @@ export function ProductCard({ p }: { p: Product }) {
   const fav = useFavorites();
   const { audience } = useAudience();
   const pricing = cardPricing(p, audience);
-  const off = discountPct(p.compareBase, pricing.price);
+  const comboOff = comboPct(p.slug);
+  const comboNet = comboOff > 0 ? lineTotals(pricing.price, 1, undefined, p.slug).net : 0;
+  const off = comboOff > 0 ? comboOff : discountPct(p.compareBase, pricing.price);
   const cart = useCart();
   const nav = useNavigate();
-  const par = installments(pricing.price);
+  const par = installments(comboNet > 0 ? comboNet : pricing.price);
   // Peso ou volume de cada apresentação (1Kg, 300ml, 1L...). Variantes sem medida ("Kit", "Unidade") não entram.
   const sizes = p.variants.map((v) => v.label).filter((l) => /\d/.test(l)).join(" · ");
   // A sacolinha SEMPRE adiciona 1 unidade (tamanho padrão do produto) direto ao carrinho; o resto do card abre a página.
@@ -575,7 +579,7 @@ export function ProductCard({ p }: { p: Product }) {
   // estrelas, selos 12/600, preço 16/700 (Pix), parcelamento 12 cinza e botão preto em pílula de 40 px.
   return (
     <div className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-white text-foreground shadow-sm">
-      <div className="relative bg-muted">
+      <div className="relative bg-white">
         {off > 0 && (
           <span className="absolute left-2 top-2 z-10 rounded-md bg-[#c3287d] px-1.5 py-0.5 text-[12px] font-semibold text-white">
             -{off}%
@@ -584,12 +588,12 @@ export function ProductCard({ p }: { p: Product }) {
         <button
           aria-label="Favoritar"
           onClick={() => fav.toggle(p.slug)}
-          className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white"
+          className="absolute right-1.5 top-1.5 z-10 grid h-10 w-10 place-items-center rounded-full"
         >
           <Heart className={`h-4 w-4 ${fav.has(p.slug) ? "fill-foreground" : ""}`} />
         </button>
         <Link to="/produto/$slug" params={{ slug: p.slug }}>
-          <img src={thumb(p.images[0]!)} srcSet={`${thumb(p.images[0]!)} 480w, ${webp(p.images[0]!)} 1080w`} sizes="(min-width: 1024px) 280px, 50vw" width={480} height={480} decoding="async" alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full object-contain mix-blend-multiply" />
+          <img src={thumb(p.images[0]!)} srcSet={`${thumb(p.images[0]!)} 480w, ${webp(p.images[0]!)} 1080w`} sizes="(min-width: 1024px) 280px, 50vw" width={480} height={480} decoding="async" alt={`Vonix Hair ${p.name}`} loading="lazy" className="aspect-square w-full object-contain" />
         </Link>
       </div>
       <div className="flex flex-1 flex-col p-3">
@@ -602,7 +606,8 @@ export function ProductCard({ p }: { p: Product }) {
           {pricing.professional && (
             <span className="rounded bg-muted px-1 py-px text-[12px] font-semibold">Leve 2: 12% · Leve 3: 15%</span>
           )}
-          {pricing.pix < pricing.price && (
+          {comboOff > 0 && <span className="rounded bg-[#e7fbfa] px-1 py-px text-[12px] font-semibold text-[#007979]">{comboOff}% OFF no combo + 5% no Pix</span>}
+          {comboOff === 0 && pricing.pix < pricing.price && (
             <span className="rounded bg-[#e7fbfa] px-1 py-px text-[12px] font-semibold text-[#007979]">5% OFF no Pix</span>
           )}
           {hasFreeShipping(pricing.price) && (
@@ -612,9 +617,19 @@ export function ProductCard({ p }: { p: Product }) {
           )}
         </div>
         <div className="mt-1.5 leading-tight">
-          {p.compareBase && p.compareBase > pricing.price && <div className="text-[12px] text-[#505052] line-through">{brl(p.compareBase)}</div>}
-          <div className="text-[16px] font-bold">{brl(pricing.pix < pricing.price ? pricing.pix : pricing.price)}</div>
-          <div className="mt-0.5 text-[12px] text-[#505052]">Ou {brl(pricing.price)} em até {par.count}x de {brl(par.value)}</div>
+          {comboOff > 0 ? (
+            <>
+              <div className="text-[12px] text-[#505052] line-through">{brl(pricing.price)}</div>
+              <div className="text-[16px] font-bold">{brl(pixPrice(comboNet))} <span className="text-[12px] font-normal">no Pix</span></div>
+              <div className="mt-0.5 text-[12px] text-[#505052]">Ou {brl(comboNet)} em até {par.count}x de {brl(par.value)}</div>
+            </>
+          ) : (
+            <>
+              {p.compareBase && p.compareBase > pricing.price && <div className="text-[12px] text-[#505052] line-through">{brl(p.compareBase)}</div>}
+              <div className="text-[16px] font-bold">{brl(pricing.pix < pricing.price ? pricing.pix : pricing.price)}</div>
+              <div className="mt-0.5 text-[12px] text-[#505052]">Ou {brl(pricing.price)} em até {par.count}x de {brl(par.value)}</div>
+            </>
+          )}
         </div>
         <div className="mt-auto pt-3">
           <button
