@@ -1,6 +1,7 @@
 import { ArrowUpRight, Headset, PackageCheck, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
+import { affiliateInstitutionalEvidence } from "@/lib/affiliate-brand-evidence";
 
 /**
  * Factual brand credibility for prospects, sourced from the official
@@ -91,16 +92,16 @@ export function AffiliateBrandTrust({
             className="mt-5 grid items-center gap-3 rounded-2xl border border-[#e5cecb] bg-white/95 px-5 py-4 shadow-sm sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-5"
           >
             <strong className="font-display text-4xl leading-none text-[#763f54] sm:text-5xl">
-              480+
+              {affiliateInstitutionalEvidence.minimumLabel}
             </strong>
             <div className="text-xs leading-[1.65] text-[#725762] sm:text-sm">
               <p>
-                Produtos vendidos entre o site e o atendimento por WhatsApp,
+                {affiliateInstitutionalEvidence.description},
                 <strong> segundo a página institucional da Vonix Hair</strong>. Não é número de
                 afiliadas, vendas por criadoras ou ganhos do programa.
               </p>
               <a
-                href="/sobre"
+                href={affiliateInstitutionalEvidence.sourceHref}
                 className="mt-1 inline-flex min-h-9 items-center gap-1.5 font-bold text-[#814759] underline underline-offset-4"
               >
                 Conferir a fonte oficial <ArrowUpRight aria-hidden="true" className="size-4" />
