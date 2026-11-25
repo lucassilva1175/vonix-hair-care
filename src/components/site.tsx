@@ -465,7 +465,7 @@ function Footer() {
           <h4 className="mb-2 font-semibold">Atendimento</h4>
           <span>Seg. a sex., 9h às 18h</span>
           <span className="break-all">contato@vonixhaircosmeticos.com.br</span>
-          <span>Rua José Pedro de Carvalho, 30 — MG</span>
+          <span>Rua José Pedro de Carvalho, 30 — Santa Luzia, MG</span>
           <span>CNPJ: 68.272.005/0001-07</span>
           <div className="mt-2"><SocialLinks /></div>
         </div>
@@ -515,7 +515,7 @@ export function PriceBlock({ price, compare, big }: { price: number; compare?: n
  * Real average rating (from src/data/reviews.json): gold stars filled in proportion to the score, plus the number.
  * A product with no reviews yet shows the five empty stars, never an invented score.
  */
-const NO_STARS = new Set(["botox-vonix"]);
+const NO_STARS = new Set<string>();
 
 export function Stars({ slug, big = false, hideEmpty = false }: { slug: string; big?: boolean; hideEmpty?: boolean }) {
   const list = reviewsFor(slug);
