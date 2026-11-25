@@ -361,7 +361,7 @@ export async function sendAffiliateAuthEmailWithResend(
     "Não compartilhe códigos, links ou senhas.",
   ].join("\n");
 
-  let accepted = false;
+  let explicitlyRejected = false;
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -380,16 +380,23 @@ export async function sendAffiliateAuthEmailWithResend(
     });
     if (!response.ok) {
       auditAffiliateAuthMailFailure(await classifyAffiliateResendError(response), response.status);
+      // Only definite provider rejection permits a second OTP issuance. A 5xx,
+      // timeout, redirect or malformed receipt may hide an already accepted send.
+      explicitlyRejected = [400, 401, 403, 422, 429].includes(response.status);
     } else {
       const receipt: unknown = await response.json();
-      accepted = z.object({ id: z.string().min(1).max(128) }).safeParse(receipt).success;
-      if (!accepted) auditAffiliateAuthMailFailure("resend-api-invalid-receipt");
+      if (z.object({ id: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/) }).safeParse(receipt).success)
+        return true;
+      auditAffiliateAuthMailFailure("resend-api-invalid-receipt");
     }
   } catch {
     auditAffiliateAuthMailFailure("resend-api-network");
   }
 
-  if (accepted) return true;
+  // Regenerating a code after an ambiguous send may invalidate the code that
+  // the recipient is already receiving. Keep the public response neutral and
+  // let the existing cooldown govern a later explicit retry instead.
+  if (!explicitlyRejected) return false;
   // Do not bypass the recipient cooldown: the fallback runs only after the
   // same authorization, quota and Supabase OTP-generation gates above.
   // A managed Supabase e-mail is a temporary alternative while Resend is

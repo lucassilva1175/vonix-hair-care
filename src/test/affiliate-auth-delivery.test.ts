@@ -397,6 +397,41 @@ describe("Verified Supabase Auth OTP via transactional email", () => {
     }
   });
 
+  it.each([
+    ["malformed receipt", () => Response.json({ id: "   " })],
+    ["missing receipt", () => Response.json({ unexpected: 1 })],
+    ["invalid JSON", () => new Response("not-json", { status: 200 })],
+    ["upstream timeout", () => new Response(null, { status: 408 })],
+    ["server error", () => new Response(null, { status: 503 })],
+    ["redirect", () => new Response(null, { status: 307 })],
+  ] as const)(
+    "does not regenerate an OTP after uncertain Resend delivery: %s",
+    async (_case, reply) => {
+      const fetcher = vi
+        .fn()
+        .mockResolvedValueOnce(Response.json(true))
+        .mockResolvedValueOnce(generate())
+        .mockResolvedValueOnce(reply())
+        .mockResolvedValueOnce(new Response(null, { status: 200 }));
+      vi.stubGlobal("fetch", fetcher);
+      expect(await sendAffiliateAuthEmailWithResend(inbox, "applicant")).toBe(false);
+      expect(fetcher).toHaveBeenCalledTimes(3);
+      expect(fetcher.mock.calls.some(([url]) => String(url).includes("/auth/v1/otp?"))).toBe(false);
+    },
+  );
+
+  it("does not invalidate a possibly delivered code after a Resend network failure", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json(true))
+      .mockResolvedValueOnce(generate())
+      .mockRejectedValueOnce(new Error("synthetic uncertain delivery"))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetcher);
+    expect(await sendAffiliateAuthEmailWithResend(inbox, "owner")).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
   it("rejects malformed recipient addresses and invalid delivery receipts", async () => {
     vi.stubGlobal("fetch", vi.fn());
     expect(await sendAffiliateAuthEmailWithResend("wrong-email", "applicant")).toBe(false);
