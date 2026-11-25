@@ -1,25 +1,41 @@
 /**
- * Perguntas frequentes da loja. Só fatos que já estão nas políticas e no checkout do site
- * (frete, pagamento, troca, atendimento); nada de promessa de resultado.
+ * Perguntas frequentes da loja (site para cabeleireiras e donas de salão). Só fatos que já estão
+ * nas políticas e no checkout do site (frete, pagamento, troca, atendimento); nada de promessa de resultado.
  */
 export type FaqItem = { q: string; a: string };
 
 export const FAQ_LOJA: FaqItem[] = [
   {
-    q: "Como funciona o frete?",
-    a: "O frete é grátis em todos os produtos, em qualquer pedido, e a entrega é de 3 a 5 dias úteis. O prazo exato aparece na página do produto e no checkout, conforme o seu CEP.",
+    q: "Para quem é o site da Vonix?",
+    a: "O site é feito para cabeleireiras e donas de salão: produtos profissionais e combos prontos para o dia a dia do salão, com desconto automático.",
+  },
+  {
+    q: "Posso comprar com um vendedor ou só pelo site?",
+    a: "Você escolhe. Pode comprar direto no site, com Pix, cartão ou boleto, ou pedir para falar com um vendedor da Vonix pelo botão verde do WhatsApp, no canto da tela. O vendedor tira suas dúvidas e ajuda a montar o seu pedido.",
+  },
+  {
+    q: "Como funcionam os combos?",
+    a: "Cada combo já sai com 5% OFF no preço e, no Pix, você ganha mais 5% por cima. Na página \"Monte seu combo\" você escolhe os produtos do seu salão e o desconto também vale.",
+  },
+  {
+    q: "Para onde vocês entregam?",
+    a: "Por enquanto entregamos em São Paulo e Minas Gerais, com frete grátis. Se o CEP for de outro estado, o site avisa antes do pagamento.",
   },
   {
     q: "Quais são as formas de pagamento?",
-    a: "Pix, com 5% OFF nos itens sem outra oferta, cartão de crédito em até 6x sem juros ou boleto bancário à vista. No boleto, o pedido é confirmado após a compensação. Os pagamentos são processados pela Appmax em ambiente seguro.",
+    a: "Pix, com 5% a mais de desconto (inclusive nos combos), cartão de crédito em até 6x sem juros ou boleto bancário à vista. No boleto, o pedido é confirmado após a compensação. Os pagamentos são processados pela Appmax em ambiente seguro.",
   },
   {
-    q: "Em quanto tempo o meu pedido chega?",
-    a: "A entrega é de 3 a 5 dias úteis. O prazo exato aparece conforme o CEP e a entrega escolhida no checkout, e considera a aprovação do pagamento, a preparação do pedido e o transporte.",
+    q: "Quanto ganho levando mais de um produto?",
+    a: "Leve 2 unidades com 12% OFF e leve 3 com 15% OFF. Vale sempre o maior desconto, sem somar com o desconto do combo.",
   },
   {
-    q: "Como acompanho o meu pedido?",
-    a: "Quando a transportadora disponibiliza, enviamos o código ou o link de rastreamento por e-mail ou WhatsApp. Você também pode falar com a gente pelo atendimento.",
+    q: "Qual a diferença entre os botox?",
+    a: "Cada produto traz na descrição o que ele é. O Botox Line (tampa azul) é com formol. Leia a descrição e o rótulo antes de escolher.",
+  },
+  {
+    q: "Em quanto tempo o meu pedido chega e como acompanho?",
+    a: "A entrega é de 3 a 5 dias úteis em São Paulo e Minas Gerais. O prazo exato aparece na página do produto e no checkout, conforme o seu CEP. Quando a transportadora disponibiliza, enviamos o código ou o link de rastreamento por e-mail ou WhatsApp.",
   },
   {
     q: "Posso trocar ou devolver?",
