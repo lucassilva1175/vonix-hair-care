@@ -24,15 +24,16 @@ const steps = [
   },
   {
     number: "02",
-    title: "Análise individual",
-    detail: "A equipe avalia a candidatura. Sem aprovação ou prazo garantido.",
-    Icon: SearchCheck,
+    title: "Guarde seu código",
+    detail: affiliateApplicationFacts.privateReceipt,
+    Icon: TicketCheck,
   },
   {
     number: "03",
-    title: "Acompanhe pelo código",
-    detail: affiliateApplicationFacts.privateReceipt,
-    Icon: TicketCheck,
+    title: "Acompanhe a seleção",
+    detail:
+      "Consulte o andamento pelo código enquanto a equipe avalia seu perfil. Sem prazo ou aprovação garantidos.",
+    Icon: SearchCheck,
   },
 ] as const;
 

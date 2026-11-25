@@ -90,6 +90,13 @@ export function AffiliateEarlyValueBand({
               Ver regras
               <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
             </a>
+            <a
+              href="#simular-comissoes"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-white/50 px-3 text-xs font-bold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            >
+              Simular comissão
+              <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+            </a>
           </nav>
         </div>
 

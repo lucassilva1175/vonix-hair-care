@@ -63,7 +63,7 @@ export function AffiliateOfficialEvidenceLinks({
   const videos = variant === "videos";
   const compact = variant === "teaser";
   const id =
-    variant === "preview"
+    variant === "preview" || compact
       ? "avaliacoes-rapidas"
       : variant === "reviews"
         ? "avaliacoes-produtos"
@@ -121,7 +121,7 @@ export function AffiliateOfficialEvidenceLinks({
       data-testid={"affiliate-c156-source-" + variant}
       className={
         compact
-          ? "bg-[#fbf5f2] px-5 py-5 sm:py-8"
+          ? "scroll-mt-32 bg-[#fbf5f2] px-5 py-5 sm:py-8"
           : "scroll-mt-32 border-y border-[#e8d8d6] bg-[#fbf5f2] px-5 py-8 sm:py-12"
       }
       aria-label={
