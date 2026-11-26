@@ -317,7 +317,6 @@ export const NEEDS: Record<string, RegExp> = {
   "Hidratação": /hidrat/i,
   "Reconstrução": /reconstru|reparação|repair|queratina/i,
   "Controle de Frizz": /frizz/i,
-  "Definição de Cachos": /cacho/i,
   "Cabelos com Química": /química|quimica|loir|coloração|matiz/i,
   "Nutrição": /nutri/i,
 };

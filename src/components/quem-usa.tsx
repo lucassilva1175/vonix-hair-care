@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import products from "@/data/products.json";
 import raw from "@/data/provas-em-video.json";
+import depoimentos from "@/data/reviews.json";
 import { WHATSAPP_NUMERO } from "@/lib/whatsapp-lead";
 
 type Prova = { id: string; src: string; poster: string; slugs: string[] };
@@ -10,7 +11,17 @@ type Item =
   | { tipo: "video"; id: string; src: string; poster: string };
 
 /** Vídeos de quem usa, sem os da criadora com contrato encerrado (Banana e Mel). */
-const videos = (raw as Prova[]).filter((v) => !v.slugs.includes("kit-banana-e-mel"));
+const provas = (raw as Prova[]).filter((v) => !v.slugs.includes("kit-banana-e-mel"));
+type Dep = { slug: string; author: string; media?: { type: "video" | "image"; src: string; poster?: string } };
+const dep = depoimentos as Dep[];
+/** Depoimentos de cabeleireiras do Botox Vonix entram no meio dos vídeos (3 vídeos) e das fotos (1 foto). */
+const depVideos: Prova[] = dep.filter((d) => d.media?.type === "video").map((d, i) => ({ id: `dep-${i}`, src: d.media!.src, poster: d.media!.poster ?? "", slugs: [d.slug] }));
+const depFotos = dep.filter((d) => d.media?.type === "image");
+const videos: Prova[] = (() => {
+  const out = [...provas];
+  depVideos.forEach((d, i) => out.splice(Math.min(out.length, 2 + i * 9), 0, d));
+  return out;
+})();
 
 /**
  * "Quem usa os nossos produtos": todas as fotos de salão dos combos e os vídeos, misturados numa grade só.
@@ -27,7 +38,7 @@ export function QuemUsa({ className = "" }: { className?: string }) {
         fotos.push({ tipo: "foto", id: `${p.slug}-${i}`, thumb: img.replace(/\.jpg$/, "-480.webp"), slug: p.slug, nome: p.name });
       });
     }
-    // Uma foto de cada combo por vez (para os combos não ficarem juntos) e um vídeo a cada 5 itens.
+    // Uma foto de cada combo por vez (para os combos não ficarem juntos); depois uma foto e um vídeo, alternados desde o início.
     const porCombo = new Map<string, Item[]>();
     fotos.forEach((f) => porCombo.set((f as { slug: string }).slug, [...(porCombo.get((f as { slug: string }).slug) ?? []), f]));
     const rodadas: Item[] = [];
@@ -36,11 +47,13 @@ export function QuemUsa({ className = "" }: { className?: string }) {
       for (const lista of porCombo.values()) if (lista[r]) { rodadas.push(lista[r]!); alguma = true; }
       if (!alguma) break;
     }
+    // Um vídeo depois de cada foto (foto, vídeo, foto, vídeo...), desde o início da grade, até acabarem os vídeos.
+    depFotos.forEach((d, i) => rodadas.splice(Math.min(rodadas.length, 5 + i * 20), 0, { tipo: "foto", id: `dep-foto-${i}`, thumb: d.media!.src, slug: d.slug, nome: "Botox Vonix" }));
     const out: Item[] = [];
     let v = 0;
-    rodadas.forEach((f, i) => {
+    rodadas.forEach((f) => {
       out.push(f);
-      if ((i + 1) % 5 === 0 && v < videos.length) {
+      if (v < videos.length) {
         const vid = videos[v++]!;
         out.push({ tipo: "video", id: vid.id, src: vid.src, poster: vid.poster });
       }

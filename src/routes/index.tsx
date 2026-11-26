@@ -1,38 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Atom, FlaskConical, ShowerHead, Sparkles } from "lucide-react";
-import { ReviewCard, reviews } from "@/components/reviews";
+import { ArrowRight } from "lucide-react";
 import { FaqSection } from "@/components/faq";
 import { FAQ_LOJA } from "@/lib/faq";
 import { ProvaSocial } from "@/components/prova-social";
 import { QuemUsa } from "@/components/quem-usa";
-import { CepCheck } from "@/components/cep-check";
-import { Benefits, Grid, Shell } from "@/components/site";
+import { Grid, Shell } from "@/components/site";
 import { SITE_URL, bySales, forAudience, homeBestSellers, products, useAudience, vitrine } from "@/lib/store";
 import { HomeGiftBanner } from "@/components/home-gift-banner";
-
-/** Faixa de valores da marca que passa devagar embaixo do banner (ícone de traço + frase curta). Não repete frete, parcelamento nem Pix. */
-const MARCA = [
-  { Icon: Sparkles, text: "Resultado de salão" },
-  { Icon: FlaskConical, text: "Fórmulas inovadoras" },
-  { Icon: Atom, text: "Alta tecnologia" },
-  { Icon: ShowerHead, text: "Rotina capilar" },
-];
-function FaixaMarca() {
-  return (
-    <section aria-label="Diferenciais da Vonix Hair" data-testid="home-faixa-marca" className="mt-3 overflow-hidden bg-[#faf6f1] py-6">
-      <div className="flex w-max animate-marquee items-center gap-16 whitespace-nowrap hover:[animation-play-state:paused] motion-reduce:animate-none">
-        {[...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA].map(({ Icon, text }, k) => (
-          <span key={k} aria-hidden={k >= MARCA.length} className="flex items-center gap-3.5 text-[1.05rem] font-bold">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[#e3c07a]/70 bg-white text-[#7a5a2e] shadow-[0_6px_16px_-10px_rgba(122,90,46,0.6)]">
-              <Icon className="h-7 w-7" strokeWidth={1.4} aria-hidden="true" />
-            </span>
-            {text}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -81,7 +55,7 @@ function Home() {
   const hidratacao = take(forAudience(bySales(vitrine.filter((p) => p.category === "hidratacao")), audience));
   const lavatorio = take(forAudience(bySales(vitrine.filter((p) => p.category === "lavatorio")), audience));
   const avulsos = take(bySales(vitrine.filter((p) => p.category === "avulsos")), 12);
-  const PROVAS_HOME = ["progressiva-fio-de-luz", "botox-vonix", "progressiva-lift-em-gel", "progressiva-vonix-special-matizadora", "botox-vonix-matizador", "shampoo-fio-de-luz-anti-residuo"];
+  const PROVAS_HOME = ["progressiva-fio-de-luz", "botox-vonix"];
   const provas = PROVAS_HOME.map((slug) => products.find((p) => p.slug === slug)).filter((p): p is NonNullable<typeof p> => !!p);
   const finalizadores = take(forAudience(bySales(vitrine.filter((p) => p.category === "finalizadores")), audience));
   return (
@@ -91,25 +65,6 @@ function Home() {
         <HomeGiftBanner />
       </div>
 
-      <div className="container-site mt-3">
-        <CepCheck />
-      </div>
-      <Benefits />
-
-      <FaixaMarca />
-
-      {/* Monte o seu kit: progressiva + shampoo anti-resíduo + o que ela quiser */}
-      <section className="container-site mt-10" data-testid="home-monte-kit" aria-label="Monte o seu kit de progressiva">
-        <div className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-[#faf6f1] p-6 md:flex-row md:items-center md:justify-between md:p-8">
-          <div className="max-w-xl">
-            <h2 className="font-display text-h2">Monte o kit de progressiva do seu salão</h2>
-            <p className="mt-2 text-body text-muted-foreground">Escolha a progressiva, o shampoo anti-resíduo, o defrizante e o perfume, na quantidade que o seu salão precisa. Tudo em um só pedido, com frete grátis.</p>
-          </div>
-          <Link to="/monte-seu-combo" search={{ cat: "quimica" }} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-foreground px-6 font-medium text-background">
-            Montar meu kit <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </section>
 
       {/* 1) O que mais vende, logo abaixo da oferta principal */}
       <section className="mt-12 bg-[#091413] py-10 text-white [&_a.border-foreground]:border-white [&_h2]:text-white" data-testid="home-vitrine-escura">
@@ -129,6 +84,19 @@ function Home() {
           <Grid carousel items={kits} />
         </section>
       )}
+
+      {/* Monte o seu kit: progressiva + shampoo anti-resíduo + o que ela quiser */}
+      <section className="container-site mt-10" data-testid="home-monte-kit" aria-label="Monte o seu kit de progressiva">
+        <div className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-[#faf6f1] p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="max-w-xl">
+            <h2 className="font-display text-h2">Monte o kit de progressiva do seu salão</h2>
+            <p className="mt-2 text-body text-muted-foreground">Escolha a progressiva, o shampoo anti-resíduo, o defrizante e o perfume, na quantidade que o seu salão precisa. Tudo em um só pedido, com frete grátis.</p>
+          </div>
+          <Link to="/monte-seu-combo" search={{ cat: "quimica" }} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-foreground px-6 font-medium text-background">
+            Montar meu kit <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
 
       {/* 3) Hidratação */}
       {hidratacao.length > 0 && (
@@ -172,15 +140,10 @@ function Home() {
       <section className="container-site mt-20" data-testid="home-prova-social">
         <Title a="As donas de salão" b="aprovam" to={{ secao: "mais-vendidos" }} />
         <p className="-mt-4 mb-6 text-body text-muted-foreground">O que cada produto resolve no seu salão, com a quantidade de cada um e os números reais de venda da Vonix.</p>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {provas.map((p) => <ProvaSocial key={p.slug} p={p} link />)}
         </div>
         <QuemUsa className="mt-12" />
-        <h3 className="mb-3 mt-12 font-display text-h2">O que dizem as cabeleireiras</h3>
-        <p className="mb-4 text-body text-muted-foreground">Depoimentos de cabeleireiras que usam o Botox Vonix.</p>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {reviews.map((r) => <ReviewCard key={r.author + r.date} r={r} />)}
-        </div>
       </section>
 
       {/* 8) Oferta de quantidade e convite de afiliadas, logo antes do rodapé */}

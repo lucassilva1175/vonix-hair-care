@@ -1,5 +1,11 @@
 .gift-banner{position:relative;isolation:isolate;overflow:hidden;border-radius:1rem;background:#fff;border:1px solid #eadfd2;color:#3a2416;display:flex;flex-direction:column-reverse}
+.gift-banner-photos{position:relative;width:100%}
 .gift-banner-photo{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;max-height:20rem;object-position:center 40%}
+.gift-banner-photo-b{position:absolute;inset:0;height:100%;opacity:0;animation:giftBannerFade 12s ease-in-out infinite}
+.gift-banner-photo-a{animation:giftBannerFadeA 12s ease-in-out infinite}
+@keyframes giftBannerFade{0%,40%{opacity:0}50%,90%{opacity:1}100%{opacity:0}}
+@keyframes giftBannerFadeA{0%,40%{opacity:1}50%,90%{opacity:0}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.gift-banner-photo-a,.gift-banner-photo-b{animation:none}.gift-banner-photo-b{display:none}}
 .gift-banner-copy{padding:1.5rem}
 .gift-banner-brand{margin:0 0 .6rem;font-size:.9rem;letter-spacing:.3em;font-weight:500}
 .gift-banner-brand span{font-size:.5rem;letter-spacing:.4em;margin-left:.6rem}
@@ -17,5 +23,5 @@
   .gift-banner{flex-direction:row;align-items:center;justify-content:space-between;min-height:26rem}
   .gift-banner-copy{padding:3rem 4rem;max-width:36rem}
   .gift-banner .gift-banner-heading{font-size:3.1rem}
-  .gift-banner-photo{width:46%;max-height:none;aspect-ratio:1/1;align-self:stretch;height:100%;object-position:center}
+  .gift-banner-photos{width:46%;align-self:stretch}.gift-banner-photo{width:100%;max-height:none;aspect-ratio:1/1;align-self:stretch;height:100%;object-position:center}
 }
