@@ -59,7 +59,10 @@ export function incluidosNosCombos(cartSlugs: string[]): Set<string> {
 }
 
 /** Vitrine: combos novos + produtos solos (os kits antigos e as unidades avulsas deles ficam fora; o endereço de cada um continua valendo). */
-const SOLTOS_OCULTOS = (p: Product) => p.category === "avulsos" || (p.category === "kits" && !p.slug.startsWith("combo-"));
+/** Kit antigo que voltou à vitrine: Ultra Blond (26/11/2026). As unidades avulsas dele continuam fora. */
+const KITS_NA_VITRINE = new Set(["kit-matizador-shampoo-e-mascara"]);
+const SOLTOS_OCULTOS = (p: Product) =>
+  p.category === "avulsos" || (p.category === "kits" && !p.slug.startsWith("combo-") && !KITS_NA_VITRINE.has(p.slug));
 /** Linha Whey Protein fora da vitrine (24/11/2026): o dono não vende mais. */
 const SEM_WHEY = (p: Product) => !/whey/i.test(p.slug);
 export const vitrine = products.filter((p) => !SOLTOS_OCULTOS(p) && SEM_WHEY(p));
