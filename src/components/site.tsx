@@ -276,7 +276,7 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
                   Por necessidade <span aria-hidden="true">▾</span>
                 </button>
                 <div className="invisible absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 rounded-xl border border-border bg-background p-2 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                  {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
+                  {["Hidratação", "Reconstrução", "Controle de Frizz", "Cabelos com Química", "Nutrição"].map((n) => (
                     <Link key={n} to="/loja" search={{ necessidades: n }} className="block rounded-lg px-3 py-2 text-body normal-case tracking-normal hover:bg-muted">
                       {n}
                     </Link>
@@ -376,7 +376,7 @@ export function Shell({ children, onBack, compactCheckout = false }: { children:
             </nav>
             <h3 className="mb-3 mt-8 text-small font-semibold uppercase tracking-[0.18em] text-muted-foreground">Por necessidade</h3>
             <nav className="flex flex-col text-body [&_a]:border-b [&_a]:border-border [&_a]:py-3">
-              {["Hidratação", "Reconstrução", "Controle de Frizz", "Definição de Cachos", "Cabelos com Química", "Nutrição"].map((n) => (
+              {["Hidratação", "Reconstrução", "Controle de Frizz", "Cabelos com Química", "Nutrição"].map((n) => (
                 <Link key={n} to="/loja" search={{ necessidades: n }} onClick={() => setOpen(false)}>
                   {n}
                 </Link>
