@@ -1,11 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import { ReviewCard, reviews } from "@/components/reviews";
 import { FaqSection } from "@/components/faq";
 import { FAQ_LOJA } from "@/lib/faq";
 import { ProvaSocial } from "@/components/prova-social";
 import { QuemUsa } from "@/components/quem-usa";
-import { CepCheck } from "@/components/cep-check";
 import { Grid, Shell } from "@/components/site";
 import { SITE_URL, bySales, forAudience, homeBestSellers, products, useAudience, vitrine } from "@/lib/store";
 import { HomeGiftBanner } from "@/components/home-gift-banner";
@@ -67,9 +65,6 @@ function Home() {
         <HomeGiftBanner />
       </div>
 
-      <div className="container-site mt-3">
-        <CepCheck compact />
-      </div>
 
       {/* Monte o seu kit: progressiva + shampoo anti-resíduo + o que ela quiser */}
       <section className="container-site mt-10" data-testid="home-monte-kit" aria-label="Monte o seu kit de progressiva">
@@ -149,11 +144,6 @@ function Home() {
           {provas.map((p) => <ProvaSocial key={p.slug} p={p} link />)}
         </div>
         <QuemUsa className="mt-12" />
-        <h3 className="mb-3 mt-12 font-display text-h2">O que dizem as cabeleireiras</h3>
-        <p className="mb-4 text-body text-muted-foreground">Depoimentos de cabeleireiras que usam o Botox Vonix.</p>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {reviews.map((r) => <ReviewCard key={r.author + r.date} r={r} />)}
-        </div>
       </section>
 
       {/* 8) Oferta de quantidade e convite de afiliadas, logo antes do rodapé */}
