@@ -315,6 +315,37 @@ function KitCross({ p }: { p: NonNullable<ReturnType<typeof getProduct>> }) {
   );
 }
 
+/** Produto solo cujo combo ganha destaque logo abaixo do preço (a progressiva pede o anti-resíduo antes). */
+const COMBO_EM_DESTAQUE: Record<string, string> = {
+  "progressiva-fio-de-luz": "combo-fio-de-luz-shampoo-anti-residuo",
+};
+
+function ComboDestaque({ slug }: { slug: string }) {
+  const alvo = COMBO_EM_DESTAQUE[slug];
+  const combo = alvo ? getProduct(alvo) : undefined;
+  const variante = combo?.variants[0];
+  if (!combo || !variante) return null;
+  const net = lineTotals(variante.price, 1, undefined, combo.slug).net;
+  return (
+    <Link
+      to="/produto/$slug"
+      params={{ slug: combo.slug }}
+      className="mt-3 flex items-center gap-3 rounded-xl border-2 border-foreground p-3"
+      data-testid="combo-destaque"
+    >
+      <img src={combo.images[0]} alt="" width={80} height={80} loading="lazy" className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+      <span className="min-w-0">
+        <span className="block text-small font-bold">Leve junto o Shampoo Anti-Resíduo</span>
+        <span className="block text-small text-muted-foreground">É o primeiro passo antes da progressiva.</span>
+        <span className="mt-1 block text-body">
+          <s className="text-muted-foreground">{brl(variante.price)}</s> <b className="money">{brl(pixPrice(net))}</b> no Pix
+        </span>
+        <span className="block text-small font-semibold underline">Ver o combo</span>
+      </span>
+    </Link>
+  );
+}
+
 function ProductPage() {
   const p = Route.useLoaderData();
   const cart = useCart();
@@ -384,6 +415,10 @@ function ProductPage() {
                 {comboPct(p.slug) > 0 ? <>Ou <b className="font-semibold">{brl(lineTotals(v.price, 1, undefined, p.slug).net)}</b> em até <b className="font-semibold">{installments(lineTotals(v.price, 1, undefined, p.slug).net).count}x de {brl(installments(lineTotals(v.price, 1, undefined, p.slug).net).value)}</b> sem juros. O desconto de 5% do combo já está no preço e o Pix dá mais 5%.</> : <>Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros</>}
               </p>
             </div>
+            <p className="mt-3 flex items-center gap-2 text-body font-semibold text-emerald-700" data-testid="frete-no-preco">
+              <Truck className="h-5 w-5 shrink-0" aria-hidden="true" /> Frete grátis · entrega de 3 a 5 dias úteis em SP e MG
+            </p>
+            <ComboDestaque slug={p.slug} />
             {provaDe(p).selo && (
               <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-1 text-small font-semibold text-white" data-testid="prova-selo">
                 <BadgeCheck className="h-4 w-4" aria-hidden="true" /> {provaDe(p).selo}{provaDe(p).vendidos >= 10 && !provaDe(p).selo?.includes("unidades") ? ` · ${provaDe(p).vendidos} unidades vendidas` : ""}
