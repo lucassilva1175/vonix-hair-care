@@ -502,6 +502,7 @@ export async function affiliateOperationalReadiness() {
 
 export type AffiliateListStatus = AffiliateStatus | "todas";
 export type AffiliateMailStatus = "pendente" | "processando" | "enviado" | "falhou" | "incerto";
+export type AffiliateMailFilter = AffiliateMailStatus | "sem_registro";
 
 export type AffiliateMailCounters = Record<
   "pendente" | "processando" | "enviado" | "falhou" | "incerto",
@@ -517,6 +518,14 @@ export interface AffiliateList {
 
 const validStatus = z.enum(["pendente", "aprovada", "recusada", "todas"]);
 const validMailStatus = z.enum(["pendente", "processando", "enviado", "falhou", "incerto"]);
+const validMailFilter = z.enum([
+  "pendente",
+  "processando",
+  "enviado",
+  "falhou",
+  "incerto",
+  "sem_registro",
+]);
 
 // A private RPC response is NOT a browser-facing DTO. Explicitly project every
 // field that the triage screen is allowed to receive. A future database migration
@@ -557,31 +566,86 @@ export async function listAffiliateApplications(input: {
   status: AffiliateListStatus;
   page: number;
   search?: string | undefined;
-  mailStatus?: AffiliateMailStatus | null | undefined;
+  mailStatus?: AffiliateMailFilter | null | undefined;
 }): Promise<AffiliateList> {
   const status = validStatus.parse(input.status);
-  const mailStatus = input.mailStatus == null ? null : validMailStatus.parse(input.mailStatus);
+  const mailStatus = input.mailStatus == null ? null : validMailFilter.parse(input.mailStatus);
   const page = z.number().int().min(0).max(50000).parse(input.page);
   const q = z
     .string()
     .trim()
     .max(70)
     .parse(input.search ?? "");
+  const missingOnly = mailStatus === "sem_registro";
+  if (missingOnly && (status !== "todas" || q !== "")) {
+    throw new Error("A fila sem registro exige todas as decisões, sem busca textual.");
+  }
+  const offset = page * 40;
+  const missingQuery = new URLSearchParams({
+    select:
+      "id,full_name,age,city,state,hair_type,email,instagram_url,tiktok_url,motivation,status,rejection_reason,created_at,reviewed_at,questionnaire_encrypted,vonix_affiliate_mail_outbox(status,sent_at)",
+    status: "in.(aprovada,recusada)",
+    vonix_affiliate_mail_outbox: "is.null",
+    order: "created_at.desc,id.desc",
+    offset: String(offset),
+    limit: "40",
+  });
+  // Anti-join against the existing unique FK, not a filter on the current page.
+  // No arbitrary search grammar reaches PostgREST; ordinary search stays in its RPC.
   const [rows, totals] = await Promise.all([
-    requestSupabase("rpc/vonix_affiliate_search", {
-      method: "POST",
-      body: JSON.stringify({
-        p_status: status,
-        p_query: q,
-        p_offset: page * 40,
-        p_limit: 40,
-        p_mail_status: mailStatus,
-      }),
-    }),
+    missingOnly
+      ? requestSupabase("vonix_affiliate_applications?" + missingQuery.toString(), {
+          method: "GET",
+          headers: { Prefer: "count=exact" },
+        })
+      : requestSupabase("rpc/vonix_affiliate_search", {
+          method: "POST",
+          body: JSON.stringify({
+            p_status: status,
+            p_query: q,
+            p_offset: offset,
+            p_limit: 40,
+            p_mail_status: mailStatus,
+          }),
+        }),
     requestSupabase("rpc/vonix_affiliate_stats", { method: "POST", body: "{}" }),
   ]);
-  if (!rows.ok || !totals.ok) throw new Error("Consulta de inscrições indisponível.");
-  const result = (await rows.json()) as { total?: unknown; applications?: unknown };
+  if (!totals.ok || (!rows.ok && !(missingOnly && rows.status === 416))) {
+    throw new Error("Consulta de inscrições indisponível.");
+  }
+  let result: { total?: unknown; applications?: unknown };
+  if (missingOnly) {
+    const range = /^(?:(\d+)-(\d+)|\*)\/(\d+)$/.exec(rows.headers.get("content-range") ?? "");
+    const total = range ? nonNegativeCount.parse(Number(range[3])) : null;
+    if (total === null) throw new Error("Contagem exata da fila indisponível.");
+    if (rows.status === 416 && offset < total)
+      throw new Error("Intervalo da fila sem registro inválido.");
+    const payload: unknown = rows.status === 416 ? [] : await rows.json();
+    if (!Array.isArray(payload) || payload.length !== Math.min(40, Math.max(total - offset, 0))) {
+      throw new Error("Página da fila sem registro inválida.");
+    }
+    if (
+      payload.length &&
+      (!range || Number(range[1]) !== offset || Number(range[2]) !== offset + payload.length - 1)
+    ) {
+      throw new Error("Intervalo da fila sem registro inválido.");
+    }
+    result = {
+      total,
+      applications: payload.map((row: unknown) => {
+        const checked = z
+          .object({
+            status: z.enum(["aprovada", "recusada"]),
+            vonix_affiliate_mail_outbox: z.union([z.null(), z.tuple([])]),
+          })
+          .passthrough()
+          .parse(row);
+        return { ...checked, vonix_affiliate_mail_outbox: [] };
+      }),
+    };
+  } else {
+    result = (await rows.json()) as { total?: unknown; applications?: unknown };
+  }
   const raw: unknown = await totals.json();
   const checkedTotal = nonNegativeCount.safeParse(result?.total);
   if (

@@ -158,7 +158,42 @@ begin
       (select count(*) from public.vonix_affiliate_mail_outbox where status = 'pendente') then
     raise exception 'Email queue dashboard counters are wrong';
   end if;
-  raise notice 'SQL QA PASS: quotas, private search, wildcard escapes, concurrent decisions, email status counters';
+  -- C175: exhausted crashed claims are ambiguous, never automatically retried.
+  update public.vonix_affiliate_mail_outbox
+     set status='processando', attempts=5, uncertain=false,
+         created_at=now()-interval '1 hour', last_attempt_at=now()-interval '1 minute'
+   where application_id=id_uncertain;
+  if exists (select 1 from public.vonix_affiliate_claim_mail(id_uncertain)) then
+    raise exception 'Fresh exhausted claim should not be reclaimed';
+  end if;
+  if (select status from public.vonix_affiliate_mail_outbox where application_id=id_uncertain) <> 'processando' then
+    raise exception 'Active claim was swept too soon';
+  end if;
+  update public.vonix_affiliate_mail_outbox set last_attempt_at=now()-interval '11 minutes'
+   where application_id=id_uncertain;
+  if exists (select 1 from public.vonix_affiliate_claim_mail(id_uncertain)) then
+    raise exception 'Exhausted stale claim should not be reclaimed';
+  end if;
+  if not exists (select 1 from public.vonix_affiliate_mail_outbox where application_id=id_uncertain and status='incerto' and uncertain) then
+    raise exception 'Exhausted stale claim must become uncertain promptly';
+  end if;
+  select public.vonix_affiliate_finish_mail(id,5,true,'late-qa',false,false) into updated
+    from public.vonix_affiliate_mail_outbox where application_id=id_uncertain;
+  if updated then raise exception 'Late result overwrote terminal uncertain status'; end if;
+  update public.vonix_affiliate_mail_outbox set status='processando', attempts=4, uncertain=false,
+    last_attempt_at=now()-interval '11 minutes' where application_id=id_uncertain;
+  select * into notification from public.vonix_affiliate_claim_mail(id_uncertain);
+  if notification.attempt is distinct from 5 or not exists (
+    select 1 from public.vonix_affiliate_mail_outbox where application_id=id_uncertain and uncertain
+  ) then raise exception 'Reclaimed attempt did not preserve ambiguity'; end if;
+  select public.vonix_affiliate_finish_mail(notification.mail_id, 5, false, null, false, true) into updated;
+  if not updated or not exists (select 1 from public.vonix_affiliate_mail_outbox where application_id=id_uncertain and status='incerto' and uncertain) then
+    raise exception 'Later failure erased earlier ambiguous provider outcome';
+  end if;
+  if exists (select 1 from public.vonix_affiliate_claim_mail(id_uncertain)) then
+    raise exception 'Terminal ambiguous mail was reclaimed';
+  end if;
+  raise notice 'SQL QA PASS: quotas, private search, wildcard escapes, concurrent decisions, email status counters, C175 exhausted claim recovery';
 end;
 $test$;
 

@@ -439,7 +439,7 @@ export const getAffiliateApplications = createServerFn({ method: "POST" })
       page: z.number().int().min(0).max(50000),
       search: z.string().trim().max(70).optional(),
       mailStatus: z
-        .enum(["pendente", "processando", "enviado", "falhou", "incerto"])
+        .enum(["pendente", "processando", "enviado", "falhou", "incerto", "sem_registro"])
         .nullable()
         .optional(),
     }),
