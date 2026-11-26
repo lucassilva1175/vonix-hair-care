@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import raw from "@/data/products.json";
 import teste from "@/data/teste-precos.json";
-import { bfPct } from "@/lib/black-friday";
+import { bfPct, vipPct } from "@/lib/black-friday";
 import { soldFor } from "@/lib/sales";
 
 export type Variant = { label: string; price: number };
@@ -342,18 +342,27 @@ export const MAX_DISCOUNT = Math.max(...products.map((p) => discountPct(p.compar
  *   are NEVER cumulative: Pix 5% and coupons apply only to lines without an offer.
  */
 export function checkoutTotals(
-  lines: { gross: number; net: number; offer?: Offer | undefined; combo?: boolean | undefined }[],
+  lines: { gross: number; net: number; offer?: Offer | undefined; combo?: boolean | undefined; slug?: string }[],
   method: "pix" | "card" | "boleto",
   couponPct = 0,
+  vip = false,
 ) {
   const gross = cents(lines.reduce((s, l) => s + l.gross, 0));
   const net = cents(lines.reduce((s, l) => s + l.net, 0));
-  const eligible = cents(lines.reduce((s, l) => s + (lineHasOffer(l) ? 0 : l.net), 0));
+  // Cupom VIP: cada produto da oferta fica no maior desconto (o da linha ou o VIP), sem somar e sem Pix por cima.
+  const vipDisc = vip
+    ? lines.reduce((s, l) => {
+        const pct = vipPct(l.slug);
+        return s + (pct ? Math.max(0, cents(l.net) - Math.round((cents(l.gross) * (100 - pct)) / 100)) : 0);
+      }, 0)
+    : 0;
+  const normais = vip ? lines.filter((l) => !vipPct(l.slug)) : lines;
+  const eligible = cents(normais.reduce((s, l) => s + (lineHasOffer(l) ? 0 : l.net), 0));
   // Linhas de combo aceitam o Pix por cima do desconto do combo (cupom continua só nas linhas sem oferta).
-  const pixBase = eligible + cents(lines.reduce((s, l) => s + (l.combo && lineHasOffer(l) ? l.net : 0), 0));
-  const couponDisc = Math.round(eligible * couponPct);
+  const pixBase = eligible + cents(normais.reduce((s, l) => s + (l.combo && lineHasOffer(l) ? l.net : 0), 0));
+  const couponDisc = vip ? vipDisc : Math.round(eligible * couponPct);
   const pixDisc =
-    method === "pix" && couponPct === 0 ? Math.round(((pixBase - couponDisc) * (100 - PIX_DISCOUNT * 100)) / 100) - (pixBase - couponDisc) : 0;
+    method === "pix" && couponPct === 0 ? Math.round(((pixBase - (vip ? 0 : couponDisc)) * (100 - PIX_DISCOUNT * 100)) / 100) - (pixBase - (vip ? 0 : couponDisc)) : 0;
   const total = net - couponDisc + pixDisc;
   return {
     gross: gross / 100,

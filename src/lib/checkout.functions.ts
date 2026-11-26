@@ -28,7 +28,7 @@ function buildLines(items: z.infer<typeof itemSchema>[]) {
     const v = p?.variants.find((x) => x.label === i.variant);
     if (!p || !v) throw new Error(`Produto indisponível: ${i.slug}`);
     const t = lineTotals(v.price, i.qty, i.offer as Offer | undefined, p.slug);
-    return { product: p, variant: v.label, offer: i.offer as Offer | undefined, ...t };
+    return { product: p, slug: p.slug, variant: v.label, offer: i.offer as Offer | undefined, ...t };
   });
 }
 
@@ -137,7 +137,7 @@ export const createPayment = createServerFn({ method: "POST" })
         const chk = couponCheck(coupon, gross);
         if (!chk.ok) return { ok: false as const, message: chk.reason };
       }
-      const totals = checkoutTotals(lines, data.method === "pix" ? "pix" : "card", couponPercent(coupon, gross));
+      const totals = checkoutTotals(lines, data.method === "pix" ? "pix" : "card", couponPercent(coupon, gross), !!coupon?.vip);
       const document = data.customer.cpf.replace(/\D/g, "");
       const [first = "", ...rest] = data.customer.nome.trim().split(/\s+/);
       const ip = data.ip || getRequestHeader("cf-connecting-ip") || getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";

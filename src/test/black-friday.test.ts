@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { BF_END, BF_START, bfEsquentaAberto, bfPct, bfPhase } from "@/lib/black-friday";
-import { lineTotals, linePct } from "@/lib/store";
+import { describe, expect, it, vi } from "vitest";
+import { BF_END, BF_START, bfEsquentaAberto, bfPct, bfPhase, vipPct } from "@/lib/black-friday";
+import { checkoutTotals, lineTotals, linePct } from "@/lib/store";
+import { couponCheck, findCoupon } from "@/lib/coupons";
 
 const antes = new Date("2026-11-20T12:00:00-03:00");
 const durante = new Date("2026-11-28T12:00:00-03:00");
@@ -16,28 +17,41 @@ describe("Black Friday 2026", () => {
     expect(bfEsquentaAberto(antes)).toBe(true);
     expect(bfEsquentaAberto(durante)).toBe(false);
   });
-  it("no esquenta e depois do prazo o preço não muda", () => {
-    for (const d of [antes, depois]) {
+  it("não existe desconto público: o preço do site não muda em nenhuma fase", () => {
+    for (const d of [antes, durante, depois]) {
       expect(bfPct("botox-vonix", d)).toBe(0);
+      expect(bfPct("combo-fio-de-luz-shampoo-anti-residuo", d)).toBe(0);
       expect(lineTotals(180.9, 1, undefined, "botox-vonix", d).net).toBe(180.9);
     }
+    expect(linePct(2, "botox-vonix", durante)).toBe(12);
   });
-  it("durante a oferta: kits 20%, Botox 25%, Fio de Luz 15%, Monovonix e o resto ficam como estão", () => {
-    expect(bfPct("kit-cronograma-capilar", durante)).toBe(20);
-    expect(bfPct("botox-vonix", durante)).toBe(25);
-    expect(bfPct("botox-line-matizador", durante)).toBe(25);
-    expect(bfPct("progressiva-fio-de-luz", durante)).toBe(15);
-    expect(bfPct("kit-monovonix", durante)).toBe(0);
-    expect(bfPct("plex-vonix", durante)).toBe(0);
-    expect(lineTotals(180.9, 1, undefined, "botox-vonix", durante).net).toBe(135.68);
-    expect(lineTotals(184.9, 1, undefined, "kit-cronograma-capilar", durante).net).toBe(147.92);
+  it("cupom do grupo VIP: combos 30%, principais 20%, sem somar com Pix nem combo", () => {
+    expect(vipPct("combo-fio-de-luz-shampoo-anti-residuo")).toBe(30);
+    expect(vipPct("progressiva-fio-de-luz")).toBe(20);
+    expect(vipPct("shampoo-fio-de-luz-anti-residuo")).toBe(0);
+    const linhas = [
+      { slug: "combo-fio-de-luz-shampoo-anti-residuo", ...lineTotals(216.8, 1, undefined, "combo-fio-de-luz-shampoo-anti-residuo") },
+      { slug: "progressiva-fio-de-luz", ...lineTotals(145.9, 1, undefined, "progressiva-fio-de-luz") },
+    ];
+    for (const metodo of ["pix", "card"] as const) {
+      const t = checkoutTotals(linhas, metodo, 0, true);
+      expect(t.net).toBe(268.48);
+      expect(t.pixDiscount).toBe(0);
+    }
+    const comShampoo = [...linhas, { slug: "shampoo-fio-de-luz-anti-residuo", ...lineTotals(70.9, 1, undefined, "shampoo-fio-de-luz-anti-residuo") }];
+    expect(checkoutTotals(comShampoo, "pix", 0, true).pixDiscount).toBe(3.54);
   });
-  it("não soma com o leve 2 / leve 3: vale o maior", () => {
-    expect(linePct(2, "botox-vonix", durante)).toBe(25);
-    expect(linePct(3, "progressiva-fio-de-luz", durante)).toBe(15);
-    expect(linePct(2, "kit-cronograma-capilar", durante)).toBe(20);
-    expect(linePct(2, "plex-vonix", durante)).toBe(12);
-    expect(linePct(1, "plex-vonix", durante)).toBe(0);
+  it("o cupom só vale dentro do prazo", () => {
+    const c = findCoupon("vipblack")!;
+    expect(c.vip).toBe(true);
+    vi.useFakeTimers();
+    vi.setSystemTime(antes);
+    expect(couponCheck(c, 200).ok).toBe(false);
+    vi.setSystemTime(durante);
+    expect(couponCheck(c, 200).ok).toBe(true);
+    vi.setSystemTime(new Date("2026-11-30T00:01:00-03:00"));
+    expect(couponCheck(c, 200).ok).toBe(false);
+    vi.useRealTimers();
   });
 });
 

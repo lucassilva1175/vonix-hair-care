@@ -1,3 +1,4 @@
+import { bfPhase } from "@/lib/black-friday";
 import { brl } from "@/lib/store";
 
 /**
@@ -11,6 +12,8 @@ export type Coupon = {
   percent?: number;
   freeShipping?: boolean;
   minSubtotal?: number;
+  /** Cupom do grupo VIP: desconto por produto (ver vipPct) e só durante a Black Friday. */
+  vip?: boolean;
 };
 
 export const COUPONS: Coupon[] = [
@@ -18,6 +21,8 @@ export const COUPONS: Coupon[] = [
   { code: "GIRA4", label: "4% OFF em compras acima de R$ 99", percent: 4, minSubtotal: 99 },
   { code: "GIRA5", label: "5% OFF em compras acima de R$ 150", percent: 5, minSubtotal: 150 },
   { code: "GIRA6", label: "6% OFF em compras acima de R$ 250", percent: 6, minSubtotal: 250 },
+  // Black Friday só do grupo VIP (27 a 29/11/2026): nunca entra na roleta nem aparece no site.
+  { code: "VIPBLACK", label: "Black Friday do grupo VIP: 30% nos combos e 20% nos principais", vip: true },
   // Parceria Bela Tiozzo: só digitado à mão (link/criativos dela), nunca na roleta.
   { code: "BT10", label: "10% OFF em qualquer compra", percent: 10 },
   // Cupom de boas-vindas: quem se cadastra no site ganha, em qualquer compra. Nunca entra na roleta.
@@ -68,6 +73,9 @@ export const prizeDays = PRIZE_DAYS;
 
 /** Is the coupon usable for this cart (product subtotal before discounts)? */
 export function couponCheck(c: Coupon, grossSubtotal: number): { ok: true } | { ok: false; reason: string } {
+  if (c.vip && bfPhase() !== "ativa") {
+    return { ok: false, reason: `O cupom ${c.code} vale de 27 a 29/11.` };
+  }
   if (c.minSubtotal && grossSubtotal < c.minSubtotal) {
     return { ok: false, reason: `O cupom ${c.code} vale em compras acima de ${brl(c.minSubtotal)} em produtos.` };
   }

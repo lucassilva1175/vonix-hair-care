@@ -3,8 +3,8 @@
  * Nada aqui muda preço: só diz em que fase o site está e guarda a lista de produtos-foco.
  */
 export const BF_START = new Date("2026-11-27T00:00:00-03:00");
-/** Ainda a confirmar com o dono da loja. */
-export const BF_END = new Date("2026-11-30T23:59:59-03:00");
+/** Decisão do dono (26/11/2026): sexta a domingo. */
+export const BF_END = new Date("2026-11-29T23:59:59-03:00");
 
 export type BfPhase = "esquenta" | "ativa" | "encerrada";
 
@@ -28,17 +28,25 @@ export const BF_FOCO: { titulo: string; texto: string; slug: string }[] = [
 ];
 
 /**
- * Desconto da Black Friday por produto (só vale com a oferta ativa, nunca no esquenta nem depois do prazo):
- * kits 20% (menos o Monovonix, margem menor), Botox 25% (preço base novo de 14/11: sobra uns R$ 30 por unidade depois da taxa; com 30% cairia para ~R$ 24), Progressiva Fio de Luz 15%.
- * Não soma com o "leve 2 / leve 3": vale o maior dos dois, para proteger a margem.
+ * Desconto público da Black Friday: nenhum (decisão do dono em 26/11/2026: a oferta é só do grupo VIP, por cupom).
+ * O site continua com o preço normal para todo mundo.
  */
-export const bfPct = (slug: string | undefined, now: Date = new Date()): number => {
-  if (!slug || bfPhase(now) !== "ativa") return 0;
-  if (slug === "kit-monovonix") return 0;
-  if (slug.startsWith("kit-")) return 20;
-  if (slug.startsWith("botox-")) return 25;
-  if (slug === "progressiva-fio-de-luz") return 15;
-  return 0;
+export const bfPct = (_slug: string | undefined, _now: Date = new Date()): number => 0;
+
+/** Avulsos principais da oferta do grupo VIP. */
+export const VIP_PRINCIPAIS: readonly string[] = [
+  "progressiva-fio-de-luz",
+  "botox-vonix",
+  "botox-vonix-matizador",
+  "progressiva-diamond",
+  "sos-reconstrutor-capilar",
+];
+
+/** Desconto do cupom do grupo VIP por produto: combos 30%, avulsos principais 20% (conferido com o custo do distribuidor). */
+export const vipPct = (slug: string | undefined): number => {
+  if (!slug) return 0;
+  if (slug.startsWith("combo-")) return 30;
+  return VIP_PRINCIPAIS.includes(slug) ? 20 : 0;
 };
 
 /** Link de convite do grupo VIP no WhatsApp. Vazio = o botao nao aparece (preencher quando o grupo existir). */

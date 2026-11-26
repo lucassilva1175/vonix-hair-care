@@ -556,9 +556,10 @@ function Checkout() {
 
   const gross = checkoutTotals(c.lines, "card").gross;
   const pct = couponPercent(applied ?? undefined, gross);
-  const t = checkoutTotals(c.lines, pay, pct);
-  const tPix = checkoutTotals(c.lines, "pix", pct);
-  const tCard = checkoutTotals(c.lines, "card", pct);
+  const vip = !!applied?.vip && couponCheck(applied, gross).ok;
+  const t = checkoutTotals(c.lines, pay, pct, vip);
+  const tPix = checkoutTotals(c.lines, "pix", pct, vip);
+  const tCard = checkoutTotals(c.lines, "card", pct, vip);
   const couponProblem = applied ? couponCheck(applied, gross) : null;
   const chosen = options.find((o) => o.id === serviceId) ?? null;
   const shippingEvent = useRef("");
