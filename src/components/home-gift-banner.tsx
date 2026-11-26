@@ -9,7 +9,7 @@ export function HomeGiftBanner() {
       <div className="gift-banner-copy">
         <p className="gift-banner-brand font-display">SITE FEITO PARA CABELEIREIRAS</p>
         <h2 className="gift-banner-heading font-display">Combos do salão com <em>até 10% OFF</em></h2>
-        <p className="gift-banner-sub">Site feito para quem vive de cabelo: cabeleireiras e donas de salão. Leve a Progressiva Fio de Luz, a mais vendida em São Paulo e Minas Gerais, já com o shampoo anti-resíduo certo: 5% OFF no combo e mais 5% no Pix, direto no preço, sem cupom.</p>
+        <p className="gift-banner-sub">Leve a Progressiva Fio de Luz, a mais vendida em São Paulo e Minas Gerais, já com o shampoo anti-resíduo certo.</p>
         <ul className="gift-banner-benefits" aria-label="Condições de pagamento e entrega" data-testid="home-banner-benefits">
           <li><QrCode aria-hidden="true" /><strong>5% OFF no combo + 5% no Pix</strong></li>
           <li><CreditCard aria-hidden="true" /><span>Até <strong>6x sem juros</strong></span></li>

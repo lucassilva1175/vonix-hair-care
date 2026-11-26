@@ -1,38 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Atom, FlaskConical, ShowerHead, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ReviewCard, reviews } from "@/components/reviews";
 import { FaqSection } from "@/components/faq";
 import { FAQ_LOJA } from "@/lib/faq";
 import { ProvaSocial } from "@/components/prova-social";
 import { QuemUsa } from "@/components/quem-usa";
 import { CepCheck } from "@/components/cep-check";
-import { Benefits, Grid, Shell } from "@/components/site";
+import { Grid, Shell } from "@/components/site";
 import { SITE_URL, bySales, forAudience, homeBestSellers, products, useAudience, vitrine } from "@/lib/store";
 import { HomeGiftBanner } from "@/components/home-gift-banner";
-
-/** Faixa de valores da marca que passa devagar embaixo do banner (ícone de traço + frase curta). Não repete frete, parcelamento nem Pix. */
-const MARCA = [
-  { Icon: Sparkles, text: "Resultado de salão" },
-  { Icon: FlaskConical, text: "Fórmulas inovadoras" },
-  { Icon: Atom, text: "Alta tecnologia" },
-  { Icon: ShowerHead, text: "Rotina capilar" },
-];
-function FaixaMarca() {
-  return (
-    <section aria-label="Diferenciais da Vonix Hair" data-testid="home-faixa-marca" className="mt-3 overflow-hidden bg-[#faf6f1] py-6">
-      <div className="flex w-max animate-marquee items-center gap-16 whitespace-nowrap hover:[animation-play-state:paused] motion-reduce:animate-none">
-        {[...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA, ...MARCA].map(({ Icon, text }, k) => (
-          <span key={k} aria-hidden={k >= MARCA.length} className="flex items-center gap-3.5 text-[1.05rem] font-bold">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border border-[#e3c07a]/70 bg-white text-[#7a5a2e] shadow-[0_6px_16px_-10px_rgba(122,90,46,0.6)]">
-              <Icon className="h-7 w-7" strokeWidth={1.4} aria-hidden="true" />
-            </span>
-            {text}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -92,11 +68,8 @@ function Home() {
       </div>
 
       <div className="container-site mt-3">
-        <CepCheck />
+        <CepCheck compact />
       </div>
-      <Benefits />
-
-      <FaixaMarca />
 
       {/* Monte o seu kit: progressiva + shampoo anti-resíduo + o que ela quiser */}
       <section className="container-site mt-10" data-testid="home-monte-kit" aria-label="Monte o seu kit de progressiva">
