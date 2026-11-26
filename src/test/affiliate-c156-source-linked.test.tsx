@@ -98,6 +98,15 @@ describe("C156 public source-linked media release", () => {
     const gate = screen.getByTestId("affiliate-c96-discovery-gate") as HTMLDetailsElement;
     const brandEvidence = within(proof).getByTestId("affiliate-c170-early-brand-evidence");
     expect(brandEvidence).toHaveTextContent("480+");
+    const storefront = screen.getByTestId("affiliate-c161-combos");
+    const storefrontLink = within(brandEvidence).getByRole("link", { name: "Ver vitrine atual" });
+    expect(storefrontLink).toHaveAttribute("href", "#vitrine-afiliadas");
+    expect(storefront).toHaveAttribute("id", "vitrine-afiliadas");
+    expect(within(storefront).queryByRole("searchbox")).not.toBeInTheDocument();
+    fireEvent.click(storefrontLink, { ctrlKey: true });
+    expect(within(storefront).queryByRole("searchbox")).not.toBeInTheDocument();
+    fireEvent.click(storefrontLink);
+    expect(within(storefront).getByRole("searchbox")).toBeInTheDocument();
     fireEvent.click(within(brandEvidence).getByRole("link", { name: /Explorar inspirações/ }));
     expect(gate.open).toBe(true);
     gate.open = false;

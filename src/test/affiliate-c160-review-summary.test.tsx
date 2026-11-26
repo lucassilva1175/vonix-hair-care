@@ -71,7 +71,16 @@ describe("C160 catalog-only review summary", () => {
       "href",
       "#catalogo-em-video",
     );
-    expect(screen.getAllByRole("link")).toHaveLength(3);
+    expect(within(evidence).getByRole("link", { name: "Ver vitrine atual" })).toHaveAttribute(
+      "href",
+      "#vitrine-afiliadas",
+    );
+    expect(
+      screen
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href"))
+        .sort(),
+    ).toEqual(["#catalogo-em-video", "#vitrine-afiliadas", "/produto/botox-vonix", "/sobre"]);
     expect(evidence.querySelectorAll("video,iframe,blockquote")).toHaveLength(0);
   });
 });
