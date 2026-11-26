@@ -296,34 +296,7 @@ function PixPanel({
   );
 }
 
-const STEPS = ["Dados", "Entrega", "Finalização"];
-const CHECKOUT_TIMER_SECONDS = 15 * 60;
-
-function CheckoutTimer() {
-  const [remaining, setRemaining] = useState(CHECKOUT_TIMER_SECONDS);
-  useEffect(() => {
-    const deadline = Date.now() + CHECKOUT_TIMER_SECONDS * 1000;
-    const timer = setInterval(() => {
-      const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      setRemaining(seconds);
-      if (seconds === 0) clearInterval(timer);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-  const minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
-  const seconds = String(remaining % 60).padStart(2, "0");
-  return (
-    <p role="timer" aria-live="off" data-testid="checkout-timer" className="flex cursor-default select-none items-center justify-between gap-3 rounded-xl border border-[#c9a45c]/50 bg-gradient-to-b from-[#232323] to-[#0b0b0b] px-4 py-3 text-small font-medium text-white">
-      <span className="leading-snug">
-        {remaining > 0 ? "Você tem 15 minutos para finalizar com tranquilidade" : "Você ainda pode finalizar sua compra"}
-      </span>
-      <span className="money shrink-0 rounded-lg border border-[#c9a45c]/40 bg-black/30 px-3 py-1.5 text-body font-semibold tabular-nums tracking-wider text-[#e3c07a]">
-        {minutes}:{seconds}
-      </span>
-    </p>
-  );
-}
-
+const STEPS = ["Entrega", "Pagamento"];
 /** Losangos do Pix (desenho próprio, só o símbolo). */
 function PixMark() {
   return (
@@ -777,15 +750,6 @@ function Checkout() {
     const fields = form.querySelectorAll<HTMLInputElement>(`fieldset[data-checkout-step="${step}"] input`);
     if (!Array.from(fields).every((input) => input.reportValidity())) return;
     if (step === 0) {
-      const phone = f.whatsapp.replace(/\D/g, "");
-      if (f.nome.trim().length < 3) return fail("Digite seu nome completo.", "Nome completo");
-      if (phone.length < 10 || phone.length > 13)
-        return fail("Digite seu WhatsApp com DDD, por exemplo (31) 99999-9999.", "WhatsApp com DDD");
-      if (!isValidCpf(f.cpf)) return fail("CPF inválido. Confira os números.", "CPF");
-      goToStep(1);
-      return;
-    }
-    if (step === 1) {
       if (f.cep.replace(/\D/g, "").length !== 8) return fail("Digite um CEP com 8 números.", "CEP");
       if (!f.rua.trim() || !f.numero.trim() || !f.bairro.trim() || !f.cidade.trim() || f.uf.trim().length !== 2) {
         setError("Confira os dados do endereço antes de continuar.");
@@ -795,9 +759,14 @@ function Checkout() {
         setError(quoting ? "Aguarde o cálculo do frete." : options.length ? "Escolha a forma de entrega." : "Calcule o frete para continuar.");
         return;
       }
-      goToStep(2);
+      goToStep(1);
       return;
     }
+    const phone = f.whatsapp.replace(/\D/g, "");
+    if (f.nome.trim().length < 3) return fail("Digite seu nome completo.", "Nome completo");
+    if (phone.length < 10 || phone.length > 13)
+      return fail("Digite seu WhatsApp com DDD, por exemplo (31) 99999-9999.", "WhatsApp com DDD");
+    if (!isValidCpf(f.cpf)) return fail("CPF inválido. Confira os números.", "CPF");
     if (busy || quoting || !chosen || !cfg?.pixEnabled) return;
     track("add_payment_info", { payment_type: pay, value: total });
     if (pay === "boleto" && !cfg.boletoEnabled) return setError("Boleto indisponível no momento. Escolha cartão ou Pix.");
@@ -884,7 +853,7 @@ function Checkout() {
   const payDisabled = busy || quoting || !chosen || !cfg || !cfg.pixEnabled || (pay === "boleto" && !cfg.boletoEnabled);
   const paymentButton = (
     <>
-      {step === 2 && error && (
+      {step === 1 && error && (
         <p role="alert" className="rounded-lg border border-destructive bg-white p-2.5 text-small text-destructive">
           {error}
         </p>
@@ -982,9 +951,15 @@ function Checkout() {
               </span>
               <h1 ref={stepHeading} tabIndex={-1} className="font-display text-h2 leading-tight outline-none">Finalizar compra</h1>
             </header>
-            <CheckoutTimer />
+            <p data-testid="checkout-total-topo" className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-xl border border-border bg-card px-4 py-3 text-body">
+              <span>
+                Total <b className="money text-name">{brl(tPix.net + shipping)}</b> no Pix
+                <span className="block text-small text-muted-foreground">ou {brl(tCard.net + shipping)} no cartão</span>
+              </span>
+              <span className="text-small font-semibold text-emerald-700">Frete grátis</span>
+            </p>
 
-            <ol aria-label="Etapas do checkout" className="grid grid-cols-3 gap-2 px-1 text-small">
+            <ol aria-label="Etapas do checkout" className="grid grid-cols-2 gap-2 px-1 text-small">
               {STEPS.map((label, index) => (
                 <li key={label} aria-current={step === index ? "step" : undefined}>
                   <span aria-hidden="true" className={`mb-1.5 block h-1.5 rounded-full ${index <= step ? "bg-black" : "bg-neutral-200"}`} />
@@ -1000,16 +975,7 @@ function Checkout() {
             </ol>
 
             <fieldset data-checkout-step="0" hidden={step !== 0} className={panel}>
-              <StepTitle n={1}>Seus dados</StepTitle>
-              <input
-                required
-                aria-label="Nome completo"
-                placeholder="Nome completo"
-                value={f.nome}
-                onChange={set("nome")}
-                autoComplete="name"
-                className={inp}
-              />
+              <StepTitle n={1}>Entrega</StepTitle>
                 <input
                   required
                   type="email"
@@ -1021,36 +987,6 @@ function Checkout() {
                   autoComplete="email"
                   className={inp}
                 />
-              <div className="grid grid-cols-2 gap-2">
-<input
-                required
-                inputMode="tel"
-                aria-label="WhatsApp com DDD"
-                placeholder="WhatsApp"
-                value={f.whatsapp}
-                onChange={set("whatsapp")}
-                autoComplete="tel"
-                className={inp}
-              />
-              <input
-                required
-                inputMode="numeric"
-                aria-label="CPF"
-                placeholder="CPF"
-                value={f.cpf}
-                maxLength={14}
-                onChange={(e) => setF((old) => ({ ...old, cpf: maskCpf(e.target.value) }))}
-                className={inp}
-              />
-</div>
-              <p className="flex items-start gap-2 pt-1 text-small text-muted-foreground" data-testid="dados-confianca">
-                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
-                <span>Usamos seus dados para emitir o pedido e enviar atualizações da entrega.</span>
-              </p>
-              </fieldset>
-
-            <fieldset data-checkout-step="1" hidden={step !== 1} className={panel}>
-              <StepTitle n={2}>Entrega</StepTitle>
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.65fr)] gap-2">
                 <input
                   required
@@ -1215,7 +1151,46 @@ function Checkout() {
               </div>
             </fieldset>
 
-            <fieldset hidden={step !== 2} className={panel}>
+            <fieldset data-checkout-step="1" hidden={step !== 1} className={panel}>
+              <StepTitle n={2}>Seus dados</StepTitle>
+              <input
+                required
+                aria-label="Nome completo"
+                placeholder="Nome completo"
+                value={f.nome}
+                onChange={set("nome")}
+                autoComplete="name"
+                className={inp}
+              />
+              <div className="grid grid-cols-2 gap-2">
+<input
+                required
+                inputMode="tel"
+                aria-label="WhatsApp com DDD"
+                placeholder="WhatsApp"
+                value={f.whatsapp}
+                onChange={set("whatsapp")}
+                autoComplete="tel"
+                className={inp}
+              />
+              <input
+                required
+                inputMode="numeric"
+                aria-label="CPF"
+                placeholder="CPF"
+                value={f.cpf}
+                maxLength={14}
+                onChange={(e) => setF((old) => ({ ...old, cpf: maskCpf(e.target.value) }))}
+                className={inp}
+              />
+</div>
+              <p className="flex items-start gap-2 pt-1 text-small text-muted-foreground" data-testid="dados-confianca">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+                <span>Usamos seus dados para emitir o pedido e enviar atualizações da entrega.</span>
+              </p>
+              </fieldset>
+
+            <fieldset hidden={step !== 1} className={panel}>
               <StepTitle n={3}>Pagamento</StepTitle>
               <div className="grid grid-cols-1 gap-2">
                 <label data-testid="pay-option-pix" className={payTile(pay === "pix")}>
@@ -1286,11 +1261,11 @@ function Checkout() {
               </div>
             </fieldset>
 
-            {step < 2 && (
+            {step < 1 && (
               <>
                 {error && <p role="alert" className="text-small text-destructive">{error}</p>}
                 <button type="submit" className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-body font-semibold text-white hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
-                  {step === 0 ? "Continuar para entrega" : "Continuar para finalização"}
+                  Continuar para o pagamento
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </button>
               </>
@@ -1298,7 +1273,7 @@ function Checkout() {
           </form>
 
           {/* The card form remains a sibling so Appmax can tokenize it. */}
-          <div hidden={step !== 2}>
+          <div hidden={step !== 1}>
             {/* Dados do cartão: caixa própria logo abaixo da escolha de pagamento (só aparece com o cartão marcado). */}
             <form
               id="card-form"
@@ -1405,7 +1380,7 @@ function Checkout() {
             <form data-appmax-customer hidden />
           </div>
 
-          <div hidden={step !== 2} className="space-y-2">
+          <div hidden={step !== 1} className="space-y-2">
             {!showCoupon && (
               <button type="button" onClick={() => setShowCoupon(true)} className="text-small underline">Adicionar cupom</button>
             )}
@@ -1449,9 +1424,9 @@ function Checkout() {
             )}
           </div>
 
-          {step === 2 && <OrderBump />}
-          {step === 2 && totalsCard}
-          <details hidden={step !== 2} data-testid="checkout-review" className="rounded-xl border border-border px-3 py-2.5">
+          {step === 1 && <OrderBump />}
+          {step === 1 && totalsCard}
+          <details hidden={step !== 1} data-testid="checkout-review" className="rounded-xl border border-border px-3 py-2.5">
             <summary className="cursor-pointer text-body font-medium">Ver itens do pedido ({c.lines.length})</summary>
               <div className="mt-3 flex justify-end">
                 <Link to="/carrinho" className="shrink-0 text-small font-medium text-black underline">
@@ -1506,7 +1481,7 @@ function Checkout() {
               </ul>
           </details>
         </div>
-        <div hidden={step !== 2} className="min-w-0 space-y-4">
+        <div hidden={step !== 1} className="min-w-0 space-y-4">
           <div
             data-testid="checkout-pay-bar"
             className={lateral
