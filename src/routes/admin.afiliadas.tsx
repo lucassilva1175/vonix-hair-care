@@ -19,6 +19,10 @@ import {
 } from "@/lib/affiliate-rejection";
 import { AffiliateOwnerActivationPanel } from "@/components/affiliate-owner-activation-panel";
 import { AffiliateManualRegistration } from "@/components/affiliate-manual-registration";
+import {
+  AffiliateDecisionMailGuidance,
+  AffiliateNotificationOperations,
+} from "@/components/affiliate-notification-operations";
 import { affiliateWhatsAppContactUrl } from "@/lib/affiliate-whatsapp-contact";
 import {
   getAffiliateAdminSession,
@@ -194,6 +198,7 @@ export function AffiliateAdminPage() {
     falhou: 0,
     incerto: 0,
   });
+  const [notificationStatsFresh, setNotificationStatsFresh] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [workingId, setWorkingId] = useState<string | null>(null);
@@ -293,6 +298,7 @@ export function AffiliateAdminPage() {
     setSearchText("");
     setStats({ pendente: 0, aprovada: 0, recusada: 0 });
     setMailStats({ pendente: 0, processando: 0, enviado: 0, falhou: 0, incerto: 0 });
+    setNotificationStatsFresh(false);
     setTotal(0);
     setWorkingId(null);
     setPendingDecision(null);
@@ -346,6 +352,7 @@ export function AffiliateAdminPage() {
     setPrivateDetailError(null);
     setApplications([]);
     setTotal(0);
+    setNotificationStatsFresh(false);
     setPendingAccessInviteId(null);
     setLoading(true);
     setPendingDecision(null);
@@ -384,6 +391,7 @@ export function AffiliateAdminPage() {
       setApplications(response.applications);
       setStats(response.stats);
       setMailStats(response.mailStats);
+      setNotificationStatsFresh(true);
       setTotal(response.total);
     } catch {
       if (isCurrent()) setError("Não foi possível carregar os dados. Tente novamente.");
@@ -1206,6 +1214,18 @@ export function AffiliateAdminPage() {
                   </button>
                 ))}
               </div>
+              <AffiliateNotificationOperations
+                decisions={stats}
+                mail={mailStats}
+                fresh={notificationStatsFresh}
+                loading={loading}
+                onRefresh={() => void load(status, page, search, mailFilter)}
+                onReviewAll={() => {
+                  setSearchText("");
+                  setNotice("");
+                  void load("todas", 0, "", null);
+                }}
+              />
             </section>
 
             <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
@@ -1442,8 +1462,11 @@ export function AffiliateAdminPage() {
                               : "Questionário completo"}
                           </h4>
                           <p className="mt-1 max-w-xl text-xs leading-relaxed text-[#806a6c]">
-                            CPF, contato e endereço são carregados apenas sob demanda, com sessão
-                            administrativa autenticada. Não compartilhe estes dados.
+                            {app.questionnaireSummary?.kind === "simple"
+                              ? "Contato e endereço são carregados apenas sob demanda. O cadastro simplificado não coleta CPF ou CNPJ."
+                              : "Dados do questionário histórico, incluindo documentos quando informados, são carregados apenas sob demanda."}{" "}
+                            Acesso exige sessão administrativa autenticada. Não compartilhe estes
+                            dados.
                           </p>
                         </div>
                         <button
@@ -1697,6 +1720,10 @@ export function AffiliateAdminPage() {
                             {mail ? mailLabels[mail.status] : "Sem registro de e-mail"}
                           </span>
                         </div>
+                        <AffiliateDecisionMailGuidance
+                          status={mail?.status}
+                          hasEmail={Boolean(app.email)}
+                        />
                       </div>
                     )}
                     <div className="border-t border-[#f3e7e3] px-6 py-4">

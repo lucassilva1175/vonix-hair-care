@@ -1,6 +1,17 @@
 # Vonix Hair — operação final do programa de candidaturas
 
-**Estado de segurança:** formulário de cinco etapas publicado, mas **inscrições fechadas por padrão**.
+**Atualização operacional de 26/11/2026:** o fluxo público ativo é o formulário simplificado de página única. O wizard de cinco etapas descrito nos registros históricos abaixo não é a inscrição pública atual. Abertura efetiva deve ser consultada no servidor; este manual não comprova que está aberta ou fechada no momento.
+
+## Fluxo atual (prevalece sobre os registros históricos abaixo)
+
+1. `/seja-afiliada`: inscrição gratuita de maiores de 18 anos, com declaração de maioridade e privacidade, nome completo, e-mail obrigatório, telefone, endereço com CEP, Instagram e seguidores; TikTok opcional. Não coleta CPF, CNPJ ou data de nascimento no formulário público simplificado. Validação real é `affiliateSimpleSchema`, não o texto da landing.
+2. Após confirmação de armazenamento, guardar o código privado de 32 caracteres; não é enviado por e-mail. Em resposta ambígua, consultar `/consultar-candidatura` pelo código da tentativa, sem divulgar o token. A prévia não envia registros.
+3. `/acesso-equipe-afiliadas` e `/admin/afiliadas`: acesso autenticado, triagem, cadastro manual com consentimento (e-mail opcional apenas no fluxo administrativo), aprovação ou recusa. Dados de contato e endereço completos somente sob demanda.
+4. No painel, a seção de notificações distingue decisão de comunicação: fila, processamento, aceite do provedor (não prova de entrega), falha e resultado incerto. Ausência de registro pode ocorrer em inscrições antigas ou sem e-mail. Não equivale a falha e não autoriza reenvio automático. O botão de reenviar acesso não envia a decisão. Concilie resultados incertos no provedor antes de qualquer comunicação; contato por WhatsApp somente após confirmar identidade, sem envio automático.
+5. A disponibilidade usa `affiliateOperatorIntakeEnabled`: gate legado integral OU controle privado de operador com confirmação registrada e requisitos técnicos de banco dedicado, governança, proxy, criptografia e segredo de tráfego. Não alterar flags, controles ou credenciais sem autorização operacional. O aceite do responsável não substitui revisão LGPD.
+6. Homologação de operação: verificar consulta pública e login da equipe com conta de teste autorizada; testar decisão, entrega de comunicação e recuperação em ambiente de homologação. Não usar candidaturas reais como dados de teste, nem declarar entrega de e-mail com base somente em CI.
+
+Os requisitos e procedimentos anteriores abaixo são mantidos para histórico, compatibilidade com registros antigos e segurança; instruções de CPF/CNPJ, wizard, convites e abertura exclusivamente por flag não descrevem necessariamente a jornada atual.
 **Escopo ativo:** exclusivamente candidatura, triagem e proteção dos dados enviados.
 Cupons, métricas, vendas e comissões pertencem a outro aplicativo e não devem
 ser adicionados a este projeto.

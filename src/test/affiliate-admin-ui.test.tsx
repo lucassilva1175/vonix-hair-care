@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { summarizeNotificationCoverage } from "@/lib/affiliate-notification-coverage";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const server = vi.hoisted(() => ({
@@ -540,6 +541,86 @@ describe("Vonix affiliate private panel", () => {
       }),
     );
     expect(uncertain).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("calculates global decision coverage without interpreting absent rows as failed delivery", () => {
+    const counts = { pendente: 1, processando: 1, enviado: 3, falhou: 1, incerto: 1 };
+    expect(summarizeNotificationCoverage({ aprovada: 8, recusada: 6 }, counts)).toEqual({
+      decided: 14,
+      recorded: 7,
+      missing: 7,
+      attention: 2,
+    });
+    expect(summarizeNotificationCoverage({ aprovada: 2, recusada: 2 }, counts)).toBeNull();
+    expect(summarizeNotificationCoverage({ aprovada: -1, recusada: 2 }, counts)).toBeNull();
+    expect(
+      summarizeNotificationCoverage(
+        { aprovada: 0, recusada: 0 },
+        { pendente: 0, processando: 0, enviado: 0, falhou: 0, incerto: 0 },
+      ),
+    ).toEqual({ decided: 0, recorded: 0, missing: 0, attention: 0 });
+  });
+
+  it("shows the reviewed decision queue and missing record guidance without sending email", async () => {
+    const missing = { ...candidate, status: "aprovada", reviewed_at: "2026-11-10T12:00:00Z" };
+    const noEmail = {
+      ...missing,
+      id: "00000000-0000-4000-8000-000000000003",
+      full_name: "Candidata sintética sem email",
+      email: null,
+    };
+    const reviewed = {
+      ...list([missing, noEmail]),
+      stats: { pendente: 0, aprovada: 8, recusada: 6 },
+      mailStats: { pendente: 0, processando: 0, enviado: 8, falhou: 0, incerto: 0 },
+    };
+    server.getAffiliateApplications.mockResolvedValue(reviewed);
+    render(<Page />);
+    const operations = await screen.findByTestId("affiliate-c174-notification-operations");
+    await within(operations).findByText("Sem registro na fila");
+    expect(within(operations).getByText("6")).toBeInTheDocument();
+    expect(within(operations).getByText(/Não significa falha de envio/)).toBeInTheDocument();
+    expect(screen.getAllByTestId("affiliate-c174-mail-guidance")[0]).toHaveTextContent(
+      "Reenviar acesso é um fluxo diferente",
+    );
+    expect(screen.getAllByTestId("affiliate-c174-mail-guidance")[1]).toHaveTextContent(
+      "Sem e-mail cadastrado",
+    );
+    fireEvent.click(
+      within(operations).getByRole("button", { name: "Ver todas as decisões analisadas" }),
+    );
+    await waitFor(() =>
+      expect(server.getAffiliateApplications).toHaveBeenLastCalledWith({
+        data: { status: "todas", page: 0, search: undefined, mailStatus: null },
+      }),
+    );
+    expect(server.resendAffiliateApplicantInvite).not.toHaveBeenCalled();
+    expect(server.reviewAffiliateApplication).not.toHaveBeenCalled();
+  });
+
+  it("does not show stale coverage after failed refresh or inconsistent totals", async () => {
+    const result = {
+      ...list(),
+      stats: { pendente: 1, aprovada: 2, recusada: 1 },
+      mailStats: { pendente: 0, processando: 0, enviado: 1, falhou: 0, incerto: 0 },
+    };
+    server.getAffiliateApplications.mockResolvedValue(result);
+    render(<Page />);
+    const operations = await screen.findByTestId("affiliate-c174-notification-operations");
+    await within(operations).findByText("Sem registro na fila");
+    server.getAffiliateApplications.mockRejectedValueOnce(new Error("synthetic network failure"));
+    fireEvent.click(within(operations).getByRole("button", { name: "Atualizar notificações" }));
+    expect(await within(operations).findByText(/Cobertura indisponível/)).toBeInTheDocument();
+    expect(within(operations).queryByText("Sem registro na fila")).not.toBeInTheDocument();
+    server.getAffiliateApplications.mockResolvedValueOnce({
+      ...result,
+      mailStats: { ...result.mailStats, enviado: 4 },
+    });
+    fireEvent.click(within(operations).getByRole("button", { name: "Atualizar notificações" }));
+    expect(
+      await within(operations).findByText(/Os totais não permitem conciliar/),
+    ).toBeInTheDocument();
+    expect(within(operations).queryByText("Sem registro na fila")).not.toBeInTheDocument();
   });
 
   it("mostra o diagnóstico privado sem expor segredos", async () => {
