@@ -598,6 +598,43 @@ describe("Vonix affiliate private panel", () => {
     expect(server.reviewAffiliateApplication).not.toHaveBeenCalled();
   });
 
+  it("C175 opens and clears the global missing-only filter without a textual search", async () => {
+    const reviewed = {
+      ...list([{ ...candidate, status: "aprovada", reviewed_at: "2026-11-10T12:00:00Z" }]),
+      stats: { pendente: 0, aprovada: 1, recusada: 0 },
+    };
+    server.getAffiliateApplications.mockResolvedValue(reviewed);
+    render(<Page />);
+    const operations = await screen.findByTestId("affiliate-c174-notification-operations");
+    await within(operations).findByText("Sem registro na fila");
+    fireEvent.change(screen.getByRole("textbox", { name: /Buscar por nome/ }), {
+      target: { value: "unsent draft" },
+    });
+    fireEvent.click(
+      within(operations).getByRole("button", { name: "Ver somente decisões sem registro" }),
+    );
+    await waitFor(() =>
+      expect(server.getAffiliateApplications).toHaveBeenLastCalledWith({
+        data: { status: "todas", page: 0, search: undefined, mailStatus: "sem_registro" },
+      }),
+    );
+    expect(await screen.findByText("Notificações — Sem registro")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /Buscar por nome/ })).not.toBeInTheDocument();
+    expect(
+      within(operations).getByRole("button", { name: "Ver somente decisões sem registro" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(
+      within(operations).getByRole("button", { name: "Ver somente decisões sem registro" }),
+    );
+    await waitFor(() =>
+      expect(server.getAffiliateApplications).toHaveBeenLastCalledWith({
+        data: { status: "todas", page: 0, search: undefined, mailStatus: null },
+      }),
+    );
+    expect(await screen.findByRole("textbox", { name: /Buscar por nome/ })).toHaveValue("");
+    expect(server.resendAffiliateApplicantInvite).not.toHaveBeenCalled();
+  });
+
   it("does not show stale coverage after failed refresh or inconsistent totals", async () => {
     const result = {
       ...list(),

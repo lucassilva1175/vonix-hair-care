@@ -336,6 +336,111 @@ describe("Acesso e decisões", () => {
     });
   });
 
+  it("C175 queries the global missing-notification queue with an exact count and no textual grammar", async () => {
+    const stats = {
+      pendente: 2,
+      aprovada: 45,
+      recusada: 8,
+      email_pendente: 1,
+      email_processando: 0,
+      email_enviado: 3,
+      email_falhou: 0,
+      email_incerto: 0,
+    };
+    const row = {
+      ...listedCandidate,
+      status: "aprovada",
+      reviewed_at: "2026-11-10T12:00:00Z",
+      vonix_affiliate_mail_outbox: null,
+      private_token: "DO_NOT_EXPOSE",
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json([row], { status: 206, headers: { "content-range": "40-40/41" } }),
+      )
+      .mockResolvedValueOnce(Response.json(stats));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await listAffiliateApplications({
+      status: "todas",
+      page: 1,
+      mailStatus: "sem_registro",
+    });
+    const url = new URL(String(fetchMock.mock.calls[0]![0]));
+    expect(url.pathname).toBe("/rest/v1/vonix_affiliate_applications");
+    expect(url.searchParams.get("status")).toBe("in.(aprovada,recusada)");
+    expect(url.searchParams.get("vonix_affiliate_mail_outbox")).toBe("is.null");
+    expect(url.searchParams.get("order")).toBe("created_at.desc,id.desc");
+    expect(url.searchParams.get("offset")).toBe("40");
+    expect(url.searchParams.get("limit")).toBe("40");
+    expect(fetchMock.mock.calls[0]![1]).toMatchObject({
+      method: "GET",
+      headers: { Prefer: "count=exact" },
+      redirect: "manual",
+    });
+    expect(result.total).toBe(41);
+    expect(result.applications[0]?.vonix_affiliate_mail_outbox).toEqual([]);
+    expect(JSON.stringify(result)).not.toContain("DO_NOT_EXPOSE");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("C175 handles a shrinking queue and rejects malformed counts, unexpected rows or unsafe filter combinations", async () => {
+    const stats = {
+      pendente: 1,
+      aprovada: 4,
+      recusada: 2,
+      email_pendente: 0,
+      email_processando: 0,
+      email_enviado: 0,
+      email_falhou: 0,
+      email_incerto: 0,
+    };
+    const row = {
+      ...listedCandidate,
+      status: "aprovada",
+      reviewed_at: "2026-11-10T12:00:00Z",
+      vonix_affiliate_mail_outbox: null,
+    };
+    const mock = vi.fn();
+    vi.stubGlobal("fetch", mock);
+    await expect(
+      listAffiliateApplications({ status: "pendente", page: 0, mailStatus: "sem_registro" }),
+    ).rejects.toThrow();
+    await expect(
+      listAffiliateApplications({
+        status: "todas",
+        page: 0,
+        mailStatus: "sem_registro",
+        search: "x),status.eq.pendente",
+      }),
+    ).rejects.toThrow();
+    expect(mock).not.toHaveBeenCalled();
+    mock
+      .mockResolvedValueOnce(
+        Response.json({ code: "PGRST103" }, { status: 416, headers: { "content-range": "*/6" } }),
+      )
+      .mockResolvedValueOnce(Response.json(stats));
+    expect(
+      await listAffiliateApplications({ status: "todas", page: 1, mailStatus: "sem_registro" }),
+    ).toMatchObject({ total: 6, applications: [] });
+    for (const response of [
+      Response.json([row], { headers: { "content-range": "0-0/*" } }),
+      Response.json([row], { headers: { "content-range": "1-1/1" } }),
+      Response.json([{ ...row, status: "pendente" }], { headers: { "content-range": "0-0/1" } }),
+      Response.json(
+        [{ ...row, vonix_affiliate_mail_outbox: { status: "enviado", sent_at: null } }],
+        { headers: { "content-range": "0-0/1" } },
+      ),
+      Response.json([row], { headers: { "content-range": "0-0/6" } }),
+      Response.json({ code: "PGRST103" }, { status: 416, headers: { "content-range": "*/6" } }),
+    ]) {
+      mock.mockResolvedValueOnce(response).mockResolvedValueOnce(Response.json(stats));
+      await expect(
+        listAffiliateApplications({ status: "todas", page: 0, mailStatus: "sem_registro" }),
+      ).rejects.toThrow();
+    }
+  });
+
   it("projects only approved triage fields, even if the privileged RPC returns extra PII", async () => {
     const raw = {
       ...listedCandidate,

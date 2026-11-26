@@ -10,6 +10,8 @@ export function AffiliateNotificationOperations({
   loading,
   onRefresh,
   onReviewAll,
+  onReviewMissing,
+  missingSelected,
 }: {
   decisions: Pick<Record<AffiliateStatus, number>, "aprovada" | "recusada">;
   mail: AffiliateMailCounters;
@@ -17,6 +19,8 @@ export function AffiliateNotificationOperations({
   loading: boolean;
   onRefresh: () => void;
   onReviewAll: () => void;
+  onReviewMissing: () => void;
+  missingSelected: boolean;
 }) {
   const summary = fresh ? summarizeNotificationCoverage(decisions, mail) : null;
   return (
@@ -70,14 +74,30 @@ export function AffiliateNotificationOperations({
             Sem registro pode incluir candidaturas antigas ou sem e-mail. Não significa falha de
             envio. Confira a decisão e o contato antes de qualquer comunicação.
           </p>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={onReviewAll}
-            className="mt-2 min-h-11 text-sm font-bold text-[#693440] underline underline-offset-4 focus-visible:outline-2"
-          >
-            Ver todas as decisões analisadas
-          </button>
+          <div className="mt-2 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={loading}
+              aria-pressed={missingSelected}
+              onClick={onReviewMissing}
+              className={
+                "min-h-11 rounded-full border px-4 text-sm font-bold focus-visible:outline-2 disabled:opacity-50 " +
+                (missingSelected
+                  ? "border-[#784254] bg-[#784254] text-white"
+                  : "border-[#cfaeb4] bg-white text-[#693440]")
+              }
+            >
+              Ver somente decisões sem registro
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onReviewAll}
+              className="mt-2 min-h-11 text-sm font-bold text-[#693440] underline underline-offset-4 focus-visible:outline-2"
+            >
+              Ver todas as decisões analisadas
+            </button>
+          </div>
         </>
       )}
     </div>

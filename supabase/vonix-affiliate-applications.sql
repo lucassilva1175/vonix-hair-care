@@ -240,9 +240,9 @@ language plpgsql security invoker set search_path = ''
 as $$
 begin
   update public.vonix_affiliate_mail_outbox
-     set status = 'incerto'
+     set status = 'incerto', uncertain = true
    where status = 'processando'
-     and created_at <= now() - interval '20 hours'
+     and (attempts >= 5 or created_at <= now() - interval '20 hours')
      and last_attempt_at < now() - interval '10 minutes';
 
   update public.vonix_affiliate_mail_outbox
@@ -266,7 +266,8 @@ begin
      for update skip locked
   ), claimed as (
     update public.vonix_affiliate_mail_outbox m
-       set status = 'processando', attempts = m.attempts + 1, last_attempt_at = now()
+       set status = 'processando', attempts = m.attempts + 1, last_attempt_at = now(),
+           uncertain = m.uncertain or m.status = 'processando'
       from candidate
      where m.id = candidate.id
      returning m.id, m.application_id, m.decision, m.attempts

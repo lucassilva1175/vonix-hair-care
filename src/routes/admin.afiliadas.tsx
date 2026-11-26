@@ -45,7 +45,7 @@ import type {
 import type {
   AffiliateMailCounters,
   AffiliateListStatus,
-  AffiliateMailStatus as AffiliateQueueFilter,
+  AffiliateMailFilter as AffiliateQueueFilter,
 } from "@/lib/affiliate-applications.server";
 
 export const Route = createFileRoute("/admin/afiliadas")({
@@ -779,6 +779,7 @@ export function AffiliateAdminPage() {
 
   async function applySearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (mailFilter === "sem_registro") return;
     await load(status, 0, searchText.trim());
   }
 
@@ -1220,6 +1221,12 @@ export function AffiliateAdminPage() {
                 fresh={notificationStatsFresh}
                 loading={loading}
                 onRefresh={() => void load(status, page, search, mailFilter)}
+                missingSelected={mailFilter === "sem_registro"}
+                onReviewMissing={() => {
+                  setSearchText("");
+                  setNotice("");
+                  void load("todas", 0, "", mailFilter === "sem_registro" ? null : "sem_registro");
+                }}
                 onReviewAll={() => {
                   setSearchText("");
                   setNotice("");
@@ -1234,33 +1241,43 @@ export function AffiliateAdminPage() {
                   {STATUS.find((item) => item.key === status)?.label}
                   {status === "todas" &&
                     mailFilter &&
-                    " — " + MAIL_STATUS.find((item) => item.key === mailFilter)?.label}
+                    " — " +
+                      (mailFilter === "sem_registro"
+                        ? "Sem registro"
+                        : MAIL_STATUS.find((item) => item.key === mailFilter)?.label)}
                 </h2>
                 <p className="mt-1 text-xs text-[#8c7778]">
                   {total} inscrição(ões) nesta consulta · {PER_PAGE} por página
                 </p>
               </div>
-              <form
-                onSubmit={(event) => void applySearch(event)}
-                className="flex w-full max-w-sm gap-2"
-              >
-                <input
-                  aria-label="Buscar por nome, Instagram, TikTok ou e-mail"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  placeholder="Nome, Instagram, TikTok ou e-mail"
-                  maxLength={70}
-                  className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#e8d7d4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-[#e8c9c5]"
-                />
-                <button
-                  aria-label="Buscar"
-                  type="submit"
-                  disabled={loading}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#693440] text-white"
+              {mailFilter === "sem_registro" ? (
+                <p className="max-w-sm text-xs leading-relaxed text-[#806a6c]">
+                  Fila global paginada, sem busca textual. Para buscar uma candidata pelo nome ou
+                  perfil, use todas as decisões analisadas.
+                </p>
+              ) : (
+                <form
+                  onSubmit={(event) => void applySearch(event)}
+                  className="flex w-full max-w-sm gap-2"
                 >
-                  <Search className="h-4 w-4" />
-                </button>
-              </form>
+                  <input
+                    aria-label="Buscar por nome, Instagram, TikTok ou e-mail"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    placeholder="Nome, Instagram, TikTok ou e-mail"
+                    maxLength={70}
+                    className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#e8d7d4] bg-white px-4 text-sm outline-none focus:ring-2 focus:ring-[#e8c9c5]"
+                  />
+                  <button
+                    aria-label="Buscar"
+                    type="submit"
+                    disabled={loading}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#693440] text-white"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </form>
+              )}
             </div>
 
             {notice && (
