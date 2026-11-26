@@ -432,6 +432,13 @@ export function AffiliateOfficialEvidenceLinks({
                         Explorar inspirações
                         <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
                       </a>
+                      <a
+                        href="#vitrine-afiliadas"
+                        className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
+                      >
+                        Ver vitrine atual
+                        <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+                      </a>
                     </div>
                   </article>
                 )}

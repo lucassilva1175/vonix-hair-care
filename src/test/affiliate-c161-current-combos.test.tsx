@@ -3,7 +3,8 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { renderToStaticMarkup } from "react-dom/server";
 import { existsSync } from "node:fs";
 import { AffiliateCurrentCombos } from "@/components/affiliate-current-combos";
-import { vitrine } from "@/lib/store";
+import { isProOnly, vitrine } from "@/lib/store";
+import packagingImages from "@/data/sacolinhas.json";
 const analytics = vi.hoisted(() => ({ track: vi.fn() }));
 vi.mock("@/lib/analytics", () => ({ track: analytics.track }));
 afterEach(() => {
@@ -79,6 +80,79 @@ describe("C161 current official combo catalog", () => {
     expect(screen.getAllByRole("link")).toHaveLength(6);
     fireEvent.click(screen.getByRole("button", { name: "Recolher combos" }));
     expect(screen.queryAllByRole("link")).toHaveLength(0);
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
+
+  it("explores every eligible individual product, classifies professional products and resets the tabs", () => {
+    render(<AffiliateCurrentCombos />);
+    fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+    const individual = vitrine.filter((p) => !p.slug.startsWith("combo-"));
+    fireEvent.click(screen.getByRole("button", { name: /Produtos individuais/ }));
+    expect(screen.getAllByRole("link")).toHaveLength(6);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ver todos os " + individual.length + " produtos" }),
+    );
+    const links = screen.getAllByRole("link");
+    expect(links).toHaveLength(individual.length);
+    expect(new Set(links.map((l) => l.getAttribute("href")))).toEqual(
+      new Set(individual.map((p) => "/produto/" + p.slug)),
+    );
+    for (const link of links) {
+      expect(existsSync("public" + link.querySelector("img")!.getAttribute("src"))).toBe(true);
+      const slug = link.getAttribute("href")!.split("/").pop()!;
+      expect(link.textContent?.includes("Uso profissional")).toBe(isProOnly(slug));
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    fireEvent.change(screen.getByLabelText("Orientação de uso"), {
+      target: { value: "professional" },
+    });
+    expect(screen.getAllByRole("link").map((l) => l.getAttribute("href"))).toEqual(
+      individual.filter((p) => isProOnly(p.slug)).map((p) => "/produto/" + p.slug),
+    );
+    fireEvent.change(screen.getByLabelText("Categoria"), { target: { value: "Química" } });
+    expect(
+      screen
+        .getAllByRole("link")
+        .every((l) =>
+          individual.some(
+            (p) => "/produto/" + p.slug === l.getAttribute("href") && p.categoryLabel === "Química",
+          ),
+        ),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Limpar todos os filtros" }));
+    expect(screen.getByRole("searchbox")).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: /Combos \(/ }));
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(screen.getAllByRole("link")).toHaveLength(6);
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
+
+  it("uses registered packaging photos only on demand, with original image fallback", () => {
+    render(<AffiliateCurrentCombos />);
+    fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+    fireEvent.click(screen.getByRole("button", { name: /Produtos individuais/ }));
+    const individual = vitrine.filter((p) => !p.slug.startsWith("combo-"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ver todos os " + individual.length + " produtos" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Ver embalagens disponíveis" }));
+    const links = screen.getAllByRole("link");
+    let tested = false;
+    for (const link of links) {
+      const slug = link.getAttribute("href")!.split("/").pop()!;
+      const img = link.querySelector("img")!;
+      const image = (packagingImages as Record<string, string>)[slug];
+      expect(img.getAttribute("src")).toBe(
+        image && slug !== "kit-monovonix" ? image : "/images/products/" + slug + "-480.webp",
+      );
+      expect(existsSync("public" + img.getAttribute("src"))).toBe(true);
+      if (!tested && image && slug !== "kit-monovonix") {
+        fireEvent.error(img);
+        expect(img.getAttribute("src")).toBe("/images/products/" + slug + "-480.webp");
+        tested = true;
+      }
+    }
+    expect(tested).toBe(true);
     expect(analytics.track).not.toHaveBeenCalled();
   });
 });
