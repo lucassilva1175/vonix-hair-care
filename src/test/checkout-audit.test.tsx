@@ -94,14 +94,17 @@ const fillContact = () => {
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
 };
 const showDelivery = async () => {
-  await screen.findByRole("button", { name: "Continuar para entrega" });
+  await screen.findByRole("button", { name: "Continuar para o pagamento" });
+  fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "teste@example.com" } });
+  expect(screen.getByRole("group", { name: "Entrega" })).toBeVisible();
+  expect(screen.getByLabelText("CPF")).not.toBeVisible();
+  expect(screen.getByTestId("checkout-total-topo")).toHaveTextContent("Frete grátis");
+};
+const showPayment = () => {
+  fireEvent.click(screen.getByRole("button", { name: "Continuar para o pagamento" }));
   fillContact();
   expect(screen.getByRole("group", { name: "Seus dados" })).toBeVisible();
-  expect(screen.getByLabelText("CEP")).not.toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
-  expect(screen.getByRole("group", { name: "Entrega" })).toBeVisible();
 };
-const showPayment = () => fireEvent.click(screen.getByRole("button", { name: "Continuar para finalização" }));
 const fill = async (proceed = true) => {
   await showDelivery();
   fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
@@ -201,9 +204,9 @@ describe("checkout auditado sem chamadas reais", () => {
   });
   it("CPF inválido não envia pagamento", async () => {
     render(<Checkout />);
-    fillContact();
+    await fill();
     fireEvent.change(screen.getByLabelText("CPF"), { target: { value: "11111111111" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
+    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
     expect(await screen.findByText("CPF inválido. Confira os números.")).toBeInTheDocument();
     expect(mocks.payment).not.toHaveBeenCalled();
   });
@@ -241,9 +244,9 @@ describe("checkout auditado sem chamadas reais", () => {
   });
   it("WhatsApp curto ou nome curto: avisa o campo certo, uma vez só, e não envia o pedido", async () => {
     render(<Checkout />);
-    fillContact();
+    await fill();
     fireEvent.change(screen.getByLabelText("WhatsApp com DDD"), { target: { value: "123" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
+    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
     const alerts = await screen.findAllByRole("alert");
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent("Digite seu WhatsApp com DDD");
@@ -253,7 +256,7 @@ describe("checkout auditado sem chamadas reais", () => {
     fireEvent.change(screen.getByLabelText("WhatsApp com DDD"), { target: { value: "31999999999" } });
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     fireEvent.change(screen.getByLabelText("Nome completo"), { target: { value: "Ab" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continuar para entrega" }));
+    fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
     expect(await screen.findByText("Digite seu nome completo.")).toBeInTheDocument();
     expect(mocks.payment).not.toHaveBeenCalled();
   });
@@ -451,17 +454,15 @@ describe("C86 — transparência dos centavos na parcela escolhida", () => {
 
 it("volta para corrigir a entrega, preserva os dados e exige frete antes de pagar", async () => {
   render(<Checkout />);
-  const timer = screen.getByTestId("checkout-timer");
-  expect(timer).toHaveTextContent("Você tem 15 minutos para finalizar com tranquilidade");
+  expect(screen.queryByRole("timer")).not.toBeInTheDocument();
   await fill();
-  expect(screen.getByTestId("checkout-timer")).toBe(timer);
-  expect(screen.getByText("Finalização")).toHaveAttribute("class", expect.stringContaining("font-semibold"));
+  const atual = screen.getByRole("list", { name: "Etapas do checkout" }).querySelector('[aria-current="step"]');
+  expect(atual).toHaveTextContent("Pagamento");
   expect(screen.getByLabelText("CEP")).not.toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Entrega" }));
   expect(screen.getByLabelText("CEP")).toHaveValue("30140-010");
   fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "123" } });
-  showPayment();
+  fireEvent.click(screen.getByRole("button", { name: "Continuar para o pagamento" }));
   expect(screen.queryByRole("button", { name: /Gerar Pix/ })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Dados" }));
   expect(screen.getByLabelText("Nome completo")).toHaveValue("Pessoa Teste");
 });

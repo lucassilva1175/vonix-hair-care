@@ -598,7 +598,7 @@ function ProductPage() {
                 className="rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5"
                 onClick={() => {
                   add();
-                  nav({ to: "/carrinho" });
+                  nav({ to: "/checkout" });
                 }}
               >
                 Comprar agora
