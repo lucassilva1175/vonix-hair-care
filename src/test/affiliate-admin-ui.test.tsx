@@ -1081,7 +1081,38 @@ describe("Vonix affiliate private panel", () => {
       expect(screen.queryByText("secret-candidate@example.invalid")).not.toBeInTheDocument();
       visibility = "visible";
       await act(async () => document.dispatchEvent(new Event("visibilitychange")));
-      expect(server.getAffiliateAdminSession).toHaveBeenCalledTimes(2);
+      await waitFor(() => expect(server.getAffiliateAdminSession).toHaveBeenCalledTimes(2));
+      expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("revalidates a background session even if visibility changes before the authorized listeners mount", async () => {
+    let visibility: DocumentVisibilityState = "hidden";
+    const spy = vi.spyOn(document, "visibilityState", "get").mockImplementation(() => visibility);
+    let finishRecheck!: (value: { authenticated: boolean }) => void;
+    server.getAffiliateAdminSession
+      .mockResolvedValueOnce({ authenticated: true })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishRecheck = resolve;
+          }),
+      );
+    server.getAffiliateApplications.mockImplementationOnce(async () => {
+      // The initial list starts inside the promise callback, before React
+      // commits the authorized state and attaches its visibility listener.
+      visibility = "visible";
+      document.dispatchEvent(new Event("visibilitychange"));
+      return list([candidate]);
+    });
+    try {
+      render(<Page />);
+      await waitFor(() => expect(server.getAffiliateAdminSession).toHaveBeenCalledTimes(2));
+      expect(await screen.findByText("Protegendo dados das candidatas")).toBeInTheDocument();
+      expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
+      await act(async () => finishRecheck({ authenticated: true }));
       expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
     } finally {
       spy.mockRestore();

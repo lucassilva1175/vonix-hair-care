@@ -247,6 +247,9 @@ export function AffiliateAdminPage() {
 
   // Versions prevent any in-flight list or decision from restoring private data after logout.
   const sessionVersion = useRef(0);
+  // Preserve the obligation to revalidate even if visibility changes before
+  // the authorized effect has installed its listeners.
+  const requiresVisibleSessionCheck = useRef(false);
   const loadVersion = useRef(0);
   // A preview becomes obsolete as soon as the operator changes either interval.
   const retentionVersion = useRef(0);
@@ -264,6 +267,7 @@ export function AffiliateAdminPage() {
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState !== "hidden") return;
+      requiresVisibleSessionCheck.current = true;
       legacyLoginEpoch.current++;
       readinessVersion.current++;
       retentionVersion.current++;
@@ -284,6 +288,7 @@ export function AffiliateAdminPage() {
   }, []);
 
   function clearPrivateData() {
+    requiresVisibleSessionCheck.current = false;
     setSessionRechecking(false);
     setSessionRecheckFailed(false);
     setSessionRecheckRetry(0);
@@ -391,7 +396,10 @@ export function AffiliateAdminPage() {
       // A background tab may finish its initial list request before the
       // visibility listener is installed. Never expose candidate details
       // until the tab becomes visible and its signed session is revalidated.
-      if (document.visibilityState === "hidden") setSessionRechecking(true);
+      if (document.visibilityState === "hidden") {
+        requiresVisibleSessionCheck.current = true;
+        setSessionRechecking(true);
+      }
       setStatus(nextStatus);
       setMailFilter(nextMailFilter);
       setPage(nextPage);
@@ -412,10 +420,12 @@ export function AffiliateAdminPage() {
     let active = true;
     const sessionRef = sessionVersion;
     const loadRef = loadVersion;
+    if (document.visibilityState === "hidden") requiresVisibleSessionCheck.current = true;
     void getAffiliateAdminSession()
       .then(async (session) => {
         if (active && session.authenticated) {
-          if (document.visibilityState === "hidden") setSessionRechecking(true);
+          if (document.visibilityState === "hidden") requiresVisibleSessionCheck.current = true;
+          if (requiresVisibleSessionCheck.current) setSessionRechecking(true);
           setAuthorized(true);
           await load("pendente", 0, "");
         }
@@ -451,6 +461,7 @@ export function AffiliateAdminPage() {
       const epoch = visibilityVersion;
       // Never render applicant PII before an active tab has revalidated the
       // signed cookie. A transient network failure must leave data concealed.
+      requiresVisibleSessionCheck.current = true;
       setSessionRechecking(true);
       setSessionRecheckFailed(false);
       try {
@@ -459,6 +470,7 @@ export function AffiliateAdminPage() {
         if (!session.authenticated) {
           sessionExpired("Acesso negado. Faça login novamente.");
         } else if (document.visibilityState === "visible") {
+          requiresVisibleSessionCheck.current = false;
           setSessionRechecking(false);
         }
       } catch {
@@ -478,6 +490,7 @@ export function AffiliateAdminPage() {
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
         visibilityVersion++;
+        requiresVisibleSessionCheck.current = true;
         inFlight = false;
         privateDetailVersion.current++;
         setPrivateDetail(null);
@@ -491,7 +504,8 @@ export function AffiliateAdminPage() {
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
-    if (sessionRecheckRetry > 0) void verifyResumedSession();
+    if (document.visibilityState === "visible" && requiresVisibleSessionCheck.current)
+      void verifyResumedSession();
     return () => {
       active = false;
       window.removeEventListener("focus", onFocus);
@@ -517,6 +531,9 @@ export function AffiliateAdminPage() {
         setError(result.reason);
         return;
       }
+      // This login completed while visible and within the current login epoch.
+      requiresVisibleSessionCheck.current = false;
+      setSessionRechecking(false);
       setAuthorized(true);
       await load("pendente", 0, "");
     } catch {
