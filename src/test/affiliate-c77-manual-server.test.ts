@@ -174,3 +174,33 @@ describe("C77: registro manual isolado de convite e email", () => {
     expect(JSON.stringify(result)).not.toContain("secret private record");
   });
 });
+
+it("reconciles an exact manually issued private receipt without confirming altered data", async () => {
+  const trackingCode = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+  const input = affiliateManualSchema.parse({ ...valid, trackingCode });
+  let stored: Record<string, unknown> | undefined;
+  const fetcher = vi.fn(async (url: string, init: RequestInit) => {
+    if (init.method === "POST") {
+      const incoming = JSON.parse(String(init.body)) as Record<string, unknown>;
+      if (!stored) {
+        stored = incoming;
+        return new Response(null, { status: 201 });
+      }
+      return new Response(JSON.stringify({ code: "23505", message: "duplicate" }), { status: 409 });
+    }
+    expect(String(url)).toContain(
+      "status_token_hash=eq." + createHash("sha256").update(trackingCode).digest("hex"),
+    );
+    return new Response(JSON.stringify([stored]), { status: 200 });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  expect(await createManualAffiliateApplication(input)).toEqual({ ok: true, trackingCode });
+  expect(await createManualAffiliateApplication(input)).toEqual({ ok: true, trackingCode });
+  const changed = affiliateManualSchema.parse({
+    ...input,
+    candidate: { ...input.candidate, city: "Outra Cidade" },
+  });
+  expect(await createManualAffiliateApplication(changed)).toMatchObject({ ok: false });
+  expect(fetcher).toHaveBeenCalledTimes(5);
+  expect(stored).not.toHaveProperty("trackingCode");
+});

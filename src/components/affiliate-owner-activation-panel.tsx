@@ -16,6 +16,45 @@ function pageHidden() {
   return typeof document !== "undefined" && document.visibilityState === "hidden";
 }
 
+function validPrivateActivationLink(link: string): boolean {
+  try {
+    const url = new URL(link);
+    return (
+      url.origin === "https://vonixhair.com" &&
+      url.pathname === "/acesso-equipe-afiliadas" &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      /^#vonix_invite=[A-Za-z0-9_-]{32,256}$/.test(url.hash)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function validTemporaryPassword(password: unknown): password is string {
+  return (
+    typeof password === "string" &&
+    password.length >= 12 &&
+    password.length <= 256 &&
+    !/[\r\n]/.test(password)
+  );
+}
+
+async function waitForOwnerRead<T>(request: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("owner-read-timeout")), 20000);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 const senderMessages: Record<string, string> = {
   verified:
     "O domínio de envio está verificado no Resend. Isso NÃO comprova a entrega na caixa de entrada.",
@@ -55,6 +94,8 @@ export function AffiliateOwnerActivationPanel() {
   const [initialError, setInitialError] = useState(false);
   const [initialRetry, setInitialRetry] = useState(0);
   const copyingLink = useRef(false);
+  const actionInFlight = useRef(false);
+  const senderInFlight = useRef(false);
   const visibilityEpoch = useRef(0);
   // Invalidate link generation when the intended recipient is unconfirmed.
   const recipientConfirmationEpoch = useRef(0);
@@ -83,6 +124,8 @@ export function AffiliateOwnerActivationPanel() {
       // A native share or clipboard Promise can remain unsettled while hidden.
       // Release its lock; callbacks from the earlier epoch cannot restore it.
       copyingLink.current = false;
+      actionInFlight.current = false;
+      senderInFlight.current = false;
       setGenerated(null);
       setGeneratedPassword(null);
       setConfirmedPrivateRecipient(false);
@@ -105,7 +148,7 @@ export function AffiliateOwnerActivationPanel() {
       return () => {
         active = false;
       };
-    void getPendingAffiliateOwnerActivations()
+    void waitForOwnerRead(getPendingAffiliateOwnerActivations())
       .then((result) => {
         if (!active || epoch !== visibilityEpoch.current || pageHidden()) return;
         if (result.ok) {
@@ -154,12 +197,23 @@ export function AffiliateOwnerActivationPanel() {
     ) : null;
 
   async function verifySenderWithoutEmail() {
-    if (busy || senderBusy || generated || generatedBatch.length || pageHidden()) return;
+    if (
+      busy ||
+      senderBusy ||
+      actionInFlight.current ||
+      senderInFlight.current ||
+      generated ||
+      generatedPassword ||
+      generatedBatch.length ||
+      pageHidden()
+    )
+      return;
+    senderInFlight.current = true;
     const epoch = visibilityEpoch.current;
     setSenderBusy(true);
     setSenderStatus(null);
     try {
-      const result = await inspectAffiliateOwnerSenderStatus();
+      const result = await waitForOwnerRead(inspectAffiliateOwnerSenderStatus());
       // A pending Resend request cannot restore an old diagnostic after
       // owner permissions are refreshed on return from a hidden tab.
       if (epoch !== visibilityEpoch.current || pageHidden()) return;
@@ -173,20 +227,24 @@ export function AffiliateOwnerActivationPanel() {
       if (epoch === visibilityEpoch.current && !pageHidden())
         setSenderStatus("provider-unavailable");
     } finally {
-      if (epoch === visibilityEpoch.current && !pageHidden()) setSenderBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        senderInFlight.current = false;
+        setSenderBusy(false);
+      }
     }
   }
 
   async function reload() {
-    if (generatedBatch.length) return;
-    if (busy || pageHidden()) return;
+    if (generatedBatch.length || generated || generatedPassword) return;
+    if (busy || actionInFlight.current || senderInFlight.current || pageHidden()) return;
     const epoch = visibilityEpoch.current;
+    actionInFlight.current = true;
     setBusy(true);
     setGenerated(null);
     setMessage("");
     setFailure("");
     try {
-      const result = await getPendingAffiliateOwnerActivations();
+      const result = await waitForOwnerRead(getPendingAffiliateOwnerActivations());
       if (epoch !== visibilityEpoch.current || pageHidden()) return;
       if (!result.ok) {
         setAvailable(false);
@@ -203,7 +261,10 @@ export function AffiliateOwnerActivationPanel() {
       setOwners(null);
       setInitialError(true);
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        actionInFlight.current = false;
+        setBusy(false);
+      }
     }
   }
 
@@ -211,6 +272,8 @@ export function AffiliateOwnerActivationPanel() {
     if (
       !confirmedPrivateRecipient ||
       busy ||
+      actionInFlight.current ||
+      senderInFlight.current ||
       generated ||
       generatedPassword ||
       generatedBatch.length ||
@@ -219,6 +282,7 @@ export function AffiliateOwnerActivationPanel() {
       return;
     const epoch = visibilityEpoch.current;
     const confirmedEpoch = recipientConfirmationEpoch.current;
+    actionInFlight.current = true;
     setBusy(true);
     setMessage("");
     setFailure("");
@@ -234,6 +298,12 @@ export function AffiliateOwnerActivationPanel() {
         setFailure(result.reason);
         return;
       }
+      if (result.recipient !== email || !validPrivateActivationLink(result.link)) {
+        setFailure(
+          "O destinatário ou o link recebido não pôde ser validado. Confira a conta antes de solicitar outro acesso.",
+        );
+        return;
+      }
       setGenerated({ email: result.recipient, link: result.link });
       setMessage(
         "Link individual gerado. Copie ou compartilhe somente com o destinatário autorizado.",
@@ -242,14 +312,26 @@ export function AffiliateOwnerActivationPanel() {
       if (epoch === visibilityEpoch.current && !pageHidden())
         setFailure("Não foi possível gerar o link. Tente novamente após conferir a sessão.");
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        actionInFlight.current = false;
+        setBusy(false);
+      }
     }
   }
 
   async function sendInvitationEmail(email: string) {
     if (generatedBatch.length) return;
-    if (busy || generated || generatedPassword || pageHidden()) return;
+    if (
+      busy ||
+      actionInFlight.current ||
+      senderInFlight.current ||
+      generated ||
+      generatedPassword ||
+      pageHidden()
+    )
+      return;
     const epoch = visibilityEpoch.current;
+    actionInFlight.current = true;
     setBusy(true);
     setMessage("");
     setFailure("");
@@ -269,13 +351,18 @@ export function AffiliateOwnerActivationPanel() {
       if (epoch === visibilityEpoch.current && !pageHidden())
         setFailure("Não foi possível solicitar o e-mail. Verifique sua conexão.");
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        actionInFlight.current = false;
+        setBusy(false);
+      }
     }
   }
 
   async function generateTemporaryPassword(email: string) {
     if (
       busy ||
+      actionInFlight.current ||
+      senderInFlight.current ||
       generated ||
       generatedPassword ||
       generatedBatch.length ||
@@ -285,6 +372,7 @@ export function AffiliateOwnerActivationPanel() {
       return;
     const epoch = visibilityEpoch.current;
     const confirmedEpoch = recipientConfirmationEpoch.current;
+    actionInFlight.current = true;
     setBusy(true);
     setMessage("");
     setFailure("");
@@ -300,6 +388,12 @@ export function AffiliateOwnerActivationPanel() {
         setFailure(response.reason);
         return;
       }
+      if (response.email !== email || !validTemporaryPassword(response.temporaryPassword)) {
+        setFailure(
+          "A resposta do provisionamento não corresponde ao destinatário. Não compartilhe credenciais e confira a conta.",
+        );
+        return;
+      }
       setGeneratedPassword({ email: response.email, password: response.temporaryPassword });
       setOwners((current) => current?.filter((person) => person.email !== response.email) ?? null);
       setMessage(
@@ -311,7 +405,10 @@ export function AffiliateOwnerActivationPanel() {
           "Falha no provisionamento. Verifique a sessão administrativa e tente novamente.",
         );
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        actionInFlight.current = false;
+        setBusy(false);
+      }
     }
   }
 
@@ -319,6 +416,8 @@ export function AffiliateOwnerActivationPanel() {
   async function regenerateThreeOwnerPasswords() {
     if (
       busy ||
+      actionInFlight.current ||
+      senderInFlight.current ||
       generated ||
       generatedPassword ||
       generatedBatch.length ||
@@ -332,6 +431,7 @@ export function AffiliateOwnerActivationPanel() {
       epoch === visibilityEpoch.current &&
       confirmedEpoch === recipientConfirmationEpoch.current &&
       !pageHidden();
+    actionInFlight.current = true;
     setBusy(true);
     setFailure("");
     setMessage("");
@@ -346,7 +446,11 @@ export function AffiliateOwnerActivationPanel() {
         if (!current()) return;
         const response = await provisionPendingAffiliateOwnerTemporaryPassword({ data: { email } });
         if (!current()) return;
-        if (!response.ok || response.email !== email) {
+        if (
+          !response.ok ||
+          response.email !== email ||
+          !validTemporaryPassword(response.temporaryPassword)
+        ) {
           setFailure(
             "Não foi possível gerar todas as senhas. Copie primeiro os acessos que aparecerem; " +
               "depois recupere individualmente os restantes.",
@@ -371,14 +475,27 @@ export function AffiliateOwnerActivationPanel() {
         );
       }
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        actionInFlight.current = false;
+        setBusy(false);
+      }
     }
   }
 
   async function copyBatchCredentials() {
-    if (busy || !generatedBatch.length || copyingLink.current || pageHidden()) return;
+    if (
+      busy ||
+      actionInFlight.current ||
+      !confirmedPrivateRecipient ||
+      !generatedBatch.length ||
+      copyingLink.current ||
+      pageHidden()
+    )
+      return;
     const epoch = visibilityEpoch.current;
+    const confirmedEpoch = recipientConfirmationEpoch.current;
     copyingLink.current = true;
+    actionInFlight.current = true;
     setBusy(true);
     setFailure("");
     try {
@@ -386,43 +503,73 @@ export function AffiliateOwnerActivationPanel() {
         .map(({ email, password }) => email + "\nSenha provisória: " + password)
         .join("\n\n");
       await navigator.clipboard.writeText(payload);
-      if (epoch !== visibilityEpoch.current || pageHidden()) return;
+      if (
+        epoch !== visibilityEpoch.current ||
+        confirmedEpoch !== recipientConfirmationEpoch.current ||
+        pageHidden()
+      )
+        return;
       setGeneratedBatch([]);
       setMessage(
         "Acessos copiados. Cole-os somente em um local privado e envie cada senha " +
           "ao destinatário correto. Apague a cópia quando terminar.",
       );
     } catch {
-      if (epoch === visibilityEpoch.current && !pageHidden())
+      if (
+        epoch === visibilityEpoch.current &&
+        confirmedEpoch === recipientConfirmationEpoch.current &&
+        !pageHidden()
+      )
         setFailure("Cópia bloqueada. Selecione as credenciais exibidas para copiar manualmente.");
     } finally {
       if (epoch === visibilityEpoch.current) {
         copyingLink.current = false;
+        actionInFlight.current = false;
         setBusy(false);
       }
     }
   }
 
   async function copyTemporaryPassword() {
-    if (!generatedPassword || busy || pageHidden() || copyingLink.current) return;
+    if (
+      !generatedPassword ||
+      !confirmedPrivateRecipient ||
+      busy ||
+      actionInFlight.current ||
+      pageHidden() ||
+      copyingLink.current
+    )
+      return;
     const epoch = visibilityEpoch.current;
+    const confirmedEpoch = recipientConfirmationEpoch.current;
     copyingLink.current = true;
+    actionInFlight.current = true;
     setBusy(true);
     try {
       await navigator.clipboard.writeText(generatedPassword.password);
-      if (epoch !== visibilityEpoch.current || pageHidden()) return;
+      if (
+        epoch !== visibilityEpoch.current ||
+        confirmedEpoch !== recipientConfirmationEpoch.current ||
+        pageHidden()
+      )
+        return;
       setGeneratedPassword(null);
       setMessage(
         "Senha provisória copiada. Entregue-a em uma mensagem privada ao titular; ela deve ser trocada no primeiro login.",
       );
     } catch {
-      if (epoch === visibilityEpoch.current && !pageHidden())
+      if (
+        epoch === visibilityEpoch.current &&
+        confirmedEpoch === recipientConfirmationEpoch.current &&
+        !pageHidden()
+      )
         setFailure(
           "A cópia foi bloqueada pelo navegador. Selecione a senha exibida e copie manualmente.",
         );
     } finally {
       if (epoch === visibilityEpoch.current) {
         copyingLink.current = false;
+        actionInFlight.current = false;
         setBusy(false);
       }
     }
@@ -435,6 +582,8 @@ export function AffiliateOwnerActivationPanel() {
       !generated ||
       !confirmedPrivateRecipient ||
       busy ||
+      actionInFlight.current ||
+      pageHidden() ||
       copyingLink.current ||
       typeof navigator.share !== "function"
     )
@@ -442,6 +591,7 @@ export function AffiliateOwnerActivationPanel() {
     const epoch = visibilityEpoch.current;
     const confirmedEpoch = recipientConfirmationEpoch.current;
     copyingLink.current = true;
+    actionInFlight.current = true;
     setBusy(true);
     setFailure("");
     try {
@@ -476,17 +626,26 @@ export function AffiliateOwnerActivationPanel() {
       // Old callbacks must not release a newer copy/share operation.
       if (epoch === visibilityEpoch.current) {
         copyingLink.current = false;
+        actionInFlight.current = false;
         setBusy(false);
       }
     }
   }
 
   async function copy() {
-    if (!generated || !confirmedPrivateRecipient || busy || copyingLink.current || pageHidden())
+    if (
+      !generated ||
+      !confirmedPrivateRecipient ||
+      busy ||
+      actionInFlight.current ||
+      copyingLink.current ||
+      pageHidden()
+    )
       return;
     const epoch = visibilityEpoch.current;
     const confirmedEpoch = recipientConfirmationEpoch.current;
     copyingLink.current = true;
+    actionInFlight.current = true;
     setBusy(true);
     try {
       await navigator.clipboard.writeText(generated.link);
@@ -513,6 +672,7 @@ export function AffiliateOwnerActivationPanel() {
       // Old callbacks must not release a newer copy/share operation.
       if (epoch === visibilityEpoch.current) {
         copyingLink.current = false;
+        actionInFlight.current = false;
         setBusy(false);
       }
     }
@@ -533,7 +693,12 @@ export function AffiliateOwnerActivationPanel() {
         </div>
         <button
           type="button"
-          disabled={busy}
+          disabled={
+            busy ||
+            senderBusy ||
+            Boolean(generated || generatedPassword) ||
+            generatedBatch.length > 0
+          }
           onClick={() => void reload()}
           className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d9c1c5] px-4 text-sm font-semibold disabled:opacity-50"
         >
@@ -583,6 +748,7 @@ export function AffiliateOwnerActivationPanel() {
                 // Remove the unused bearer link from the UI immediately;
                 // checking the box again requires generating a fresh link.
                 setGenerated(null);
+                setGeneratedPassword(null);
                 setMessage("");
                 setFailure("");
               }

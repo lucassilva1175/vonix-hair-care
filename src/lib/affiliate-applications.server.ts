@@ -224,6 +224,40 @@ export async function createAffiliateApplication(raw: AffiliateApplicationInput)
   return { ok: true as const };
 }
 
+async function matchingSimplePrivateReceipt(
+  statusTokenHash: string,
+  instagram: string,
+  data: AffiliateSimpleInput,
+): Promise<boolean> {
+  const prior = await requestSupabase(
+    "vonix_affiliate_applications?select=instagram_url,status_token_hash,questionnaire_encrypted" +
+      "&status_token_hash=eq." +
+      encodeURIComponent(statusTokenHash) +
+      "&limit=1",
+    { method: "GET" },
+  );
+  if (!prior.ok) throw new Error("Private receipt verification unavailable.");
+  const matching = z
+    .array(
+      z.object({
+        instagram_url: z.string().max(400),
+        status_token_hash: z.string().regex(/^[a-f0-9]{64}$/),
+        questionnaire_encrypted: z
+          .string()
+          .min(1)
+          .max(MAX_AFFILIATE_QUESTIONNAIRE_CIPHERTEXT_LENGTH),
+      }),
+    )
+    .max(1)
+    .parse(await prior.json());
+  return (
+    matching.length === 1 &&
+    matching[0]!.status_token_hash === statusTokenHash &&
+    normalizedProfile(matching[0]!.instagram_url) === normalizedProfile(instagram) &&
+    matchesEncryptedSimpleAffiliateApplication(matching[0]!.questionnaire_encrypted, data)
+  );
+}
+
 /**
  * One-page enrollment: no fictitious email, DOB or hair type is generated.
  * Phone and full address live only inside authenticated encrypted ciphertext.
@@ -257,36 +291,8 @@ export async function createSimpleAffiliateApplication(raw: AffiliateSimpleInput
   // profile alone is NEVER sufficient proof and must not reveal a receipt.
   if (response.status === 409) {
     if (data.trackingCode) {
-      const prior = await requestSupabase(
-        "vonix_affiliate_applications?select=instagram_url,status_token_hash,questionnaire_encrypted" +
-          "&status_token_hash=eq." +
-          encodeURIComponent(statusTokenHash) +
-          "&limit=1",
-        { method: "GET" },
-      );
-      if (!prior.ok) throw new Error("Private receipt verification unavailable.");
-      const matching = z
-        .array(
-          z.object({
-            instagram_url: z.string().max(400),
-            status_token_hash: z.string().regex(/^[a-f0-9]{64}$/),
-            questionnaire_encrypted: z
-              .string()
-              .min(1)
-              .max(MAX_AFFILIATE_QUESTIONNAIRE_CIPHERTEXT_LENGTH),
-          }),
-        )
-        .max(1)
-        .parse(await prior.json());
-      if (
-        matching.length === 1 &&
-        matching[0]!.status_token_hash === statusTokenHash &&
-        normalizedProfile(matching[0]!.instagram_url) ===
-          normalizedProfile(socials.instagram_url) &&
-        matchesEncryptedSimpleAffiliateApplication(matching[0]!.questionnaire_encrypted, data)
-      ) {
+      if (await matchingSimplePrivateReceipt(statusTokenHash, socials.instagram_url, data))
         return { ok: true as const, trackingCode };
-      }
     }
     return {
       ok: false as const,
@@ -303,10 +309,14 @@ export async function createSimpleAffiliateApplication(raw: AffiliateSimpleInput
  * A candidate enters moderation as "pendente"; approval stays a separate action.
  * A missing email is explicitly represented by SQL NULL, not a fake address. */
 export async function createManualAffiliateApplication(raw: AffiliateManualInput) {
-  const { candidate } = affiliateManualSchema.parse(raw);
-  const completeCandidate = affiliateSimpleBaseSchema.parse({ ...candidate, website: "" });
+  const { candidate, trackingCode: requestedCode } = affiliateManualSchema.parse(raw);
+  const completeCandidate = affiliateSimpleBaseSchema.parse({
+    ...candidate,
+    website: "",
+    trackingCode: requestedCode,
+  });
   const socials = simpleAffiliateSocialUrls(completeCandidate);
-  const trackingCode = randomBytes(24).toString("base64url");
+  const trackingCode = requestedCode ?? randomBytes(24).toString("base64url");
   const statusTokenHash = createHash("sha256").update(trackingCode).digest("hex");
   const record = {
     status_token_hash: statusTokenHash,
@@ -329,6 +339,15 @@ export async function createManualAffiliateApplication(raw: AffiliateManualInput
     body: JSON.stringify(record),
   });
   if (response.status === 409) {
+    if (
+      requestedCode &&
+      (await matchingSimplePrivateReceipt(
+        statusTokenHash,
+        socials.instagram_url,
+        completeCandidate,
+      ))
+    )
+      return { ok: true as const, trackingCode };
     let constraint = "";
     try {
       const error: unknown = await response.json();

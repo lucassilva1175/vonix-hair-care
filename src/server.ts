@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { blockedResponse, isBlockedCountry } from "./lib/bot-block";
+import { applyAffiliatePrivatePageHeaders } from "./lib/affiliate-private-page-headers";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -48,13 +49,15 @@ function isH3SwallowedErrorBody(body: string): boolean {
 // Impede que o site seja embutido em sites de terceiros (clique escondido) e limita recursos do aparelho; não afeta GTM, Clarity, Pixel nem a Appmax.
 // A prévia do editor da Lovable embute o site, por isso o domínio dela fica liberado (e não se usa X-Frame-Options, que não aceita lista).
 const SECURITY_HEADERS: Record<string, string> = {
-  "Content-Security-Policy": "frame-ancestors 'self' https://lovable.dev https://*.lovable.dev https://*.lovable.app https://*.lovableproject.com",
+  "Content-Security-Policy":
+    "frame-ancestors 'self' https://lovable.dev https://*.lovable.dev https://*.lovable.app https://*.lovableproject.com",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(self)",
 };
 
 function withSecurityHeaders(response: Response): Response {
   const out = new Response(response.body, response);
-  for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS))
+    if (!out.headers.has(k)) out.headers.set(k, v);
   return out;
 }
 
@@ -64,13 +67,19 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      return applyAffiliatePrivatePageHeaders(
+        request,
+        withSecurityHeaders(await normalizeCatastrophicSsrResponse(response)),
+      );
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return applyAffiliatePrivatePageHeaders(
+        request,
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
     }
   },
 };

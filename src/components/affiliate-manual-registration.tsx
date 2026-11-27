@@ -3,6 +3,16 @@ import { ClipboardCopy, UserRoundPlus } from "lucide-react";
 import { createManualAffiliateAdmin } from "@/lib/affiliate-functions";
 import { affiliateManualSchema } from "@/lib/affiliate-simple";
 import { WIZARD_BRAZIL_STATES } from "@/lib/affiliate-wizard";
+import { downloadAffiliatePrivateReceipt } from "@/lib/affiliate-private-receipt";
+
+function issueManualReceipt() {
+  const bytes = new Uint8Array(24);
+  window.crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
 
 function registrationTabHidden() {
   return document.visibilityState === "hidden";
@@ -54,30 +64,53 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
   const [error, setError] = useState("");
   const [receipt, setReceipt] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [pendingReceipt, setPendingReceipt] = useState("");
+  const [revealed, setRevealed] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const attempt = useRef<{ code: string; payload: string } | null>(null);
+  const copyingRef = useRef(false);
+  const copyVersion = useRef(0);
   const inFlight = useRef(false);
   const epoch = useRef(0);
 
   useEffect(() => {
+    const copyRef = copyVersion;
     const hidden = () => {
       if (document.visibilityState === "hidden") {
         epoch.current += 1;
+        copyVersion.current++;
+        copyingRef.current = false;
+        setCopying(false);
         setReceipt("");
-        setFeedback("");
+        setPendingReceipt("");
+        setRevealed(false);
+        setSaved(false);
+        setValues(empty);
+        setConsent(false);
+        attempt.current = null;
+        setFeedback(
+          inFlight.current
+            ? "O cadastro estava em andamento. Confira a lista antes de iniciar outra inscrição."
+            : "",
+        );
+        setError("");
       }
     };
     document.addEventListener("visibilitychange", hidden);
     return () => {
       epoch.current += 1;
+      copyRef.current++;
       document.removeEventListener("visibilitychange", hidden);
     };
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (inFlight.current || registrationTabHidden()) return;
+    if (inFlight.current || registrationTabHidden() || receipt) return;
     setError("");
     setFeedback("");
-    setReceipt("");
+    setRevealed(false);
     if (!values.instagramFollowers.trim()) {
       setError("Informe a quantidade de seguidores no Instagram (pode ser zero).");
       return;
@@ -96,22 +129,47 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
       setError(parsed.error.issues[0]?.message ?? "Confira os dados da candidata.");
       return;
     }
+    const payload = JSON.stringify(parsed.data);
+    if (attempt.current && attempt.current.payload !== payload) {
+      setError(
+        "Os dados mudaram desde a tentativa anterior. Confira o código existente antes de descartar a tentativa.",
+      );
+      return;
+    }
+    try {
+      if (!attempt.current) attempt.current = { code: issueManualReceipt(), payload };
+    } catch {
+      setError("Não foi possível criar um código privado seguro neste navegador.");
+      return;
+    }
+    const code = attempt.current.code;
+    setPendingReceipt(code);
+    setSaved(false);
     const requestEpoch = ++epoch.current;
     inFlight.current = true;
     setBusy(true);
     try {
-      const result = await createManualAffiliateAdmin({ data: parsed.data });
-      if (requestEpoch !== epoch.current || registrationTabHidden()) {
-        setFeedback(
-          "O resultado chegou com a aba inativa. Confira a lista antes de cadastrar novamente.",
-        );
-        return;
-      }
+      const result = await createManualAffiliateAdmin({
+        data: { ...parsed.data, trackingCode: code },
+      });
+      if (requestEpoch !== epoch.current || registrationTabHidden()) return;
       if (!result.ok) {
         setError(result.reason);
         return;
       }
-      setReceipt(result.trackingCode);
+      if (result.trackingCode !== code) {
+        setError(
+          "O cadastro não pôde ser confirmado com o mesmo código. Consulte a tentativa antes de reenviar.",
+        );
+        return;
+      }
+      copyVersion.current++;
+      copyingRef.current = false;
+      setCopying(false);
+      attempt.current = null;
+      setPendingReceipt("");
+      setReceipt(code);
+      setSaved(false);
       setValues(empty);
       setConsent(false);
       setFeedback("Candidatura registrada como pendente. Nenhum convite ou e-mail foi enviado.");
@@ -129,13 +187,57 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
   }
 
   async function copyCode() {
-    if (!receipt || registrationTabHidden()) return;
+    const code = receipt || pendingReceipt;
+    if (!code || copyingRef.current || registrationTabHidden()) return;
+    const requestEpoch = epoch.current;
+    const version = ++copyVersion.current;
+    copyingRef.current = true;
+    setCopying(true);
     try {
-      await navigator.clipboard.writeText(receipt);
-      setFeedback("Código copiado. Envie apenas à própria candidata por um canal privado.");
+      await navigator.clipboard.writeText(code);
+      if (
+        epoch.current === requestEpoch &&
+        version === copyVersion.current &&
+        !registrationTabHidden()
+      )
+        setFeedback("Código copiado. Envie apenas à própria candidata por um canal privado.");
     } catch {
-      setFeedback("Não foi possível copiar. Selecione o código e anote de forma privada.");
+      if (
+        epoch.current === requestEpoch &&
+        version === copyVersion.current &&
+        !registrationTabHidden()
+      )
+        setFeedback("Não foi possível copiar. Revele o código e anote de forma privada.");
+    } finally {
+      if (version === copyVersion.current) {
+        copyingRef.current = false;
+        setCopying(false);
+      }
     }
+  }
+
+  function downloadCode() {
+    if (registrationTabHidden()) return;
+    const initiated = downloadAffiliatePrivateReceipt(receipt || pendingReceipt, Boolean(receipt));
+    setFeedback(
+      initiated
+        ? "Download solicitado. Confira o arquivo privado antes de entregá-lo."
+        : "Não foi possível baixar. Copie o código em local seguro.",
+    );
+  }
+
+  function clearReceipt() {
+    if (inFlight.current || registrationTabHidden() || !saved) return;
+    copyVersion.current++;
+    copyingRef.current = false;
+    setCopying(false);
+    attempt.current = null;
+    setReceipt("");
+    setPendingReceipt("");
+    setRevealed(false);
+    setSaved(false);
+    setError("");
+    setFeedback("");
   }
 
   return (
@@ -174,6 +276,7 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
                 step={type === "number" ? 1 : undefined}
                 autoComplete="off"
                 placeholder={placeholder}
+                disabled={busy || Boolean(receipt)}
                 value={values[name]}
                 onChange={(event) =>
                   setValues((previous) => ({ ...previous, [name]: event.target.value }))
@@ -186,7 +289,9 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
             Estado
             <select
               name="state"
+              aria-label="Estado"
               required
+              disabled={busy || Boolean(receipt)}
               value={values.state}
               onChange={(event) =>
                 setValues((previous) => ({ ...previous, state: event.target.value }))
@@ -206,6 +311,7 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
           <input
             type="checkbox"
             checked={consent}
+            disabled={busy || Boolean(receipt)}
             onChange={(event) => setConsent(event.target.checked)}
             className="mt-1 size-5 shrink-0 accent-[#723e52]"
           />
@@ -225,33 +331,82 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
             {feedback}
           </p>
         )}
-        {receipt && (
+        {(receipt || pendingReceipt) && (
           <div className="mt-4 rounded-xl border border-[#ddc5cb] p-4">
             <p className="text-sm font-bold">
-              Código privado de acompanhamento · exibido nesta sessão
+              {receipt
+                ? "Código privado de acompanhamento · inscrição recebida"
+                : "Código privado da tentativa · recebimento ainda não confirmado"}
             </p>
             <input
               aria-label="Código privado da candidata"
               readOnly
-              value={receipt}
+              type={revealed ? "text" : "password"}
+              autoComplete="off"
+              spellCheck={false}
+              value={receipt || pendingReceipt}
               className="mt-3 min-h-12 w-full rounded-lg border border-[#e3d3d2] px-3 font-sans text-xs"
             />
             <button
               type="button"
+              aria-pressed={revealed}
+              onClick={() => setRevealed((v) => !v)}
+              className="mt-3 mr-2 min-h-11 rounded-xl border border-[#a98792] px-4 text-sm font-semibold"
+            >
+              {revealed ? "Ocultar código" : "Mostrar código"}
+            </button>
+            <button
+              type="button"
+              disabled={copying}
               onClick={() => void copyCode()}
               className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#a98792] px-4 text-sm font-semibold"
             >
               <ClipboardCopy aria-hidden="true" className="size-4" /> Copiar código
             </button>
+            <button
+              type="button"
+              onClick={downloadCode}
+              className="mt-3 ml-2 min-h-11 rounded-xl border border-[#a98792] px-4 text-sm font-semibold"
+            >
+              Baixar comprovante privado
+            </button>
             <p className="mt-2 text-xs text-[#765b66]">
-              Não compartilhe o código em grupos nem guarde em planilhas públicas.
+              Não compartilhe o código em grupos nem guarde em planilhas públicas. O código é
+              removido da tela ao sair desta aba.
+              {!receipt &&
+                " O comprovante de tentativa não confirma o recebimento; confira o acompanhamento antes de reenviar."}
             </p>
+            {!busy && (
+              <div className="mt-4 border-t border-[#ead7d8] pt-3">
+                <label className="flex items-start gap-2 text-xs text-[#623d4b]">
+                  <input
+                    type="checkbox"
+                    checked={saved}
+                    onChange={(e) => setSaved(e.target.checked)}
+                    className="mt-0.5 size-4 shrink-0"
+                  />
+                  {receipt
+                    ? "Já guardei o código em local privado."
+                    : "Já guardei o código e conferi a tentativa anterior antes de descartá-la."}
+                </label>
+                <button
+                  type="button"
+                  disabled={!saved}
+                  onClick={clearReceipt}
+                  className="mt-2 min-h-11 rounded-xl border border-[#a98792] px-4 text-sm font-semibold disabled:opacity-50"
+                >
+                  {receipt
+                    ? "Encerrar comprovante e cadastrar outra candidata"
+                    : "Descartar tentativa e iniciar novo cadastro"}
+                </button>
+              </div>
+            )}
           </div>
         )}
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <button
             type="submit"
-            disabled={busy || !consent}
+            disabled={busy || !consent || Boolean(receipt)}
             className="min-h-12 rounded-xl bg-[#6f3b4d] px-6 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "Registrando..." : "Cadastrar para análise"}
