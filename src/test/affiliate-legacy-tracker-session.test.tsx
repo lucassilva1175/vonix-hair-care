@@ -308,3 +308,81 @@ it("distinguishes a failed legacy status query from a successful empty result", 
     screen.getByRole("link", { name: "Consultar inscrição pelo código privado" }),
   ).toHaveAttribute("href", "/consultar-candidatura");
 });
+
+describe("Legacy tracker history and read recovery", () => {
+  it("conceals identity on pagehide, ignores Auth callbacks while suspended and requires fresh session on history restore", async () => {
+    service.getUser
+      .mockResolvedValueOnce(identity("private@example.invalid"))
+      .mockResolvedValueOnce({ data: { user: null }, error: null });
+    service.from.mockImplementation(() => ({
+      select: () => ({ order: () => ({ limit: async () => answer("aprovada") }) }),
+    }));
+    render(<AffiliateApplicationTracker />);
+    await screen.findByText("Candidatura aprovada");
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    expect(screen.queryByText("private@example.invalid")).toBeNull();
+    expect(screen.queryByText("Candidatura aprovada")).toBeNull();
+    await act(async () => {
+      authChanged?.();
+      await Promise.resolve();
+    });
+    expect(service.getUser).toHaveBeenCalledTimes(1);
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    await screen.findByLabelText("E-mail utilizado na inscrição");
+    expect(service.getUser).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText("Candidatura aprovada")).toBeNull();
+  });
+  it("distinguishes identity lookup failure from a verified absent session and retries explicitly", async () => {
+    service.getUser
+      .mockResolvedValueOnce({ data: { user: null }, error: { name: "AuthRetryableFetchError" } })
+      .mockResolvedValueOnce({ data: { user: null }, error: { name: "AuthSessionMissingError" } });
+    render(<AffiliateApplicationTracker />);
+    expect(await screen.findByText("Não foi possível confirmar sua sessão")).toBeInTheDocument();
+    expect(screen.queryByLabelText("E-mail utilizado na inscrição")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Verificar sessão novamente" }));
+    await screen.findByLabelText("E-mail utilizado na inscrição");
+    expect(service.getUser).toHaveBeenCalledTimes(2);
+    expect(service.from).not.toHaveBeenCalled();
+  });
+  it("times out stalled identity reads and ignores the old response after retry", async () => {
+    vi.useFakeTimers();
+    try {
+      const previous = deferred<ReturnType<typeof identity>>();
+      service.getUser
+        .mockReturnValueOnce(previous.promise)
+        .mockResolvedValueOnce({ data: { user: null }, error: null });
+      render(<AffiliateApplicationTracker />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15000);
+      });
+      expect(screen.getByText("Não foi possível confirmar sua sessão")).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Verificar sessão novamente" }));
+      });
+      expect(screen.getByLabelText("E-mail utilizado na inscrição")).toBeInTheDocument();
+      await act(async () => previous.resolve(identity("obsolete@example.invalid")));
+      expect(screen.queryByText("obsolete@example.invalid")).toBeNull();
+      expect(service.from).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("clears entered email and OTP on history navigation and does not duplicate a pending access request", async () => {
+    const pending = deferred<{ status: string }>();
+    service.requestAffiliateAccessEmail.mockReturnValue(pending.promise);
+    render(<AffiliateApplicationTracker />);
+    const email = await screen.findByLabelText("E-mail utilizado na inscrição");
+    fireEvent.change(email, { target: { value: "synthetic@example.invalid" } });
+    fireEvent.click(screen.getByRole("button", { name: "Receber acesso por e-mail" }));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    const restored = await screen.findByLabelText("E-mail utilizado na inscrição");
+    expect(restored).toHaveValue("");
+    expect(restored).toBeDisabled();
+    expect(screen.getByPlaceholderText("Código de verificação")).toHaveValue("");
+    expect(service.requestAffiliateAccessEmail).toHaveBeenCalledTimes(1);
+    await act(async () => pending.resolve({ status: "requested" }));
+    expect(restored).toBeEnabled();
+    expect(screen.queryByText(/Se este e-mail corresponde/)).toBeNull();
+  });
+});

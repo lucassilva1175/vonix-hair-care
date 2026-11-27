@@ -120,13 +120,16 @@ export function AffiliateTrackingCodePage() {
         "A cópia automática não funcionou. Use Mostrar código privado e copie manualmente em um local seguro.",
       );
       const field = document.getElementById("affiliate-private-code") as HTMLInputElement | null;
-      field?.focus();
-      field?.select();
-    } finally {
-      if (clipboardEpoch.current === copyEpoch) {
-        clipboardInFlight.current = false;
-        setCopying(false);
+      // Do not select a masked bearer code without an explicit reveal.
+      if (field?.type === "text") {
+        field.focus();
+        field.select();
       }
+    } finally {
+      // Invalidation suppresses feedback, not the native clipboard write.
+      // Keep the single-flight lock until that write actually settles.
+      clipboardInFlight.current = false;
+      setCopying(false);
     }
   }
 
@@ -142,12 +145,10 @@ export function AffiliateTrackingCodePage() {
     lookupVersion.current++;
     lookupInFlight.current = null;
     clipboardEpoch.current++;
-    clipboardInFlight.current = false;
     importEpoch.current++;
     setImporting(false);
     setImportFeedback("");
     setCopyFeedback("");
-    setCopying(false);
     setBusy(false);
     setCode(value);
     setCopied(false);
@@ -312,8 +313,6 @@ export function AffiliateTrackingCodePage() {
       setImportFeedback("");
       setCopyFeedback("");
       clipboardEpoch.current++;
-      clipboardInFlight.current = false;
-      setCopying(false);
       setBusy(false);
       setResult(null);
       resetRecovery();
