@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
 import { isIP } from "node:net";
 import { affiliateDatabaseConfig } from "./affiliate-database.server";
+import { probeAffiliateRecruitment } from "./affiliate-recruitment-probes.server";
 import { VONIX_AFFILIATE_AUTH_URL, VONIX_AFFILIATE_PUBLIC_KEY } from "./vonix-affiliate-auth";
 import { affiliateQuestionnaireEncryptionReady } from "./affiliate-wizard-crypto.server";
 import { affiliateApplicationSchema, affiliateAdminSchema } from "./affiliate-application";
@@ -56,94 +57,23 @@ function privateAffiliateAuthResponse() {
   setResponseHeader("Referrer-Policy", "no-referrer");
 }
 
-function classifyAffiliateFetchFailure(error: unknown): string {
-  // Only a fixed, non-sensitive category is returned to callers.
-  // Never return the raw error or any header/secret content.
-  const name =
-    typeof error === "object" && error !== null && "name" in error ? String(error.name) : "";
-  const message = error instanceof Error ? error.message : "";
-  if (/timeout|abort/i.test(name + " " + message)) return "timeout";
-  if (/redirect/i.test(message)) return "redirect";
-  if (/header/i.test(message)) return "invalid-header";
-  if (name === "TypeError") return "type-error";
-  return "network-error";
-}
-
 /**
- * Public, read-only readiness probe: never returns any key, customer record,
- * raw IP, SQL result or provider error. Proves the production Worker actually
- * reaches the dedicated DB before advertising a working signup.
+ * Public, read-only readiness probe. Returns only fixed diagnostic categories
+ * and booleans, never database records, raw errors or credentials.
  */
 export const getAffiliateRecruitmentStatus = createServerFn({ method: "GET" }).handler(async () => {
   setResponseHeader("Cache-Control", "no-store");
   const config = affiliateDatabaseConfig();
-  let storageReachable = false;
-  // Public-key probe is safe and independent of the privileged secret.
-  // A successful HTTP response (including 401/403) proves Worker egress
-  // without exposing or querying any candidate data.
-  let publicNetworkDiagnostic = "network-error";
-  try {
-    const response = await fetch(
-      VONIX_AFFILIATE_AUTH_URL + "/rest/v1/vonix_affiliate_applications?select=id&limit=0",
-      {
-        method: "GET",
-        headers: { apikey: VONIX_AFFILIATE_PUBLIC_KEY },
-        redirect: "manual",
-        signal: AbortSignal.timeout(6500),
-      },
-    );
-    publicNetworkDiagnostic =
-      response.status === 401
-        ? "unauthorized"
-        : response.status === 403
-          ? "forbidden"
-          : response.ok
-            ? "reachable"
-            : "http-" + response.status;
-  } catch (error) {
-    publicNetworkDiagnostic = classifyAffiliateFetchFailure(error);
-  }
-  let storageDiagnostic: string = config ? "network-error" : "not-configured";
-  if (config) {
-    try {
-      const response = await fetch(
-        config.url + "/rest/v1/vonix_affiliate_applications?select=id&limit=0",
-        {
-          method: "GET",
-          headers: config.headers,
-          // Strict redirect:error throws on some Worker fetch adapters.
-          // Manual mode never forwards privileged credentials to a new host.
-          redirect: "manual",
-          signal: AbortSignal.timeout(4000),
-        },
-      );
-      storageReachable = response.ok;
-      storageDiagnostic = response.ok
-        ? "reachable"
-        : response.status === 401
-          ? "unauthorized"
-          : response.status === 403
-            ? "forbidden"
-            : response.status === 404
-              ? "not-found"
-              : response.status >= 300 && response.status < 400
-                ? "redirect-blocked"
-                : "server-error";
-    } catch (error) {
-      storageReachable = false;
-      storageDiagnostic = classifyAffiliateFetchFailure(error);
-    }
-  }
   const cfConnectingIp = getRequestHeader("cf-connecting-ip")?.trim() ?? "";
-  const operatorIntakeReady = storageReachable && (await affiliateOperatorIntakeEnabled());
-  const rateLimitReady = operatorIntakeReady && (await affiliateRateLimitAllowed("submit"));
+  const diagnostics = await probeAffiliateRecruitment({
+    config,
+    publicUrl: VONIX_AFFILIATE_AUTH_URL,
+    publicKey: VONIX_AFFILIATE_PUBLIC_KEY,
+    operatorIntakeEnabled: affiliateOperatorIntakeEnabled,
+    rateLimitAllowed: () => affiliateRateLimitAllowed("submit"),
+  });
   return {
-    open: rateLimitReady,
-    intakeEnabled: operatorIntakeReady,
-    rateLimitReady,
-    storageReachable,
-    storageDiagnostic,
-    publicNetworkDiagnostic,
+    ...diagnostics,
     cfConnectingIpPresent: isIP(cfConnectingIp) !== 0,
     encryptionReady: affiliateQuestionnaireEncryptionReady(),
     transactionalEmailConfigured: affiliateCustomAuthEmailReady(),

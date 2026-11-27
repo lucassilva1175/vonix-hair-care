@@ -7,7 +7,7 @@ const privilegedModules = [
   "affiliate-invites.server.ts",
   "affiliate-member-auth.server.ts",
   "affiliate-throttle.server.ts",
-  "affiliate-functions.ts",
+  "affiliate-recruitment-probes.server.ts",
 ] as const;
 
 describe("Vonix affiliate private requests on Cloudflare Workers", () => {
@@ -18,5 +18,15 @@ describe("Vonix affiliate private requests on Cloudflare Workers", () => {
     const source = readFileSync(join(process.cwd(), "src", "lib", filename), "utf8");
     expect(source).not.toMatch(/redirect:\s*["']error["']/);
     expect(source).toMatch(/redirect:\s*["']manual["']/);
+  });
+
+  it("delegates public readiness to the protected probe module without unsafe redirects", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src", "lib", "affiliate-functions.ts"),
+      "utf8",
+    );
+    expect(source).not.toMatch(/redirect:\s*["']error["']/);
+    expect(source).toContain('from "./affiliate-recruitment-probes.server"');
+    expect(source).toMatch(/await probeAffiliateRecruitment\(/);
   });
 });

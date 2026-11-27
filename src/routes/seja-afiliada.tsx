@@ -123,8 +123,8 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
           new Promise<never>((_, reject) => {
             // GETs can hang on unreliable connections. Never leave applicants
             // in a permanent loading state or assume recruitment is OPEN.
-            // The sequential server probes have up to 19s of configured
-            // network deadlines (6.5 + 4 + 4 + 4.5s). Allow transport margin.
+            // Server diagnostics run independently from the storage/intake/quota
+            // chain. Keep the conservative 25s client deadline for transport margin.
             timeoutId = window.setTimeout(() => {
               if (timeoutId !== undefined) statusTimeouts.delete(timeoutId);
               reject(new Error("affiliate_status_timeout"));
