@@ -231,3 +231,24 @@ scripts adicionados independentemente pela hospedagem, extensões do
 navegador ou outros serviços. Não implica comprovação de coleta histórica.
 Após publicar, verifique em navegador as cinco rotas e uma rota de controle
 da loja, interceptando requisições externas sem transmitir dados reais.
+
+
+## 9. Panorama operacional de primeira parte
+
+O painel autenticado apresenta indicadores derivados exclusivamente dos
+totais gerais e da fila de notificações retornados pela consulta privada
+existente. Não há nova coleta de eventos, cookies, armazenamento de
+identificadores ou serviço de métricas. Os denominadores são:
+
+- análise: decisões / inscrições atualmente existentes;
+- aprovação: aprovadas / decisões;
+- cobertura de notificações: registros da fila / decisões.
+
+Denominador zero significa não aplicável; contagens inválidas ou uma
+consulta indisponível ocultam o panorama e a exportação. As contagens
+não são uma série histórica, não incluem necessariamente registros
+removidos pela retenção e não medem visitas ou conversão de aquisição.
+O arquivo TXT é gerado localmente por ação explícita e contém somente
+totais, proporções, horário UTC e limitações. Trate-o como material
+interno; não o publique. Os atalhos aplicam os filtros autorizados
+existentes e não enviam ou alteram candidaturas.
