@@ -176,7 +176,7 @@ export function AffiliateCurrentCombos() {
             aria-expanded={open}
             aria-controls="affiliate-c161-combo-panel"
             onClick={() => setOpen((value) => !value)}
-            className="min-h-12 rounded-full bg-[#784254] px-5 py-3 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4"
+            className="min-h-[48px] rounded-full bg-[#784254] px-5 py-3 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4"
           >
             {open ? "Recolher combos" : "Explorar novos combos"}
           </button>
@@ -196,7 +196,7 @@ export function AffiliateCurrentCombos() {
                     aria-pressed={mode === value}
                     onClick={() => switchMode(value)}
                     className={
-                      "min-h-12 rounded-lg px-3 py-2 text-xs font-bold focus-visible:outline-2 " +
+                      "min-h-[48px] rounded-lg px-3 py-2 text-xs font-bold focus-visible:outline-2 " +
                       (mode === value ? "bg-[#784254] text-white" : "bg-white text-[#724155]")
                     }
                   >
@@ -255,7 +255,7 @@ export function AffiliateCurrentCombos() {
                             type="button"
                             aria-label={"Remover " + p.name + " da lista"}
                             onClick={() => toggleShortlist(p.slug)}
-                            className="grid size-11 shrink-0 place-items-center rounded-lg border border-[#e5d2d4] text-[#724155] focus-visible:outline-2"
+                            className="grid size-[44px] shrink-0 place-items-center rounded-lg border border-[#e5d2d4] text-[#724155] focus-visible:outline-2"
                           >
                             <X aria-hidden="true" className="size-4" />
                           </button>
@@ -267,7 +267,7 @@ export function AffiliateCurrentCombos() {
                         type="button"
                         disabled={copyState === "copying"}
                         onClick={() => void copyShortlist()}
-                        className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#784254] px-4 text-xs font-bold text-white disabled:opacity-50"
+                        className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-[#784254] px-4 text-xs font-bold text-white disabled:opacity-50"
                       >
                         <ClipboardCopy aria-hidden="true" className="size-4" />
                         {copyState === "copying"
@@ -280,7 +280,7 @@ export function AffiliateCurrentCombos() {
                           invalidateCopy();
                           setShortlist([]);
                         }}
-                        className="min-h-11 rounded-lg border border-[#d8bfc5] bg-white px-3 text-xs font-bold text-[#724155]"
+                        className="min-h-[44px] rounded-lg border border-[#d8bfc5] bg-white px-3 text-xs font-bold text-[#724155]"
                       >
                         Limpar minha lista
                       </button>
@@ -326,7 +326,7 @@ export function AffiliateCurrentCombos() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Ex.: Botox, hidratação, Fio de Luz"
-                  className="min-h-12 w-full min-w-0 bg-transparent text-sm text-[#523342] focus-visible:outline-2"
+                  className="min-h-[48px] w-full min-w-0 bg-transparent text-sm text-[#523342] focus-visible:outline-2"
                 />
                 {query && (
                   <button
@@ -335,7 +335,7 @@ export function AffiliateCurrentCombos() {
                       setQuery("");
                       searchRef.current?.focus();
                     }}
-                    className="min-h-11 px-2 text-xs font-bold text-[#724155]"
+                    className="min-h-[44px] px-2 text-xs font-bold text-[#724155]"
                   >
                     Limpar
                   </button>
@@ -348,7 +348,7 @@ export function AffiliateCurrentCombos() {
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="mt-1 block min-h-12 w-full rounded-xl border border-[#d8bfc5] bg-white px-3 text-sm"
+                      className="mt-1 block min-h-[48px] w-full rounded-xl border border-[#d8bfc5] bg-white px-3 text-sm"
                     >
                       <option value="">Todas as categorias</option>
                       {categories.map((name) => (
@@ -362,7 +362,7 @@ export function AffiliateCurrentCombos() {
                   <select
                     value={usage}
                     onChange={(e) => setUsage(e.target.value as typeof usage)}
-                    className="mt-1 block min-h-12 w-full rounded-xl border border-[#d8bfc5] bg-white px-3 text-sm"
+                    className="mt-1 block min-h-[48px] w-full rounded-xl border border-[#d8bfc5] bg-white px-3 text-sm"
                   >
                     <option value="">Todos os itens</option>
                     <option value="professional">Uso exclusivamente profissional</option>
@@ -376,7 +376,7 @@ export function AffiliateCurrentCombos() {
                     type="button"
                     aria-pressed={packaging}
                     onClick={() => setPackaging((v) => !v)}
-                    className="min-h-11 rounded-full border border-[#d8bfc5] px-4 text-xs font-bold text-[#724155]"
+                    className="min-h-[44px] rounded-full border border-[#d8bfc5] px-4 text-xs font-bold text-[#724155]"
                   >
                     {packaging ? "Ver fotos dos produtos" : "Ver embalagens disponíveis"}
                   </button>
@@ -389,7 +389,7 @@ export function AffiliateCurrentCombos() {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mt-2 min-h-11 text-xs font-bold text-[#724155] underline"
+                  className="mt-2 min-h-[44px] text-xs font-bold text-[#724155] underline"
                 >
                   Limpar todos os filtros
                 </button>
@@ -460,7 +460,7 @@ export function AffiliateCurrentCombos() {
                       disabled={!shortlist.includes(p.slug) && shortlist.length >= 6}
                       onClick={() => toggleShortlist(p.slug)}
                       className={
-                        "flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold focus-visible:outline-2 disabled:opacity-50 " +
+                        "flex min-h-[44px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold focus-visible:outline-2 disabled:opacity-50 " +
                         (shortlist.includes(p.slug)
                           ? "border-[#784254] bg-[#f0e2e4] text-[#724155]"
                           : "border-[#e5d2d4] bg-white text-[#724155]")
@@ -485,7 +485,7 @@ export function AffiliateCurrentCombos() {
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="mt-2 min-h-11 font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
+                    className="mt-2 min-h-[44px] font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
                   >
                     Limpar todos os filtros
                   </button>
@@ -498,7 +498,7 @@ export function AffiliateCurrentCombos() {
                         setQuery(term);
                         searchRef.current?.focus();
                       }}
-                      className="ml-0 block min-h-11 rounded-xl bg-[#784254] px-4 py-2 text-xs font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 sm:ml-3 sm:inline-flex sm:items-center"
+                      className="ml-0 block min-h-[44px] rounded-xl bg-[#784254] px-4 py-2 text-xs font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 sm:ml-3 sm:inline-flex sm:items-center"
                     >
                       Ver {otherMatches}{" "}
                       {otherMode === "products" ? "produtos individuais" : "combos"} com esta busca
@@ -512,7 +512,7 @@ export function AffiliateCurrentCombos() {
                   type="button"
                   onClick={() => setAll((value) => !value)}
                   aria-expanded={all}
-                  className="mt-4 min-h-12 w-full rounded-full border border-[#d8bfc5] px-4 text-sm font-bold text-[#724155]"
+                  className="mt-4 min-h-[48px] w-full rounded-full border border-[#d8bfc5] px-4 text-sm font-bold text-[#724155]"
                 >
                   {all ? "Mostrar apenas destaques" : "Ver todos os " + matches.length + " " + noun}
                 </button>
