@@ -333,7 +333,7 @@ export function AffiliateEditorialHero({
             {sourceLinked && (
               <a
                 href="/consultar-candidatura"
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[#d9c2c7] bg-white px-4 text-xs font-bold text-[#714458] hover:bg-[#fbf0f3] focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-[#d9c2c7] bg-white px-4 text-xs font-bold text-[#714458] hover:bg-[#fbf0f3] focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 Já me inscrevi
                 <ArrowRight aria-hidden="true" className="size-4" />
@@ -350,7 +350,7 @@ export function AffiliateEditorialHero({
             {sourceLinked && (
               <a
                 href="#vitrine-afiliadas"
-                className="inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 Montar minha lista de referências
                 <ArrowDownRight aria-hidden="true" className="size-4" />
