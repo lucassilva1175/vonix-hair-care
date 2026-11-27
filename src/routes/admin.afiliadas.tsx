@@ -284,8 +284,7 @@ export function AffiliateAdminPage() {
   const legacyLoginPending = useRef(false);
 
   useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState !== "hidden") return;
+    const concealTransientData = () => {
       requiresVisibleSessionCheck.current = true;
       legacyLoginEpoch.current++;
       readinessVersion.current++;
@@ -306,8 +305,15 @@ export function AffiliateAdminPage() {
       setPassword("");
       setOtp("");
     };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") concealTransientData();
+    };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", concealTransientData);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", concealTransientData);
+    };
   }, []);
 
   function clearPrivateData() {
@@ -520,28 +526,38 @@ export function AffiliateAdminPage() {
     const onFocus = () => {
       if (document.visibilityState === "visible") void verifyResumedSession();
     };
+    const concealApplicantData = () => {
+      visibilityVersion++;
+      requiresVisibleSessionCheck.current = true;
+      inFlight = false;
+      privateDetailVersion.current++;
+      setPrivateDetail(null);
+      setPrivateDetailLoading(null);
+      setPrivateDetailError(null);
+      setSessionRechecking(true);
+      setSessionRecheckFailed(false);
+    };
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        visibilityVersion++;
-        requiresVisibleSessionCheck.current = true;
-        inFlight = false;
-        privateDetailVersion.current++;
-        setPrivateDetail(null);
-        setPrivateDetailLoading(null);
-        setPrivateDetailError(null);
-        setSessionRechecking(true);
-        setSessionRecheckFailed(false);
-      } else if (document.visibilityState === "visible") {
-        void verifyResumedSession();
+      if (document.visibilityState === "hidden") concealApplicantData();
+      else if (document.visibilityState === "visible") void verifyResumedSession();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        concealApplicantData();
+        if (document.visibilityState === "visible") void verifyResumedSession();
       }
     };
     window.addEventListener("focus", onFocus);
+    window.addEventListener("pagehide", concealApplicantData);
+    window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisibility);
     if (document.visibilityState === "visible" && requiresVisibleSessionCheck.current)
       void verifyResumedSession();
     return () => {
       active = false;
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pagehide", concealApplicantData);
+      window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibility);
     };
     // Session transitions, not ordinary list rendering, control the listener lifecycle.

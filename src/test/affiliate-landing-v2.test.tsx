@@ -68,8 +68,8 @@ describe("Vonix affiliate V2 editorial journey", () => {
     const slider = screen.getByRole("slider", { name: /Valor hipotético de vendas/ });
     expect(slider).toHaveAttribute("min", "0");
     expect(slider).toHaveAttribute("max", "20000");
-    // Whole-real increments keep the slider synchronized with exact typed examples.
-    expect(slider).toHaveAttribute("step", "1");
+    // Cent precision keeps typed amounts and the slider synchronized.
+    expect(slider).toHaveAttribute("step", "0.01");
     fireEvent.change(slider, { target: { value: "10000" } });
     expect(screen.getByTestId("illustrative-commission").textContent?.replace(/\s/g, " ")).toBe(
       "R$ 800,00",
@@ -97,5 +97,33 @@ describe("Vonix affiliate V2 editorial journey", () => {
     );
     fireEvent.click(within(scenarios).getByRole("button", { name: /R\$\s*5\.000,00/ }));
     expect(screen.getByTestId("illustrative-total")).toHaveTextContent("R$ 400,00");
+  });
+});
+
+describe("Brazilian currency examples", () => {
+  it("accepts formatted pasted BRL and preserves cent precision", () => {
+    render(<AffiliateEarningsSimulator />);
+    const input = screen.getByRole("textbox", { name: /Ou informe um valor/ });
+    fireEvent.change(input, { target: { value: "R$ 1.234,56" } });
+    expect(screen.getByRole("slider")).toHaveValue("1234.56");
+    expect(screen.getByTestId("illustrative-commission")).toHaveTextContent("R$ 98,76");
+    fireEvent.change(input, { target: { value: "9.999,99" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Simular bônus, se elegível/ }));
+    expect(screen.getByTestId("illustrative-bonus")).toHaveTextContent("R$ 0,00");
+    fireEvent.change(input, { target: { value: "10.000,00" } });
+    expect(screen.getByTestId("illustrative-bonus")).toHaveTextContent("R$ 500,00");
+  });
+  it("does not silently interpret malformed money or change the last valid result", () => {
+    render(<AffiliateEarningsSimulator />);
+    const input = screen.getByRole("textbox", { name: /Ou informe um valor/ });
+    fireEvent.change(input, { target: { value: "1234,56" } });
+    for (const bad of ["1.2", "12,345", "-10", "1e3", "abc"]) {
+      fireEvent.change(input, { target: { value: bad } });
+      expect(input).toHaveAttribute("aria-invalid", "true");
+      expect(screen.getByRole("slider")).toHaveValue("1234.56");
+    }
+    fireEvent.change(input, { target: { value: "30.000,01" } });
+    expect(input).toHaveValue("20000");
+    expect(input).toHaveAttribute("aria-invalid", "false");
   });
 });

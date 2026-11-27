@@ -356,6 +356,14 @@ export function AffiliateEditorialHero({
                 <ArrowDownRight aria-hidden="true" className="size-4" />
               </a>
             )}
+            {sourceLinked && (
+              <a
+                href="#planejamento-criativo"
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Planejar conteúdo da semana <ArrowDownRight aria-hidden="true" className="size-4" />
+              </a>
+            )}
             <AffiliateProgramShare />
           </div>
           <ul
