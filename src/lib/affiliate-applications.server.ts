@@ -827,7 +827,7 @@ const claimedMailSchema = z.object({
   application_id: z.string().uuid(),
   recipient: z.string().trim().toLowerCase().email().max(180),
   decision: z.enum(["aprovada", "recusada"]),
-  attempt: z.number().int().min(1).max(2_147_483_647),
+  attempt: z.number().int().min(1).max(5),
 });
 type ClaimedMail = z.infer<typeof claimedMailSchema>;
 
@@ -903,10 +903,27 @@ export async function processAffiliateEmails(limit = 5, applicationId?: string) 
   if (!apiKey || !from) return { sent: 0, failed: 0, configured: false };
   let sent = 0;
   let failed = 0;
+  const target =
+    applicationId === undefined ? undefined : z.string().uuid().parse(applicationId).toLowerCase();
+  const seenMail = new Set<string>();
+  const seenApplication = new Set<string>();
   const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(Math.trunc(limit), 0), 10) : 0;
   for (let i = 0; i < safeLimit; i++) {
-    const mail = await claimAffiliateMail(applicationId);
+    const mail = await claimAffiliateMail(target);
     if (!mail) break;
+    const mailId = mail.mail_id.toLowerCase();
+    const claimedApplication = mail.application_id.toLowerCase();
+    // Fail closed before contacting the provider if the privileged RPC ever
+    // returns another candidate or a second reservation for the same decision.
+    if (
+      (target && claimedApplication !== target) ||
+      seenMail.has(mailId) ||
+      seenApplication.has(claimedApplication)
+    ) {
+      throw new Error("Invalid or repeated affiliate mail reservation.");
+    }
+    seenMail.add(mailId);
+    seenApplication.add(claimedApplication);
     let successful = false;
     let providerId: string | null = null;
     let unknown = false;
@@ -967,7 +984,7 @@ export async function processAffiliateEmails(limit = 5, applicationId?: string) 
     if (successful) sent++;
     else failed++;
     // Avoid reclaiming the same candidate in the same run after a transient failure.
-    if (!successful) break;
+    if (!successful || target) break;
   }
   return { sent, failed, configured: true };
 }

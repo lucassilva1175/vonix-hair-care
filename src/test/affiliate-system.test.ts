@@ -1066,6 +1066,7 @@ describe("Validação da fila privada antes de enviar comunicações", () => {
       { ...validClaim, decision: "desconhecida" },
       { ...validClaim, mail_id: "../invalid-mail-id" },
       { ...validClaim, attempt: 0 },
+      { ...validClaim, attempt: 6 },
       { ...validClaim, attempt: "1" },
     ]) {
       const mock = vi.fn().mockResolvedValue(Response.json([malformed]));
@@ -1074,6 +1075,66 @@ describe("Validação da fila privada antes de enviar comunicações", () => {
       expect(mock).toHaveBeenCalledOnce();
       expect(String(mock.mock.calls[0]![0])).toContain("claim_mail");
     }
+  });
+
+  it("C180 refuses a targeted reservation for a different applicant", async () => {
+    const mock = vi.fn().mockResolvedValueOnce(Response.json([validClaim]));
+    vi.stubGlobal("fetch", mock);
+    await expect(processAffiliateEmails(1, "cccccccc-cccc-4ccc-8ccc-cccccccccccc")).rejects.toThrow(
+      /reservation/i,
+    );
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("C180 limits a targeted worker to one claim even when requested limit is larger", async () => {
+    const mock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json([{ ...validClaim, attempt: 5 }]))
+      .mockResolvedValueOnce(Response.json({ id: "synthetic-provider-id" }))
+      .mockResolvedValueOnce(Response.json(true));
+    vi.stubGlobal("fetch", mock);
+    expect(await processAffiliateEmails(10, validClaim.application_id)).toEqual({
+      sent: 1,
+      failed: 0,
+      configured: true,
+    });
+    expect(mock).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(String(mock.mock.calls[0]![1].body)).p_application_id).toBe(
+      validClaim.application_id,
+    );
+  });
+
+  it("C180 rejects duplicate mail IDs and duplicate applications within one batch before another provider call", async () => {
+    for (const duplicate of [
+      { ...validClaim, application_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", attempt: 2 },
+      { ...validClaim, mail_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", attempt: 2 },
+      {
+        ...validClaim,
+        mail_id: validClaim.mail_id.toUpperCase(),
+        application_id: validClaim.application_id.toUpperCase(),
+        attempt: 2,
+      },
+    ]) {
+      const mock = vi
+        .fn()
+        .mockResolvedValueOnce(Response.json([validClaim]))
+        .mockResolvedValueOnce(Response.json({ id: "synthetic-provider-id" }))
+        .mockResolvedValueOnce(Response.json(true))
+        .mockResolvedValueOnce(Response.json([duplicate]));
+      vi.stubGlobal("fetch", mock);
+      await expect(processAffiliateEmails(5)).rejects.toThrow(/reservation/i);
+      expect(mock).toHaveBeenCalledTimes(4);
+      expect(
+        mock.mock.calls.filter(([url]) => url === "https://api.resend.com/emails"),
+      ).toHaveLength(1);
+    }
+  });
+
+  it("C180 rejects invalid targeted identifiers before fetching", async () => {
+    const mock = vi.fn();
+    vi.stubGlobal("fetch", mock);
+    await expect(processAffiliateEmails(1, "not-a-uuid")).rejects.toThrow();
+    expect(mock).not.toHaveBeenCalled();
   });
 
   it("recusa um retorno do RPC não limitado a uma única notificação reservada", async () => {
