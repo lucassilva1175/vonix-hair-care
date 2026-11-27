@@ -28,6 +28,8 @@ jobs:
           bun-version: latest
       - name: Install from committed lockfile
         run: bun install --frozen-lockfile
+      - name: Test notification scheduler without network
+        run: node --test scripts/qa-affiliate-mail-scheduler.test.mjs
       - name: Run all application tests
         run: bun run test
       - name: TypeScript check

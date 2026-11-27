@@ -1,0 +1,33 @@
+name: Vonix affiliates - notification scheduler
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "2-57/5 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vonix-affiliate-mail-production
+  cancel-in-progress: false
+
+jobs:
+  notification-worker:
+    # Manual dispatch is a read-only authentication probe. The scheduled
+    # processing job requires deliberate opt-in after operational approval.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.VONIX_AFFILIATE_MAIL_SCHEDULE_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    environment: vonix-affiliate-mail-production
+    steps:
+      - name: Checkout trusted main revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Check or process authorized affiliate queue
+        env:
+          VONIX_AFFILIATE_MAIL_WORKER_SECRET: ${{ secrets.VONIX_AFFILIATE_MAIL_WORKER_SECRET }}
+          VONIX_AFFILIATE_MAIL_SCHEDULE_ENABLED: ${{ vars.VONIX_AFFILIATE_MAIL_SCHEDULE_ENABLED }}
+          VONIX_AFFILIATE_MAIL_MODE: ${{ github.event_name == 'schedule' && 'process' || 'probe' }}
+        run: node scripts/run-affiliate-mail-scheduler.mjs "$VONIX_AFFILIATE_MAIL_MODE"
