@@ -8,7 +8,8 @@ const validProbe = () =>
     status: 204,
     headers: { "x-vonix-worker-probe": "authenticated-v1", "cache-control": "private, no-store" },
   });
-const response = (value) => Response.json(value);
+const response = (value) =>
+  Response.json(value, { headers: { "cache-control": "private, no-store" } });
 function fixture(...responses) {
   const calls = [];
   const fetchImpl = async (url, options) => {
@@ -53,6 +54,10 @@ test("processing requires verified deployment marker and cannot follow redirects
   for (const invalid of [
     new Response(null, { status: 401 }),
     new Response(null, { status: 204 }),
+    new Response(null, {
+      status: 204,
+      headers: { "x-vonix-worker-probe": "authenticated-v1", "cache-control": "x-no-store" },
+    }),
     new Error("redirect"),
   ]) {
     const f = fixture(invalid);
@@ -88,6 +93,14 @@ test("ambiguous response never retries and cannot expose response details", asyn
     response({ sent: 0, failed: 0, configured: true, recipient: "private" }),
     response({ sent: 0, failed: 0, configured: true, detail: "x".repeat(1000) }),
     new Response("private upstream failure", { status: 503 }),
+    Response.json({ sent: 0, failed: 0, configured: true }),
+    new Response('{"sent":0,"failed":0,"configured":true}', {
+      headers: { "cache-control": "no-store", "content-type": "text/application/json" },
+    }),
+    Response.json(
+      { sent: 0, failed: 0, configured: true },
+      { headers: { "cache-control": "x-no-store" } },
+    ),
   ]) {
     const f = fixture(validProbe(), invalid);
     await assert.rejects(

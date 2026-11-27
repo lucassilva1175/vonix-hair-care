@@ -2,22 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { env } from "@/lib/env.server";
 import { secureEqual, processAffiliateEmails } from "@/lib/affiliate-applications.server";
 
-const privateHeaders = {
-  "cache-control": "private, no-store, max-age=0",
-  "referrer-policy": "no-referrer",
-};
+import {
+  affiliateMailWorkerPrivateHeaders as privateHeaders,
+  unsupportedAffiliateMailWorkerMethod,
+} from "@/lib/affiliate-mail-worker-http";
 
 export async function receiveAffiliateMailWorker(request: Request): Promise<Response> {
-  if (request.method !== "POST" && request.method !== "HEAD")
-    return new Response("method not allowed", {
-      status: 405,
-      headers: { ...privateHeaders, allow: "POST, HEAD" },
-    });
+  const unsupported = unsupportedAffiliateMailWorkerMethod(request.method);
+  if (unsupported) return unsupported;
   const secret = env("AFFILIATE_WORKER_SECRET");
   const header = request.headers.get("authorization");
   if (
     !secret ||
     secret.length < 24 ||
+    /\s/.test(secret) ||
     !header?.startsWith("Bearer ") ||
     !secureEqual(header.slice(7), secret)
   ) {
@@ -44,6 +42,8 @@ export const Route = createFileRoute("/api/internal/affiliate-mail-worker")({
     handlers: {
       POST: ({ request }) => receiveAffiliateMailWorker(request),
       HEAD: ({ request }) => receiveAffiliateMailWorker(request),
+      GET: ({ request }) => receiveAffiliateMailWorker(request),
+      OPTIONS: ({ request }) => receiveAffiliateMailWorker(request),
     },
   },
 });

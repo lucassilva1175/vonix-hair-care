@@ -177,3 +177,36 @@ do painel e do código ativo e **não participa do fluxo de candidaturas**. As d
 tabelas históricas `vonix_affiliate_sandbox_orders` e
 `vonix_affiliate_sandbox_events` permanecem vazias e sem acessos públicos.
 Não apagá-las em produção por automação ou sem revisão de backup e impacto.
+
+
+## 7. Aceite público de uma publicação (somente leitura)
+
+Depois da CI verde, da integração na main e da publicação da revisão correta,
+execute:
+
+```sh
+node scripts/check-affiliate-public-release.mjs
+# Opcional: exija o nome do arquivo index-*.js observado para esta revisão.
+node scripts/check-affiliate-public-release.mjs --expected-entry=index-EXEMPLO.js
+# Exija também o cabeçalho HTTP no-referrer na borda.
+node scripts/check-affiliate-public-release.mjs --strict-referrer
+```
+
+O exemplo de nome de arquivo é ilustrativo; substitua pelo artefato verificado
+da revisão publicada. O relatório executa exclusivamente GET e HEAD, sem
+segredos, cookies, redirecionamentos seguidos ou envio de dados. A URL alternativa
+da Lovable pode redirecionar para o domínio oficial, desde que preserve a rota
+exata. Não interpreta um redirecionamento arbitrário como publicação correta.
+
+O worker deve responder GET com 405 e Allow: POST, HEAD; HEAD sem autenticação
+deve responder 401. Ambos devem estar protegidos contra cache e indexação.
+A camada de servidor rejeita outros métodos não permitidos antes do framework.
+Uma sonda anônima nunca pode apresentar o marcador autenticado. A sonda HEAD
+autorizada e o POST de processamento continuam separados e sujeitos ao roteiro
+de governança anterior.
+
+Uma advertência de Referrer-Policy na borda significa que a hospedagem precisa
+ser corrigida; não é eliminada pela aprovação dos testes de código. O modo
+estrito transforma essa advertência em falha. A ausência de falhas no aceite
+público não comprova candidatura real, acesso da equipe, entrega de notificações,
+permissão de mídia, conversão comercial ou ativação do agendador.

@@ -3,6 +3,13 @@ import { pathToFileURL } from "node:url";
 const endpoint = "https://vonixhair.com/api/internal/affiliate-mail-worker";
 const MAX_BATCH = 5;
 const MAX_RESPONSE_BYTES = 512;
+const privateNoStore = (response) =>
+  (response.headers.get("cache-control") || "")
+    .split(",")
+    .some((directive) => directive.trim().toLowerCase() === "no-store");
+const exactJson = (response) =>
+  (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase() ===
+  "application/json";
 
 // No configurable URL, redirects, retries, raw response logs or credentials in argv.
 export async function runAffiliateMailScheduler({
@@ -35,7 +42,8 @@ export async function runAffiliateMailScheduler({
   if (
     probe.status !== 204 ||
     probe.headers.get("x-vonix-worker-probe") !== "authenticated-v1" ||
-    !probe.headers.get("cache-control")?.includes("no-store")
+    probe.redirected ||
+    !privateNoStore(probe)
   ) {
     throw new Error("authenticated_probe_not_confirmed");
   }
@@ -44,7 +52,9 @@ export async function runAffiliateMailScheduler({
   const response = await request("POST");
   if (
     response.status !== 200 ||
-    !response.headers.get("content-type")?.includes("application/json")
+    response.redirected ||
+    !privateNoStore(response) ||
+    !exactJson(response)
   )
     throw new Error("processing_response_unconfirmed");
   // Read a bounded response, not an arbitrary provider or proxy error document.
