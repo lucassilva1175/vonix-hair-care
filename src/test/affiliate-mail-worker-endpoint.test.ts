@@ -18,6 +18,8 @@ function request(auth?: string, method = "POST") {
 function privateResponse(response: Response) {
   expect(response.headers.get("cache-control")).toContain("no-store");
   expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+  expect(response.headers.get("x-robots-tag")).toContain("noindex");
+  expect(response.headers.get("x-content-type-options")).toBe("nosniff");
 }
 describe("C180 — authenticated notification worker boundary", () => {
   beforeEach(() => {
@@ -38,7 +40,7 @@ describe("C180 — authenticated notification worker boundary", () => {
     expect(worker.process).not.toHaveBeenCalled();
   });
   it("fails closed if the configured secret is missing or too short", async () => {
-    for (const value of ["", "short"]) {
+    for (const value of ["", "short", "synthetic worker secret not real"]) {
       vi.stubEnv("AFFILIATE_WORKER_SECRET", value);
       const response = await receiveAffiliateMailWorker(request("Bearer " + value));
       expect(response.status).toBe(401);

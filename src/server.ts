@@ -4,6 +4,11 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { blockedResponse, isBlockedCountry } from "./lib/bot-block";
 import { applyAffiliatePrivatePageHeaders } from "./lib/affiliate-private-page-headers";
+import {
+  applyAffiliateMailWorkerHeaders,
+  isAffiliateMailWorkerRequest,
+  unsupportedAffiliateMailWorkerMethod,
+} from "./lib/affiliate-mail-worker-http";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -63,22 +68,35 @@ function withSecurityHeaders(response: Response): Response {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
-    if (isBlockedCountry(request.headers.get("cf-ipcountry"))) return blockedResponse();
+    if (isBlockedCountry(request.headers.get("cf-ipcountry")))
+      return applyAffiliateMailWorkerHeaders(request, blockedResponse());
+    // Do not allow a missing framework method handler to fall through to
+    // the public storefront. No unsupported request reaches mail processing.
+    if (isAffiliateMailWorkerRequest(request)) {
+      const unsupported = unsupportedAffiliateMailWorkerMethod(request.method);
+      if (unsupported) return withSecurityHeaders(unsupported);
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return applyAffiliatePrivatePageHeaders(
         request,
-        withSecurityHeaders(await normalizeCatastrophicSsrResponse(response)),
+        applyAffiliateMailWorkerHeaders(
+          request,
+          withSecurityHeaders(await normalizeCatastrophicSsrResponse(response)),
+        ),
       );
     } catch (error) {
       console.error(error);
       return applyAffiliatePrivatePageHeaders(
         request,
-        new Response(renderErrorPage(), {
-          status: 500,
-          headers: { "content-type": "text/html; charset=utf-8" },
-        }),
+        applyAffiliateMailWorkerHeaders(
+          request,
+          new Response(renderErrorPage(), {
+            status: 500,
+            headers: { "content-type": "text/html; charset=utf-8" },
+          }),
+        ),
       );
     }
   },

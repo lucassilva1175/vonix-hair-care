@@ -28,8 +28,8 @@ jobs:
           bun-version: latest
       - name: Install from committed lockfile
         run: bun install --frozen-lockfile
-      - name: Test notification scheduler without network
-        run: node --test scripts/qa-affiliate-mail-scheduler.test.mjs
+      - name: Test notification scheduler and release acceptance without network
+        run: node --test scripts/qa-affiliate-mail-scheduler.test.mjs scripts/qa-affiliate-public-release.test.mjs
       - name: Run all application tests
         run: bun run test
       - name: TypeScript check
@@ -58,6 +58,10 @@ jobs:
             src/test/affiliate-home-invite.test.tsx \
             src/routes/admin.afiliadas.tsx \
             src/routes/api.internal.affiliate-mail-worker.ts \
+            src/lib/affiliate-mail-worker-http.ts \
+            src/test/affiliate-mail-worker-http.test.ts \
+            src/test/affiliate-mail-worker-origin.test.ts \
+            src/test/affiliate-mail-worker-endpoint.test.ts \
             src/routes/seja-afiliada.tsx \
             src/routes/acompanhar-inscricao.tsx \
             src/routes/acesso-equipe-afiliadas.tsx \
