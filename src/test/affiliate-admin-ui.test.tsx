@@ -439,7 +439,7 @@ describe("Vonix affiliate private panel", () => {
     });
     render(<Page />);
     await screen.findByText("Segredo da candidata");
-    fireEvent.click(screen.getByRole("button", { name: "APROVAR", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^APROVAR$/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
     expect(
       await screen.findByText("Inscrição já analisada. Atualize a lista."),
