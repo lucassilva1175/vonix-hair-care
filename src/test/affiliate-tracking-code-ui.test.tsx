@@ -831,3 +831,30 @@ describe("Private receipt continuity through navigation", () => {
     expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
   });
 });
+
+it("does not start a second native clipboard write until the first settles after code changes", async () => {
+  let finish!: () => void;
+  const writeText = vi
+    .fn()
+    .mockImplementationOnce(() => new Promise<void>((r) => (finish = r)))
+    .mockResolvedValue(undefined);
+  const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  try {
+    render(<AffiliateTrackingCodePage />);
+    const field = screen.getByLabelText("Código privado de acompanhamento");
+    fireEvent.change(field, { target: { value: code } });
+    fireEvent.click(screen.getByRole("button", { name: "Copiar código para guardar" }));
+    fireEvent.change(field, { target: { value: "abcdefghijklmnopqrstuvwxyzABCDEF" } });
+    expect(screen.getByRole("button", { name: "Copiando código..." })).toBeDisabled();
+    expect(writeText).toHaveBeenCalledTimes(1);
+    await act(async () => finish());
+    expect(screen.queryByText("Código copiado!")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Copiar código para guardar" }));
+    await screen.findByText("Código copiado!");
+    expect(writeText).toHaveBeenLastCalledWith("abcdefghijklmnopqrstuvwxyzABCDEF");
+  } finally {
+    if (original) Object.defineProperty(navigator, "clipboard", original);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+});

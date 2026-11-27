@@ -70,6 +70,24 @@ const statusUi = {
   },
 } as const;
 
+export const LEGACY_TRACKER_READ_WAIT_MS = 15000;
+async function waitForTrackerRead<T>(request: PromiseLike<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve(request),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error("legacy-read-timeout")),
+          LEGACY_TRACKER_READ_WAIT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 function trackerTabHidden() {
   return typeof document !== "undefined" && document.visibilityState === "hidden";
 }
@@ -84,6 +102,9 @@ export function AffiliateApplicationTracker() {
   const [error, setError] = useState("");
   const [application, setApplication] = useState<OwnApplication | null>(null);
   const [statusChecked, setStatusChecked] = useState(false);
+  const [sessionUnavailable, setSessionUnavailable] = useState(false);
+  const suspended = useRef(false);
+  const signOutInFlight = useRef(false);
   // A response from an old account must never render under a newer session.
   const refreshVersion = useRef(0);
   const accessInFlight = useRef(false);
@@ -92,32 +113,42 @@ export function AffiliateApplicationTracker() {
 
   const refresh = useCallback(async () => {
     const requestId = ++refreshVersion.current;
+    if (suspended.current || trackerTabHidden() || signOutInFlight.current) return;
     setChecking(true);
     setError("");
+    setSessionUnavailable(false);
     setApplication(null);
     setStatusChecked(false);
     setSignedEmail("");
     // Never refresh private status while the page is hidden. An Auth callback
     // can fire in the background, but resuming must revalidate the user anew.
-    if (typeof document !== "undefined" && trackerTabHidden()) return;
+    let identityVerified = false;
     try {
       // getUser checks the Auth server; do not trust an unvalidated local token.
-      const userResult = await vonixAffiliateAuth.auth.getUser();
+      const userResult = await waitForTrackerRead(vonixAffiliateAuth.auth.getUser());
       if (refreshVersion.current !== requestId) return;
       if (trackerTabHidden()) return;
       const verified = userResult.data.user;
+      if (userResult.error && userResult.error.name !== "AuthSessionMissingError") {
+        setSessionUnavailable(true);
+        setError("Não foi possível verificar sua sessão. Confira a conexão e tente novamente.");
+        return;
+      }
       if (userResult.error || !verified?.email || !verified.email_confirmed_at) {
         setSignedEmail("");
         return;
       }
+      identityVerified = true;
       setSignedEmail(verified.email);
       // PostgreSQL RLS matches only the verified JWT e-mail. No names,
       // documents, phone numbers or other candidates' details are returned.
-      const response = await vonixAffiliateAuth
-        .from("vonix_affiliate_portal_status")
-        .select("application_id,status,rejection_reason,submitted_at,reviewed_at")
-        .order("submitted_at", { ascending: false })
-        .limit(1);
+      const response = await waitForTrackerRead(
+        vonixAffiliateAuth
+          .from("vonix_affiliate_portal_status")
+          .select("application_id,status,rejection_reason,submitted_at,reviewed_at")
+          .order("submitted_at", { ascending: false })
+          .limit(1),
+      );
       if (refreshVersion.current !== requestId) return;
       if (trackerTabHidden()) return;
       if (response.error) {
@@ -135,8 +166,10 @@ export function AffiliateApplicationTracker() {
       }
       setStatusChecked(true);
     } catch {
-      if (refreshVersion.current === requestId && !trackerTabHidden())
+      if (refreshVersion.current === requestId && !trackerTabHidden() && !suspended.current) {
+        if (!identityVerified) setSessionUnavailable(true);
         setError("Não foi possível estabelecer uma conexão segura para consultar sua candidatura.");
+      }
     } finally {
       if (refreshVersion.current === requestId) setChecking(false);
     }
@@ -155,38 +188,55 @@ export function AffiliateApplicationTracker() {
         if (active) void refresh();
       });
     });
+    const conceal = () => {
+      if (!active) return;
+      ++versionRef.current;
+      ++accessVersion.current;
+      // An access email/OTP request cannot be cancelled by hiding the page.
+      // Do not release its single-flight lock until its promise settles.
+      setCode("");
+      setLoginEmail("");
+      activeEmail.current = "";
+      setNotice("");
+      setChecking(true);
+      setStatusChecked(false);
+      setSessionUnavailable(false);
+      setApplication(null);
+      setSignedEmail("");
+      setError("");
+    };
     const onVisibilityChange = () => {
       if (!active) return;
-      if (trackerTabHidden()) {
-        // Revoke in-flight confidential reads and remove the email + decision
-        // from the DOM immediately, before a shared device changes hands.
-        ++versionRef.current;
-        ++accessVersion.current;
-        accessInFlight.current = false;
-        setLoading(false);
-        setCode("");
-        setNotice("");
-        setChecking(true);
-        setApplication(null);
-        setSignedEmail("");
-        setError("");
-      } else if (document.visibilityState === "visible") {
-        void refresh();
-      }
+      if (trackerTabHidden()) conceal();
+      else if (!suspended.current) void refresh();
+    };
+    const onPageHide = () => {
+      suspended.current = true;
+      conceal();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted && !suspended.current) return;
+      suspended.current = false;
+      conceal();
+      if (!trackerTabHidden()) void refresh();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       active = false;
       ++versionRef.current;
       ++accessRef.current;
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
       subscription.unsubscribe();
     };
   }, [refresh]);
 
   async function requestLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading || accessInFlight.current || trackerTabHidden()) return;
+    if (loading || accessInFlight.current || suspended.current || trackerTabHidden()) return;
     const normalized = loginEmail.trim().toLowerCase();
     if (!z.string().email().safeParse(normalized).success) return;
     accessInFlight.current = true;
@@ -223,16 +273,21 @@ export function AffiliateApplicationTracker() {
       if (accessVersion.current === requestId && !trackerTabHidden())
         setError("Falha de conexão ao solicitar acesso.");
     } finally {
-      if (accessVersion.current === requestId) {
-        accessInFlight.current = false;
-        setLoading(false);
-      }
+      accessInFlight.current = false;
+      setLoading(false);
     }
   }
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading || accessInFlight.current || trackerTabHidden() || !/^\d{6,8}$/.test(code)) return;
+    if (
+      loading ||
+      accessInFlight.current ||
+      suspended.current ||
+      trackerTabHidden() ||
+      !/^\d{6,8}$/.test(code)
+    )
+      return;
     const normalized = loginEmail.trim().toLowerCase();
     if (!z.string().email().safeParse(normalized).success) {
       setError("Informe o e-mail utilizado na inscrição antes de validar o código.");
@@ -258,18 +313,20 @@ export function AffiliateApplicationTracker() {
       if (accessVersion.current === requestId && !trackerTabHidden())
         setError("Não foi possível validar o código. Tente novamente.");
     } finally {
-      if (accessVersion.current === requestId) {
-        accessInFlight.current = false;
-        setLoading(false);
-      }
+      accessInFlight.current = false;
+      setLoading(false);
     }
   }
 
   async function signOut() {
+    if (signOutInFlight.current || suspended.current || trackerTabHidden()) return;
+    signOutInFlight.current = true;
     ++refreshVersion.current;
     setChecking(true);
     setApplication(null);
     setSignedEmail("");
+    setLoginEmail("");
+    activeEmail.current = "";
     setCode("");
     setNotice("");
     let signOutFailed = false;
@@ -280,8 +337,11 @@ export function AffiliateApplicationTracker() {
       signOutFailed = true;
     }
     // Recheck the Auth server rather than claiming logout before it succeeds.
+    signOutInFlight.current = false;
+    if (suspended.current || trackerTabHidden()) return;
     await refresh();
-    if (signOutFailed) setError("Não foi possível encerrar sua sessão. Tente novamente.");
+    if (signOutFailed && !suspended.current && !trackerTabHidden())
+      setError("Não foi possível encerrar sua sessão. Tente novamente.");
   }
 
   const show = application ? statusUi[application.status] : null;
@@ -311,6 +371,27 @@ export function AffiliateApplicationTracker() {
               <p role="status" className="flex items-center gap-3 text-sm text-[#73545e]">
                 <Clock3 className="h-5 w-5" /> Verificando sua sessão de maneira segura...
               </p>
+            ) : sessionUnavailable ? (
+              <div className="rounded-xl border border-[#eddad7] bg-[#fffaf8] p-5">
+                <h2 className="font-display text-2xl">Não foi possível confirmar sua sessão</h2>
+                <p className="mt-2 text-sm text-[#73545e]">
+                  Uma falha de conexão não significa que sua candidatura foi perdida ou que você
+                  saiu da conta.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="mt-4 min-h-11 rounded-xl bg-[#633847] px-5 text-sm font-bold text-white"
+                >
+                  Verificar sessão novamente
+                </button>
+                <a
+                  href="/consultar-candidatura"
+                  className="mt-3 flex min-h-11 items-center text-sm font-bold underline underline-offset-4"
+                >
+                  Consultar pelo código privado
+                </a>
+              </div>
             ) : signedEmail ? (
               <>
                 <div className="flex flex-wrap items-start justify-between gap-4">
