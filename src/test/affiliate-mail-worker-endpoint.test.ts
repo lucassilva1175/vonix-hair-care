@@ -33,7 +33,7 @@ describe("C180 — authenticated notification worker boundary", () => {
     }
     const method = await receiveAffiliateMailWorker(request("Bearer " + secret, "GET"));
     expect(method.status).toBe(405);
-    expect(method.headers.get("allow")).toBe("POST");
+    expect(method.headers.get("allow")).toBe("POST, HEAD");
     privateResponse(method);
     expect(worker.process).not.toHaveBeenCalled();
   });
@@ -53,6 +53,17 @@ describe("C180 — authenticated notification worker boundary", () => {
     privateResponse(response);
     expect(await response.json()).toEqual({ sent: 2, failed: 1, configured: true });
     expect(worker.process).toHaveBeenCalledExactlyOnceWith(5);
+  });
+  it("authenticates a HEAD probe without invoking mail processing", async () => {
+    const denied = await receiveAffiliateMailWorker(request(undefined, "HEAD"));
+    expect(denied.status).toBe(401);
+    expect(denied.headers.get("x-vonix-worker-probe")).toBeNull();
+    const response = await receiveAffiliateMailWorker(request("Bearer " + secret, "HEAD"));
+    expect(response.status).toBe(204);
+    expect(response.headers.get("x-vonix-worker-probe")).toBe("authenticated-v1");
+    expect(await response.text()).toBe("");
+    privateResponse(response);
+    expect(worker.process).not.toHaveBeenCalled();
   });
   it("returns a generic private 503 without leaking provider errors", async () => {
     worker.process.mockRejectedValue(new Error("SYNTHETIC_PRIVATE_PROVIDER_DETAIL"));
