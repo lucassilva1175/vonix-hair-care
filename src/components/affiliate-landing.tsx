@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
+import { AffiliateEditorialPlanner } from "@/components/affiliate-editorial-planner";
 import { AffiliateBrandTrust } from "@/components/affiliate-brand-trust";
 import { AffiliateOfficialEvidenceLinks } from "@/components/affiliate-official-evidence-links";
 import { AffiliateCurrentCombos } from "@/components/affiliate-current-combos";
@@ -559,6 +560,9 @@ export function AffiliateLandingDiscovery({
       </section>
 
       <AffiliateCreatorPaths recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
+      {sourceLinked && (
+        <AffiliateEditorialPlanner recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
+      )}
 
       <AffiliateCreatorOpportunity
         recruitmentOpen={isOpen}

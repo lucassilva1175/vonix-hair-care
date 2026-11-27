@@ -1603,3 +1603,38 @@ it("releases a stalled read after its local deadline and ignores a late list", a
     vi.useRealTimers();
   }
 });
+
+describe("Admin browser history privacy", () => {
+  it("conceals candidates at pagehide and revalidates a restored session before exposing any data", async () => {
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    render(<Page />);
+    await screen.findByText(candidate.full_name);
+    let finish!: (x: { authenticated: boolean }) => void;
+    server.getAffiliateAdminSession.mockImplementationOnce(() => new Promise((r) => (finish = r)));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    expect(screen.queryByText(candidate.full_name)).toBeNull();
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    expect(screen.getByText("Protegendo dados das candidatas")).toBeInTheDocument();
+    expect(screen.queryByText(candidate.full_name)).toBeNull();
+    await act(async () => finish({ authenticated: false }));
+    expect(screen.queryByText(candidate.full_name)).toBeNull();
+    expect(await screen.findByText(/Sua sessão expirou/)).toBeInTheDocument();
+    expect(server.reviewAffiliateApplication).not.toHaveBeenCalled();
+    visibility.mockRestore();
+  });
+  it("clears unsubmitted legacy credentials on pagehide even before authorization", async () => {
+    server.getAffiliateAdminSession.mockResolvedValue({ authenticated: false });
+    render(<Page />);
+    await screen.findByText("Acesso da equipe");
+    fireEvent.change(screen.getByLabelText("Senha administrativa"), {
+      target: { value: "synthetic-password" },
+    });
+    fireEvent.change(screen.getByLabelText("Código do autenticador"), {
+      target: { value: "123456" },
+    });
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    expect(screen.getByLabelText("Senha administrativa")).toHaveValue("");
+    expect(screen.getByLabelText("Código do autenticador")).toHaveValue("");
+    expect(server.loginAffiliateAdmin).not.toHaveBeenCalled();
+  });
+});

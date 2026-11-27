@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
-import { illustrativeEarnings } from "@/lib/affiliate-marketing-math";
+import { illustrativeEarnings, parseIllustrativeSales } from "@/lib/affiliate-marketing-math";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -10,10 +10,15 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
   const [sales, setSales] = useState(2500);
   const [includeBonus, setIncludeBonus] = useState(false);
   const [salesText, setSalesText] = useState("2500");
+  const [invalidSales, setInvalidSales] = useState(false);
+  function amountText(value: number) {
+    return String(value).replace(".", ",");
+  }
   function chooseSales(value: number) {
     const bounded = illustrativeEarnings(value).sales;
     setSales(bounded);
-    setSalesText(String(bounded));
+    setSalesText(amountText(bounded));
+    setInvalidSales(false);
   }
   const result = illustrativeEarnings(sales);
   const bonus = includeBonus ? result.bonus : 0;
@@ -49,7 +54,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
             type="range"
             min={0}
             max={20000}
-            step={1}
+            step={0.01}
             value={sales}
             aria-describedby="simulator-conditions"
             aria-valuetext={money.format(result.sales)}
@@ -73,22 +78,35 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
             <input
               id="illustrative-exact-sales"
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               value={salesText}
-              maxLength={5}
+              maxLength={18}
               onChange={(event) => {
                 const value = event.target.value;
-                if (!/^\d{0,5}$/.test(value)) return;
-                if (value === "") {
-                  setSalesText("");
-                  setSales(0);
-                } else chooseSales(Number(value));
+                const parsed = parseIllustrativeSales(value);
+                setSalesText(value);
+                setInvalidSales(parsed === null);
+                if (parsed === null) return;
+                const bounded = illustrativeEarnings(parsed).sales;
+                setSales(bounded);
+                if (parsed !== bounded) setSalesText(amountText(bounded));
               }}
-              onBlur={() => setSalesText(String(sales))}
-              aria-describedby="simulator-conditions"
+              onBlur={() => {
+                if (!invalidSales) setSalesText(amountText(sales));
+              }}
+              aria-invalid={invalidSales}
+              aria-describedby="simulator-conditions simulator-input-help"
               className="min-h-12 w-full min-w-0 bg-transparent font-semibold tabular-nums outline-none focus-visible:outline-2"
             />
           </div>
+          <p
+            id="simulator-input-help"
+            className="mt-2 text-xs leading-relaxed text-muted-foreground"
+          >
+            {invalidSales
+              ? "Formato inválido. Use, por exemplo, 1.234,56. O resultado mantém o último valor válido."
+              : "Aceita valores como 1.234,56 ou R$ 1.234,56; limite de R$ 20 mil."}
+          </p>
           <div
             role="group"
             aria-label="Cenários ilustrativos de vendas"
