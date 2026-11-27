@@ -1,4 +1,5 @@
 import type { Product } from "@/lib/store";
+import { affiliateTrackersAllowed } from "@/lib/affiliate-document-privacy";
 
 declare global {
   interface Window {
@@ -86,7 +87,7 @@ function sendServerEvent(event: string, eventId: string, customData: Record<stri
 
 /** GA4 recommended e-commerce events; the same names show up as smart events in Clarity and, when set up, in the Meta Pixel. */
 export function track(event: string, params: Record<string, unknown> = {}) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !affiliateTrackersAllowed([window.location.pathname])) return;
   try {
     window.gtag?.("event", event, { currency: "BRL", ...params });
     window.clarity?.("event", event);
