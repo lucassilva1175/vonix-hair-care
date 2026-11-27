@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  EDITORIAL_REFERENCE_LIMIT,
+  resolveEditorialReferences,
+} from "@/lib/affiliate-editorial-references";
 import { affiliateSearchTerms, matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
 import { ArrowUpRight, Search, PackageOpen, Bookmark, Check, X, ClipboardCopy } from "lucide-react";
 import { isProOnly, vitrine } from "@/lib/store";
@@ -14,7 +18,13 @@ const featured = [
   "combo-teia-coco-nutri-shampoo",
 ];
 
-export function AffiliateCurrentCombos() {
+export function AffiliateCurrentCombos({
+  referenceSelection,
+}: {
+  referenceSelection?: readonly [string[], Dispatch<SetStateAction<string[]>>];
+} = {}) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
   const [query, setQuery] = useState("");
@@ -23,7 +33,8 @@ export function AffiliateCurrentCombos() {
   const [usage, setUsage] = useState<"" | "professional" | "other">("");
   const [packaging, setPackaging] = useState(false);
   const [failedPackaging, setFailedPackaging] = useState<string[]>([]);
-  const [shortlist, setShortlist] = useState<string[]>([]);
+  const localSelection = useState<string[]>([]);
+  const [shortlist, setShortlist] = referenceSelection ?? localSelection;
   const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
   const shortlistCopyVersion = useRef(0);
   const shortlistCopying = useRef(false);
@@ -40,7 +51,7 @@ export function AffiliateCurrentCombos() {
   const searchRef = useRef<HTMLInputElement>(null);
   const individual = vitrine.filter((p) => !p.slug.startsWith("combo-"));
   const items = mode === "combos" ? ordered : individual;
-  const selectedProducts = shortlist.flatMap((slug) => {
+  const selectedProducts = resolveEditorialReferences(shortlist).flatMap(({ slug }) => {
     const item = [...ordered, ...individual].find((p) => p.slug === slug);
     return item ? [item] : [];
   });
@@ -67,7 +78,7 @@ export function AffiliateCurrentCombos() {
     setShortlist((prev) =>
       prev.includes(slug)
         ? prev.filter((x) => x !== slug)
-        : prev.length < 6
+        : prev.length < EDITORIAL_REFERENCE_LIMIT
           ? [...prev, slug]
           : prev,
     );
@@ -151,6 +162,7 @@ export function AffiliateCurrentCombos() {
       id="vitrine-afiliadas"
       aria-labelledby="affiliate-c161-combos-title"
       data-testid="affiliate-c161-combos"
+      data-interactive={ready ? "true" : "false"}
       className="scroll-mt-32 bg-[#fbf5f2] px-5 py-5 sm:py-8"
     >
       <div className="mx-auto max-w-6xl rounded-2xl border border-[#e3ccc9] bg-white p-4 sm:p-6">
@@ -173,6 +185,7 @@ export function AffiliateCurrentCombos() {
           </div>
           <button
             type="button"
+            disabled={!ready}
             aria-expanded={open}
             aria-controls="affiliate-c161-combo-panel"
             onClick={() => setOpen((value) => !value)}
@@ -218,13 +231,24 @@ export function AffiliateCurrentCombos() {
                     aria-live="polite"
                     className="text-xs font-bold tabular-nums text-[#89586a]"
                   >
-                    {selectedProducts.length} de 6 itens
+                    {selectedProducts.length} de {EDITORIAL_REFERENCE_LIMIT} itens
                   </span>
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-[#755d66]">
                   Separe produtos para ideias de conteúdo. A lista fica apenas nesta página, sem
                   compra, cadastro ou armazenamento de dados.
                 </p>
+                {referenceSelection && (
+                  <a
+                    href="#planejamento-criativo"
+                    className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-xs font-bold text-[#724155] underline underline-offset-4"
+                  >
+                    {selectedProducts.length
+                      ? "Usar referências no planejamento"
+                      : "Conhecer o planejamento semanal"}{" "}
+                    <ArrowUpRight aria-hidden="true" className="size-4" />
+                  </a>
+                )}
                 {selectedProducts.length > 0 && (
                   <>
                     <ul
@@ -457,7 +481,9 @@ export function AffiliateCurrentCombos() {
                           : " à lista de referências")
                       }
                       aria-pressed={shortlist.includes(p.slug)}
-                      disabled={!shortlist.includes(p.slug) && shortlist.length >= 6}
+                      disabled={
+                        !shortlist.includes(p.slug) && shortlist.length >= EDITORIAL_REFERENCE_LIMIT
+                      }
                       onClick={() => toggleShortlist(p.slug)}
                       className={
                         "flex min-h-[44px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold focus-visible:outline-2 disabled:opacity-50 " +

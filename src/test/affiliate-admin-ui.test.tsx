@@ -1638,3 +1638,33 @@ describe("Admin browser history privacy", () => {
     expect(server.loginAffiliateAdmin).not.toHaveBeenCalled();
   });
 });
+
+describe("Pending queue navigation", () => {
+  it("jumps to the oldest page of the active pending query and returns to the first page", async () => {
+    server.getAffiliateApplications.mockImplementation(async ({ data }) => {
+      const rows = Array.from({ length: data.page === 2 ? 1 : 40 }, (_, i) => ({
+        ...candidate,
+        id: "synthetic-" + data.page + "-" + i,
+        full_name: "QA page " + data.page + " candidate " + i,
+      }));
+      return { ...list(rows), total: 81, stats: { pendente: 81, aprovada: 0, recusada: 0 } };
+    });
+    render(<Page />);
+    const queue = await screen.findByRole("complementary", {
+      name: "Organização da fila pendente",
+    });
+    expect(queue).toHaveTextContent("Inscrições 1–40 de 81");
+    expect(within(queue).getByRole("button", { name: "Voltar à primeira página" })).toBeDisabled();
+    fireEvent.click(within(queue).getByRole("button", { name: "Ir à página mais antiga" }));
+    await screen.findByText("Inscrições 81–81 de 81");
+    expect(server.getAffiliateApplications).toHaveBeenLastCalledWith({
+      data: { status: "pendente", page: 2, search: undefined, mailStatus: null },
+    });
+    expect(screen.getByText("QA page 2 candidate 0")).toBeInTheDocument();
+    const oldest = screen.getByRole("complementary", { name: "Organização da fila pendente" });
+    expect(within(oldest).getByRole("button", { name: "Ir à página mais antiga" })).toBeDisabled();
+    fireEvent.click(within(oldest).getByRole("button", { name: "Voltar à primeira página" }));
+    await screen.findByText("Inscrições 1–40 de 81");
+    expect(server.reviewAffiliateApplication).not.toHaveBeenCalled();
+  });
+});

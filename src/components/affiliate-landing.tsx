@@ -458,6 +458,7 @@ export function AffiliateLandingDiscovery({
   onSafePreview?: (() => void) | undefined;
 }) {
   const isOpen = recruitmentStatus === "open";
+  const referenceSelection = useState<string[]>([]);
 
   return (
     <div data-testid="vonix-c64-discovery" className="min-w-0">
@@ -473,7 +474,7 @@ export function AffiliateLandingDiscovery({
 
       {sourceLinked ? (
         <>
-          <AffiliateCurrentCombos />
+          <AffiliateCurrentCombos referenceSelection={referenceSelection} />
           <AffiliateOfficialEvidenceLinks variant="videos" />
           <div className="bg-[#fbf5f2] px-5 pb-8 sm:pb-12">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e5d2d4] bg-white p-4 sm:p-6">
@@ -561,7 +562,11 @@ export function AffiliateLandingDiscovery({
 
       <AffiliateCreatorPaths recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
       {sourceLinked && (
-        <AffiliateEditorialPlanner recruitmentOpen={isOpen} onSafePreview={onSafePreview} />
+        <AffiliateEditorialPlanner
+          recruitmentOpen={isOpen}
+          onSafePreview={onSafePreview}
+          referenceSlugs={referenceSelection[0]}
+        />
       )}
 
       <AffiliateCreatorOpportunity

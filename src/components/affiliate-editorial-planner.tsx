@@ -8,13 +8,19 @@ import {
   type EditorialFormat,
 } from "@/lib/affiliate-editorial-plan";
 import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
+import {
+  appendEditorialReferences,
+  resolveEditorialReferences,
+} from "@/lib/affiliate-editorial-references";
 
 export function AffiliateEditorialPlanner({
   recruitmentOpen = false,
   onSafePreview,
+  referenceSlugs = [],
 }: {
   recruitmentOpen?: boolean;
   onSafePreview?: (() => void) | undefined;
+  referenceSlugs?: readonly string[];
 }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -26,6 +32,14 @@ export function AffiliateEditorialPlanner({
   const copyVersion = useRef(0);
   const copying = useRef(false);
   const plan = buildEditorialPlan(profile, cadence, format);
+  const references = resolveEditorialReferences(referenceSlugs);
+  const copyText = appendEditorialReferences(plan.text, referenceSlugs);
+  // Changing catalog selections invalidates any previous clipboard feedback.
+  const referenceKey = references.map((item) => item.slug).join("|");
+  useEffect(() => {
+    copyVersion.current++;
+    if (!copying.current) setCopy("idle");
+  }, [referenceKey]);
   function change(update: () => void) {
     if (!ready) return;
     update();
@@ -39,7 +53,7 @@ export function AffiliateEditorialPlanner({
     copying.current = true;
     setCopy("copying");
     try {
-      await navigator.clipboard.writeText(plan.text);
+      await navigator.clipboard.writeText(copyText);
       if (version === copyVersion.current) setCopy("copied");
     } catch {
       if (version === copyVersion.current) setCopy("failed");
@@ -188,6 +202,44 @@ export function AffiliateEditorialPlanner({
               </li>
             ))}
           </ol>
+          {references.length > 0 && (
+            <aside
+              aria-label="Referências do seu planejamento"
+              className="mt-6 rounded-xl border border-[#ead8d6] bg-[#fffaf7] p-4"
+            >
+              <h3 className="font-display text-xl text-[#633847]">Seus produtos de referência</h3>
+              <p className="mt-2 text-xs leading-relaxed text-[#755d66]">
+                {references.length}{" "}
+                {references.length === 1 ? "referência selecionada" : "referências selecionadas"} na
+                vitrine. Seus links oficiais também entram na cópia do plano; não são recomendações
+                de uso nem produtos recebidos.
+              </p>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {references.map((item) => (
+                  <li key={item.slug} className="rounded-lg border border-[#ead8d6] bg-white p-3">
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-[#633847] underline underline-offset-4"
+                    >
+                      {item.name} <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+                    </a>
+                    <p className="text-xs text-[#755d66]">
+                      {item.category}
+                      {item.professional ? " · Uso exclusivamente profissional" : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="#vitrine-afiliadas"
+                className="mt-3 inline-flex min-h-11 items-center text-xs font-bold text-[#633847] underline underline-offset-4"
+              >
+                Editar minhas referências na vitrine
+              </a>
+            </aside>
+          )}
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               type="button"
@@ -229,7 +281,7 @@ export function AffiliateEditorialPlanner({
               <textarea
                 readOnly
                 rows={9}
-                value={plan.text}
+                value={copyText}
                 aria-label="Plano editorial para copiar manualmente"
                 onFocus={(e) => e.currentTarget.select()}
                 className="mt-2 w-full rounded-xl border border-[#d9bec5] bg-white p-3 text-sm text-[#633847]"
