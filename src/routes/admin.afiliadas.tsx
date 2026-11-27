@@ -20,6 +20,7 @@ import {
 import { AffiliateOwnerActivationPanel } from "@/components/affiliate-owner-activation-panel";
 import { AffiliateManualRegistration } from "@/components/affiliate-manual-registration";
 import { AffiliateReadinessActions } from "@/components/affiliate-readiness-actions";
+import { AffiliateOperationalOverview } from "@/components/affiliate-operational-overview";
 import {
   AffiliateDecisionMailGuidance,
   AffiliateNotificationOperations,
@@ -454,6 +455,17 @@ export function AffiliateAdminPage() {
     } finally {
       if (isCurrent()) setLoading(false);
     }
+  }
+
+  function openOperationalQueue(
+    nextStatus: AffiliateListStatus,
+    nextMailFilter: AffiliateQueueFilter | null,
+  ) {
+    if (loading || mutationInFlight.current || document.visibilityState === "hidden") return;
+    setNotice("");
+    setSearchText("");
+    void load(nextStatus, 0, "", nextMailFilter);
+    document.getElementById("lista-afiliadas")?.scrollIntoView?.({ block: "start" });
   }
 
   useEffect(() => {
@@ -1101,6 +1113,16 @@ export function AffiliateAdminPage() {
                 Consultar inscrições
               </a>
               <a
+                href="#indicadores-afiliadas"
+                onClick={() => {
+                  const panel = document.getElementById("indicadores-afiliadas");
+                  if (panel instanceof HTMLDetailsElement) panel.open = true;
+                }}
+                className="inline-flex min-h-11 items-center rounded-full border border-[#e8dcd8] px-4 text-sm font-semibold text-[#693440]"
+              >
+                Indicadores
+              </a>
+              <a
                 href="#notificacoes-afiliadas"
                 className="inline-flex min-h-11 items-center rounded-full border border-[#e8dcd8] px-4 text-sm font-semibold text-[#693440]"
               >
@@ -1171,6 +1193,18 @@ export function AffiliateAdminPage() {
               ))}
             </div>
 
+            <AffiliateOperationalOverview
+              stats={stats}
+              mail={mailStats}
+              fresh={notificationStatsFresh}
+              checkedAt={listCheckedAt}
+              loading={loading || workingId !== null}
+              onPending={() => openOperationalQueue("pendente", null)}
+              onDecisions={() => openOperationalQueue("todas", null)}
+              onMissing={() => openOperationalQueue("todas", "sem_registro")}
+              onUncertain={() => openOperationalQueue("todas", "incerto")}
+              onFailed={() => openOperationalQueue("todas", "falhou")}
+            />
             <section
               id="notificacoes-afiliadas"
               aria-labelledby="affiliate-mail-summary"
