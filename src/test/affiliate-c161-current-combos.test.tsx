@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 import { AffiliateCurrentCombos } from "@/components/affiliate-current-combos";
 import { isProOnly, vitrine } from "@/lib/store";
 import packagingImages from "@/data/sacolinhas.json";
+import { matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
 const analytics = vi.hoisted(() => ({ track: vi.fn() }));
 vi.mock("@/lib/analytics", () => ({ track: analytics.track }));
 afterEach(() => {
@@ -153,6 +154,38 @@ describe("C161 current official combo catalog", () => {
       }
     }
     expect(tested).toBe(true);
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
+  it("offers an alternative catalog mode for a matching query and a single reset", () => {
+    render(<AffiliateCurrentCombos />);
+    fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+    const comboSlugs = vitrine.filter((p) => p.slug.startsWith("combo-"));
+    const candidate = vitrine.find(
+      (p) =>
+        !p.slug.startsWith("combo-") &&
+        !comboSlugs.some((c) =>
+          matchesAffiliateSearch(c.name + " " + c.slug + " " + c.categoryLabel, p.slug),
+        ),
+    );
+    expect(candidate).toBeDefined();
+    const search = screen.getByRole("searchbox");
+    fireEvent.change(search, { target: { value: candidate!.slug } });
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: /produtos individuais com esta busca/ }));
+    expect(search).toHaveValue(candidate!.slug);
+    expect(
+      screen
+        .getAllByRole("link")
+        .some((l) => l.getAttribute("href") === "/produto/" + candidate!.slug),
+    ).toBe(true);
+    fireEvent.change(screen.getByLabelText("Orientação de uso"), {
+      target: { value: "professional" },
+    });
+    fireEvent.change(search, { target: { value: "semresultadozxqx" } });
+    expect(screen.getAllByRole("button", { name: "Limpar todos os filtros" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Limpar todos os filtros" }));
+    expect(search).toHaveValue("");
+    expect(search).toHaveFocus();
     expect(analytics.track).not.toHaveBeenCalled();
   });
 });

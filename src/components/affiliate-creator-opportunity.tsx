@@ -9,6 +9,12 @@ const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL
 export function AffiliateEarningsSimulator({ compact = false }: { compact?: boolean }) {
   const [sales, setSales] = useState(2500);
   const [includeBonus, setIncludeBonus] = useState(false);
+  const [salesText, setSalesText] = useState("2500");
+  function chooseSales(value: number) {
+    const bounded = illustrativeEarnings(value).sales;
+    setSales(bounded);
+    setSalesText(String(bounded));
+  }
   const result = illustrativeEarnings(sales);
   const bonus = includeBonus ? result.bonus : 0;
   const total = includeBonus ? result.total : result.commission;
@@ -43,16 +49,45 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
             type="range"
             min={0}
             max={20000}
-            step={500}
+            step={1}
             value={sales}
             aria-describedby="simulator-conditions"
             aria-valuetext={money.format(result.sales)}
-            onChange={(event) => setSales(Number(event.target.value))}
+            onChange={(event) => chooseSales(Number(event.target.value))}
             className="mt-3 min-h-11 w-full cursor-pointer accent-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
           />
           <div className="flex justify-between text-xs text-muted-foreground" aria-hidden="true">
             <span>R$ 0</span>
             <span>R$ 20.000</span>
+          </div>
+          <label
+            htmlFor="illustrative-exact-sales"
+            className="mt-4 block text-xs font-semibold text-primary"
+          >
+            Ou informe um valor em reais (de 0 a 20 mil)
+          </label>
+          <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#dfccd0] bg-white px-3 text-sm text-primary">
+            <span aria-hidden="true" className="font-bold">
+              R$
+            </span>
+            <input
+              id="illustrative-exact-sales"
+              type="text"
+              inputMode="numeric"
+              value={salesText}
+              maxLength={5}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (!/^\d{0,5}$/.test(value)) return;
+                if (value === "") {
+                  setSalesText("");
+                  setSales(0);
+                } else chooseSales(Number(value));
+              }}
+              onBlur={() => setSalesText(String(sales))}
+              aria-describedby="simulator-conditions"
+              className="min-h-12 w-full min-w-0 bg-transparent font-semibold tabular-nums outline-none focus-visible:outline-2"
+            />
           </div>
           <div
             role="group"
@@ -64,7 +99,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
                 key={amount}
                 type="button"
                 aria-pressed={sales === amount}
-                onClick={() => setSales(amount)}
+                onClick={() => chooseSales(amount)}
                 className={
                   "min-h-11 rounded-full border px-3 py-2 text-xs font-bold focus-visible:outline-2 focus-visible:outline-offset-2 " +
                   (sales === amount
@@ -96,7 +131,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
           htmlFor="illustrative-sales"
           aria-live="polite"
           aria-atomic="true"
-          className="block min-w-0 self-center"
+          className="block min-w-0 self-center rounded-[1.5rem] border border-[#e5cfd2] bg-gradient-to-br from-[#fffaf7] to-[#f5e8e8] p-5 shadow-[0_12px_32px_rgba(73,39,52,.07)] sm:p-7"
         >
           <dl className="space-y-5">
             <div className="flex flex-wrap justify-between gap-2">

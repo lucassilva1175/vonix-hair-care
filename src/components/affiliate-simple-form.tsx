@@ -457,6 +457,40 @@ export function AffiliateSimpleForm({
     },
   ];
   const filledGroups = completionGroups.filter(({ filled }) => filled).length;
+  const requiredFields: readonly Key[] = [
+    "fullName",
+    "email",
+    "phone",
+    "instagram",
+    "instagramFollowers",
+    "postalCode",
+    "street",
+    "number",
+    "district",
+    "city",
+    "state",
+  ];
+  const nextEmptyField = requiredFields.find((key) => !values[key].trim());
+  const nextRequired: ValidationKey | undefined =
+    nextEmptyField ?? (!accepted ? "privacyAccepted" : undefined);
+  function focusRequiredField(event: MouseEvent<HTMLAnchorElement>) {
+    if (
+      !nextRequired ||
+      sending ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    const target = document.getElementById("simple-" + nextRequired);
+    if (!target) return;
+    event.preventDefault();
+    target.focus({ preventScroll: true });
+    target.scrollIntoView?.({ block: "center", behavior: "instant" });
+  }
 
   // Count actual visible form exposure, not an offscreen render.
   // Never emit a stage for the non-submitting preview or a confirmed receipt.
@@ -953,6 +987,25 @@ export function AffiliateSimpleForm({
               </li>
             ))}
           </ul>
+          {!sending && nextRequired ? (
+            <a
+              href={"#simple-" + nextRequired}
+              onClick={focusRequiredField}
+              data-testid="affiliate-next-required-field"
+              className="mt-3 flex min-h-11 items-center justify-between gap-2 rounded-xl bg-[#f3e3e6] px-3 py-2 text-xs font-semibold text-[#633a49] focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              <span>Continuar preenchendo: {validationLabels[nextRequired]}</span>
+              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+            </a>
+          ) : !sending ? (
+            <p
+              data-testid="affiliate-all-required-present"
+              className="mt-3 rounded-xl bg-[#f3e3e6] px-3 py-2 text-xs font-semibold text-[#633a49]"
+            >
+              Campos obrigatórios informados. Revise os dados antes de{" "}
+              {preview ? "concluir a prévia" : "enviar"}.
+            </p>
+          ) : null}
           <p className="mt-2 text-[11px] leading-relaxed text-[#7c6269]">
             Toque em uma etapa para ir aos campos. Indica campos informados e aceite, não validação.
             A prévia nunca envia candidaturas.

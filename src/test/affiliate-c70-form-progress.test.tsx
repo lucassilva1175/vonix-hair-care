@@ -99,4 +99,24 @@ describe("C70 form progress — presence only, no applicant data", () => {
     expect(analytics.track).not.toHaveBeenCalled();
     expect(server.submit).not.toHaveBeenCalled();
   });
+  it("jumps to the next empty required field without changing data or submitting", () => {
+    render(<AffiliateSimpleForm preview />);
+    const next = () => screen.getByTestId("affiliate-next-required-field");
+    expect(next()).toHaveAttribute("href", "#simple-fullName");
+    fireEvent.click(next(), { button: 0 });
+    expect(screen.getByLabelText(/Nome completo/)).toHaveFocus();
+    fillContact();
+    expect(next()).toHaveAttribute("href", "#simple-instagram");
+    fillSocial();
+    expect(next()).toHaveAttribute("href", "#simple-postalCode");
+    fillAddress();
+    expect(next()).toHaveAttribute("href", "#simple-privacyAccepted");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Autorizo o uso destes dados/ }));
+    expect(screen.getByTestId("affiliate-all-required-present")).toHaveTextContent(
+      "Revise os dados",
+    );
+    expect(screen.queryByTestId("affiliate-next-required-field")).toBeNull();
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
 });

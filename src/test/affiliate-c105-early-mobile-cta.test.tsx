@@ -19,7 +19,7 @@ describe("C105 — CTA mais imediato sem omitir contexto da candidatura", () => 
       "order-1",
       "min-h-[16rem]",
       "sm:min-h-[19rem]",
-      "lg:min-h-[25rem]",
+      "lg:min-h-[21rem]",
     );
     const intro = within(hero).getByText(/Cria conteúdo sobre cabelos ou quer começar\?/i);
     const status = within(hero).getByTestId("affiliate-c94-intake-status");
@@ -27,6 +27,8 @@ describe("C105 — CTA mais imediato sem omitir contexto da candidatura", () => 
     expect(intro).toHaveClass("order-5", "sm:order-4", "lg:order-2");
     expect(status).toHaveClass("order-2", "lg:order-3", "self-start");
     expect(action.closest("div")).toHaveClass("order-3", "lg:order-4");
+    expect(within(hero).getByTestId("vonix-c67-public-share").parentElement).toHaveClass("order-7");
+    expect(within(hero).getByTestId("affiliate-c118-hero-benefits")).toHaveClass("order-4");
     expect(
       container.querySelectorAll('[data-testid="vonix-affiliate-hero"] a[href="#inscricao"]'),
     ).toHaveLength(1);
