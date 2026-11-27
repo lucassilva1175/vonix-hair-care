@@ -305,7 +305,12 @@ export function AffiliateShell({
         {children}
       </main>
 
-      <footer className="bg-primary px-5 py-12 text-muted-foreground sm:py-14">
+      <footer
+        className={
+          "bg-primary px-5 py-12 text-muted-foreground sm:py-14 " +
+          (mode === "landing" ? "max-md:pb-[calc(7rem+env(safe-area-inset-bottom))]" : "")
+        }
+      >
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <Link

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { affiliateSearchTerms, matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
-import { ArrowUpRight, Search, PackageOpen } from "lucide-react";
+import { ArrowUpRight, Search, PackageOpen, Bookmark, Check, X, ClipboardCopy } from "lucide-react";
 import { isProOnly, vitrine } from "@/lib/store";
 import packagingImages from "@/data/sacolinhas.json";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
@@ -23,6 +23,10 @@ export function AffiliateCurrentCombos() {
   const [usage, setUsage] = useState<"" | "professional" | "other">("");
   const [packaging, setPackaging] = useState(false);
   const [failedPackaging, setFailedPackaging] = useState<string[]>([]);
+  const [shortlist, setShortlist] = useState<string[]>([]);
+  const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
+  const shortlistCopyVersion = useRef(0);
+  const shortlistCopying = useRef(false);
   // The perfume is currently excluded as a standalone product; do not promote
   // its combo until the brand confirms component availability.
   const combos = vitrine.filter(
@@ -36,6 +40,53 @@ export function AffiliateCurrentCombos() {
   const searchRef = useRef<HTMLInputElement>(null);
   const individual = vitrine.filter((p) => !p.slug.startsWith("combo-"));
   const items = mode === "combos" ? ordered : individual;
+  const selectedProducts = shortlist.flatMap((slug) => {
+    const item = [...ordered, ...individual].find((p) => p.slug === slug);
+    return item ? [item] : [];
+  });
+  const shortlistText = [
+    "VONIX HAIR — referências de conteúdo",
+    ...selectedProducts.map(
+      (p) =>
+        p.name +
+        (isProOnly(p.slug) ? " (uso exclusivamente profissional)" : "") +
+        "\nhttps://vonixhair.com/produto/" +
+        p.slug,
+    ),
+    "Lista editorial pessoal. Não é pedido, kit de inscrição ou garantia de parceria. Confira as orientações oficiais de uso.",
+  ].join("\n\n");
+
+  function invalidateCopy() {
+    shortlistCopyVersion.current++;
+    // A clipboard write cannot be cancelled. Keep the lock until it settles
+    // so an older write cannot overwrite a newer explicit copy.
+    if (!shortlistCopying.current) setCopyState("idle");
+  }
+  function toggleShortlist(slug: string) {
+    invalidateCopy();
+    setShortlist((prev) =>
+      prev.includes(slug)
+        ? prev.filter((x) => x !== slug)
+        : prev.length < 6
+          ? [...prev, slug]
+          : prev,
+    );
+  }
+  async function copyShortlist() {
+    if (!selectedProducts.length || shortlistCopying.current) return;
+    const version = ++shortlistCopyVersion.current;
+    shortlistCopying.current = true;
+    setCopyState("copying");
+    try {
+      await navigator.clipboard.writeText(shortlistText);
+      if (version === shortlistCopyVersion.current) setCopyState("copied");
+    } catch {
+      if (version === shortlistCopyVersion.current) setCopyState("failed");
+    } finally {
+      shortlistCopying.current = false;
+      if (version !== shortlistCopyVersion.current) setCopyState("idle");
+    }
+  }
   const categories = [...new Set(individual.map((p) => p.categoryLabel))].sort((a, b) =>
     a.localeCompare(b, "pt-BR"),
   );
@@ -155,6 +206,108 @@ export function AffiliateCurrentCombos() {
                   </button>
                 ))}
               </div>
+              <div
+                data-testid="affiliate-reference-shortlist"
+                className="mt-4 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] p-3 sm:p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="inline-flex items-center gap-2 text-sm font-bold text-[#724155]">
+                    <Bookmark aria-hidden="true" className="size-4" /> Minha lista de referências
+                  </h3>
+                  <span
+                    aria-live="polite"
+                    className="text-xs font-bold tabular-nums text-[#89586a]"
+                  >
+                    {selectedProducts.length} de 6 itens
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-[#755d66]">
+                  Separe produtos para ideias de conteúdo. A lista fica apenas nesta página, sem
+                  compra, cadastro ou armazenamento de dados.
+                </p>
+                {selectedProducts.length > 0 && (
+                  <>
+                    <ul
+                      aria-label="Produtos selecionados"
+                      className="mt-3 grid gap-2 sm:grid-cols-2"
+                    >
+                      {selectedProducts.map((p) => (
+                        <li
+                          key={p.slug}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-[#e5d2d4] bg-white px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <a
+                              href={"/produto/" + p.slug}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
+                              className="text-xs font-bold text-[#724155] underline underline-offset-2"
+                            >
+                              {p.name}
+                            </a>
+                            <p className="text-[10px] leading-relaxed text-[#755d66]">
+                              {p.categoryLabel}
+                              {isProOnly(p.slug) ? " · uso exclusivamente profissional" : ""}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            aria-label={"Remover " + p.name + " da lista"}
+                            onClick={() => toggleShortlist(p.slug)}
+                            className="grid size-11 shrink-0 place-items-center rounded-lg border border-[#e5d2d4] text-[#724155] focus-visible:outline-2"
+                          >
+                            <X aria-hidden="true" className="size-4" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={copyState === "copying"}
+                        onClick={() => void copyShortlist()}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#784254] px-4 text-xs font-bold text-white disabled:opacity-50"
+                      >
+                        <ClipboardCopy aria-hidden="true" className="size-4" />
+                        {copyState === "copying"
+                          ? "Copiando lista..."
+                          : "Copiar lista de referências"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          invalidateCopy();
+                          setShortlist([]);
+                        }}
+                        className="min-h-11 rounded-lg border border-[#d8bfc5] bg-white px-3 text-xs font-bold text-[#724155]"
+                      >
+                        Limpar minha lista
+                      </button>
+                    </div>
+                    {copyState === "copied" && (
+                      <p role="status" className="mt-2 text-xs font-semibold text-[#58734f]">
+                        Lista copiada com os links oficiais.
+                      </p>
+                    )}
+                    {copyState === "failed" && (
+                      <div className="mt-2">
+                        <p className="text-xs font-semibold text-[#724155]">
+                          Selecione o texto para copiar manualmente.
+                        </p>
+                        <textarea
+                          aria-label="Lista de referências para copiar manualmente"
+                          readOnly
+                          rows={5}
+                          value={shortlistText}
+                          onFocus={(event) => event.currentTarget.select()}
+                          className="mt-1 w-full rounded-lg border border-[#d8bfc5] bg-white p-3 text-xs text-[#724155]"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
               <label
                 className="mt-5 block text-xs font-bold text-[#724155]"
                 htmlFor="affiliate-c161-combo-search"
@@ -246,52 +399,81 @@ export function AffiliateCurrentCombos() {
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {visible.map((p) => (
-                  <a
-                    key={p.slug}
-                    href={"/produto/" + p.slug}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
-                    className="group flex min-w-0 items-center gap-3 overflow-hidden rounded-2xl border border-[#e5d2d4] bg-white p-3 shadow-[0_8px_24px_rgba(83,42,58,.06)] transition-colors hover:border-[#b98b9c] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-col sm:items-stretch sm:p-4"
-                  >
-                    <img
-                      src={
-                        packaging &&
-                        p.slug !== "kit-monovonix" &&
-                        !failedPackaging.includes(p.slug) &&
-                        (packagingImages as Record<string, string>)[p.slug]
-                          ? (packagingImages as Record<string, string>)[p.slug]
-                          : "/images/products/" + p.slug + "-480.webp"
-                      }
-                      onError={() => {
-                        if (packaging)
-                          setFailedPackaging((prev) =>
-                            prev.includes(p.slug) ? prev : [...prev, p.slug],
-                          );
-                      }}
-                      alt=""
-                      width={480}
-                      height={480}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full sm:p-3"
-                    />
-                    <span className="min-w-0 text-sm font-bold text-[#724155]">
-                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#89586a]">
-                        {p.categoryLabel}
-                      </span>
-                      <span className="mt-1 block leading-snug sm:text-base">{p.name}</span>
-                      {isProOnly(p.slug) && (
-                        <span className="mt-1 block text-[11px] text-[#755d66]">
-                          Uso profissional · consulte o rótulo
+                  <div key={p.slug} className="flex min-w-0 flex-col gap-1">
+                    <a
+                      href={"/produto/" + p.slug}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
+                      className="group flex min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-2xl border border-[#e5d2d4] bg-white p-3 shadow-[0_8px_24px_rgba(83,42,58,.06)] transition-colors hover:border-[#b98b9c] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-col sm:items-stretch sm:p-4"
+                    >
+                      <img
+                        src={
+                          packaging &&
+                          p.slug !== "kit-monovonix" &&
+                          !failedPackaging.includes(p.slug) &&
+                          (packagingImages as Record<string, string>)[p.slug]
+                            ? (packagingImages as Record<string, string>)[p.slug]
+                            : "/images/products/" + p.slug + "-480.webp"
+                        }
+                        onError={() => {
+                          if (packaging)
+                            setFailedPackaging((prev) =>
+                              prev.includes(p.slug) ? prev : [...prev, p.slug],
+                            );
+                        }}
+                        alt=""
+                        width={480}
+                        height={480}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full sm:p-3"
+                      />
+                      <span className="min-w-0 text-sm font-bold text-[#724155]">
+                        <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#89586a]">
+                          {p.categoryLabel}
                         </span>
-                      )}
-                      <span className="mt-2 inline-flex items-center gap-1 text-xs underline underline-offset-4">
-                        {mode === "combos" ? "Ver composição (nova aba)" : "Ver produto (nova aba)"}{" "}
-                        <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+                        <span className="mt-1 block leading-snug sm:text-base">{p.name}</span>
+                        {isProOnly(p.slug) && (
+                          <span className="mt-1 block text-[11px] text-[#755d66]">
+                            Uso profissional · consulte o rótulo
+                          </span>
+                        )}
+                        <span className="mt-2 inline-flex items-center gap-1 text-xs underline underline-offset-4">
+                          {mode === "combos"
+                            ? "Ver composição (nova aba)"
+                            : "Ver produto (nova aba)"}{" "}
+                          <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+                        </span>
                       </span>
-                    </span>
-                  </a>
+                    </a>
+                    <button
+                      type="button"
+                      aria-label={
+                        (shortlist.includes(p.slug) ? "Remover " : "Adicionar ") +
+                        p.name +
+                        (shortlist.includes(p.slug)
+                          ? " da lista de referências"
+                          : " à lista de referências")
+                      }
+                      aria-pressed={shortlist.includes(p.slug)}
+                      disabled={!shortlist.includes(p.slug) && shortlist.length >= 6}
+                      onClick={() => toggleShortlist(p.slug)}
+                      className={
+                        "flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold focus-visible:outline-2 disabled:opacity-50 " +
+                        (shortlist.includes(p.slug)
+                          ? "border-[#784254] bg-[#f0e2e4] text-[#724155]"
+                          : "border-[#e5d2d4] bg-white text-[#724155]")
+                      }
+                    >
+                      {shortlist.includes(p.slug) ? (
+                        <Check aria-hidden="true" className="size-4" />
+                      ) : (
+                        <Bookmark aria-hidden="true" className="size-4" />
+                      )}
+                      {shortlist.includes(p.slug) ? "Na minha lista" : "Guardar referência"}
+                    </button>
+                  </div>
                 ))}
               </div>
               {!matches.length && (

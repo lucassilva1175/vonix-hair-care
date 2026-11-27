@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { existsSync } from "node:fs";
 import { AffiliateCurrentCombos } from "@/components/affiliate-current-combos";
@@ -187,5 +187,106 @@ describe("C161 current official combo catalog", () => {
     expect(search).toHaveValue("");
     expect(search).toHaveFocus();
     expect(analytics.track).not.toHaveBeenCalled();
+  });
+});
+
+describe("Local editorial reference shortlist", () => {
+  it("keeps official references across catalog modes, without analytics or storage", () => {
+    render(<AffiliateCurrentCombos />);
+    fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+    const shortlist = screen.getByTestId("affiliate-reference-shortlist");
+    const first = screen.getAllByRole("button", {
+      name: /Adicionar .* à lista de referências/,
+    })[0]!;
+    fireEvent.click(first);
+    expect(within(shortlist).getByText("1 de 6 itens")).toBeInTheDocument();
+    const firstHref = within(shortlist).getByRole("link").getAttribute("href");
+    fireEvent.click(screen.getByRole("button", { name: /Produtos individuais/ }));
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Adicionar .* à lista de referências/ })[0]!,
+    );
+    expect(within(shortlist).getByText("2 de 6 itens")).toBeInTheDocument();
+    expect(
+      within(shortlist)
+        .getAllByRole("link")
+        .map((x) => x.getAttribute("href")),
+    ).toContain(firstHref);
+    fireEvent.click(screen.getByRole("button", { name: "Limpar minha lista" }));
+    expect(within(shortlist).getByText("0 de 6 itens")).toBeInTheDocument();
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
+
+  it("caps the list at six and allows removal without navigating", () => {
+    render(<AffiliateCurrentCombos />);
+    fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+    fireEvent.click(screen.getByRole("button", { name: /Ver todos os .* combos/ }));
+    for (let i = 0; i < 6; i++)
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Adicionar .* à lista de referências/ })[0]!,
+      );
+    const shortlist = screen.getByTestId("affiliate-reference-shortlist");
+    expect(within(shortlist).getByText("6 de 6 itens")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /Adicionar .* à lista de referências/ })[0],
+    ).toBeDisabled();
+    fireEvent.click(within(shortlist).getAllByRole("button", { name: /Remover .* da lista/ })[0]!);
+    expect(within(shortlist).getByText("5 de 6 itens")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /Adicionar .* à lista de referências/ })[0],
+    ).toBeEnabled();
+  });
+
+  it("provides a selectable fallback containing only catalog references if clipboard fails", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("synthetic clipboard denied")) },
+    });
+    try {
+      render(<AffiliateCurrentCombos />);
+      fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Adicionar .* à lista de referências/ })[0]!,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Copiar lista de referências" }));
+      const field = await screen.findByLabelText("Lista de referências para copiar manualmente");
+      expect((field as HTMLTextAreaElement).value).toContain("https://vonixhair.com/produto/");
+      expect((field as HTMLTextAreaElement).value).toContain("Não é pedido");
+      expect(analytics.track).not.toHaveBeenCalled();
+    } finally {
+      if (descriptor) Object.defineProperty(navigator, "clipboard", descriptor);
+      else Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+
+  it("never reports an obsolete clipboard success when the selected references changed", async () => {
+    let resolve!: () => void;
+    const promise = new Promise<void>((r) => {
+      resolve = r;
+    });
+    const writeText = vi.fn().mockReturnValue(promise);
+    const descriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    try {
+      render(<AffiliateCurrentCombos />);
+      fireEvent.click(screen.getByRole("button", { name: "Explorar novos combos" }));
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Adicionar .* à lista de referências/ })[0]!,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Copiar lista de referências" }));
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Adicionar .* à lista de referências/ })[0]!,
+      );
+      expect(screen.getByRole("button", { name: "Copiando lista..." })).toBeDisabled();
+      await act(async () => resolve());
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Copiar lista de referências" })).toBeEnabled(),
+      );
+      expect(screen.queryByText("Lista copiada com os links oficiais.")).toBeNull();
+      expect(writeText).toHaveBeenCalledOnce();
+    } finally {
+      if (descriptor) Object.defineProperty(navigator, "clipboard", descriptor);
+      else Reflect.deleteProperty(navigator, "clipboard");
+    }
   });
 });
