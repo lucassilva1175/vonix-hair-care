@@ -404,6 +404,49 @@ describe("Vonix affiliate private panel", () => {
     expect(screen.getByText("Nenhuma inscrição encontrada")).toBeInTheDocument();
   });
 
+  it("distinguishes a failed list from a verified empty list and retries the same filter", async () => {
+    render(<Page />);
+    expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
+    server.getAffiliateApplications.mockRejectedValueOnce(new Error("synthetic outage"));
+    fireEvent.click(screen.getByRole("button", { name: /Aprovadas/i }));
+    expect(await screen.findByText("Não foi possível consultar as inscrições")).toBeInTheDocument();
+    expect(screen.queryByText("Nenhuma inscrição encontrada")).not.toBeInTheDocument();
+    expect(screen.queryByText("Segredo da candidata")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Aprovadas/i })).toHaveTextContent("—");
+    server.getAffiliateApplications.mockResolvedValueOnce(list([]));
+    fireEvent.click(screen.getByRole("button", { name: "Tentar consulta novamente" }));
+    expect(await screen.findByText("Nenhuma inscrição encontrada")).toBeInTheDocument();
+    expect(server.getAffiliateApplications).toHaveBeenLastCalledWith({
+      data: { status: "aprovada", page: 0, search: undefined, mailStatus: null },
+    });
+  });
+
+  it("keeps the authenticated operator in the workspace after the initial list fails", async () => {
+    server.getAffiliateApplications.mockRejectedValueOnce(new Error("synthetic outage"));
+    render(<Page />);
+    expect(await screen.findByText("Não foi possível consultar as inscrições")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sair" })).toBeInTheDocument();
+    expect(screen.queryByText("Entrar com sua conta pessoal")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Tentar consulta novamente" }));
+    expect(await screen.findByText("Segredo da candidata")).toBeInTheDocument();
+    expect(server.loginAffiliateAdmin).not.toHaveBeenCalled();
+  });
+
+  it("keeps a failed decision message after refreshing the list", async () => {
+    server.reviewAffiliateApplication.mockResolvedValueOnce({
+      ok: false,
+      reason: "Inscrição já analisada. Atualize a lista.",
+    });
+    render(<Page />);
+    await screen.findByText("Segredo da candidata");
+    fireEvent.click(screen.getByRole("button", { name: "APROVAR", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    expect(
+      await screen.findByText("Inscrição já analisada. Atualize a lista."),
+    ).toBeInTheDocument();
+    expect(server.reviewAffiliateApplication).toHaveBeenCalledOnce();
+  });
+
   it("does not restore candidate PII from a request that resolves after logout", async () => {
     let resolveStale!: (value: ReturnType<typeof list>) => void;
     const stale = new Promise<ReturnType<typeof list>>((resolve) => {

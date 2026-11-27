@@ -4,7 +4,9 @@
 
 ## Fluxo atual (prevalece sobre os registros históricos abaixo)
 
-Nota técnica C175: a correção versionada de `vonix_affiliate_claim_mail` exige homologação SQL isolada e aplicação específica autorizada no banco dedicado. Não reaplique o arquivo de bootstrap inteiro sobre produção, pois migrações posteriores modificam outras funções. Tentativas esgotadas e interrompidas devem ser conciliadas como incertas, sem reenvio automático.
+Atualização de 27/11/2026 (C181): a correção específica de `vonix_affiliate_claim_mail` foi aplicada no banco dedicado e verificada por leitura da definição e das permissões. Migração registrada `20261127034932_vonix_affiliate_c176_guarded_claim_recovery`. Não reaplicar a migração nem o bootstrap integral. Tentativas esgotadas e interrompidas devem ser conciliadas como incertas, sem reenvio automático. A confirmação da migração não comprova execução periódica do worker ou entrega de e-mails.
+
+Operação diária: o painel prioriza a triagem e oferece atalhos para inscrições, notificações, cadastro manual, preparação e retenção. Uma consulta que falha não representa fila vazia; os totais ficam indisponíveis até nova consulta válida. Use **Tentar consulta novamente** para manter o filtro ou **Limpar filtros** para recomeçar a pesquisa. A homologação de uma conta individual e uma caixa de teste continua necessária antes de declarar operação integral. Meta de fechamento: 04/12/2026, condicionada a acesso autorizado e validação real.
 
 1. `/seja-afiliada`: inscrição gratuita de maiores de 18 anos, com declaração de maioridade e privacidade, nome completo, e-mail obrigatório, telefone, endereço com CEP, Instagram e seguidores; TikTok opcional. Não coleta CPF, CNPJ ou data de nascimento no formulário público simplificado. Validação real é `affiliateSimpleSchema`, não o texto da landing.
 2. Após confirmação de armazenamento, guardar o código privado de 32 caracteres; não é enviado por e-mail. Em resposta ambígua, consultar `/consultar-candidatura` pelo código da tentativa, sem divulgar o token. A prévia não envia registros.

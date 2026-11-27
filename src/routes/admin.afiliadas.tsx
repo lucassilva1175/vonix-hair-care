@@ -201,6 +201,7 @@ export function AffiliateAdminPage() {
   const [notificationStatsFresh, setNotificationStatsFresh] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [listError, setListError] = useState("");
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [pendingAccessInviteId, setPendingAccessInviteId] = useState<string | null>(null);
   const [privateDetail, setPrivateDetail] = useState<
@@ -299,6 +300,7 @@ export function AffiliateAdminPage() {
     setStats({ pendente: 0, aprovada: 0, recusada: 0 });
     setMailStats({ pendente: 0, processando: 0, enviado: 0, falhou: 0, incerto: 0 });
     setNotificationStatsFresh(false);
+    setListError("");
     setTotal(0);
     setWorkingId(null);
     setPendingDecision(null);
@@ -353,6 +355,12 @@ export function AffiliateAdminPage() {
     setApplications([]);
     setTotal(0);
     setNotificationStatsFresh(false);
+    setListError("");
+    // Preserve the intended query even when the network fails, so retry targets the right view.
+    setStatus(nextStatus);
+    setMailFilter(nextMailFilter);
+    setPage(nextPage);
+    setSearch(nextSearch);
     setPendingAccessInviteId(null);
     setLoading(true);
     setPendingDecision(null);
@@ -368,7 +376,7 @@ export function AffiliateAdminPage() {
       });
       if (!isCurrent()) return;
       if (!response.ok) {
-        if (!sessionExpired(response.reason)) setError(response.reason);
+        if (!sessionExpired(response.reason)) setListError(response.reason);
         return;
       }
       // Deletions or decisions can empty the last page while another page
@@ -394,7 +402,7 @@ export function AffiliateAdminPage() {
       setNotificationStatsFresh(true);
       setTotal(response.total);
     } catch {
-      if (isCurrent()) setError("Não foi possível carregar os dados. Tente novamente.");
+      if (isCurrent()) setListError("Não foi possível carregar os dados. Tente novamente.");
     } finally {
       if (isCurrent()) setLoading(false);
     }
@@ -406,7 +414,11 @@ export function AffiliateAdminPage() {
     const loadRef = loadVersion;
     void getAffiliateAdminSession()
       .then(async (session) => {
-        if (active && session.authenticated) await load("pendente", 0, "");
+        if (active && session.authenticated) {
+          if (document.visibilityState === "hidden") setSessionRechecking(true);
+          setAuthorized(true);
+          await load("pendente", 0, "");
+        }
       })
       .catch(() => {})
       .finally(() => {
@@ -505,6 +517,7 @@ export function AffiliateAdminPage() {
         setError(result.reason);
         return;
       }
+      setAuthorized(true);
       await load("pendente", 0, "");
     } catch {
       // Discard delayed errors when hiding the tab invalidated legacy login.
@@ -567,7 +580,9 @@ export function AffiliateAdminPage() {
       if (sessionVersion.current !== sessionId) return;
       if (!result.ok) {
         if (sessionExpired(result.reason)) return;
-        setError(result.reason);
+        await load(status, page, search);
+        if (sessionVersion.current === sessionId) setError(result.reason);
+        return;
       } else {
         const mailNotice = !app.email
           ? " O motivo está disponível no acompanhamento por código; contato telefônico é manual."
@@ -837,6 +852,14 @@ export function AffiliateAdminPage() {
           </div>
         ) : !authorized ? (
           <div className="max-w-lg space-y-5">
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+              >
+                {error}
+              </p>
+            )}
             <section className="rounded-[2rem] border border-[#e7cece] bg-white p-7 shadow-[0_12px_42px_rgba(88,40,54,.08)] sm:p-10">
               <ShieldCheck className="mb-5 h-9 w-9 text-[#864a56]" />
               <h2 className="font-display text-3xl">Entrar com sua conta pessoal</h2>
@@ -905,11 +928,6 @@ export function AffiliateAdminPage() {
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   className="mt-2 min-h-12 w-full rounded-xl border border-[#e3d1ce] px-4 tracking-[.3em] outline-none focus:ring-2 focus:ring-[#e8c9c5]"
                 />
-                {error && (
-                  <p role="alert" className="mt-4 text-sm text-red-700">
-                    {error}
-                  </p>
-                )}
                 <button
                   type="submit"
                   disabled={loading || !password || otp.length !== 6}
@@ -955,181 +973,45 @@ export function AffiliateAdminPage() {
           </section>
         ) : (
           <>
-            <AffiliateOwnerActivationPanel />
-            <AffiliateManualRegistration onCreated={() => void load("pendente", 0, "")} />
-            <section
-              aria-label="Preparação do programa"
-              className="mb-6 rounded-[1.5rem] border border-[#e8dcd8] bg-white p-5 sm:p-6"
+            <nav
+              aria-label="Atalhos da operação"
+              className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-[#e8dcd8] bg-white p-4"
             >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="font-display text-2xl">Preparação para abertura</h2>
-                  <p className="mt-2 max-w-2xl text-xs leading-relaxed text-[#806a6c]">
-                    Diagnóstico privado de configuração. A presença de uma chave não confirma que o
-                    envio de e-mails, a migração ou os requisitos jurídicos estejam homologados.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void inspectReadiness()}
-                  disabled={readinessBusy || loading}
-                  className="min-h-11 rounded-full border border-[#d6b6be] px-5 text-sm font-semibold text-[#733e4a] disabled:opacity-50"
-                >
-                  {readinessBusy ? "Verificando preparação..." : "Verificar preparação"}
-                </button>
-              </div>
-              {readiness && (
-                <div className="mt-5">
-                  <p role="status" className="text-sm font-semibold text-[#6c4b53]">
-                    {readiness.recruitmentOpen
-                      ? "A configuração autoriza abertura; confira a homologação operacional."
-                      : "As inscrições permanecem bloqueadas."}
-                  </p>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    {readiness.checks.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-[#f1e4e2] p-3 text-sm"
-                      >
-                        <span>{item.label}</span>
-                        <span
-                          className={
-                            item.ok
-                              ? "font-semibold text-emerald-700"
-                              : "font-semibold text-amber-700"
-                          }
-                        >
-                          {item.ok ? "Configurado" : "Pendente"}
-                        </span>
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#f1e4e2] p-3 text-sm">
-                      <span>Consulta de banco</span>
-                      <span
-                        className={
-                          readiness.databaseResponding
-                            ? "font-semibold text-emerald-700"
-                            : "font-semibold text-amber-700"
-                        }
-                      >
-                        {readiness.databaseResponding ? "Respondeu" : "Não confirmada"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#f1e4e2] p-3 text-sm">
-                      <span>RPC de governança</span>
-                      <span
-                        className={
-                          readiness.governanceResponding
-                            ? "font-semibold text-emerald-700"
-                            : "font-semibold text-amber-700"
-                        }
-                      >
-                        {readiness.governanceResponding ? "Respondeu" : "Não confirmada"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </section>
-            <section
-              aria-labelledby="affiliate-retention-title"
-              className="mb-6 rounded-[1.5rem] border border-[#e8dcd8] bg-white p-5 sm:p-6"
-            >
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-[#8f5361]" aria-hidden="true" />
-                <div>
-                  <h2 id="affiliate-retention-title" className="font-display text-2xl">
-                    Prévia de retenção LGPD
-                  </h2>
-                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#806a6c]">
-                    Consulte apenas quantidades de inscrições antigas para revisão pela equipe. Esta
-                    consulta não mostra CPF, endereço ou e-mail e não executa exclusões. Os prazos
-                    são exemplos de planejamento, não uma política aprovada.
-                  </p>
-                </div>
-              </div>
-              <form
-                onSubmit={(event) => void inspectRetention(event)}
-                className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+              <a
+                href="#lista-afiliadas"
+                className="inline-flex min-h-11 items-center rounded-full bg-[#693440] px-5 text-sm font-bold text-white"
               >
-                <label htmlFor="retention-pending" className="text-sm font-semibold text-[#654c52]">
-                  Pendentes há pelo menos (dias)
-                  <input
-                    id="retention-pending"
-                    type="number"
-                    min={30}
-                    max={3650}
-                    step={1}
-                    required
-                    value={retentionPendingDays}
-                    onChange={(event) => {
-                      setRetentionPendingDays(Number(event.target.value));
-                      invalidateRetentionPreview();
-                    }}
-                    className="mt-2 min-h-11 w-full rounded-xl border border-[#dbc3c7] bg-white px-4 text-base"
-                  />
-                </label>
-                <label
-                  htmlFor="retention-rejected"
-                  className="text-sm font-semibold text-[#654c52]"
-                >
-                  Recusadas há pelo menos (dias)
-                  <input
-                    id="retention-rejected"
-                    type="number"
-                    min={30}
-                    max={3650}
-                    step={1}
-                    required
-                    value={retentionRejectedDays}
-                    onChange={(event) => {
-                      setRetentionRejectedDays(Number(event.target.value));
-                      invalidateRetentionPreview();
-                    }}
-                    className="mt-2 min-h-11 w-full rounded-xl border border-[#dbc3c7] bg-white px-4 text-base"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  disabled={retentionBusy}
-                  className="min-h-11 rounded-full border border-[#d6b6be] px-5 text-sm font-semibold text-[#733e4a] disabled:opacity-50"
-                >
-                  {retentionBusy ? "Consultando..." : "Consultar prévia"}
-                </button>
-              </form>
-              {retentionError && (
-                <p role="alert" className="mt-3 text-sm text-red-700">
-                  {retentionError}
-                </p>
-              )}
-              {retentionResult && (
-                <div role="status" className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <p className="text-xs font-medium text-[#74545d] sm:col-span-2">
-                    Critérios desta consulta: pendentes há pelo menos {retentionResult.pendingDays}{" "}
-                    dias; recusadas há pelo menos {retentionResult.rejectedDays} dias.
-                  </p>
-                  <div className="rounded-xl border border-[#f0e3df] bg-[#fffaf8] p-4">
-                    <p className="text-xs text-[#806a6c]">Candidaturas pendentes para revisão</p>
-                    <p className="mt-2 font-display text-3xl text-[#633e49]">
-                      {retentionResult.pendingEligible}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-[#f0e3df] bg-[#fffaf8] p-4">
-                    <p className="text-xs text-[#806a6c]">Candidaturas recusadas para revisão</p>
-                    <p className="mt-2 font-display text-3xl text-[#633e49]">
-                      {retentionResult.rejectedEligible}
-                    </p>
-                  </div>
-                  <p className="text-xs leading-relaxed text-[#806a6c] sm:col-span-2">
-                    Exclusões executadas por esta consulta: {retentionResult.executedDeletions}.
-                    Nenhuma candidatura aprovada é incluída nesta prévia. Qualquer exclusão exige
-                    análise jurídica, confirmação do titular e ação individual autorizada.
-                  </p>
-                </div>
-              )}
-            </section>
-
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                Consultar inscrições
+              </a>
+              <a
+                href="#notificacoes-afiliadas"
+                className="inline-flex min-h-11 items-center rounded-full border border-[#e8dcd8] px-4 text-sm font-semibold text-[#693440]"
+              >
+                Notificações
+              </a>
+              <a
+                href="#ferramentas-afiliadas"
+                className="inline-flex min-h-11 items-center rounded-full border border-[#e8dcd8] px-4 text-sm font-semibold text-[#693440]"
+              >
+                Cadastro manual e equipe
+              </a>
+              <a
+                href="#preparacao-afiliadas"
+                className="inline-flex min-h-11 items-center rounded-full border border-[#e8dcd8] px-4 text-sm font-semibold text-[#693440]"
+              >
+                Preparação
+              </a>
+              <a
+                href="#retencao-afiliadas"
+                className="inline-flex min-h-11 items-center rounded-full border border-[#e8dcd8] px-4 text-sm font-semibold text-[#693440]"
+              >
+                Retenção LGPD
+              </a>
+            </nav>
+            <div
+              id="triagem-afiliadas"
+              className="scroll-mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            >
               {STATUS.map((item) => (
                 <button
                   key={item.key}
@@ -1151,7 +1033,11 @@ export function AffiliateAdminPage() {
                       {item.label}
                     </div>
                     <div className="mt-2 font-display text-4xl">
-                      {item.key === "todas" ? stats.aprovada + stats.recusada : stats[item.key]}
+                      {notificationStatsFresh
+                        ? item.key === "todas"
+                          ? stats.aprovada + stats.recusada
+                          : stats[item.key]
+                        : "—"}
                     </div>
                   </div>
                   {item.key === "pendente" ? (
@@ -1168,8 +1054,9 @@ export function AffiliateAdminPage() {
             </div>
 
             <section
+              id="notificacoes-afiliadas"
               aria-labelledby="affiliate-mail-summary"
-              className="mt-6 rounded-[1.5rem] border border-[#e8dcd8] bg-white p-5 sm:p-6"
+              className="scroll-mt-6 mt-6 rounded-[1.5rem] border border-[#e8dcd8] bg-white p-5 sm:p-6"
             >
               <div className="flex items-start gap-3">
                 <Mail className="mt-1 h-5 w-5 shrink-0 text-[#8f5361]" aria-hidden="true" />
@@ -1210,7 +1097,7 @@ export function AffiliateAdminPage() {
                   >
                     <p className="text-xs font-medium text-[#786467]">{item.label}</p>
                     <p className={"mt-1 font-display text-3xl " + item.color}>
-                      {mailStats[item.key]}
+                      {notificationStatsFresh ? mailStats[item.key] : "—"}
                     </p>
                   </button>
                 ))}
@@ -1235,7 +1122,10 @@ export function AffiliateAdminPage() {
               />
             </section>
 
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+            <div
+              id="lista-afiliadas"
+              className="scroll-mt-6 mt-8 flex flex-wrap items-center justify-between gap-4"
+            >
               <div>
                 <h2 className="font-display text-2xl">
                   {STATUS.find((item) => item.key === status)?.label}
@@ -1247,8 +1137,38 @@ export function AffiliateAdminPage() {
                         : MAIL_STATUS.find((item) => item.key === mailFilter)?.label)}
                 </h2>
                 <p className="mt-1 text-xs text-[#8c7778]">
-                  {total} inscrição(ões) nesta consulta · {PER_PAGE} por página
+                  {loading
+                    ? "Consultando inscrições…"
+                    : listError
+                      ? "Consulta indisponível"
+                      : notificationStatsFresh
+                        ? total + " inscrição(ões) nesta consulta · " + PER_PAGE + " por página"
+                        : "Aguardando consulta"}
                 </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={loading || workingId !== null}
+                  onClick={() => void load(status, page, search, mailFilter)}
+                  className="min-h-11 rounded-full border border-[#d6b6be] bg-white px-4 text-sm font-semibold text-[#733e4a] disabled:opacity-50"
+                >
+                  Atualizar inscrições
+                </button>
+                {(search || mailFilter) && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => {
+                      setSearchText("");
+                      setNotice("");
+                      void load(status, 0, "", null);
+                    }}
+                    className="min-h-11 rounded-full px-3 text-sm font-semibold text-[#733e4a] underline underline-offset-4"
+                  >
+                    Limpar filtros
+                  </button>
+                )}
               </div>
               {mailFilter === "sem_registro" ? (
                 <p className="max-w-sm text-xs leading-relaxed text-[#806a6c]">
@@ -1301,7 +1221,25 @@ export function AffiliateAdminPage() {
                 Carregando inscrições...
               </p>
             )}
-            {!loading && applications.length === 0 && (
+            {!loading && listError && (
+              <section
+                role="alert"
+                className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950"
+              >
+                <h3 className="font-display text-xl">Não foi possível consultar as inscrições</h3>
+                <p className="mt-2 text-sm">
+                  {listError} Nenhum total ou resultado vazio foi confirmado.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void load(status, page, search, mailFilter)}
+                  className="mt-4 min-h-11 rounded-full bg-[#693440] px-5 text-sm font-semibold text-white"
+                >
+                  Tentar consulta novamente
+                </button>
+              </section>
+            )}
+            {!loading && !listError && notificationStatsFresh && applications.length === 0 && (
               <div className="mt-6 rounded-2xl border border-dashed border-[#d9c4c4] bg-white px-6 py-16 text-center">
                 <p className="font-display text-2xl">Nenhuma inscrição encontrada</p>
                 <p className="mt-2 text-sm text-[#907b7c]">
@@ -1856,6 +1794,196 @@ export function AffiliateAdminPage() {
                 </button>
               </div>
             )}
+            <div id="ferramentas-afiliadas" className="mt-12 scroll-mt-6">
+              <h2 className="mb-4 font-display text-2xl text-[#633e49]">Ferramentas de gestão</h2>
+              <AffiliateOwnerActivationPanel />
+              <AffiliateManualRegistration onCreated={() => void load("pendente", 0, "")} />
+              <section
+                id="preparacao-afiliadas"
+                aria-label="Preparação do programa"
+                className="scroll-mt-6 mb-6 rounded-[1.5rem] border border-[#e8dcd8] bg-white p-5 sm:p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h2 className="font-display text-2xl">Preparação para abertura</h2>
+                    <p className="mt-2 max-w-2xl text-xs leading-relaxed text-[#806a6c]">
+                      Diagnóstico privado de configuração. A presença de uma chave não confirma que
+                      o envio de e-mails, a migração ou os requisitos jurídicos estejam homologados.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void inspectReadiness()}
+                    disabled={readinessBusy || loading}
+                    className="min-h-11 rounded-full border border-[#d6b6be] px-5 text-sm font-semibold text-[#733e4a] disabled:opacity-50"
+                  >
+                    {readinessBusy ? "Verificando preparação..." : "Verificar preparação"}
+                  </button>
+                </div>
+                {readiness && (
+                  <div className="mt-5">
+                    <p role="status" className="text-sm font-semibold text-[#6c4b53]">
+                      {readiness.recruitmentOpen
+                        ? "A configuração autoriza abertura; confira a homologação operacional."
+                        : "As inscrições permanecem bloqueadas."}
+                    </p>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {readiness.checks.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-[#f1e4e2] p-3 text-sm"
+                        >
+                          <span>{item.label}</span>
+                          <span
+                            className={
+                              item.ok
+                                ? "font-semibold text-emerald-700"
+                                : "font-semibold text-amber-700"
+                            }
+                          >
+                            {item.ok ? "Configurado" : "Pendente"}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-[#f1e4e2] p-3 text-sm">
+                        <span>Consulta de banco</span>
+                        <span
+                          className={
+                            readiness.databaseResponding
+                              ? "font-semibold text-emerald-700"
+                              : "font-semibold text-amber-700"
+                          }
+                        >
+                          {readiness.databaseResponding ? "Respondeu" : "Não confirmada"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-[#f1e4e2] p-3 text-sm">
+                        <span>RPC de governança</span>
+                        <span
+                          className={
+                            readiness.governanceResponding
+                              ? "font-semibold text-emerald-700"
+                              : "font-semibold text-amber-700"
+                          }
+                        >
+                          {readiness.governanceResponding ? "Respondeu" : "Não confirmada"}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="mt-4 rounded-xl border border-[#e8dcd8] bg-[#fcf9f7] p-3 text-xs leading-relaxed text-[#806a6c]">
+                      Este diagnóstico não envia mensagens nem confirma o agendamento do worker, a
+                      entrega na caixa de entrada ou a homologação de uma conta pessoal. Confira
+                      esses itens em ambiente de teste autorizado.
+                    </p>
+                  </div>
+                )}
+              </section>
+              <section
+                id="retencao-afiliadas"
+                aria-labelledby="affiliate-retention-title"
+                className="scroll-mt-6 mb-6 rounded-[1.5rem] border border-[#e8dcd8] bg-white p-5 sm:p-6"
+              >
+                <div className="flex items-start gap-3">
+                  <ShieldCheck
+                    className="mt-1 h-5 w-5 shrink-0 text-[#8f5361]"
+                    aria-hidden="true"
+                  />
+                  <div>
+                    <h2 id="affiliate-retention-title" className="font-display text-2xl">
+                      Prévia de retenção LGPD
+                    </h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#806a6c]">
+                      Consulte apenas quantidades de inscrições antigas para revisão pela equipe.
+                      Esta consulta não mostra CPF, endereço ou e-mail e não executa exclusões. Os
+                      prazos são exemplos de planejamento, não uma política aprovada.
+                    </p>
+                  </div>
+                </div>
+                <form
+                  onSubmit={(event) => void inspectRetention(event)}
+                  className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+                >
+                  <label
+                    htmlFor="retention-pending"
+                    className="text-sm font-semibold text-[#654c52]"
+                  >
+                    Pendentes há pelo menos (dias)
+                    <input
+                      id="retention-pending"
+                      type="number"
+                      min={30}
+                      max={3650}
+                      step={1}
+                      required
+                      value={retentionPendingDays}
+                      onChange={(event) => {
+                        setRetentionPendingDays(Number(event.target.value));
+                        invalidateRetentionPreview();
+                      }}
+                      className="mt-2 min-h-11 w-full rounded-xl border border-[#dbc3c7] bg-white px-4 text-base"
+                    />
+                  </label>
+                  <label
+                    htmlFor="retention-rejected"
+                    className="text-sm font-semibold text-[#654c52]"
+                  >
+                    Recusadas há pelo menos (dias)
+                    <input
+                      id="retention-rejected"
+                      type="number"
+                      min={30}
+                      max={3650}
+                      step={1}
+                      required
+                      value={retentionRejectedDays}
+                      onChange={(event) => {
+                        setRetentionRejectedDays(Number(event.target.value));
+                        invalidateRetentionPreview();
+                      }}
+                      className="mt-2 min-h-11 w-full rounded-xl border border-[#dbc3c7] bg-white px-4 text-base"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={retentionBusy}
+                    className="min-h-11 rounded-full border border-[#d6b6be] px-5 text-sm font-semibold text-[#733e4a] disabled:opacity-50"
+                  >
+                    {retentionBusy ? "Consultando..." : "Consultar prévia"}
+                  </button>
+                </form>
+                {retentionError && (
+                  <p role="alert" className="mt-3 text-sm text-red-700">
+                    {retentionError}
+                  </p>
+                )}
+                {retentionResult && (
+                  <div role="status" className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <p className="text-xs font-medium text-[#74545d] sm:col-span-2">
+                      Critérios desta consulta: pendentes há pelo menos{" "}
+                      {retentionResult.pendingDays} dias; recusadas há pelo menos{" "}
+                      {retentionResult.rejectedDays} dias.
+                    </p>
+                    <div className="rounded-xl border border-[#f0e3df] bg-[#fffaf8] p-4">
+                      <p className="text-xs text-[#806a6c]">Candidaturas pendentes para revisão</p>
+                      <p className="mt-2 font-display text-3xl text-[#633e49]">
+                        {retentionResult.pendingEligible}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-[#f0e3df] bg-[#fffaf8] p-4">
+                      <p className="text-xs text-[#806a6c]">Candidaturas recusadas para revisão</p>
+                      <p className="mt-2 font-display text-3xl text-[#633e49]">
+                        {retentionResult.rejectedEligible}
+                      </p>
+                    </div>
+                    <p className="text-xs leading-relaxed text-[#806a6c] sm:col-span-2">
+                      Exclusões executadas por esta consulta: {retentionResult.executedDeletions}.
+                      Nenhuma candidatura aprovada é incluída nesta prévia. Qualquer exclusão exige
+                      análise jurídica, confirmação do titular e ação individual autorizada.
+                    </p>
+                  </div>
+                )}
+              </section>
+            </div>
           </>
         )}
       </main>
