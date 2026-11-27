@@ -25,6 +25,7 @@ import {
   AffiliateNotificationOperations,
 } from "@/components/affiliate-notification-operations";
 import { affiliateWhatsAppContactUrl } from "@/lib/affiliate-whatsapp-contact";
+import { pendingReviewAge, reviewPageRange } from "@/lib/affiliate-review-queue";
 import {
   getAffiliateAdminSession,
   eraseAffiliateApplicationAdmin,
@@ -903,6 +904,11 @@ export function AffiliateAdminPage() {
     }
   }
 
+  const visiblePage =
+    notificationStatsFresh && !loading && !listError
+      ? reviewPageRange(total, page, PER_PAGE, applications.length)
+      : null;
+
   async function applySearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (mailFilter === "sem_registro" || mutationInFlight.current || loading) return;
@@ -1315,6 +1321,44 @@ export function AffiliateAdminPage() {
               )}
             </div>
 
+            {visiblePage && status === "pendente" && (
+              <aside
+                aria-label="Organização da fila pendente"
+                className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#e8d7d4] bg-white p-4"
+              >
+                <div>
+                  <p className="text-sm font-bold text-[#633847]">
+                    Inscrições {visiblePage.first}–{visiblePage.last} de {total}
+                  </p>
+                  <p className="mt-1 max-w-xl text-xs leading-relaxed text-[#806a6c]">
+                    A consulta mostra as mais recentes primeiro. Use a última página para localizar
+                    as mais antigas neste filtro. O tempo de espera é calculado na última consulta,
+                    sem prazo de análise presumido.
+                  </p>
+                </div>
+                {visiblePage.pages > 1 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={workingId !== null || page === 0}
+                      onClick={() => void load(status, 0, search, mailFilter)}
+                      className="min-h-11 rounded-lg border border-[#d6b6be] bg-white px-4 text-xs font-bold text-[#733e4a] disabled:opacity-50"
+                    >
+                      Voltar à primeira página
+                    </button>
+                    <button
+                      type="button"
+                      disabled={workingId !== null || page === visiblePage.pages - 1}
+                      onClick={() => void load(status, visiblePage.pages - 1, search, mailFilter)}
+                      className="min-h-11 rounded-lg bg-[#693440] px-4 text-xs font-bold text-white disabled:opacity-50"
+                    >
+                      Ir à página mais antiga
+                    </button>
+                  </div>
+                )}
+              </aside>
+            )}
+
             {notice && (
               <div
                 role="status"
@@ -1368,6 +1412,10 @@ export function AffiliateAdminPage() {
                 const instagram = safeProfileLink(app.instagram_url, "instagram");
                 const tiktok = safeProfileLink(app.tiktok_url, "tiktok");
                 const mail = app.vonix_affiliate_mail_outbox?.[0];
+                const waitAge =
+                  app.status === "pendente"
+                    ? pendingReviewAge(app.created_at, listCheckedAt)
+                    : null;
                 // No phone is fetched or exposed until explicit confidential
                 // detail access by the currently authenticated admin.
                 const manualWhatsApp =
@@ -1385,6 +1433,9 @@ export function AffiliateAdminPage() {
                         <p className="mt-1 text-xs text-[#897375]">
                           Inscrita em {new Date(app.created_at).toLocaleString("pt-BR")}
                         </p>
+                        {waitAge && (
+                          <p className="mt-2 text-xs font-semibold text-[#7e505d]">{waitAge}</p>
+                        )}
                       </div>
                       <span
                         className={

@@ -536,6 +536,9 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
                 { href: "#avaliacoes-produtos", label: "Avaliações de produtos" },
                 { href: "#catalogo-em-video", label: "Vídeos do catálogo" },
                 { href: "#perfis", label: "Ideias de conteúdo" },
+                ...(sourceLinked
+                  ? [{ href: "#planejamento-criativo", label: "Planejamento semanal" }]
+                  : []),
               ].map(({ href, label }) => (
                 <a
                   key={href}

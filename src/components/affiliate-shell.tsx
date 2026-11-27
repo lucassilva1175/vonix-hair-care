@@ -209,6 +209,15 @@ export function AffiliateShell({
                     Vitrine de produtos
                   </a>
                 )}
+                {showCatalogLink && (
+                  <a
+                    href="#planejamento-criativo"
+                    onClick={closeMobileMenu}
+                    className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
+                  >
+                    Planejamento semanal
+                  </a>
+                )}
                 <a
                   href="#duvidas"
                   onClick={closeMobileMenu}
@@ -289,6 +298,14 @@ export function AffiliateShell({
                 className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
               >
                 Vitrine de produtos
+              </a>
+            )}
+            {showCatalogLink && (
+              <a
+                href="#planejamento-criativo"
+                className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
+              >
+                Planejamento semanal
               </a>
             )}
             <a
