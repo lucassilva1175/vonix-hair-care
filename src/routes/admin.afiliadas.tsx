@@ -53,6 +53,7 @@ export const Route = createFileRoute("/admin/afiliadas")({
     meta: [
       { title: "Seleção de afiliadas | Vonix Hair" },
       { name: "robots", content: "noindex,nofollow,noarchive" },
+      { name: "referrer", content: "no-referrer" },
     ],
   }),
   component: AffiliateAdminPage,

@@ -67,7 +67,7 @@ describe("C67 public program sharing without tracking or referral claims", () =>
     });
     await waitFor(() =>
       expect(screen.getByTestId("vonix-c67-share-feedback")).toHaveTextContent(
-        "Compartilhamento concluído",
+        "Convite entregue ao compartilhamento",
       ),
     );
     expect(writeText).not.toHaveBeenCalled();
@@ -100,6 +100,7 @@ describe("C67 public program sharing without tracking or referral claims", () =>
       ),
     );
     expect(writeText).not.toHaveBeenCalled();
+    expect(screen.queryByRole("textbox", { name: /convite público para copiar/i })).toBeNull();
   });
 
   it("does not invent success if native share and clipboard both fail", async () => {
@@ -114,6 +115,9 @@ describe("C67 public program sharing without tracking or referral claims", () =>
         "Não foi possível copiar ou compartilhar",
       ),
     );
+    const manual = screen.getByRole("textbox", { name: /convite público para copiar/i });
+    expect(manual).toHaveAttribute("readonly");
+    expect(manual).toHaveValue(PUBLIC_AFFILIATE_SHARE_TEXT + "\n" + PUBLIC_AFFILIATE_PAGE);
   });
 
   it("has an honest unavailable state without browser capabilities", async () => {
@@ -125,5 +129,27 @@ describe("C67 public program sharing without tracking or referral claims", () =>
         "Compartilhamento indisponível",
       ),
     );
+    expect(screen.getByRole("textbox", { name: /convite público para copiar/i })).toHaveValue(
+      PUBLIC_AFFILIATE_SHARE_TEXT + "\n" + PUBLIC_AFFILIATE_PAGE,
+    );
+  });
+
+  it("clears the manual fallback on retry and never copies after successful sharing", async () => {
+    configureBrowser({});
+    render(<AffiliateProgramShare />);
+    const button = screen.getByRole("button", { name: "Compartilhar programa" });
+    fireEvent.click(button);
+    expect(
+      await screen.findByRole("textbox", { name: /convite público para copiar/i }),
+    ).toBeInTheDocument();
+    const share = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    configureBrowser({ share, writeText });
+    fireEvent.click(button);
+    await waitFor(() =>
+      expect(screen.getByTestId("vonix-c67-share-feedback")).toHaveTextContent("Convite entregue"),
+    );
+    expect(screen.queryByRole("textbox", { name: /convite público para copiar/i })).toBeNull();
+    expect(writeText).not.toHaveBeenCalled();
   });
 });

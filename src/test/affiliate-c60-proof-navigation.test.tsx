@@ -12,6 +12,7 @@ vi.mock("@tanstack/react-router", () => ({
 import { AffiliateLandingIntro } from "@/components/affiliate-landing";
 import { AffiliateCreatorOpportunity } from "@/components/affiliate-creator-opportunity";
 import { AffiliateShell } from "@/components/affiliate-shell";
+import { AffiliateCurrentCombos } from "@/components/affiliate-current-combos";
 import { AffiliateApplicationStepsPreview } from "@/components/affiliate-application-steps-preview";
 import { AffiliateCreatorPaths } from "@/components/affiliate-creator-paths";
 
@@ -73,6 +74,16 @@ describe("C60 editorial product evidence and recruitment navigation", () => {
       "href",
       "#inscricao",
     );
+  });
+
+  it("offers catalog shortcuts only for the composition with the current catalog", () => {
+    const { container } = render(
+      <AffiliateShell recruitmentStatus="open" showCatalogLink>
+        <AffiliateCurrentCombos />
+      </AffiliateShell>,
+    );
+    expect(container.querySelectorAll('header a[href="#vitrine-afiliadas"]')).toHaveLength(3);
+    expect(container.querySelectorAll("#vitrine-afiliadas")).toHaveLength(1);
   });
 
   it("exposes accessible quick navigation to real anchors on mobile and desktop", () => {

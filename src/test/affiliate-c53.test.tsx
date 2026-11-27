@@ -122,5 +122,14 @@ describe("C53 recruitment presentation boundaries", () => {
       /sem garantia de ganhos/,
     );
     expect(head.meta.find((meta) => meta.name === "robots")?.content).toBe("index,follow");
+    const shareDescription = head.meta.find((meta) => meta.property === "og:description")?.content;
+    expect(shareDescription).toMatch(/8% sobre vendas elegíveis após aprovação/);
+    expect(shareDescription).toMatch(/sem garantia de ganhos/);
+    expect(head.meta.find((meta) => meta.name === "twitter:description")?.content).toBe(
+      shareDescription,
+    );
+    expect(head.meta.find((meta) => meta.name === "twitter:title")?.content).toBe(
+      head.meta.find((meta) => meta.property === "og:title")?.content,
+    );
   });
 });

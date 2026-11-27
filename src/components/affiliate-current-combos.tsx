@@ -236,7 +236,7 @@ export function AffiliateCurrentCombos() {
               <p aria-live="polite" className="mt-3 text-xs text-[#755d66]">
                 Mostrando {visible.length} de {matches.length} {noun} encontrados.
               </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {visible.map((p) => (
                   <a
                     key={p.slug}
@@ -244,7 +244,7 @@ export function AffiliateCurrentCombos() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
-                    className="flex min-w-0 items-center gap-3 rounded-xl border border-[#e5d2d4] p-3 hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2"
+                    className="group flex min-w-0 items-center gap-3 overflow-hidden rounded-2xl border border-[#e5d2d4] bg-white p-3 shadow-[0_8px_24px_rgba(83,42,58,.06)] transition-colors hover:border-[#b98b9c] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-col sm:items-stretch sm:p-4"
                   >
                     <img
                       src={
@@ -266,10 +266,13 @@ export function AffiliateCurrentCombos() {
                       height={480}
                       loading="lazy"
                       decoding="async"
-                      className="size-24 shrink-0 rounded-lg bg-[#fbf5f2] object-contain"
+                      className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full sm:p-3"
                     />
                     <span className="min-w-0 text-sm font-bold text-[#724155]">
-                      <span className="block">{p.name}</span>
+                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#89586a]">
+                        {p.categoryLabel}
+                      </span>
+                      <span className="mt-1 block leading-snug sm:text-base">{p.name}</span>
                       {isProOnly(p.slug) && (
                         <span className="mt-1 block text-[11px] text-[#755d66]">
                           Uso profissional · consulte o rótulo
@@ -284,10 +287,25 @@ export function AffiliateCurrentCombos() {
                 ))}
               </div>
               {!matches.length && (
-                <p className="mt-4 text-sm text-[#755d66]">
-                  {mode === "combos" ? "Nenhum combo encontrado." : "Nenhum produto encontrado."}{" "}
-                  Experimente outro nome ou filtro.
-                </p>
+                <div className="mt-4 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] p-4 text-sm text-[#755d66]">
+                  <p>
+                    {mode === "combos" ? "Nenhum combo encontrado." : "Nenhum produto encontrado."}{" "}
+                    Experimente outro nome ou filtro.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      setCategory("");
+                      setUsage("");
+                      setAll(false);
+                      searchRef.current?.focus();
+                    }}
+                    className="mt-2 min-h-11 font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
+                  >
+                    Limpar todos os filtros
+                  </button>
+                </div>
               )}
               {!search && matches.length > 6 && (
                 <button

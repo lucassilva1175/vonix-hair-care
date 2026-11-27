@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { MessageCircle, Share2 } from "lucide-react";
 import {
   PUBLIC_AFFILIATE_PAGE,
@@ -14,11 +14,16 @@ import {
 export function AffiliateProgramShare() {
   const [feedback, setFeedback] = useState("");
   const [busy, setBusy] = useState(false);
+  const [manualShare, setManualShare] = useState(false);
+  const shareInFlight = useRef(false);
+  const manualId = useId();
 
   async function sharePublicProgram() {
-    if (busy) return;
+    if (shareInFlight.current) return;
+    shareInFlight.current = true;
     setBusy(true);
     setFeedback("");
+    setManualShare(false);
     try {
       if (typeof navigator.share === "function") {
         try {
@@ -27,7 +32,7 @@ export function AffiliateProgramShare() {
             text: PUBLIC_AFFILIATE_SHARE_TEXT,
             url: PUBLIC_AFFILIATE_PAGE,
           });
-          setFeedback("Compartilhamento concluído no aplicativo escolhido.");
+          setFeedback("Convite entregue ao compartilhamento do dispositivo.");
           return;
         } catch (error) {
           if (error instanceof Error && error.name === "AbortError") {
@@ -39,14 +44,19 @@ export function AffiliateProgramShare() {
       }
 
       if (typeof navigator.clipboard?.writeText !== "function") {
-        setFeedback("Compartilhamento indisponível neste navegador. Use o endereço desta página.");
+        setFeedback("Compartilhamento indisponível neste navegador. Copie o convite abaixo.");
+        setManualShare(true);
         return;
       }
       await navigator.clipboard.writeText(PUBLIC_AFFILIATE_SHARE_MESSAGE);
       setFeedback("Convite público copiado. Compartilhe apenas com quem tiver interesse.");
     } catch {
-      setFeedback("Não foi possível copiar ou compartilhar. Use o endereço desta página.");
+      setFeedback(
+        "Não foi possível copiar ou compartilhar automaticamente. Copie o convite abaixo.",
+      );
+      setManualShare(true);
     } finally {
+      shareInFlight.current = false;
       setBusy(false);
     }
   }
@@ -87,6 +97,21 @@ export function AffiliateProgramShare() {
       >
         {feedback}
       </p>
+      {manualShare && (
+        <div className="w-full max-w-xs space-y-1">
+          <label htmlFor={manualId} className="block text-xs font-semibold text-[#784254]">
+            Convite público para copiar manualmente
+          </label>
+          <textarea
+            id={manualId}
+            readOnly
+            rows={4}
+            value={PUBLIC_AFFILIATE_SHARE_MESSAGE}
+            onFocus={(event) => event.currentTarget.select()}
+            className="w-full resize-y rounded-lg border border-[#e9d3d2] bg-white p-2 text-xs leading-relaxed text-[#693c4c] focus-visible:outline-2 focus-visible:outline-[#754153]"
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -162,6 +162,45 @@ describe("C122 — prévia disponível enquanto a consulta permanece pendente", 
     expect(within(section).queryByText("Inscrição real verificada")).not.toBeInTheDocument();
   });
 
+  it("preserva um rascunho real durante limitação, atalhos e nova consulta", async () => {
+    const pending = deferred<typeof open>();
+    server.status
+      .mockResolvedValueOnce(open)
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce(open);
+    render(<AffiliateApplicationPage />);
+    const section = document.getElementById("inscricao")!;
+    await waitFor(() =>
+      expect(within(section).getByTestId("c122-form")).toHaveTextContent(
+        "Inscrição real verificada",
+      ),
+    );
+    const draft = within(section).getByRole("textbox", { name: "Rascunho local C122" });
+    fireEvent.change(draft, { target: { value: "Rascunho preservado" } });
+    await act(async () => {
+      vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(server.status).toHaveBeenCalledTimes(2);
+    expect(
+      within(section).getByRole("button", { name: "Enviar candidatura sintética" }),
+    ).toBeDisabled();
+    await act(async () =>
+      pending.resolve({ open: false, intakeEnabled: true, rateLimitReady: false }),
+    );
+    fireEvent.click(screen.getByTestId("affiliate-c125-bridge-cta"));
+    expect(within(section).getByRole("textbox", { name: "Rascunho local C122" })).toBe(draft);
+    expect(draft).toHaveValue("Rascunho preservado");
+    fireEvent.click(within(section).getByRole("button", { name: "Verificar novamente" }));
+    await waitFor(() =>
+      expect(
+        within(section).getByRole("button", { name: "Enviar candidatura sintética" }),
+      ).toBeEnabled(),
+    );
+    expect(draft).toHaveValue("Rascunho preservado");
+    expect(server.status).toHaveBeenCalledTimes(3);
+  });
+
   it("não modifica envio real quando status OPEN é confirmado sem prévia", async () => {
     server.status.mockResolvedValue(open);
     render(<AffiliateApplicationPage />);
