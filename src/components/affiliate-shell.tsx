@@ -102,7 +102,7 @@ export function AffiliateShell({
           {mode === "landing" && (
             <nav
               aria-label="Navegação da seleção de afiliadas"
-              className="hidden items-center gap-4 xl:flex"
+              className="hidden items-center gap-3 xl:flex"
             >
               <Link
                 to="/consultar-candidatura"
@@ -128,6 +128,12 @@ export function AffiliateShell({
                 className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
               >
                 Avaliações de produtos
+              </a>
+              <a
+                href="#vitrine-afiliadas"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
+              >
+                Vitrine de produtos
               </a>
               <a
                 href="#duvidas"
@@ -160,7 +166,7 @@ export function AffiliateShell({
               <nav
                 data-testid="affiliate-c138-mobile-menu-links"
                 aria-label="Seções da seleção no celular"
-                className="fixed inset-x-3 top-[4.75rem] z-[70] grid gap-1 rounded-2xl border border-[#dac6c8] bg-[#fffaf7] p-2 text-sm font-semibold text-[#754256] shadow-[0_18px_40px_rgba(65,36,49,.18)]"
+                className="fixed inset-x-3 top-[4.75rem] z-[70] grid max-h-[calc(100dvh-6rem)] gap-1 overflow-y-auto overscroll-contain rounded-2xl border border-[#dac6c8] bg-[#fffaf7] p-2 text-sm font-semibold text-[#754256] shadow-[0_18px_40px_rgba(65,36,49,.18)]"
               >
                 <Link
                   to="/consultar-candidatura"
@@ -189,6 +195,13 @@ export function AffiliateShell({
                   className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
                 >
                   Avaliações de produtos
+                </a>
+                <a
+                  href="#vitrine-afiliadas"
+                  onClick={closeMobileMenu}
+                  className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
+                >
+                  Vitrine de produtos
                 </a>
                 <a
                   href="#duvidas"
@@ -263,6 +276,12 @@ export function AffiliateShell({
               className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
             >
               Avaliações de produtos
+            </a>
+            <a
+              href="#vitrine-afiliadas"
+              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
+            >
+              Vitrine de produtos
             </a>
             <a
               href="#duvidas"

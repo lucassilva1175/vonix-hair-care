@@ -33,11 +33,17 @@ export const Route = createFileRoute("/seja-afiliada")({
         content:
           "Conheça o programa de afiliadas Vonix Hair: inscrição gratuita, comissão de 8% sobre vendas elegíveis após aprovação, sem estoque próprio e seleção individual, sem garantia de ganhos.",
       },
-      { property: "og:title", content: "Afiliadas Vonix Hair | Seu jeito de criar" },
+      { property: "og:title", content: "Seja afiliada Vonix Hair | Inscrição gratuita" },
       {
         property: "og:description",
         content:
-          "Sua criatividade pode abrir novas possibilidades. Conheça o programa de afiliadas Vonix Hair, as condições após aprovação e como enviar sua candidatura gratuita.",
+          "Crie conteúdo sobre beleza capilar com a Vonix Hair. Inscrição gratuita, sem estoque próprio e comissão de 8% sobre vendas elegíveis após aprovação, sem garantia de ganhos.",
+      },
+      { name: "twitter:title", content: "Seja afiliada Vonix Hair | Inscrição gratuita" },
+      {
+        name: "twitter:description",
+        content:
+          "Crie conteúdo sobre beleza capilar com a Vonix Hair. Inscrição gratuita, sem estoque próprio e comissão de 8% sobre vendas elegíveis após aprovação, sem garantia de ganhos.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Vonix Hair" },
@@ -86,8 +92,12 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   useEffect(() => {
     let active = true;
     let latestRequest = 0;
+    let checkingAvailability = false;
     const statusTimeouts = new Set<number>();
     async function refreshStatus() {
+      // Focus and visibility events can arrive together. Reuse the pending probe.
+      if (!active || checkingAvailability) return;
+      checkingAvailability = true;
       const requestId = ++latestRequest;
       let timeoutId: number | undefined;
       // Never trust a previously OPEN session while the next GET is pending.
@@ -154,6 +164,7 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
           setRecruitment("unavailable");
         }
       } finally {
+        checkingAvailability = false;
         if (timeoutId !== undefined) {
           window.clearTimeout(timeoutId);
           statusTimeouts.delete(timeoutId);
@@ -185,6 +196,9 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
 
   function openSafePreview() {
     // Deliberate user action: opening the simulation never authorizes a POST.
+    // A live form already paused by the server is itself a safe view. Do not
+    // remount it with a preview key and discard an in-progress application.
+    if (liveFormStarted && !preview) return;
     setConfirmPreviewExit(false);
     setPreview(true);
   }
@@ -361,7 +375,7 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
                       ? "Não conseguimos consultar o status das inscrições nesta conexão. Isso não significa que o programa esteja fechado. O envio permanece bloqueado até uma confirmação do servidor."
                       : "O formulário simplificado está disponível para visualização, mas não recebe candidaturas enquanto as inscrições estiverem fechadas."}
               </p>
-              {recruitment === "unavailable" && (
+              {(recruitment === "unavailable" || recruitment === "limited") && (
                 <Button
                   type="button"
                   variant="outline"
@@ -410,7 +424,7 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
               )}
               {/* A preview must never turn into a live POST because status changed.
                   Switching explicitly to live starts a fresh form, not an old draft. */}
-              {!preview && recruitment === "unavailable" && (
+              {!preview && (recruitment === "unavailable" || recruitment === "limited") && (
                 <div className="mx-auto mb-5 max-w-3xl text-center">
                   <Button
                     type="button"

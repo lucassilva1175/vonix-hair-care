@@ -17,6 +17,7 @@ export const Route = createFileRoute("/consultar-candidatura")({
     meta: [
       { title: "Consultar candidatura | Vonix Hair" },
       { name: "robots", content: "noindex,nofollow,noarchive" },
+      { name: "referrer", content: "no-referrer" },
     ],
   }),
   component: AffiliateTrackingCodePage,

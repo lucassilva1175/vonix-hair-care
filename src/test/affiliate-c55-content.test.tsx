@@ -72,6 +72,8 @@ describe("Vonix Afiliadas C55 — conteúdo útil, original e transparente", () 
     const section = screen.getByTestId("affiliate-c55-next-steps");
     expect(section).toHaveTextContent("Quando concluir sua inscrição, guarde o código recebido.");
     expect(section).not.toHaveTextContent("Visualizar a prévia não gera");
+    expect(section).toHaveTextContent("consulte o código da tentativa antes de reenviar");
+    expect(section).not.toHaveTextContent("não existe candidatura registrada");
   });
 
   it("copies only the public selection URL — no codes, UTM, applicant or affiliate tokens", async () => {
@@ -103,5 +105,8 @@ describe("Vonix Afiliadas C55 — conteúdo útil, original e transparente", () 
         "Não foi possível copiar",
       ),
     );
+    const field = screen.getByRole("textbox", { name: /Link público para copiar manualmente/i });
+    expect(field).toHaveValue(PUBLIC_AFFILIATE_PAGE);
+    expect(field).toHaveAttribute("readonly");
   });
 });

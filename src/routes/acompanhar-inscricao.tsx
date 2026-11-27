@@ -25,6 +25,7 @@ export const Route = createFileRoute("/acompanhar-inscricao")({
           "Área privada de acompanhamento da sua candidatura ao programa de afiliadas Vonix Hair.",
       },
       { name: "robots", content: "noindex,nofollow,noarchive" },
+      { name: "referrer", content: "no-referrer" },
     ],
   }),
   component: AffiliateApplicationTracker,

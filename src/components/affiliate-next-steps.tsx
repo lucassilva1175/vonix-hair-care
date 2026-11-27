@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -21,7 +21,7 @@ const stages = [
     number: "01",
     title: "Concluiu uma inscrição real?",
     description:
-      "Guarde o código de acompanhamento exibido após a confirmação do cadastro. Sem confirmação de envio, não existe candidatura registrada.",
+      "Guarde o código de acompanhamento exibido após a confirmação. Se o envio ficou sem resposta, consulte o código da tentativa antes de reenviar.",
     Icon: ClipboardCheck,
   },
   {
@@ -42,14 +42,21 @@ const stages = [
 
 export function AffiliateNextSteps({ recruitmentOpen }: { recruitmentOpen: boolean }) {
   const [copyMessage, setCopyMessage] = useState("");
+  const [manualCopy, setManualCopy] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const inFlight = useRef(false);
+  const copyId = useId();
 
   async function copyPublicLink() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setCopying(true);
+    setManualCopy(false);
     setCopyMessage("");
     try {
       if (!navigator.clipboard?.writeText) {
-        setCopyMessage(
-          "Cópia não disponível neste navegador. Compartilhe o endereço desta página.",
-        );
+        setCopyMessage("Cópia automática não disponível. Selecione o link público abaixo.");
+        setManualCopy(true);
         return;
       }
       await navigator.clipboard.writeText(PUBLIC_AFFILIATE_PAGE);
@@ -57,7 +64,11 @@ export function AffiliateNextSteps({ recruitmentOpen }: { recruitmentOpen: boole
         "Link público copiado. Compartilhe apenas com quem deseja conhecer a seleção.",
       );
     } catch {
-      setCopyMessage("Não foi possível copiar. Você pode compartilhar o endereço desta página.");
+      setCopyMessage("Não foi possível copiar automaticamente. Selecione o link público abaixo.");
+      setManualCopy(true);
+    } finally {
+      inFlight.current = false;
+      setCopying(false);
     }
   }
 
@@ -146,10 +157,25 @@ export function AffiliateNextSteps({ recruitmentOpen }: { recruitmentOpen: boole
             >
               {copyMessage}
             </p>
+            {manualCopy && (
+              <div className="mt-3">
+                <label htmlFor={copyId} className="block text-xs font-semibold text-primary">
+                  Link público para copiar manualmente
+                </label>
+                <input
+                  id={copyId}
+                  readOnly
+                  value={PUBLIC_AFFILIATE_PAGE}
+                  onFocus={(event) => event.currentTarget.select()}
+                  className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-xs text-foreground"
+                />
+              </div>
+            )}
           </div>
           <button
             type="button"
             onClick={() => void copyPublicLink()}
+            disabled={copying}
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-primary px-6 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
           >
             <Link2 aria-hidden="true" className="h-4 w-4" />

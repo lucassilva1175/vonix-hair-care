@@ -17,6 +17,7 @@ export const Route = createFileRoute("/acesso-equipe-afiliadas")({
     meta: [
       { title: "Acesso da equipe de seleção | Vonix Hair" },
       { name: "robots", content: "noindex,nofollow,noarchive" },
+      { name: "referrer", content: "no-referrer" },
     ],
   }),
   component: AffiliateTeamAccess,
