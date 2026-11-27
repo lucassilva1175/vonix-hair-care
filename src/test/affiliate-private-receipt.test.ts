@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   affiliatePrivateReceiptText,
+  parseAffiliatePrivateReceipt,
   downloadAffiliatePrivateReceipt,
 } from "@/lib/affiliate-private-receipt";
 
@@ -67,5 +68,27 @@ describe("local-only, user-triggered private candidate receipt", () => {
     });
     vi.stubGlobal("URL", { createObjectURL: create, revokeObjectURL: vi.fn() });
     expect(downloadAffiliatePrivateReceipt(token, true)).toBe(false);
+  });
+});
+
+describe("strict local receipt import", () => {
+  it("loads generated receipts regardless of claimed status and accepts CRLF", () => {
+    expect(parseAffiliatePrivateReceipt(affiliatePrivateReceiptText(token, true))).toBe(token);
+    expect(
+      parseAffiliatePrivateReceipt(
+        affiliatePrivateReceiptText(token, false).replace(/\n/g, "\r\n"),
+      ),
+    ).toBe(token);
+    expect(parseAffiliatePrivateReceipt("  " + token + "  ")).toBe(token);
+  });
+  it("rejects oversized, ambiguous, malformed and unrelated documents", () => {
+    const original = affiliatePrivateReceiptText(token, true);
+    expect(parseAffiliatePrivateReceipt(original + "\nCódigo privado: " + token)).toBeNull();
+    expect(parseAffiliatePrivateReceipt(original + "x".repeat(4097))).toBeNull();
+    expect(parseAffiliatePrivateReceipt("Código privado: " + token)).toBeNull();
+    expect(parseAffiliatePrivateReceipt(original.replace(token, "@social"))).toBeNull();
+    expect(
+      parseAffiliatePrivateReceipt(original.replace("INSCRIÇÃO RECEBIDA", "PAGAMENTO GARANTIDO")),
+    ).toBeNull();
   });
 });

@@ -4,6 +4,33 @@
 const CODE = /^[A-Za-z0-9_-]{32}$/;
 
 export const pendingReceiptSessionKey = "vonix-affiliate-unconfirmed-code";
+export const maxPrivateReceiptBytes = 4096;
+
+/** Local recovery only: never look up a saved attempt until the user asks. */
+export function readPendingReceiptCode(): string | null {
+  try {
+    const saved = window.sessionStorage.getItem(pendingReceiptSessionKey) ?? "";
+    return CODE.test(saved) ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Decode only a single exact code or a Vonix-generated text receipt. The
+ * receipt's claimed status is never trusted; only the server can confirm it. */
+export function parseAffiliatePrivateReceipt(text: string): string | null {
+  if (text.length > maxPrivateReceiptBytes) return null;
+  const trimmed = text.trim();
+  if (CODE.test(trimmed)) return trimmed;
+  const lines = trimmed.split(/\r?\n/);
+  if (lines[0] !== "VONIX HAIR — CÓDIGO PRIVADO DA CANDIDATURA") return null;
+  if (!["INSCRIÇÃO RECEBIDA", "TENTATIVA AINDA NÃO CONFIRMADA"].includes(lines[1] ?? ""))
+    return null;
+  const candidates = lines.filter((line) => line.startsWith("Código privado:"));
+  if (candidates.length !== 1) return null;
+  const match = /^Código privado: ([A-Za-z0-9_-]{32})$/.exec(candidates[0] ?? "");
+  return match?.[1] ?? null;
+}
 
 /** Only clear the matching, independently confirmed attempt, on explicit user action.
  * Storage may be disabled or silently ignore removals. Do not touch another code. */

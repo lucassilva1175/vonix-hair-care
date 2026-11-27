@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "
 import { affiliateSimpleBaseSchema, affiliateSimpleSchema } from "@/lib/affiliate-simple";
 import {
   downloadAffiliatePrivateReceipt,
+  clearMatchingPendingReceipt,
   pendingReceiptSessionKey,
 } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
@@ -330,7 +331,9 @@ export function AffiliateSimpleForm({
     }
   }
 
-  function discardUnconfirmedCode() {
+  function discardUnconfirmedCode(confirmed = false) {
+    if (!confirmed && submitting.current) return;
+    const previous = attemptCode.current;
     receiptCopyEpoch.current++;
     receiptCopying.current = false;
     setUnconfirmedHandoffError("");
@@ -341,15 +344,11 @@ export function AffiliateSimpleForm({
     setUnconfirmedCode("");
     setUnconfirmedCopied(false);
     setCodeRevealed(false);
-    try {
-      window.sessionStorage.removeItem(pendingReceiptSessionKey);
-    } catch {
-      /* restricted storage */
-    }
+    clearMatchingPendingReceipt(previous);
   }
 
   function handoffUnconfirmedCode(event: MouseEvent<HTMLAnchorElement>) {
-    if (!/^[A-Za-z0-9_-]{32}$/.test(unconfirmedCode)) {
+    if (submitting.current || !/^[A-Za-z0-9_-]{32}$/.test(unconfirmedCode)) {
       event.preventDefault();
       return;
     }
@@ -795,7 +794,7 @@ export function AffiliateSimpleForm({
           );
           return;
         }
-        discardUnconfirmedCode();
+        discardUnconfirmedCode(true);
         trackAffiliateFunnel("affiliate_application_confirmed");
         track("sign_up", { method: "affiliate_application" });
         setTrackingCode(receipt);
@@ -827,7 +826,7 @@ export function AffiliateSimpleForm({
         <h3 className="mt-5 font-display text-4xl text-[#482b37]">Inscrição recebida!</h3>
         <p className="mx-auto mt-4 max-w-lg text-[#70575e]">
           Obrigada pelo interesse na Vonix Hair. Nossa equipe analisará seu Instagram e, se
-          informado, seu TikTok e, caso necessário, entrará em contato pelo telefone informado.
+          informado, seu TikTok e, caso necessário, entrará em contato pelos canais informados.
         </p>
         {trackingCode && (
           <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-[#d4b8bd] bg-[#fff8f5] p-5">
@@ -1341,14 +1340,16 @@ export function AffiliateSimpleForm({
                 <a
                   href="/consultar-candidatura"
                   onClick={handoffUnconfirmedCode}
+                  aria-disabled={sending}
                   className="inline-flex min-h-11 items-center rounded-full border border-[#b9969e] px-4 font-bold underline"
                 >
                   Consultar código no portal
                 </a>
                 <button
                   type="button"
-                  onClick={discardUnconfirmedCode}
-                  className="min-h-11 px-4 text-xs underline"
+                  onClick={() => discardUnconfirmedCode()}
+                  disabled={sending}
+                  className="min-h-11 px-4 text-xs underline disabled:opacity-50"
                 >
                   Descartar código e iniciar nova tentativa
                 </button>

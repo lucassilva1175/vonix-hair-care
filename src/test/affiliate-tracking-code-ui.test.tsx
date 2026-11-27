@@ -12,6 +12,7 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (config: { component: React.ComponentType }) => config,
 }));
 
+import { affiliatePrivateReceiptText } from "@/lib/affiliate-private-receipt";
 import { AffiliateTrackingCodePage } from "@/routes/consultar-candidatura";
 
 const code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
@@ -596,4 +597,165 @@ it("C37 never selects a secret field if clipboard fails while tab is hidden befo
     if (original) Object.defineProperty(navigator, "clipboard", original);
     else Reflect.deleteProperty(navigator, "clipboard");
   }
+});
+
+describe("Local private receipt recovery", () => {
+  const receipt = () => affiliatePrivateReceiptText(code, false);
+  const field = () => screen.getByLabelText("Código privado de acompanhamento");
+  const picker = () => screen.getByLabelText("Importar comprovante privado de texto");
+  const submit = () => screen.getByRole("button", { name: "Consultar minha inscrição" });
+  const received = {
+    ok: true,
+    status: "pendente",
+    rejectionReason: null,
+    submittedAt: "2026-11-11T12:00:00Z",
+    reviewedAt: null,
+  };
+  const fileWith = (text: () => Promise<string>, size = 200) => ({ size, text });
+  it("imports a saved text file locally, without assuming a confirmed submission", async () => {
+    render(<AffiliateTrackingCodePage />);
+    const read = vi.fn().mockResolvedValue(receipt());
+    fireEvent.change(picker(), { target: { files: [fileWith(read)] } });
+    await screen.findByText(/Código carregado neste navegador/);
+    expect(field()).toHaveValue(code);
+    expect(field()).toHaveAttribute("type", "password");
+    expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
+    expect(screen.queryByText("Candidatura em análise")).toBeNull();
+    server.getAffiliateStatusByCode.mockResolvedValue(received);
+    fireEvent.click(submit());
+    await screen.findByText("Candidatura em análise");
+    expect(server.getAffiliateStatusByCode).toHaveBeenCalledExactlyOnceWith({ data: { code } });
+  });
+  it("accepts pasting the whole generated receipt but never auto-consults", () => {
+    render(<AffiliateTrackingCodePage />);
+    fireEvent.paste(field(), { clipboardData: { getData: () => receipt() } });
+    expect(field()).toHaveValue(code);
+    expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
+    fireEvent.paste(field(), {
+      clipboardData: { getData: () => receipt() + "\nCódigo privado: " + code },
+    });
+    expect(screen.getByText(/Cole somente o código/)).toBeInTheDocument();
+    expect(field()).toHaveValue(code);
+  });
+  it("rejects oversized files without reading them and keeps an existing code", async () => {
+    render(<AffiliateTrackingCodePage />);
+    fireEvent.change(field(), { target: { value: code } });
+    const read = vi.fn();
+    fireEvent.change(picker(), { target: { files: [fileWith(read, 4097)] } });
+    await screen.findByText(/Não foi possível ler um código Vonix válido/);
+    expect(read).not.toHaveBeenCalled();
+    expect(field()).toHaveValue(code);
+  });
+  it("ignores delayed file reads after manual edits or backgrounding", async () => {
+    render(<AffiliateTrackingCodePage />);
+    let resolve!: (s: string) => void;
+    fireEvent.change(picker(), {
+      target: {
+        files: [
+          fileWith(
+            () =>
+              new Promise((r) => {
+                resolve = r;
+              }),
+          ),
+        ],
+      },
+    });
+    const other = "abcdefghijklmnopqrstuvwxyzABCDEF";
+    fireEvent.change(field(), { target: { value: other } });
+    await act(async () => {
+      resolve(receipt());
+    });
+    expect(field()).toHaveValue(other);
+    fireEvent.change(picker(), {
+      target: {
+        files: [
+          fileWith(
+            () =>
+              new Promise((r) => {
+                resolve = r;
+              }),
+          ),
+        ],
+      },
+    });
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    try {
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await act(async () => {
+        resolve(receipt());
+      });
+      expect(field()).toHaveValue(other);
+    } finally {
+      visibility.mockRestore();
+    }
+    expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
+  });
+  it("clears the screen without deleting the pending receipt or accepting a stale lookup", async () => {
+    let finish!: (v: unknown) => void;
+    server.getAffiliateStatusByCode.mockImplementation(
+      () =>
+        new Promise((r) => {
+          finish = r;
+        }),
+    );
+    render(<AffiliateTrackingCodePage />);
+    window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", code);
+    fireEvent.change(field(), { target: { value: code } });
+    fireEvent.click(submit());
+    fireEvent.click(screen.getByRole("button", { name: "Limpar consulta nesta tela" }));
+    await act(async () => {
+      finish(received);
+    });
+    expect(field()).toHaveValue("");
+    expect(screen.queryByText("Candidatura em análise")).toBeNull();
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
+  });
+  it("releases a stalled lookup after the local deadline, then ignores its late reply", async () => {
+    vi.useFakeTimers();
+    try {
+      let late!: (v: unknown) => void;
+      server.getAffiliateStatusByCode
+        .mockImplementationOnce(
+          () =>
+            new Promise((r) => {
+              late = r;
+            }),
+        )
+        .mockResolvedValueOnce(received);
+      render(<AffiliateTrackingCodePage />);
+      fireEvent.change(field(), { target: { value: code } });
+      fireEvent.click(submit());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30000);
+      });
+      expect(screen.getByRole("alert")).toHaveTextContent("Falha ao consultar");
+      expect(submit()).toBeEnabled();
+      await act(async () => {
+        fireEvent.click(submit());
+      });
+      expect(screen.getByText("Candidatura em análise")).toBeInTheDocument();
+      await act(async () => {
+        late({ ...received, status: "aprovada" });
+      });
+      expect(screen.queryByText("Candidatura aprovada")).toBeNull();
+      expect(server.getAffiliateStatusByCode).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+it("restores a pending receipt only after explicit action without consulting or deleting it", async () => {
+  window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", code);
+  render(<AffiliateTrackingCodePage />);
+  const field = screen.getByLabelText("Código privado de acompanhamento");
+  expect(field).toHaveValue("");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Recuperar código de uma tentativa anterior" }),
+  );
+  expect(field).toHaveValue(code);
+  expect(field).toHaveAttribute("type", "password");
+  expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
+  expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
 });
