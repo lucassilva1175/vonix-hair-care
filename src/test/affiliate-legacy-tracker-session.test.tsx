@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const service = vi.hoisted(() => ({
@@ -231,4 +231,80 @@ describe("Session logout and disposal", () => {
     expect(service.getUser).toHaveBeenCalledTimes(1);
     expect(service.from).not.toHaveBeenCalled();
   });
+});
+
+describe("Legacy applicant access continuity", () => {
+  it("describes the current form accurately and prevents same-tick duplicate requests", async () => {
+    const pending = deferred<{ status: string }>();
+    service.requestAffiliateAccessEmail.mockReturnValue(pending.promise);
+    render(<AffiliateApplicationTracker />);
+    const email = await screen.findByLabelText("E-mail utilizado na inscrição");
+    expect(screen.getByText(/O e-mail e o telefone/)).toBeInTheDocument();
+    fireEvent.change(email, { target: { value: "person@example.invalid" } });
+    const form = screen.getByRole("button", { name: "Receber acesso por e-mail" }).closest("form")!;
+    act(() => {
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+    });
+    expect(service.requestAffiliateAccessEmail).toHaveBeenCalledTimes(1);
+    expect(email).toBeDisabled();
+    await act(async () => pending.resolve({ status: "requested" }));
+    expect(screen.getByText(/Se este e-mail corresponde/)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("Código de verificação"), {
+      target: { value: "123456" },
+    });
+    fireEvent.change(email, { target: { value: "different@example.invalid" } });
+    expect(screen.getByPlaceholderText("Código de verificação")).toHaveValue("");
+    expect(screen.queryByText(/Se este e-mail corresponde/)).toBeNull();
+  });
+  it("validates only once and rejects obsolete background feedback", async () => {
+    const pending = deferred<{ error: unknown }>();
+    service.verifyOtp.mockReturnValue(pending.promise);
+    render(<AffiliateApplicationTracker />);
+    const email = await screen.findByLabelText("E-mail utilizado na inscrição");
+    const otp = screen.getByPlaceholderText("Código de verificação");
+    fireEvent.change(otp, { target: { value: "123456" } });
+    expect(screen.getByRole("button", { name: "Validar código" })).toBeDisabled();
+    fireEvent.change(email, { target: { value: "person@example.invalid" } });
+    fireEvent.change(otp, { target: { value: "123456" } });
+    const form = screen.getByRole("button", { name: "Validar código" }).closest("form")!;
+    act(() => {
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+    });
+    expect(service.verifyOtp).toHaveBeenCalledTimes(1);
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    try {
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await act(async () => pending.resolve({ error: { message: "invalid" } }));
+      visibility.mockReturnValue("visible");
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await screen.findByLabelText("E-mail utilizado na inscrição");
+      expect(screen.queryByText("O código informado é inválido ou expirou.")).toBeNull();
+      expect(screen.getByPlaceholderText("Código de verificação")).toHaveValue("");
+    } finally {
+      visibility.mockRestore();
+    }
+  });
+});
+
+it("distinguishes a failed legacy status query from a successful empty result", async () => {
+  service.getUser.mockResolvedValue(identity("verified@example.invalid"));
+  service.from
+    .mockImplementationOnce(() => ({
+      select: () => ({
+        order: () => ({ limit: async () => ({ data: null, error: { message: "offline" } }) }),
+      }),
+    }))
+    .mockImplementationOnce(() => ({
+      select: () => ({ order: () => ({ limit: async () => ({ data: [], error: null }) }) }),
+    }));
+  render(<AffiliateApplicationTracker />);
+  await screen.findByText(/Ainda não foi possível confirmar o resultado/);
+  expect(screen.queryByText(/Nenhuma candidatura antiga foi localizada/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Atualizar acompanhamento" }));
+  await screen.findByText(/Nenhuma candidatura antiga foi localizada/);
+  expect(
+    screen.getByRole("link", { name: "Consultar inscrição pelo código privado" }),
+  ).toHaveAttribute("href", "/consultar-candidatura");
 });

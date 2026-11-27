@@ -70,6 +70,10 @@ const statusUi = {
   },
 } as const;
 
+function trackerTabHidden() {
+  return typeof document !== "undefined" && document.visibilityState === "hidden";
+}
+
 export function AffiliateApplicationTracker() {
   const [signedEmail, setSignedEmail] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
@@ -79,22 +83,28 @@ export function AffiliateApplicationTracker() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [application, setApplication] = useState<OwnApplication | null>(null);
+  const [statusChecked, setStatusChecked] = useState(false);
   // A response from an old account must never render under a newer session.
   const refreshVersion = useRef(0);
+  const accessInFlight = useRef(false);
+  const accessVersion = useRef(0);
+  const activeEmail = useRef("");
 
   const refresh = useCallback(async () => {
     const requestId = ++refreshVersion.current;
     setChecking(true);
     setError("");
     setApplication(null);
+    setStatusChecked(false);
     setSignedEmail("");
     // Never refresh private status while the page is hidden. An Auth callback
     // can fire in the background, but resuming must revalidate the user anew.
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    if (typeof document !== "undefined" && trackerTabHidden()) return;
     try {
       // getUser checks the Auth server; do not trust an unvalidated local token.
       const userResult = await vonixAffiliateAuth.auth.getUser();
       if (refreshVersion.current !== requestId) return;
+      if (trackerTabHidden()) return;
       const verified = userResult.data.user;
       if (userResult.error || !verified?.email || !verified.email_confirmed_at) {
         setSignedEmail("");
@@ -109,6 +119,7 @@ export function AffiliateApplicationTracker() {
         .order("submitted_at", { ascending: false })
         .limit(1);
       if (refreshVersion.current !== requestId) return;
+      if (trackerTabHidden()) return;
       if (response.error) {
         setError("Não foi possível consultar sua solicitação agora. Tente novamente.");
         return;
@@ -122,8 +133,9 @@ export function AffiliateApplicationTracker() {
         }
         setApplication(parsed.data satisfies OwnApplication);
       }
+      setStatusChecked(true);
     } catch {
-      if (refreshVersion.current === requestId)
+      if (refreshVersion.current === requestId && !trackerTabHidden())
         setError("Não foi possível estabelecer uma conexão segura para consultar sua candidatura.");
     } finally {
       if (refreshVersion.current === requestId) setChecking(false);
@@ -133,6 +145,7 @@ export function AffiliateApplicationTracker() {
   useEffect(() => {
     let active = true;
     const versionRef = refreshVersion;
+    const accessRef = accessVersion;
     void refresh();
     const {
       data: { subscription },
@@ -144,10 +157,15 @@ export function AffiliateApplicationTracker() {
     });
     const onVisibilityChange = () => {
       if (!active) return;
-      if (document.visibilityState === "hidden") {
+      if (trackerTabHidden()) {
         // Revoke in-flight confidential reads and remove the email + decision
         // from the DOM immediately, before a shared device changes hands.
         ++versionRef.current;
+        ++accessVersion.current;
+        accessInFlight.current = false;
+        setLoading(false);
+        setCode("");
+        setNotice("");
         setChecking(true);
         setApplication(null);
         setSignedEmail("");
@@ -160,6 +178,7 @@ export function AffiliateApplicationTracker() {
     return () => {
       active = false;
       ++versionRef.current;
+      ++accessRef.current;
       document.removeEventListener("visibilitychange", onVisibilityChange);
       subscription.unsubscribe();
     };
@@ -167,15 +186,21 @@ export function AffiliateApplicationTracker() {
 
   async function requestLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading) return;
+    if (loading || accessInFlight.current || trackerTabHidden()) return;
+    const normalized = loginEmail.trim().toLowerCase();
+    if (!z.string().email().safeParse(normalized).success) return;
+    accessInFlight.current = true;
+    const requestId = ++accessVersion.current;
+    activeEmail.current = normalized;
+    setCode("");
     setError("");
     setNotice("");
     setLoading(true);
     try {
-      const normalized = loginEmail.trim().toLowerCase();
       const alternate = await requestAffiliateAccessEmail({
         data: { email: normalized, purpose: "applicant" },
       });
+      if (accessVersion.current !== requestId || trackerTabHidden()) return;
       if (alternate.status === "requested") {
         setNotice(
           "Se este e-mail corresponde a uma inscrição, solicitamos o acesso. A mensagem pode trazer um código ou um link: digite o código aqui se estiver disponível ou abra apenas o link mais recente. Verifique entrada e spam; a entrega depende do provedor.",
@@ -195,32 +220,48 @@ export function AffiliateApplicationTracker() {
         "O envio de acesso está temporariamente indisponível. Tente novamente mais tarde ou contate a equipe Vonix.",
       );
     } catch {
-      setError("Falha de conexão ao solicitar acesso.");
+      if (accessVersion.current === requestId && !trackerTabHidden())
+        setError("Falha de conexão ao solicitar acesso.");
     } finally {
-      setLoading(false);
+      if (accessVersion.current === requestId) {
+        accessInFlight.current = false;
+        setLoading(false);
+      }
     }
   }
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (loading || !/^\d{6,8}$/.test(code)) return;
+    if (loading || accessInFlight.current || trackerTabHidden() || !/^\d{6,8}$/.test(code)) return;
+    const normalized = loginEmail.trim().toLowerCase();
+    if (!z.string().email().safeParse(normalized).success) {
+      setError("Informe o e-mail utilizado na inscrição antes de validar o código.");
+      return;
+    }
+    accessInFlight.current = true;
+    const requestId = ++accessVersion.current;
     setLoading(true);
     setError("");
     try {
       const { error: authError } = await vonixAffiliateAuth.auth.verifyOtp({
-        email: loginEmail.trim().toLowerCase(),
+        email: normalized,
         token: code,
         type: "email",
       });
+      if (accessVersion.current !== requestId || trackerTabHidden()) return;
       if (authError) setError("O código informado é inválido ou expirou.");
       else {
         setCode("");
         await refresh();
       }
     } catch {
-      setError("Não foi possível validar o código. Tente novamente.");
+      if (accessVersion.current === requestId && !trackerTabHidden())
+        setError("Não foi possível validar o código. Tente novamente.");
     } finally {
-      setLoading(false);
+      if (accessVersion.current === requestId) {
+        accessInFlight.current = false;
+        setLoading(false);
+      }
     }
   }
 
@@ -247,7 +288,7 @@ export function AffiliateApplicationTracker() {
   const Icon = show?.Icon;
   return (
     <AffiliateShell mode="account">
-      <div className="relative isolate min-h-[75vh] bg-[#faf5f0] px-5 py-16 text-[#392832] sm:py-24">
+      <div className="relative isolate min-h-[75vh] bg-[#faf5f0] px-4 py-8 text-[#392832] sm:px-5 sm:py-16">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-[#f0dfe1] to-transparent"
@@ -265,7 +306,7 @@ export function AffiliateApplicationTracker() {
               continua disponível para acompanhamento, inclusive após uma decisão.
             </p>
           </div>
-          <section className="rounded-[2rem] border border-[#e8d7d3] bg-white p-6 shadow-[0_18px_70px_rgba(72,31,43,.08)] sm:p-10">
+          <section className="rounded-[1.5rem] border border-[#e8d7d3] bg-white p-4 shadow-[0_18px_70px_rgba(72,31,43,.08)] sm:rounded-[2rem] sm:p-10">
             {checking ? (
               <p role="status" className="flex items-center gap-3 text-sm text-[#73545e]">
                 <Clock3 className="h-5 w-5" /> Verificando sua sessão de maneira segura...
@@ -332,10 +373,20 @@ export function AffiliateApplicationTracker() {
                       )}
                     </dl>
                   </div>
+                ) : statusChecked ? (
+                  <div className="mt-7 rounded-xl border border-[#eddad7] bg-[#fffaf8] p-5 text-sm text-[#73545e]">
+                    <p>Nenhuma candidatura antiga foi localizada para este e-mail verificado.</p>
+                    <a
+                      href="/consultar-candidatura"
+                      className="mt-3 inline-flex min-h-11 items-center font-bold underline underline-offset-4"
+                    >
+                      Consultar inscrição pelo código privado
+                    </a>
+                  </div>
                 ) : (
                   <p className="mt-7 rounded-xl border border-[#eddad7] bg-[#fffaf8] p-5 text-sm text-[#73545e]">
-                    Não há uma candidatura vinculada a este e-mail verificado. Apenas pessoas que
-                    concluíram o formulário podem acompanhar uma solicitação.
+                    Ainda não foi possível confirmar o resultado da consulta. Atualize o
+                    acompanhamento antes de concluir que não existe uma inscrição.
                   </p>
                 )}
                 <button
@@ -359,9 +410,9 @@ export function AffiliateApplicationTracker() {
                   </div>
                 </div>
                 <p className="mt-5 rounded-xl border border-[#ead9d2] bg-[#fffaf6] p-4 text-sm leading-relaxed text-[#75575f]">
-                  <strong>Fez a inscrição pelo novo formulário?</strong> Ele não solicita e-mail. A
-                  equipe poderá entrar em contato pelo telefone informado. Guarde e use o código
-                  privado recebido ao concluir sua inscrição no{" "}
+                  <strong>Fez a inscrição pelo formulário atual?</strong> O e-mail e o telefone são
+                  usados para contato. A consulta da nova candidatura usa o código privado recebido
+                  ao concluir sua inscrição no{" "}
                   <a href="/consultar-candidatura" className="font-semibold underline">
                     acompanhamento por código
                   </a>
@@ -378,7 +429,16 @@ export function AffiliateApplicationTracker() {
                     required
                     maxLength={180}
                     value={loginEmail}
-                    onChange={(event) => setLoginEmail(event.target.value)}
+                    disabled={loading}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      if (next.trim().toLowerCase() !== activeEmail.current) {
+                        setCode("");
+                        setNotice("");
+                        setError("");
+                      }
+                      setLoginEmail(next);
+                    }}
                     placeholder="seu@email.com"
                     className="mt-2 min-h-12 w-full rounded-xl border border-[#d9c3c8] bg-white px-4 outline-none focus-visible:ring-2 focus-visible:ring-[#9a6776]"
                   />
@@ -412,6 +472,7 @@ export function AffiliateApplicationTracker() {
                       minLength={6}
                       maxLength={8}
                       value={code}
+                      disabled={loading}
                       onChange={(event) =>
                         setCode(event.target.value.replace(/\D/g, "").slice(0, 8))
                       }
@@ -420,7 +481,11 @@ export function AffiliateApplicationTracker() {
                     />
                     <button
                       type="submit"
-                      disabled={loading || !/^\d{6,8}$/.test(code)}
+                      disabled={
+                        loading ||
+                        !z.string().email().safeParse(loginEmail.trim()).success ||
+                        !/^\d{6,8}$/.test(code)
+                      }
                       className="min-h-11 rounded-xl border border-[#b99fa5] px-5 text-sm font-bold text-[#653a49] disabled:opacity-50"
                     >
                       Validar código

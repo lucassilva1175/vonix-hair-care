@@ -1122,3 +1122,52 @@ it("requires an explicit decision before a recovered code can be reused after a 
   expect(newCode).not.toBe(old);
   expect(confirmedSignUpCalls()).toHaveLength(1);
 });
+
+it("keeps a retry receipt immutable while the server is still processing", async () => {
+  let finish!: (value: unknown) => void;
+  server.submit.mockRejectedValueOnce(new TypeError("synthetic outage")).mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        finish = r;
+      }),
+  );
+  render(<AffiliateSimpleForm />);
+  fill();
+  fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+  const field = await screen.findByLabelText("Código privado da tentativa não confirmada");
+  const code = (field as HTMLInputElement).value;
+  fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+  expect(
+    screen.getByRole("button", { name: "Descartar código e iniciar nova tentativa" }),
+  ).toBeDisabled();
+  const link = screen.getByRole("link", { name: "Consultar código no portal" });
+  expect(link).toHaveAttribute("aria-disabled", "true");
+  fireEvent.click(link);
+  expect(window.sessionStorage.getItem("vonix-affiliate-once-code")).toBeNull();
+  expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
+  await act(async () => {
+    finish({ ok: true, trackingCode: code });
+  });
+  expect(await screen.findByLabelText("Código privado de acompanhamento")).toHaveValue(code);
+  expect(confirmedSignUpCalls()).toHaveLength(1);
+});
+it("does not erase a different local receipt when the current attempt confirms", async () => {
+  let finish!: (value: unknown) => void;
+  server.submit.mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        finish = r;
+      }),
+  );
+  render(<AffiliateSimpleForm />);
+  fill();
+  fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+  const code = server.submit.mock.calls[0]![0].data.trackingCode;
+  const another = "abcdefghijklmnopqrstuvwxyzABCDEF";
+  window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", another);
+  await act(async () => {
+    finish({ ok: true, trackingCode: code });
+  });
+  expect(await screen.findByLabelText("Código privado de acompanhamento")).toHaveValue(code);
+  expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(another);
+});
