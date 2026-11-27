@@ -127,7 +127,9 @@ function CatalogCard({ item, featured = false }: { item: CatalogItem; featured?:
         className={
           "flex min-h-0 flex-1 items-center justify-center " +
           item.background +
-          (featured ? " aspect-[5/4] lg:aspect-auto" : " aspect-[5/4]")
+          (featured
+            ? " aspect-[5/4] lg:aspect-auto lg:max-h-[26rem]"
+            : " aspect-[5/4] lg:aspect-[5/3]")
         }
       >
         <source srcSet={`/images/products/${item.slug}.webp`} type="image/webp" />
@@ -232,11 +234,11 @@ export function AffiliateEditorialHero({
       aria-labelledby="vonix-affiliate-title"
       className="overflow-hidden border-b border-[#e7d8d2] bg-[#fcf7f2] px-5 py-5 sm:py-8 lg:py-10"
     >
-      <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,.98fr)] lg:gap-12 xl:gap-16">
-        <div className="flex min-w-0 flex-col lg:py-5">
+      <div className="mx-auto grid max-w-7xl min-w-0 items-center gap-3 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,.92fr)] lg:items-start lg:gap-8 xl:gap-12">
+        <div className="flex min-w-0 flex-col lg:py-0">
           <div
             data-testid="affiliate-c89-hair-editorial"
-            className="order-1 relative isolate min-h-[16rem] min-w-0 overflow-hidden rounded-[1.6rem] border border-[#e1cfcb] bg-[#a7847f] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[19rem] lg:min-h-[25rem] lg:rounded-[1.8rem]"
+            className="order-1 relative isolate min-h-[16rem] min-w-0 overflow-hidden rounded-[1.6rem] border border-[#e1cfcb] bg-[#a7847f] shadow-[0_20px_45px_rgba(69,35,50,.18)] sm:min-h-[19rem] lg:min-h-[21rem] lg:rounded-[1.8rem]"
           >
             <img
               src="/images/categorias/cachos.jpg"
@@ -253,7 +255,7 @@ export function AffiliateEditorialHero({
               aria-hidden="true"
               className="absolute inset-0 bg-gradient-to-t from-[#21151d]/95 via-[#2a1a25]/50 to-[#21151d]/20"
             />
-            <div className="relative flex min-h-[16rem] flex-col justify-between gap-3 px-4 py-4 text-white sm:min-h-[19rem] sm:gap-4 sm:p-6 lg:min-h-[25rem] lg:gap-5 lg:p-7">
+            <div className="relative flex min-h-[16rem] flex-col justify-between gap-3 px-4 py-4 text-white sm:min-h-[19rem] sm:gap-4 sm:p-6 lg:min-h-[21rem] lg:gap-3 lg:p-6">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-white/55 bg-[#21151d]/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.09em] text-white backdrop-blur-sm sm:px-3.5 sm:py-2">
                   Inscrição gratuita · seleção individual
@@ -328,7 +330,9 @@ export function AffiliateEditorialHero({
                 <ArrowUpRight aria-hidden="true" className="size-4" />
               </AffiliateApplyLink>
             </Button>
-            <Button asChild variant="link" className="h-auto min-h-11 whitespace-normal">
+          </div>
+          <div className="order-7 mt-2 flex flex-wrap items-start gap-x-3 gap-y-1 border-t border-[#e4d1d1] pt-2">
+            <Button asChild variant="link" className="h-auto min-h-11 whitespace-normal px-1">
               <a href="#ganhos">
                 Conhecer as condições
                 <ArrowDownRight aria-hidden="true" className="size-4" />
@@ -339,7 +343,7 @@ export function AffiliateEditorialHero({
           <ul
             data-testid="affiliate-c118-hero-benefits"
             aria-label="Condições e informações da candidatura"
-            className="order-4 mt-3 grid min-w-0 grid-cols-2 gap-2 text-[#553d47] sm:order-5 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5 lg:mt-6"
+            className="order-4 mt-2 grid min-w-0 grid-cols-2 gap-2 text-[#553d47] sm:order-5 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5 lg:mt-3"
           >
             <li
               data-testid="affiliate-c118-commission"
@@ -385,7 +389,7 @@ export function AffiliateEditorialHero({
 
         <figure
           data-testid="affiliate-c61-hero-catalog"
-          className="mx-auto w-full max-w-[540px] min-w-0 lg:max-w-none lg:pl-2"
+          className="mx-auto w-full max-w-[540px] min-w-0 lg:max-w-none lg:pl-2 lg:pt-1"
           aria-label="Vitrine de produtos reais do catálogo Vonix Hair"
         >
           <div
@@ -520,7 +524,7 @@ export function AffiliateEditorialHero({
               tabIndex={0}
               aria-label="Vitrine de três produtos reais Vonix Hair, deslize horizontalmente para explorar no celular"
               data-testid="vonix-c73-hero-products-region"
-              className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-[1.03fr_.97fr] lg:grid-rows-2 lg:gap-4 lg:overflow-visible lg:pb-0"
+              className="-mx-5 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 scroll-px-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#754153] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-[1.03fr_.97fr] lg:grid-rows-[repeat(2,minmax(0,1fr))] lg:gap-3 lg:overflow-visible lg:pb-0"
             >
               <CatalogCard item={heroProducts[0]!} featured />
               <CatalogCard item={heroProducts[1]!} />

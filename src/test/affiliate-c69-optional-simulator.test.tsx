@@ -52,4 +52,23 @@ describe("C69 — exemplo de ganhos opcional antes da candidatura", () => {
     fireEvent.click(summary);
     expect(optional.open).toBe(false);
   });
+  it("synchronizes custom sales with the slider and preserves the conditional bonus", () => {
+    render(<AffiliateLandingOffer recruitmentStatus="open" />);
+    const optional = screen.getByTestId("vonix-c69-optional-simulator");
+    fireEvent.click(within(optional).getByText("Explorar um cálculo ilustrativo de comissões"));
+    const input = within(optional).getByRole("textbox", { name: /Ou informe um valor/ });
+    const slider = within(optional).getByRole("slider");
+    fireEvent.change(input, { target: { value: "1234" } });
+    expect(slider).toHaveValue("1234");
+    expect(within(optional).getByTestId("illustrative-total")).toHaveTextContent("R$ 98,72");
+    fireEvent.change(input, { target: { value: "99999" } });
+    expect(input).toHaveValue("20000");
+    fireEvent.change(slider, { target: { value: "10000" } });
+    expect(input).toHaveValue("10000");
+    fireEvent.change(input, { target: { value: "" } });
+    expect(slider).toHaveValue("0");
+    fireEvent.blur(input);
+    expect(input).toHaveValue("0");
+    expect(within(optional).getByTestId("illustrative-bonus")).toHaveTextContent("R$ 0,00");
+  });
 });

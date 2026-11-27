@@ -48,6 +48,19 @@ export function AffiliateCurrentCombos() {
       matchesAffiliateSearch(p.name + " " + p.slug + " " + p.categoryLabel, query),
   );
   const visible = all || search ? matches : matches.slice(0, 6);
+  const otherMode = mode === "combos" ? "products" : "combos";
+  const otherMatches = affiliateSearchTerms(query).length
+    ? (otherMode === "products" ? individual : ordered).filter((p) =>
+        matchesAffiliateSearch(p.name + " " + p.slug + " " + p.categoryLabel, query),
+      ).length
+    : 0;
+  function clearFilters() {
+    setQuery("");
+    setCategory("");
+    setUsage("");
+    setAll(false);
+    searchRef.current?.focus();
+  }
   function switchMode(next: "combos" | "products") {
     setMode(next);
     setQuery("");
@@ -219,15 +232,10 @@ export function AffiliateCurrentCombos() {
                   </span>
                 </div>
               )}
-              {(category || usage) && (
+              {(category || usage) && matches.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setCategory("");
-                    setUsage("");
-                    setQuery("");
-                    searchRef.current?.focus();
-                  }}
+                  onClick={clearFilters}
                   className="mt-2 min-h-11 text-xs font-bold text-[#724155] underline"
                 >
                   Limpar todos os filtros
@@ -294,17 +302,27 @@ export function AffiliateCurrentCombos() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setQuery("");
-                      setCategory("");
-                      setUsage("");
-                      setAll(false);
-                      searchRef.current?.focus();
-                    }}
+                    onClick={clearFilters}
                     className="mt-2 min-h-11 font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
                   >
                     Limpar todos os filtros
                   </button>
+                  {otherMatches > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const term = query;
+                        switchMode(otherMode);
+                        setQuery(term);
+                        searchRef.current?.focus();
+                      }}
+                      className="ml-0 block min-h-11 rounded-xl bg-[#784254] px-4 py-2 text-xs font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 sm:ml-3 sm:inline-flex sm:items-center"
+                    >
+                      Ver {otherMatches}{" "}
+                      {otherMode === "products" ? "produtos individuais" : "combos"} com esta busca
+                      <ArrowUpRight aria-hidden="true" className="ml-1 size-4" />
+                    </button>
+                  )}
                 </div>
               )}
               {!search && matches.length > 6 && (
