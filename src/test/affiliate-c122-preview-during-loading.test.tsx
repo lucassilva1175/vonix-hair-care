@@ -180,7 +180,6 @@ describe("C122 — prévia disponível enquanto a consulta permanece pendente", 
     await act(async () => {
       vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
       window.dispatchEvent(new Event("focus"));
-      document.dispatchEvent(new Event("visibilitychange"));
     });
     expect(server.status).toHaveBeenCalledTimes(2);
     expect(

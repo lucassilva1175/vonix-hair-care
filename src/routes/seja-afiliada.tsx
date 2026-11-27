@@ -92,12 +92,8 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   useEffect(() => {
     let active = true;
     let latestRequest = 0;
-    let checkingAvailability = false;
     const statusTimeouts = new Set<number>();
     async function refreshStatus() {
-      // Focus and visibility events can arrive together. Reuse the pending probe.
-      if (!active || checkingAvailability) return;
-      checkingAvailability = true;
       const requestId = ++latestRequest;
       let timeoutId: number | undefined;
       // Never trust a previously OPEN session while the next GET is pending.
@@ -164,7 +160,6 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
           setRecruitment("unavailable");
         }
       } finally {
-        checkingAvailability = false;
         if (timeoutId !== undefined) {
           window.clearTimeout(timeoutId);
           statusTimeouts.delete(timeoutId);
@@ -218,7 +213,11 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   }
 
   return (
-    <AffiliateShell recruitmentStatus={recruitment} onSafePreview={openSafePreview}>
+    <AffiliateShell
+      recruitmentStatus={recruitment}
+      onSafePreview={openSafePreview}
+      showCatalogLink={sourceLinked}
+    >
       <div data-testid="vonix-affiliate-editorial" className="bg-background text-foreground">
         <AffiliateLandingOffer
           recruitmentStatus={recruitment}

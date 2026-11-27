@@ -15,11 +15,13 @@ export function AffiliateShell({
   mode = "landing",
   recruitmentStatus = "loading",
   onSafePreview,
+  showCatalogLink = false,
 }: {
   children: ReactNode;
   mode?: "landing" | "account";
   recruitmentStatus?: "loading" | "open" | "limited" | "closed" | "unavailable";
   onSafePreview?: (() => void) | undefined;
+  showCatalogLink?: boolean;
 }) {
   const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
   const closeMobileMenu = () => {
@@ -129,12 +131,14 @@ export function AffiliateShell({
               >
                 Avaliações de produtos
               </a>
-              <a
-                href="#vitrine-afiliadas"
-                className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
-              >
-                Vitrine de produtos
-              </a>
+              {showCatalogLink && (
+                <a
+                  href="#vitrine-afiliadas"
+                  className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
+                >
+                  Vitrine de produtos
+                </a>
+              )}
               <a
                 href="#duvidas"
                 className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
@@ -196,13 +200,15 @@ export function AffiliateShell({
                 >
                   Avaliações de produtos
                 </a>
-                <a
-                  href="#vitrine-afiliadas"
-                  onClick={closeMobileMenu}
-                  className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
-                >
-                  Vitrine de produtos
-                </a>
+                {showCatalogLink && (
+                  <a
+                    href="#vitrine-afiliadas"
+                    onClick={closeMobileMenu}
+                    className="flex items-center rounded-xl px-4 py-3 hover:bg-[#f7ebeb]"
+                  >
+                    Vitrine de produtos
+                  </a>
+                )}
                 <a
                   href="#duvidas"
                   onClick={closeMobileMenu}
@@ -277,12 +283,14 @@ export function AffiliateShell({
             >
               Avaliações de produtos
             </a>
-            <a
-              href="#vitrine-afiliadas"
-              className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
-            >
-              Vitrine de produtos
-            </a>
+            {showCatalogLink && (
+              <a
+                href="#vitrine-afiliadas"
+                className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 text-primary"
+              >
+                Vitrine de produtos
+              </a>
+            )}
             <a
               href="#duvidas"
               className="inline-flex min-h-11 shrink-0 snap-start items-center px-1 pr-2 text-primary"
