@@ -68,7 +68,8 @@ describe("Vonix affiliate V2 editorial journey", () => {
     const slider = screen.getByRole("slider", { name: /Valor hipotético de vendas/ });
     expect(slider).toHaveAttribute("min", "0");
     expect(slider).toHaveAttribute("max", "20000");
-    expect(slider).toHaveAttribute("step", "500");
+    // Whole-real increments keep the slider synchronized with exact typed examples.
+    expect(slider).toHaveAttribute("step", "1");
     fireEvent.change(slider, { target: { value: "10000" } });
     expect(screen.getByTestId("illustrative-commission").textContent?.replace(/\s/g, " ")).toBe(
       "R$ 800,00",
