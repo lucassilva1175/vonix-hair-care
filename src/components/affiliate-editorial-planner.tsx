@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ClipboardCopy, Check, ArrowUpRight } from "lucide-react";
 import {
   buildEditorialPlan,
@@ -16,6 +16,8 @@ export function AffiliateEditorialPlanner({
   recruitmentOpen?: boolean;
   onSafePreview?: (() => void) | undefined;
 }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const [profile, setProfile] = useState<EditorialProfile>("rotina");
   const [cadence, setCadence] = useState<EditorialCadence>(3);
   const [format, setFormat] = useState<EditorialFormat>("misto");
@@ -25,13 +27,14 @@ export function AffiliateEditorialPlanner({
   const copying = useRef(false);
   const plan = buildEditorialPlan(profile, cadence, format);
   function change(update: () => void) {
+    if (!ready) return;
     update();
     setDone([]);
     copyVersion.current++;
     if (!copying.current) setCopy("idle");
   }
   async function copyPlan() {
-    if (copying.current) return;
+    if (!ready || copying.current) return;
     const version = ++copyVersion.current;
     copying.current = true;
     setCopy("copying");
@@ -52,6 +55,7 @@ export function AffiliateEditorialPlanner({
       id="planejamento-criativo"
       aria-labelledby="editorial-planner-title"
       data-testid="affiliate-editorial-planner"
+      data-interactive={ready ? "true" : "false"}
       className="scroll-mt-28 bg-[#fbf5f1] px-5 py-10 sm:py-16"
     >
       <div className="mx-auto max-w-6xl overflow-hidden rounded-[1.8rem] border border-[#e0c9cc] bg-white shadow-[0_12px_36px_rgba(82,43,57,.08)]">
@@ -80,6 +84,7 @@ export function AffiliateEditorialPlanner({
             <label className="text-xs font-bold text-[#633847]">
               Meu estilo
               <select
+                disabled={!ready}
                 className={"mt-2 " + control}
                 value={profile}
                 onChange={(e) => change(() => setProfile(e.target.value as EditorialProfile))}
@@ -94,6 +99,7 @@ export function AffiliateEditorialPlanner({
             <label className="text-xs font-bold text-[#633847]">
               Ideias por semana
               <select
+                disabled={!ready}
                 className={"mt-2 " + control}
                 value={cadence}
                 onChange={(e) =>
@@ -110,6 +116,7 @@ export function AffiliateEditorialPlanner({
             <label className="text-xs font-bold text-[#633847]">
               Formato preferido
               <select
+                disabled={!ready}
                 className={"mt-2 " + control}
                 value={format}
                 onChange={(e) => change(() => setFormat(e.target.value as EditorialFormat))}
@@ -120,6 +127,11 @@ export function AffiliateEditorialPlanner({
               </select>
             </label>
           </div>
+          {!ready && (
+            <p role="status" className="mt-4 text-xs font-semibold text-[#765c67]">
+              Preparando as opções interativas…
+            </p>
+          )}
           <p className="mt-5 text-xs text-[#765c67]">
             As escolhas e marcações ficam nesta página. Não são enviadas nem salvas após recarregar.
             Alterar o plano reinicia a lista de preparação.
@@ -161,6 +173,8 @@ export function AffiliateEditorialPlanner({
                 <label className="mt-3 flex min-h-[44px] cursor-pointer items-center gap-3 text-sm font-semibold text-[#633847]">
                   <input
                     type="checkbox"
+                    disabled={!ready}
+                    aria-label={"Preparei esta ideia: " + item.title}
                     checked={done.includes(item.day)}
                     onChange={(e) =>
                       setDone((prev) =>
@@ -177,7 +191,7 @@ export function AffiliateEditorialPlanner({
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               type="button"
-              disabled={copy === "copying"}
+              disabled={!ready || copy === "copying"}
               onClick={() => void copyPlan()}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#784254] px-5 text-sm font-bold text-white disabled:opacity-50"
             >
@@ -192,7 +206,7 @@ export function AffiliateEditorialPlanner({
             </a>
             <button
               type="button"
-              disabled={!done.length}
+              disabled={!ready || !done.length}
               onClick={() => setDone([])}
               className="min-h-[44px] px-3 text-sm font-semibold text-[#633847] underline disabled:opacity-50"
             >
