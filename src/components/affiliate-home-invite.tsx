@@ -37,6 +37,7 @@ export function AffiliateHomeInvite() {
           </div>
           <Link
             to="/seja-afiliada"
+            reloadDocument
             className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[#623a49] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#7b4a5b] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#623a49] lg:self-auto"
           >
             Conhecer o programa de afiliadas

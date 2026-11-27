@@ -17,6 +17,7 @@ import playfairFont from "../assets/fonts/playfair-display-latin.woff2?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { META_PIXEL_ID } from "@/lib/analytics";
+import { affiliateDocumentCheckScript, affiliateDocumentNeedsReload, affiliateTrackersAllowed, isAffiliateDocumentPath } from "@/lib/affiliate-document-privacy";
 import { captureRef } from "@/lib/affiliate-ref";
 import { markPaidVisit } from "@/lib/paid-visit";
 import { FACEBOOK, INSTAGRAM, SITE_URL } from "@/lib/store";
@@ -48,10 +49,14 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    if (affiliateTrackersAllowed([window.location.pathname])) {
+      console.error(error);
+      reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    } else {
+      console.error("Affiliate document rendering failed.");
+    }
   }, [error]);
 
   return (
@@ -86,7 +91,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  head: ({ matches }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -135,25 +140,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           ],
         }),
       },
+      ...(affiliateTrackersAllowed(matches.map(match => match.pathname)) ? [
       {
-        children: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`,
+        children: `if(!${affiliateDocumentCheckScript}){window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments);};gtag('js',new Date());gtag('config','${GA_ID}');}`,
       },
       {
         // Google e Meta só baixam depois da página abrir (primeiro toque ou 3,5 s). Os eventos ficam na fila e saem quando carregam; nada se perde.
-        children: `(function(){window.__vonixLoadTrackers=function(){if(window.__vonixTrk)return;window.__vonixTrk=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=${GA_ID}';document.head.appendChild(s);if(window.__vonixLoadMeta)window.__vonixLoadMeta();};var ev=['pointerdown','keydown','scroll','touchstart'];function go(){ev.forEach(function(e){window.removeEventListener(e,go)});window.__vonixLoadTrackers();}ev.forEach(function(e){window.addEventListener(e,go,{passive:true,once:true})});window.addEventListener('load',function(){setTimeout(go,3500)});})();`,
+        children: `(function(){if(${affiliateDocumentCheckScript})return;window.__vonixLoadTrackers=function(){if(${affiliateDocumentCheckScript}||window.__vonixTrk)return;window.__vonixTrk=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=${GA_ID}';document.head.appendChild(s);if(window.__vonixLoadMeta)window.__vonixLoadMeta();};var ev=['pointerdown','keydown','scroll','touchstart'];function go(){ev.forEach(function(e){window.removeEventListener(e,go)});window.__vonixLoadTrackers();}ev.forEach(function(e){window.addEventListener(e,go,{passive:true,once:true})});window.addEventListener('load',function(){setTimeout(go,3500)});})();`,
       },
       {
         // Clarity só carrega depois da página abrir, para não competir com o conteúdo.
-        children: `window.addEventListener('load',function(){setTimeout(function(){(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${CLARITY_ID}");},3000)});`,
+        children: `if(!${affiliateDocumentCheckScript})window.addEventListener('load',function(){setTimeout(function(){if(${affiliateDocumentCheckScript})return;(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${CLARITY_ID}");},3000)});`,
       },
       {
         // A prévia da Lovable não deve gerar eventos de produção.
-        children: `if (window.location.origin === ${JSON.stringify(SITE_URL)} && !window.fbq) {
-          !function(f,b,e,v,n,t,s){n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];window.__vonixLoadMeta=function(){t=b.createElement(e);t.async=!0;t.src=v;t.onload=function(){setTimeout(window.__vonixMetaServer,1500)};s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        children: `if (!${affiliateDocumentCheckScript} && window.location.origin === ${JSON.stringify(SITE_URL)} && !window.fbq) {
+          !function(f,b,e,v,n,t,s){n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];window.__vonixLoadMeta=function(){if(${affiliateDocumentCheckScript})return;t=b.createElement(e);t.async=!0;t.src=v;t.onload=function(){setTimeout(window.__vonixMetaServer,1500)};s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
           fbq('init','${META_PIXEL_ID}');
           var pvId='PageView-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
           fbq('track','PageView',{},{eventID:pvId});
-          window.__vonixMetaServer=function(){try{
+          window.__vonixMetaServer=function(){if(${affiliateDocumentCheckScript})return;try{
             var ck=function(n){var m=document.cookie.split('; ').filter(function(c){return c.indexOf(n+'=')===0})[0];return m?m.slice(n.length+1):undefined};
             var fc=new URLSearchParams(location.search).get('fbclid');
             fetch('/api/public/meta-event',{method:'POST',headers:{'content-type':'application/json'},keepalive:true,
@@ -161,6 +167,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           }catch(e){}};
         }`,
       },
+      ] : []),
     ],
   }),
   shellComponent: RootShell,
@@ -187,21 +194,35 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useLocation({ select: (location) => location.pathname });
   const previousPathname = useRef(pathname);
+  const crossingPrivacyBoundary = affiliateDocumentNeedsReload(pathname);
+  useEffect(() => {
+    if (crossingPrivacyBoundary) window.location.reload();
+  }, [crossingPrivacyBoundary, pathname]);
   // Link de afiliada (?ref=codigo): guarda o código por 30 dias para a venda ser contada para ela.
+  // First-party attribution is unchanged; only third-party trackers are isolated.
   useEffect(() => { captureRef(window.location.search); markPaidVisit(window.location.search); }, []);
 
   // O script do pixel já registra a primeira página antes da hidratação.
   useEffect(() => {
     if (previousPathname.current === pathname) return;
     previousPathname.current = pathname;
-    if (window.location.origin === SITE_URL) window.fbq?.("track", "PageView");
-  }, [pathname]);
+    if (!crossingPrivacyBoundary && !isAffiliateDocumentPath(pathname) && window.location.origin === SITE_URL)
+      window.fbq?.("track", "PageView");
+  }, [pathname, crossingPrivacyBoundary]);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-      <Toaster />
+      {crossingPrivacyBoundary ? (
+        <main className="min-h-screen grid place-items-center p-6" role="status">
+          Abrindo uma página independente com segurança…
+        </main>
+      ) : (
+        <>
+          <Outlet />
+          <Toaster />
+        </>
+      )}
     </QueryClientProvider>
   );
 }

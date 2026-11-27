@@ -457,7 +457,7 @@ function Footer() {
           <Link to="/favoritos">Favoritos</Link>
           <Link to="/$page" params={{ page: "contato" }}>Contato</Link>
           <h4 className="mb-1 mt-4 font-semibold">Comunidade Vonix</h4>
-          <Link to="/seja-afiliada" className="font-semibold text-[#eed4b5] underline decoration-[#eed4b5]/50 underline-offset-4 hover:text-white">
+          <Link reloadDocument to="/seja-afiliada" className="font-semibold text-[#eed4b5] underline decoration-[#eed4b5]/50 underline-offset-4 hover:text-white">
             Programa de afiliadas
           </Link>
         </div>
@@ -486,7 +486,7 @@ function Footer() {
           <Link to="/$page" params={{ page: "termos-de-uso" }}>Termos de Uso</Link>
           <Link to="/$page" params={{ page: "politica-de-trocas-e-devolucoes" }}>Política de Troca e Devoluções</Link>
           <Link to="/$page" params={{ page: "politica-de-frete" }}>Política de Frete</Link>
-          <Link to="/seja-afiliada">Seja afiliada</Link>
+          <Link reloadDocument to="/seja-afiliada">Seja afiliada</Link>
         </div>
       </div>
     </footer>

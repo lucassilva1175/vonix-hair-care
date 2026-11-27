@@ -210,3 +210,24 @@ ser corrigida; não é eliminada pela aprovação dos testes de código. O modo
 estrito transforma essa advertência em falha. A ausência de falhas no aceite
 público não comprova candidatura real, acesso da equipe, entrega de notificações,
 permissão de mídia, conversão comercial ou ativação do agendador.
+
+
+## 8. Isolamento de documentos de candidatura e equipe
+
+As rotas /seja-afiliada, /consultar-candidatura, /acompanhar-inscricao,
+/acesso-equipe-afiliadas e /admin/afiliadas não inicializam os scripts de
+marketing e gravação de sessão da loja (Google, Meta e Clarity). A entrada
+e a saída da área usam documentos independentes; a proteção no componente
+raiz também impede montar uma página privada durante uma transição SPA de
+um documento de comércio. Eventos genéricos desses documentos não são
+encaminhados aos rastreadores. A atribuição de vendas própria, o catálogo e
+o checkout não foram substituídos.
+
+Consequência deliberada: o funil de recrutamento não deve ser interpretado
+como medido pelos três serviços acima. Para mensurar conversão, planeje
+métricas agregadas de primeira parte com minimização de dados e aprovação
+do responsável. A exclusão dos scripts próprios não certifica eventuais
+scripts adicionados independentemente pela hospedagem, extensões do
+navegador ou outros serviços. Não implica comprovação de coleta histórica.
+Após publicar, verifique em navegador as cinco rotas e uma rota de controle
+da loja, interceptando requisições externas sem transmitir dados reais.

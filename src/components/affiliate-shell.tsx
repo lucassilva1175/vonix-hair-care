@@ -83,6 +83,7 @@ export function AffiliateShell({
         <div className="mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-4">
             <Link
+              reloadDocument
               to="/"
               aria-label="Voltar à loja Vonix Hair"
               className="inline-flex shrink-0 items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
@@ -331,6 +332,7 @@ export function AffiliateShell({
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <Link
+              reloadDocument
               to="/"
               aria-label="Ir para o e-commerce Vonix Hair"
               className="inline-block rounded-md focus-visible:outline-2 focus-visible:outline-offset-4"
@@ -361,6 +363,7 @@ export function AffiliateShell({
           </div>
           <div className="flex flex-col items-start gap-4 text-sm md:items-end">
             <Link
+              reloadDocument
               to="/"
               className="inline-flex items-center gap-2 underline decoration-border underline-offset-4 hover:text-primary-foreground"
             >
