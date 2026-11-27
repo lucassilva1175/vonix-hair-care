@@ -1,17 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-const server = vi.hoisted(() => ({ submit: vi.fn() }));
+const server = vi.hoisted(() => ({ submit: vi.fn(), status: vi.fn() }));
 const analytics = vi.hoisted(() => ({ track: vi.fn() }));
 const receipts = vi.hoisted(() => ({ download: vi.fn() }));
-vi.mock("@/lib/affiliate-private-receipt", () => ({
+vi.mock("@/lib/affiliate-private-receipt", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/affiliate-private-receipt")>()),
   downloadAffiliatePrivateReceipt: receipts.download,
 }));
 vi.mock("@/lib/analytics", () => ({ track: analytics.track }));
 vi.mock("@/lib/affiliate-functions", () => ({
   submitSimpleAffiliateApplication: server.submit,
+  getAffiliateStatusByCode: server.status,
+}));
+vi.mock("@/components/affiliate-shell", () => ({
+  AffiliateShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
+}));
+vi.mock("@tanstack/react-router", () => ({
+  createFileRoute: () => (config: { component: React.ComponentType }) => config,
 }));
 import { AffiliateSimpleForm } from "@/components/affiliate-simple-form";
+import { AffiliateTrackingCodePage } from "@/routes/consultar-candidatura";
 
 /** Only a saved application with an accepted receipt may count as Meta Lead.
  * C68 anonymous view/start events do not change this confirmation contract.
@@ -645,6 +654,53 @@ describe("Vonix short single-page application form", () => {
     expect(
       analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
     ).toHaveLength(0);
+  });
+
+  it("C177 completes a lost-response application journey across the actual form and status page without resubmitting", async () => {
+    server.submit.mockRejectedValueOnce(new TypeError("synthetic response lost"));
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const pending = (
+      (await screen.findByLabelText(
+        "Código privado da tentativa não confirmada",
+      )) as HTMLInputElement
+    ).value;
+    expect(pending).toMatch(/^[A-Za-z0-9_-]{32}$/);
+    const link = screen.getByRole("link", { name: "Consultar código no portal" });
+    link.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(link);
+    expect(window.sessionStorage.getItem("vonix-affiliate-once-code")).toBe(pending);
+    cleanup();
+    server.status.mockResolvedValueOnce({
+      ok: true,
+      status: "pendente",
+      rejectionReason: null,
+      submittedAt: "2026-11-26T12:00:00Z",
+      reviewedAt: null,
+    });
+    render(<AffiliateTrackingCodePage />);
+    await screen.findByText("Sua tentativa anterior foi localizada");
+    expect(server.status).toHaveBeenCalledWith({ data: { code: pending } });
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(pending);
+    receipts.download.mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Baixar comprovante do código privado" }));
+    expect(receipts.download).toHaveBeenCalledWith(pending, true);
+    expect(screen.getByText(/Download solicitado/)).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Já guardei meu código privado em local seguro." }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar recuperação neste navegador" }));
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(window.sessionStorage.getItem("vonix-affiliate-once-code")).toBeNull();
+    cleanup();
+    render(<AffiliateSimpleForm />);
+    expect(
+      screen.queryByLabelText("Código privado da tentativa não confirmada"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar minha inscrição" })).toBeEnabled();
+    expect(server.submit).toHaveBeenCalledTimes(1);
+    expect(confirmedSignUpCalls()).toHaveLength(0);
   });
 
   it("does not report a Meta Lead if the server returns another private code", async () => {
