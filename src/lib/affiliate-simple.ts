@@ -110,6 +110,12 @@ export const affiliateManualSchema = z
   .object({
     candidate: affiliateSimpleBaseSchema.omit({ website: true, trackingCode: true }),
     consentConfirmed: z.literal(true),
+    // Optional for older staff clients. New clients keep the same strong
+    // receipt for retries of the exact same authorized registration.
+    trackingCode: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{32}$/)
+      .optional(),
   })
   .strict()
   .superRefine(({ candidate }, ctx) => {

@@ -19,6 +19,7 @@ import {
 } from "@/lib/affiliate-rejection";
 import { AffiliateOwnerActivationPanel } from "@/components/affiliate-owner-activation-panel";
 import { AffiliateManualRegistration } from "@/components/affiliate-manual-registration";
+import { AffiliateReadinessActions } from "@/components/affiliate-readiness-actions";
 import {
   AffiliateDecisionMailGuidance,
   AffiliateNotificationOperations,
@@ -173,6 +174,21 @@ function legacyAdminTabHidden() {
   return typeof document !== "undefined" && document.visibilityState === "hidden";
 }
 
+// Bound only the browser's read wait; no mutation is retried or cancelled by this helper.
+async function waitForAdminRead<T>(request: Promise<T>, delay = 30000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("affiliate-read-timeout")), delay);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 export function AffiliateAdminPage() {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -204,6 +220,8 @@ export function AffiliateAdminPage() {
   const [loading, setLoading] = useState(false);
   const [listError, setListError] = useState("");
   const [workingId, setWorkingId] = useState<string | null>(null);
+  const mutationInFlight = useRef<string | null>(null);
+  const [listCheckedAt, setListCheckedAt] = useState<number | null>(null);
   const [pendingAccessInviteId, setPendingAccessInviteId] = useState<string | null>(null);
   const [privateDetail, setPrivateDetail] = useState<
     (AffiliatePrivateDetail & { id: string }) | null
@@ -277,6 +295,10 @@ export function AffiliateAdminPage() {
       setRetentionBusy(false);
       setRetentionError("");
       setRetentionResult(null);
+      setPendingDecision(null);
+      setPendingAccessInviteId(null);
+      setErasureId(null);
+      setErasureEmail("");
       if (legacyLoginPending.current) {
         legacyLoginPending.current = false;
         setLoading(false);
@@ -308,7 +330,9 @@ export function AffiliateAdminPage() {
     setNotificationStatsFresh(false);
     setListError("");
     setTotal(0);
+    mutationInFlight.current = null;
     setWorkingId(null);
+    setListCheckedAt(null);
     setPendingDecision(null);
     setPendingAccessInviteId(null);
     setNotice("");
@@ -348,7 +372,9 @@ export function AffiliateAdminPage() {
     nextPage = page,
     nextSearch = search,
     nextMailFilter: AffiliateQueueFilter | null = mailFilter,
+    internalAfterMutation = false,
   ) {
+    if (mutationInFlight.current && !internalAfterMutation) return;
     const requestId = ++loadVersion.current;
     const sessionId = sessionVersion.current;
     const isCurrent = () =>
@@ -361,7 +387,10 @@ export function AffiliateAdminPage() {
     setApplications([]);
     setTotal(0);
     setNotificationStatsFresh(false);
+    setListCheckedAt(null);
     setListError("");
+    setErasureId(null);
+    setErasureEmail("");
     // Preserve the intended query even when the network fails, so retry targets the right view.
     setStatus(nextStatus);
     setMailFilter(nextMailFilter);
@@ -372,14 +401,16 @@ export function AffiliateAdminPage() {
     setPendingDecision(null);
     setError("");
     try {
-      const response = await getAffiliateApplications({
-        data: {
-          status: nextStatus,
-          page: nextPage,
-          search: nextSearch || undefined,
-          mailStatus: nextMailFilter,
-        },
-      });
+      const response = await waitForAdminRead(
+        getAffiliateApplications({
+          data: {
+            status: nextStatus,
+            page: nextPage,
+            search: nextSearch || undefined,
+            mailStatus: nextMailFilter,
+          },
+        }),
+      );
       if (!isCurrent()) return;
       if (!response.ok) {
         if (!sessionExpired(response.reason)) setListError(response.reason);
@@ -390,7 +421,7 @@ export function AffiliateAdminPage() {
       // stranding the reviewer on an empty page with no pagination controls.
       const lastPage = Math.max(0, Math.ceil(response.total / PER_PAGE) - 1);
       if (nextPage > lastPage) {
-        await load(nextStatus, lastPage, nextSearch, nextMailFilter);
+        await load(nextStatus, lastPage, nextSearch, nextMailFilter, internalAfterMutation);
         return;
       }
       setAuthorized(true);
@@ -409,6 +440,7 @@ export function AffiliateAdminPage() {
       setStats(response.stats);
       setMailStats(response.mailStats);
       setNotificationStatsFresh(true);
+      setListCheckedAt(Date.now());
       setTotal(response.total);
     } catch {
       if (isCurrent()) setListError("Não foi possível carregar os dados. Tente novamente.");
@@ -422,7 +454,7 @@ export function AffiliateAdminPage() {
     const sessionRef = sessionVersion;
     const loadRef = loadVersion;
     if (document.visibilityState === "hidden") requiresVisibleSessionCheck.current = true;
-    void getAffiliateAdminSession()
+    void waitForAdminRead(getAffiliateAdminSession(), 20000)
       .then(async (session) => {
         if (active && session.authenticated) {
           if (document.visibilityState === "hidden") requiresVisibleSessionCheck.current = true;
@@ -466,7 +498,7 @@ export function AffiliateAdminPage() {
       setSessionRechecking(true);
       setSessionRecheckFailed(false);
       try {
-        const session = await getAffiliateAdminSession();
+        const session = await waitForAdminRead(getAffiliateAdminSession(), 20000);
         if (!active || sessionId !== sessionVersion.current || epoch !== visibilityVersion) return;
         if (!session.authenticated) {
           sessionExpired("Acesso negado. Faça login novamente.");
@@ -577,6 +609,38 @@ export function AffiliateAdminPage() {
     }
   }
 
+  function startMutation(id: string) {
+    if (
+      !authorized ||
+      loading ||
+      sessionRechecking ||
+      requiresVisibleSessionCheck.current ||
+      legacyAdminTabHidden() ||
+      mutationInFlight.current
+    )
+      return false;
+    mutationInFlight.current = id;
+    privateDetailVersion.current++;
+    setPrivateDetail(null);
+    setPrivateDetailLoading(null);
+    setPrivateDetailError(null);
+    setWorkingId(id);
+    setPendingDecision(null);
+    setPendingAccessInviteId(null);
+    setErasureId(null);
+    setErasureEmail("");
+    setError("");
+    setNotice("");
+    return true;
+  }
+
+  function finishMutation(id: string, sessionId: number) {
+    if (sessionVersion.current === sessionId && mutationInFlight.current === id) {
+      mutationInFlight.current = null;
+      setWorkingId(null);
+    }
+  }
+
   async function decide(app: AffiliateApplicationRecord, decision: "aprovada" | "recusada") {
     if (
       workingId ||
@@ -587,10 +651,7 @@ export function AffiliateAdminPage() {
     )
       return;
     const sessionId = sessionVersion.current;
-    setPendingDecision(null);
-    setWorkingId(app.id);
-    setError("");
-    setNotice("");
+    if (!startMutation(app.id)) return;
     try {
       const result = await reviewAffiliateApplication({
         data: { id: app.id, decision, reason: decision === "recusada" ? rejectionReason : null },
@@ -598,7 +659,7 @@ export function AffiliateAdminPage() {
       if (sessionVersion.current !== sessionId) return;
       if (!result.ok) {
         if (sessionExpired(result.reason)) return;
-        await load(status, page, search);
+        await load(status, page, search, mailFilter, true);
         if (sessionVersion.current === sessionId) setError(result.reason);
         return;
       } else {
@@ -615,14 +676,19 @@ export function AffiliateAdminPage() {
           (decision === "aprovada" ? "Inscrição aprovada." : "Inscrição recusada.") + mailNotice,
         );
       }
-      await load(status, page, search);
+      await load(status, page, search, mailFilter, true);
     } catch {
-      if (sessionVersion.current === sessionId)
-        setError(
-          "Não foi possível concluir a decisão. Confira o status antes de tentar novamente.",
-        );
+      if (sessionVersion.current === sessionId) {
+        // A network exception may occur after the decision commits. Never
+        // automatically repeat a mutation; reconcile using the current query.
+        await load(status, page, search, mailFilter, true);
+        if (sessionVersion.current === sessionId)
+          setError(
+            "Não foi possível concluir a decisão. Confira o status antes de tentar novamente.",
+          );
+      }
     } finally {
-      if (sessionVersion.current === sessionId) setWorkingId(null);
+      finishMutation(app.id, sessionId);
     }
   }
 
@@ -636,10 +702,7 @@ export function AffiliateAdminPage() {
     )
       return;
     const sessionId = sessionVersion.current;
-    setWorkingId(app.id);
-    setPendingAccessInviteId(null);
-    setError("");
-    setNotice("");
+    if (!startMutation(app.id)) return;
     try {
       const result = await resendAffiliateApplicantInvite({ data: { id: app.id } });
       if (sessionId !== sessionVersion.current) return;
@@ -656,7 +719,7 @@ export function AffiliateAdminPage() {
         setError("Falha ao solicitar o convite. Nenhuma entrega foi confirmada.");
       }
     } finally {
-      if (sessionId === sessionVersion.current) setWorkingId(null);
+      finishMutation(app.id, sessionId);
     }
   }
 
@@ -664,13 +727,12 @@ export function AffiliateAdminPage() {
     if (
       !authorized ||
       workingId ||
+      erasureId !== app.id ||
       erasureEmail.trim().toLowerCase() !== (app.email ?? app.full_name).toLowerCase()
     )
       return;
     const sessionId = sessionVersion.current;
-    setWorkingId(app.id);
-    setError("");
-    setNotice("");
+    if (!startMutation(app.id)) return;
     try {
       const result = await eraseAffiliateApplicationAdmin({
         data: {
@@ -689,18 +751,29 @@ export function AffiliateAdminPage() {
         setNotice(
           "Candidatura excluída. Dados, questionário criptografado e notificações pendentes foram eliminados.",
         );
-        await load(status, Math.max(0, page), search);
+        await load(status, Math.max(0, page), search, mailFilter, true);
       }
     } catch {
-      if (sessionId === sessionVersion.current)
-        setError("Falha na exclusão. Nenhum resultado foi confirmado.");
+      if (sessionId === sessionVersion.current) {
+        await load(status, page, search, mailFilter, true);
+        if (sessionId === sessionVersion.current)
+          setError("Falha na exclusão. Nenhum resultado foi confirmado.");
+      }
     } finally {
-      if (sessionId === sessionVersion.current) setWorkingId(null);
+      finishMutation(app.id, sessionId);
     }
   }
 
   async function inspectPrivateAnswers(app: AffiliateApplicationRecord) {
-    if (!authorized || sessionRechecking || workingId || loading) return;
+    if (
+      !authorized ||
+      sessionRechecking ||
+      workingId ||
+      loading ||
+      legacyAdminTabHidden() ||
+      requiresVisibleSessionCheck.current
+    )
+      return;
     if (privateDetail?.id === app.id) {
       privateDetailVersion.current++;
       setPrivateDetail(null);
@@ -717,7 +790,9 @@ export function AffiliateAdminPage() {
     setPrivateDetailError(null);
     setPrivateDetailLoading(app.id);
     try {
-      const result = await getAffiliateApplicationPrivateDetail({ data: { id: app.id } });
+      const result = await waitForAdminRead(
+        getAffiliateApplicationPrivateDetail({ data: { id: app.id } }),
+      );
       if (!isCurrent()) return;
       if (!result.ok) {
         if (sessionExpired(result.reason)) return;
@@ -748,7 +823,7 @@ export function AffiliateAdminPage() {
     setReadiness(null);
     setError("");
     try {
-      const result = await getAffiliateOperationalReadiness();
+      const result = await waitForAdminRead(getAffiliateOperationalReadiness());
       if (!isCurrent()) return;
       if (!result.ok) {
         if (!sessionExpired(result.reason)) setError(result.reason);
@@ -788,9 +863,11 @@ export function AffiliateAdminPage() {
     setRetentionError("");
     setRetentionResult(null);
     try {
-      const response = await getAffiliateRetentionPreview({
-        data: { pendingDays: retentionPendingDays, rejectedDays: retentionRejectedDays },
-      });
+      const response = await waitForAdminRead(
+        getAffiliateRetentionPreview({
+          data: { pendingDays: retentionPendingDays, rejectedDays: retentionRejectedDays },
+        }),
+      );
       if (!isCurrent()) return;
       if (!response.ok) {
         if (!sessionExpired(response.reason)) setRetentionError(response.reason);
@@ -812,7 +889,7 @@ export function AffiliateAdminPage() {
 
   async function applySearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mailFilter === "sem_registro") return;
+    if (mailFilter === "sem_registro" || mutationInFlight.current || loading) return;
     await load(status, 0, searchText.trim());
   }
 
@@ -1035,9 +1112,10 @@ export function AffiliateAdminPage() {
                   key={item.key}
                   onClick={() => {
                     setNotice("");
-                    void load(item.key, 0, search, null);
+                    setSearchText("");
+                    void load(item.key, 0, "", null);
                   }}
-                  disabled={loading}
+                  disabled={loading || workingId !== null}
                   aria-pressed={status === item.key}
                   className={
                     "flex items-center justify-between rounded-2xl border p-5 text-left transition " +
@@ -1094,15 +1172,16 @@ export function AffiliateAdminPage() {
                   <button
                     type="button"
                     key={item.key}
-                    disabled={loading}
+                    disabled={loading || workingId !== null}
                     aria-pressed={status === "todas" && mailFilter === item.key}
                     aria-label={`Ver notificações: ${item.label.toLowerCase()}`}
                     onClick={() => {
                       setNotice("");
+                      setSearchText("");
                       void load(
                         "todas",
                         0,
-                        search,
+                        "",
                         status === "todas" && mailFilter === item.key ? null : item.key,
                       );
                     }}
@@ -1124,7 +1203,8 @@ export function AffiliateAdminPage() {
                 decisions={stats}
                 mail={mailStats}
                 fresh={notificationStatsFresh}
-                loading={loading}
+                loading={loading || workingId !== null}
+                checkedAt={listCheckedAt}
                 onRefresh={() => void load(status, page, search, mailFilter)}
                 missingSelected={mailFilter === "sem_registro"}
                 onReviewMissing={() => {
@@ -1176,7 +1256,7 @@ export function AffiliateAdminPage() {
                 {(search || mailFilter) && (
                   <button
                     type="button"
-                    disabled={loading}
+                    disabled={loading || workingId !== null}
                     onClick={() => {
                       setSearchText("");
                       setNotice("");
@@ -1201,6 +1281,7 @@ export function AffiliateAdminPage() {
                   <input
                     aria-label="Buscar por nome, Instagram, TikTok ou e-mail"
                     value={searchText}
+                    disabled={workingId !== null}
                     onChange={(e) => setSearchText(e.target.value)}
                     placeholder="Nome, Instagram, TikTok ou e-mail"
                     maxLength={70}
@@ -1209,7 +1290,7 @@ export function AffiliateAdminPage() {
                   <button
                     aria-label="Buscar"
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || workingId !== null}
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#693440] text-white"
                   >
                     <Search className="h-4 w-4" />
@@ -1793,7 +1874,7 @@ export function AffiliateAdminPage() {
               <div className="mt-7 flex items-center justify-center gap-4">
                 <button
                   type="button"
-                  disabled={loading || page === 0}
+                  disabled={loading || workingId !== null || page === 0}
                   onClick={() => void load(status, page - 1, search)}
                   className="rounded-full border border-[#dfc9c7] bg-white px-5 py-3 text-sm font-semibold disabled:opacity-40"
                 >
@@ -1804,7 +1885,7 @@ export function AffiliateAdminPage() {
                 </span>
                 <button
                   type="button"
-                  disabled={loading || (page + 1) * PER_PAGE >= total}
+                  disabled={loading || workingId !== null || (page + 1) * PER_PAGE >= total}
                   onClick={() => void load(status, page + 1, search)}
                   className="rounded-full border border-[#dfc9c7] bg-white px-5 py-3 text-sm font-semibold disabled:opacity-40"
                 >
@@ -1814,8 +1895,11 @@ export function AffiliateAdminPage() {
             )}
             <div id="ferramentas-afiliadas" className="mt-12 scroll-mt-6">
               <h2 className="mb-4 font-display text-2xl text-[#633e49]">Ferramentas de gestão</h2>
-              <AffiliateOwnerActivationPanel />
-              <AffiliateManualRegistration onCreated={() => void load("pendente", 0, "")} />
+              <fieldset disabled={workingId !== null} className="min-w-0 border-0 p-0">
+                <legend className="sr-only">Cadastro e acessos da equipe</legend>
+                <AffiliateOwnerActivationPanel />
+                <AffiliateManualRegistration onCreated={() => void load("pendente", 0, "", null)} />
+              </fieldset>
               <section
                 id="preparacao-afiliadas"
                 aria-label="Preparação do programa"
@@ -1888,6 +1972,7 @@ export function AffiliateAdminPage() {
                         </span>
                       </div>
                     </div>
+                    <AffiliateReadinessActions readiness={readiness} />
                     <p className="mt-4 rounded-xl border border-[#e8dcd8] bg-[#fcf9f7] p-3 text-xs leading-relaxed text-[#806a6c]">
                       Este diagnóstico não envia mensagens nem confirma o agendamento do worker, a
                       entrega na caixa de entrada ou a homologação de uma conta pessoal. Confira

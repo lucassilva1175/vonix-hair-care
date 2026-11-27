@@ -1491,3 +1491,115 @@ describe("C56 approved affiliate contact visibility without expanding access per
     expect(server.getAffiliateApplicationPrivateDetail).not.toHaveBeenCalled();
   });
 });
+
+describe("Integrated operational safeguards", () => {
+  it("opens global notification totals without retaining a previous search", async () => {
+    render(<Page />);
+    await screen.findByText("Segredo da candidata");
+    fireEvent.change(screen.getByRole("textbox", { name: /Buscar por nome/ }), {
+      target: { value: "@qa" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+    await waitFor(() =>
+      expect(server.getAffiliateApplications).toHaveBeenLastCalledWith({
+        data: { status: "pendente", page: 0, search: "@qa", mailStatus: null },
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Ver notificações: falhas" }));
+    await waitFor(() =>
+      expect(server.getAffiliateApplications).toHaveBeenLastCalledWith({
+        data: { status: "todas", page: 0, search: undefined, mailStatus: "falhou" },
+      }),
+    );
+    expect(screen.getByRole("textbox", { name: /Buscar por nome/ })).toHaveValue("");
+    expect(screen.getByText(/Consulta concluída às/)).toBeInTheDocument();
+  });
+  it("prevents a duplicate decision and blocks filter navigation while its result is pending", async () => {
+    let finish!: (v: unknown) => void;
+    server.reviewAffiliateApplication.mockReturnValueOnce(
+      new Promise((r) => {
+        finish = r;
+      }),
+    );
+    render(<Page />);
+    await screen.findByText("Segredo da candidata");
+    fireEvent.click(screen.getByRole("button", { name: "APROVAR" }));
+    const confirm = screen.getByRole("button", { name: "Confirmar aprovação" });
+    act(() => {
+      fireEvent.click(confirm);
+      fireEvent.click(confirm);
+    });
+    expect(server.reviewAffiliateApplication).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Ver notificações: incertos" })).toBeDisabled();
+    await act(async () => finish({ ok: true, notification: "queued" }));
+    await screen.findByText(/Inscrição aprovada/);
+    expect(screen.getByRole("button", { name: "Ver notificações: incertos" })).toBeEnabled();
+  });
+  it("closes sensitive confirmation drafts on tab change before any mutation", async () => {
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    try {
+      render(<Page />);
+      await screen.findByText("Segredo da candidata");
+      fireEvent.click(screen.getByRole("button", { name: "APROVAR" }));
+      fireEvent.click(screen.getByRole("button", { name: "Reenviar acesso" }));
+      fireEvent.click(screen.getByRole("button", { name: "Exclusão de dados (LGPD)" }));
+      visibility.mockReturnValue("hidden");
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      visibility.mockReturnValue("visible");
+      act(() => document.dispatchEvent(new Event("visibilitychange")));
+      await screen.findByText("Segredo da candidata");
+      expect(screen.queryByRole("button", { name: "Confirmar aprovação" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Confirmar tentativa de convite" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Confirmar exclusão definitiva" })).toBeNull();
+      expect(server.reviewAffiliateApplication).not.toHaveBeenCalled();
+      expect(server.resendAffiliateApplicantInvite).not.toHaveBeenCalled();
+      expect(server.eraseAffiliateApplicationAdmin).not.toHaveBeenCalled();
+    } finally {
+      visibility.mockRestore();
+    }
+  });
+  it("refreshes the actual query after an uncertain decision rather than retrying the write", async () => {
+    server.reviewAffiliateApplication.mockRejectedValueOnce(new Error("synthetic response lost"));
+    render(<Page />);
+    await screen.findByText("Segredo da candidata");
+    fireEvent.click(screen.getByRole("button", { name: "APROVAR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    await screen.findByText(/Não foi possível concluir a decisão/);
+    expect(server.reviewAffiliateApplication).toHaveBeenCalledTimes(1);
+    expect(server.getAffiliateApplications).toHaveBeenCalledTimes(2);
+  });
+});
+
+it("releases a stalled read after its local deadline and ignores a late list", async () => {
+  vi.useFakeTimers();
+  try {
+    let finish!: (v: unknown) => void;
+    server.getAffiliateApplications
+      .mockReturnValueOnce(
+        new Promise((r) => {
+          finish = r;
+        }),
+      )
+      .mockResolvedValueOnce(list([]));
+    render(<Page />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(server.getAffiliateApplications).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30000);
+    });
+    expect(screen.getByText(/Não foi possível consultar as inscrições/)).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Tentar consulta novamente" }));
+    });
+    expect(screen.getByText("Nenhuma inscrição encontrada")).toBeInTheDocument();
+    await act(async () => finish(list()));
+    expect(screen.queryByText("Segredo da candidata")).toBeNull();
+    expect(server.getAffiliateApplications).toHaveBeenCalledTimes(2);
+  } finally {
+    vi.useRealTimers();
+  }
+});

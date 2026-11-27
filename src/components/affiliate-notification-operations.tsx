@@ -12,6 +12,7 @@ export function AffiliateNotificationOperations({
   onReviewAll,
   onReviewMissing,
   missingSelected,
+  checkedAt,
 }: {
   decisions: Pick<Record<AffiliateStatus, number>, "aprovada" | "recusada">;
   mail: AffiliateMailCounters;
@@ -21,6 +22,7 @@ export function AffiliateNotificationOperations({
   onReviewAll: () => void;
   onReviewMissing: () => void;
   missingSelected: boolean;
+  checkedAt?: number | null;
 }) {
   const summary = fresh ? summarizeNotificationCoverage(decisions, mail) : null;
   return (
@@ -35,6 +37,16 @@ export function AffiliateNotificationOperations({
             Totais gerais da última consulta concluída, independentemente da página ou filtro.
             Registro na fila não comprova entrega.
           </p>
+          {fresh && checkedAt != null && (
+            <p className="mt-1 text-xs font-semibold text-[#72515f]">
+              Consulta concluída às{" "}
+              {new Date(checkedAt).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}{" "}
+              (horário deste dispositivo).
+            </p>
+          )}
         </div>
         <button
           type="button"

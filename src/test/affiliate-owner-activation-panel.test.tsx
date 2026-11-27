@@ -729,3 +729,56 @@ it("C37 discards a delayed Resend diagnosis after owner tab hide and reactivatio
     visibility.mockRestore();
   }
 });
+
+it("blocks duplicate owner provisioning and refuses a response for a different recipient", async () => {
+  let finish!: (v: unknown) => void;
+  mocks.provision.mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        finish = r;
+      }),
+  );
+  render(<AffiliateOwnerActivationPanel />);
+  await screen.findByText(email);
+  fireEvent.click(screen.getByRole("checkbox"));
+  const button = screen.getByRole("button", { name: "Criar senha temporária" });
+  act(() => {
+    fireEvent.click(button);
+    fireEvent.click(button);
+  });
+  expect(mocks.provision).toHaveBeenCalledTimes(1);
+  await act(async () =>
+    finish({
+      ok: true,
+      email: "other@example.invalid",
+      temporaryPassword: "Synthetic-not-real-password",
+    }),
+  );
+  expect(screen.getByText(/não corresponde ao destinatário/)).toBeInTheDocument();
+  expect(screen.queryByText("Synthetic-not-real-password")).toBeNull();
+  expect(mocks.clipboard).not.toHaveBeenCalled();
+});
+it("does not expose or copy a link for a different recipient or untrusted origin", async () => {
+  mocks.generate.mockResolvedValueOnce({
+    ok: true,
+    recipient: email,
+    link: "https://example.invalid/acesso-equipe-afiliadas#vonix_invite=" + "a".repeat(64),
+  });
+  render(<AffiliateOwnerActivationPanel />);
+  await screen.findByText(email);
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: /Gerar link/ }));
+  await screen.findByText(/destinatário ou o link recebido não pôde ser validado/);
+  expect(mocks.clipboard).not.toHaveBeenCalled();
+  expect(document.body.innerHTML).not.toContain("https://example.invalid/acesso-equipe-afiliadas");
+});
+it("conceals a generated temporary password when the recipient confirmation is withdrawn", async () => {
+  render(<AffiliateOwnerActivationPanel />);
+  await screen.findByText(email);
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "Criar senha temporária" }));
+  await screen.findByText("Example-Only-C51-Temporary-Pass-2026");
+  fireEvent.click(screen.getByRole("checkbox"));
+  expect(screen.queryByText("Example-Only-C51-Temporary-Pass-2026")).toBeNull();
+  expect(mocks.clipboard).not.toHaveBeenCalled();
+});
