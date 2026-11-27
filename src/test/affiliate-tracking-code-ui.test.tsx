@@ -759,3 +759,75 @@ it("restores a pending receipt only after explicit action without consulting or 
   expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
   expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
 });
+
+describe("Private receipt continuity through navigation", () => {
+  const received = {
+    ok: true,
+    status: "pendente",
+    rejectionReason: null,
+    submittedAt: "2026-11-11T12:00:00Z",
+    reviewedAt: null,
+  };
+  it("keeps a failed one-time deletion masked and requires an explicit lookup", async () => {
+    window.sessionStorage.setItem("vonix-affiliate-once-code", code);
+    const remove = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {});
+    server.getAffiliateStatusByCode.mockResolvedValue(received);
+    try {
+      render(<AffiliateTrackingCodePage />);
+      const field = screen.getByLabelText("Código privado de acompanhamento");
+      expect(field).toHaveValue(code);
+      expect(field).toHaveAttribute("type", "password");
+      expect(screen.getByText(/não confirmou a remoção da transferência/)).toBeInTheDocument();
+      expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+      await screen.findByText("Candidatura em análise");
+      expect(server.getAffiliateStatusByCode).toHaveBeenCalledOnce();
+    } finally {
+      remove.mockRestore();
+    }
+  });
+
+  it("conceals a private result after browser history cache restoration", async () => {
+    server.getAffiliateStatusByCode.mockResolvedValue(received);
+    render(<AffiliateTrackingCodePage />);
+    const field = screen.getByLabelText("Código privado de acompanhamento");
+    fireEvent.change(field, { target: { value: code } });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    await screen.findByText("Candidatura em análise");
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar código privado" }));
+    expect(field).toHaveAttribute("type", "text");
+    const event = new Event("pageshow");
+    Object.defineProperty(event, "persisted", { value: true });
+    act(() => window.dispatchEvent(event));
+    expect(field).toHaveAttribute("type", "password");
+    expect(screen.queryByText("Candidatura em análise")).toBeNull();
+    expect(server.getAffiliateStatusByCode).toHaveBeenCalledOnce();
+  });
+
+  it("offers a fresh application after a rejected recovered attempt only once the old code is saved", async () => {
+    window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", code);
+    server.getAffiliateStatusByCode.mockResolvedValue({
+      ...received,
+      status: "recusada",
+      rejectionReason: "seguidores_insuficientes",
+      reviewedAt: "2026-11-11T13:00:00Z",
+    });
+    render(<AffiliateTrackingCodePage />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Recuperar código de uma tentativa anterior" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    await screen.findByText("Candidatura não selecionada");
+    expect(screen.queryByRole("link", { name: "Quero me candidatar novamente" })).toBeNull();
+    expect(
+      screen.getByText(/Para iniciar outra candidatura, guarde o código anterior/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Já guardei meu código privado em local seguro."));
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar recuperação neste navegador" }));
+    expect(screen.getByRole("link", { name: "Quero me candidatar novamente" })).toHaveAttribute(
+      "href",
+      "/seja-afiliada",
+    );
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+  });
+});

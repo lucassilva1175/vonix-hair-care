@@ -22,6 +22,19 @@ describe("C152 clear program entry", () => {
       "#inscricao",
     );
   });
+  it("offers the private status and catalog reference shortcuts only in the linked portal", () => {
+    const { rerender } = render(<AffiliateEditorialHero recruitmentStatus="open" />);
+    expect(screen.queryByRole("link", { name: "Já me inscrevi" })).toBeNull();
+    rerender(<AffiliateEditorialHero recruitmentStatus="open" sourceLinked />);
+    expect(screen.getByRole("link", { name: "Já me inscrevi" })).toHaveAttribute(
+      "href",
+      "/consultar-candidatura",
+    );
+    expect(screen.getByRole("link", { name: "Montar minha lista de referências" })).toHaveAttribute(
+      "href",
+      "#vitrine-afiliadas",
+    );
+  });
   it("reveals optional videos directly without opening a candidate form", () => {
     render(
       <>

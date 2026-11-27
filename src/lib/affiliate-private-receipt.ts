@@ -43,15 +43,21 @@ export function hasMatchingPendingReceipt(code: string): boolean {
   }
 }
 
-export function clearMatchingPendingReceipt(code: string): boolean {
-  if (!CODE.test(code)) return false;
+export function releasePendingReceipt(code: string): "cleared" | "not-matching" | "unavailable" {
+  if (!CODE.test(code)) return "not-matching";
   try {
-    if (window.sessionStorage.getItem(pendingReceiptSessionKey) !== code) return false;
+    if (window.sessionStorage.getItem(pendingReceiptSessionKey) !== code) return "not-matching";
     window.sessionStorage.removeItem(pendingReceiptSessionKey);
-    return window.sessionStorage.getItem(pendingReceiptSessionKey) === null;
+    return window.sessionStorage.getItem(pendingReceiptSessionKey) === null
+      ? "cleared"
+      : "unavailable";
   } catch {
-    return false;
+    return "unavailable";
   }
+}
+
+export function clearMatchingPendingReceipt(code: string): boolean {
+  return releasePendingReceipt(code) === "cleared";
 }
 
 export function affiliatePrivateReceiptText(code: string, confirmed: boolean): string {

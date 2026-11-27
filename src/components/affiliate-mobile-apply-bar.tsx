@@ -15,6 +15,7 @@ export function AffiliateMobileApplyBar({
   recruitmentStatus: RecruitmentStatus;
   onSafePreview?: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const [visibility, setVisibility] = useState<{
     hero: boolean | null;
     form: boolean | null;
@@ -48,7 +49,27 @@ export function AffiliateMobileApplyBar({
     return () => observer.disconnect();
   }, []);
 
-  const show = visibility.hero === false && visibility.form === false;
+  useEffect(() => {
+    const sync = (active: EventTarget | null) => {
+      setEditing(
+        active instanceof Element &&
+          active.matches(
+            "input:not([type=button]):not([type=submit]),textarea,select,[contenteditable=true]",
+          ),
+      );
+    };
+    const onFocus = (event: FocusEvent) => sync(event.target);
+    const onBlur = (event: FocusEvent) => sync(event.relatedTarget);
+    sync(document.activeElement);
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("focusout", onBlur);
+    return () => {
+      document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("focusout", onBlur);
+    };
+  }, []);
+
+  const show = !editing && visibility.hero === false && visibility.form === false;
 
   if (!show) return null;
 

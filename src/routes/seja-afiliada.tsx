@@ -85,8 +85,8 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   const [previewHasDraft, setPreviewHasDraft] = useState(false);
   const [confirmPreviewExit, setConfirmPreviewExit] = useState(false);
   // Keep an already-started application mounted if the operator closes
-  // recruitment while somebody is filling it in. It becomes read-only preview
-  // mode, but never loses the unsent local draft or attempts to POST.
+  // recruitment while somebody is filling it in. Its submission pauses,
+  // but the real draft and recovery controls stay available.
   const [liveFormStarted, setLiveFormStarted] = useState(false);
 
   useEffect(() => {
@@ -438,6 +438,7 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
               <AffiliateSimpleForm
                 key={preview ? "preview" : "live"}
                 preview={simulationOnly}
+                paused={!preview && recruitment !== "open"}
                 onDraftChange={setPreviewHasDraft}
               />
               {preview && (

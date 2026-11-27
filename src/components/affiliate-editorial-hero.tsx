@@ -330,6 +330,15 @@ export function AffiliateEditorialHero({
                 <ArrowUpRight aria-hidden="true" className="size-4" />
               </AffiliateApplyLink>
             </Button>
+            {sourceLinked && (
+              <a
+                href="/consultar-candidatura"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[#d9c2c7] bg-white px-4 text-xs font-bold text-[#714458] hover:bg-[#fbf0f3] focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Já me inscrevi
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </a>
+            )}
           </div>
           <div className="order-7 mt-2 flex flex-wrap items-start gap-x-3 gap-y-1 border-t border-[#e4d1d1] pt-2">
             <Button asChild variant="link" className="h-auto min-h-11 whitespace-normal px-1">
@@ -338,6 +347,15 @@ export function AffiliateEditorialHero({
                 <ArrowDownRight aria-hidden="true" className="size-4" />
               </a>
             </Button>
+            {sourceLinked && (
+              <a
+                href="#vitrine-afiliadas"
+                className="inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Montar minha lista de referências
+                <ArrowDownRight aria-hidden="true" className="size-4" />
+              </a>
+            )}
             <AffiliateProgramShare />
           </div>
           <ul

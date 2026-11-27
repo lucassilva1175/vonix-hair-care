@@ -132,3 +132,22 @@ describe("C76: CTA mobile do programa sem envio nem sobreposição", () => {
     expect(anchor).toHaveClass("motion-reduce:transition-none");
   });
 });
+
+it("hides the floating shortcut while a visitor edits a catalog or simulator input", () => {
+  const { hero, form } = targets();
+  render(
+    <>
+      <input aria-label="Busca de catálogo" />
+      <button type="button">Fechar edição</button>
+      <AffiliateMobileApplyBar recruitmentStatus="open" />
+    </>,
+  );
+  trigger(hero, false);
+  trigger(form, false);
+  expect(screen.getByTestId("affiliate-c76-mobile-apply")).toBeInTheDocument();
+  const input = screen.getByLabelText("Busca de catálogo");
+  act(() => input.focus());
+  expect(screen.queryByTestId("affiliate-c76-mobile-apply")).not.toBeInTheDocument();
+  act(() => screen.getByRole("button", { name: "Fechar edição" }).focus());
+  expect(screen.getByTestId("affiliate-c76-mobile-apply")).toBeInTheDocument();
+});

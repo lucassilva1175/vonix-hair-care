@@ -276,16 +276,24 @@ export function AffiliateTrackingCodePage() {
     setBusy(false);
     setPendingAvailable(Boolean(readPendingReceiptCode()));
     let oneTimeCode = "";
+    let consumed = false;
     try {
       oneTimeCode = window.sessionStorage.getItem("vonix-affiliate-once-code") ?? "";
       window.sessionStorage.removeItem("vonix-affiliate-once-code");
+      consumed = window.sessionStorage.getItem("vonix-affiliate-once-code") === null;
     } catch {
-      return;
+      // If reading succeeded but deletion failed, preserve the masked code.
+      // Never repeatedly consume quota on reload from a failed handoff.
     }
     if (/^[A-Za-z0-9_-]{32}$/.test(oneTimeCode)) {
       setCode(oneTimeCode);
-      // Retain the once-only handoff in the masked field if a tab opens in
-      // background. The applicant can request the lookup when visible.
+      if (!consumed) {
+        setImportFeedback(
+          "Código carregado. O navegador não confirmou a remoção da transferência temporária; consulte manualmente para confirmar o status.",
+        );
+        return;
+      }
+      // Auto lookup is allowed only after a verified one-time transfer.
       if (document.visibilityState === "visible") void lookup(oneTimeCode);
     }
   }, []);
@@ -296,11 +304,7 @@ export function AffiliateTrackingCodePage() {
     const lookupRef = lookupVersion;
     const importRef = importEpoch;
     const clipboardRef = clipboardEpoch;
-    const onVisibilityChange = () => {
-      if (document.visibilityState !== "hidden") {
-        setPendingAvailable(Boolean(readPendingReceiptCode()));
-        return;
-      }
+    const concealPrivateResult = () => {
       lookupVersion.current++;
       lookupInFlight.current = null;
       importEpoch.current++;
@@ -317,9 +321,21 @@ export function AffiliateTrackingCodePage() {
       setCopied(false);
       setCodeRevealed(false);
     };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") concealPrivateResult();
+      else setPendingAvailable(Boolean(readPendingReceiptCode()));
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) concealPrivateResult();
+      setPendingAvailable(Boolean(readPendingReceiptCode()));
+    };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", concealPrivateResult);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", concealPrivateResult);
+      window.removeEventListener("pageshow", onPageShow);
       lookupRef.current++;
       importRef.current++;
       clipboardRef.current++;
@@ -510,12 +526,19 @@ export function AffiliateTrackingCodePage() {
                     <p className="mt-2 text-sm leading-relaxed text-[#70525c]">
                       {affiliateRejectionGuidance(result.rejectionReason)}
                     </p>
-                    <a
-                      href="/seja-afiliada"
-                      className="mt-5 inline-block rounded-full bg-[#633847] px-5 py-3 text-sm font-bold text-white"
-                    >
-                      Quero me candidatar novamente
-                    </a>
+                    {recoveryAvailable ? (
+                      <p className="mt-4 rounded-lg border border-[#d9bfc7] bg-white p-3 text-xs font-semibold text-[#633847]">
+                        Para iniciar outra candidatura, guarde o código anterior e encerre a
+                        recuperação local abaixo. Isso não exclui sua inscrição.
+                      </p>
+                    ) : (
+                      <a
+                        href="/seja-afiliada"
+                        className="mt-5 inline-block rounded-full bg-[#633847] px-5 py-3 text-sm font-bold text-white"
+                      >
+                        Quero me candidatar novamente
+                      </a>
+                    )}
                   </>
                 )}
                 {result.status === "aprovada" && (

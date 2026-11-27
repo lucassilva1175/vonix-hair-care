@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "
 import { affiliateSimpleBaseSchema, affiliateSimpleSchema } from "@/lib/affiliate-simple";
 import {
   downloadAffiliatePrivateReceipt,
-  clearMatchingPendingReceipt,
+  releasePendingReceipt,
   pendingReceiptSessionKey,
 } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
@@ -225,12 +225,17 @@ function Field({
 }
 
 export function AffiliateSimpleForm({
-  preview = false,
+  preview: simulation = false,
+  paused = false,
   onDraftChange,
 }: {
   preview?: boolean;
+  paused?: boolean;
   onDraftChange?: (hasDraft: boolean) => void;
 }) {
+  // A live draft paused by readiness is not a fictional preview. Preserve
+  // its recovery controls while preventing new submission or analytics.
+  const preview = simulation && !paused;
   const [values, setValues] = useState(fields);
   const [errors, setErrors] = useState<Partial<Record<ValidationKey, string>>>({});
   const [invalidAttempt, setInvalidAttempt] = useState(0);
@@ -244,6 +249,7 @@ export function AffiliateSimpleForm({
   // Async clipboard callbacks must never publish a result from a previous
   // receipt or a background tab. A synchronous guard prevents double-copy.
   const receiptCopyEpoch = useRef(0);
+  const leavingWithVerifiedHandoff = useRef(false);
   const receiptCopying = useRef(false);
   const [codeRevealed, setCodeRevealed] = useState(false);
   const [trackingNavigationError, setTrackingNavigationError] = useState("");
@@ -256,6 +262,10 @@ export function AffiliateSimpleForm({
   const [unconfirmedCopied, setUnconfirmedCopied] = useState(false);
   const [unconfirmedHandoffError, setUnconfirmedHandoffError] = useState("");
   const [downloadFeedback, setDownloadFeedback] = useState("");
+  const [discardRequested, setDiscardRequested] = useState(false);
+  const [receiptSaved, setReceiptSaved] = useState(false);
+  const [recoveryClosed, setRecoveryClosed] = useState(false);
+  const [receiptCloseFeedback, setReceiptCloseFeedback] = useState("");
 
   useEffect(() => {
     // A non-submitting preview must not read or modify a live private receipt.
@@ -278,20 +288,34 @@ export function AffiliateSimpleForm({
 
   // The receipt is a bearer token. Mask it again if a shared device changes tabs.
   useEffect(() => {
+    const concealReceipt = () => {
+      receiptCopyEpoch.current++;
+      receiptCopying.current = false;
+      setCodeRevealed(false);
+      setTrackingCopied(false);
+      setUnconfirmedCopied(false);
+      setDiscardRequested(false);
+      setReceiptSaved(false);
+      setDownloadFeedback("");
+    };
     const onVisibilityChange = () => {
-      if (receiptTabHidden()) {
-        receiptCopyEpoch.current++;
-        receiptCopying.current = false;
-        setCodeRevealed(false);
-        setTrackingCopied(false);
-        setUnconfirmedCopied(false);
-      }
+      if (receiptTabHidden()) concealReceipt();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) concealReceipt();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", concealReceipt);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", concealReceipt);
+      window.removeEventListener("pageshow", onPageShow);
+    };
   }, []);
 
   function downloadCode(code: string, confirmed: boolean) {
+    if (receiptTabHidden()) return;
     const initiated = downloadAffiliatePrivateReceipt(code, confirmed);
     setDownloadFeedback(
       initiated
@@ -324,6 +348,9 @@ export function AffiliateSimpleForm({
       const field = document.getElementById(
         "affiliate-unconfirmed-code",
       ) as HTMLInputElement | null;
+      setDownloadFeedback(
+        "Não foi possível copiar automaticamente. Mostre o código e selecione-o manualmente ou baixe o arquivo privado.",
+      );
       field?.focus();
       field?.select();
     } finally {
@@ -332,8 +359,14 @@ export function AffiliateSimpleForm({
   }
 
   function discardUnconfirmedCode(confirmed = false) {
-    if (!confirmed && submitting.current) return;
+    if (!confirmed && (submitting.current || receiptTabHidden())) return;
     const previous = attemptCode.current;
+    if (!confirmed && releasePendingReceipt(previous) === "unavailable") {
+      setUnconfirmedHandoffError(
+        "Não foi possível apagar a tentativa salva nesta aba. Guarde o código e tente novamente.",
+      );
+      return;
+    }
     receiptCopyEpoch.current++;
     receiptCopying.current = false;
     setUnconfirmedHandoffError("");
@@ -344,11 +377,13 @@ export function AffiliateSimpleForm({
     setUnconfirmedCode("");
     setUnconfirmedCopied(false);
     setCodeRevealed(false);
-    clearMatchingPendingReceipt(previous);
+    setDiscardRequested(false);
+    // Keep a confirmed code recoverable in this tab until explicitly saved.
+    // After reload it is treated as a code to consult, never as proof of success.
   }
 
   function handoffUnconfirmedCode(event: MouseEvent<HTMLAnchorElement>) {
-    if (submitting.current || !/^[A-Za-z0-9_-]{32}$/.test(unconfirmedCode)) {
+    if (submitting.current || receiptTabHidden() || !/^[A-Za-z0-9_-]{32}$/.test(unconfirmedCode)) {
       event.preventDefault();
       return;
     }
@@ -380,14 +415,32 @@ export function AffiliateSimpleForm({
     } catch {
       if (epoch !== receiptCopyEpoch.current || receiptTabHidden()) return;
       setTrackingCopied(false);
+      setDownloadFeedback(
+        "Não foi possível copiar automaticamente. Mostre o código e selecione-o manualmente ou baixe o arquivo privado.",
+      );
       document.getElementById("affiliate-confirmed-code")?.focus();
     } finally {
       if (epoch === receiptCopyEpoch.current) receiptCopying.current = false;
     }
   }
 
+  function finishReceiptRecovery() {
+    if (!receiptSaved || receiptTabHidden() || !trackingCode || recoveryClosed) return;
+    if (releasePendingReceipt(trackingCode) === "unavailable") {
+      setReceiptCloseFeedback(
+        "Não foi possível remover a cópia desta aba. Guarde o código e encerre a sessão quando terminar.",
+      );
+      return;
+    }
+    setRecoveryClosed(true);
+    setCodeRevealed(false);
+    setReceiptCloseFeedback(
+      "Recuperação nesta aba encerrada. Sua candidatura continua registrada.",
+    );
+  }
+
   function openTrackingWithCode() {
-    if (!/^[A-Za-z0-9_-]{32}$/.test(trackingCode)) return;
+    if (receiptTabHidden() || !/^[A-Za-z0-9_-]{32}$/.test(trackingCode)) return;
     try {
       window.sessionStorage.setItem("vonix-affiliate-once-code", trackingCode);
       if (window.sessionStorage.getItem("vonix-affiliate-once-code") !== trackingCode)
@@ -402,12 +455,21 @@ export function AffiliateSimpleForm({
       return;
     }
     setTrackingNavigationError("");
-    window.location.assign("/consultar-candidatura");
+    leavingWithVerifiedHandoff.current = true;
+    try {
+      window.location.assign("/consultar-candidatura");
+    } catch {
+      leavingWithVerifiedHandoff.current = false;
+      setTrackingNavigationError(
+        "Não foi possível abrir o acompanhamento. Seu código permanece nesta tela.",
+      );
+    }
   }
   const [message, setMessage] = useState("");
   const [zipLoading, setZipLoading] = useState(false);
   const [zipFeedback, setZipFeedback] = useState("");
   const zipRequest = useRef(0);
+  const activeZipRequest = useRef<number | null>(null);
   // Track only CEP-provided values. Never clear an applicant's manual edits.
   const zipAutoFilled = useRef<Partial<Record<"street" | "district" | "city" | "state", string>>>(
     {},
@@ -496,6 +558,7 @@ export function AffiliateSimpleForm({
   useEffect(() => {
     if (
       preview ||
+      paused ||
       sent ||
       formSeen.current ||
       !formElement.current ||
@@ -519,7 +582,7 @@ export function AffiliateSimpleForm({
       active = false;
       observer.disconnect();
     };
-  }, [preview, sent]);
+  }, [preview, paused, sent]);
 
   // A successful CEP lookup must clear errors for the address fields it actually
   // resolved, but leave unrelated or still-invalid fields for manual correction.
@@ -544,6 +607,7 @@ export function AffiliateSimpleForm({
     const onVisibility = () => {
       if (!receiptTabHidden()) return;
       zipRequest.current++;
+      activeZipRequest.current = null;
       setZipLoading(false);
       setZipFeedback("");
     };
@@ -556,20 +620,28 @@ export function AffiliateSimpleForm({
   }, [dirty, sent, onDraftChange]);
 
   useEffect(() => {
-    if (!dirty || sent) return;
+    if ((!dirty || sent) && !(sent && trackingCode && !receiptSaved && !recoveryClosed)) return;
     const warn = (e: BeforeUnloadEvent) => {
+      if (leavingWithVerifiedHandoff.current) return;
       e.preventDefault();
       e.returnValue = "";
     };
+    const onPageShow = () => {
+      leavingWithVerifiedHandoff.current = false;
+    };
     window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, sent]);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [dirty, sent, trackingCode, receiptSaved, recoveryClosed]);
 
   function update(key: Key, raw: string) {
     // Do not let the visible values drift away from an in-flight, signed receipt.
     if (submitting.current) return;
     // This event contains no field names or values; a preview never counts as a lead.
-    if (!preview && !formStarted.current && raw.trim().length > 0) {
+    if (!preview && !paused && !formStarted.current && raw.trim().length > 0) {
       formStarted.current = true;
       trackAffiliateFunnel("affiliate_form_started");
     }
@@ -585,6 +657,7 @@ export function AffiliateSimpleForm({
       if (onlyDigits(value) !== onlyDigits(values.postalCode)) {
         // Old results can no longer overwrite a changed CEP; allow a new lookup.
         zipRequest.current++;
+        activeZipRequest.current = null;
         setZipLoading(false);
         setZipFeedback("");
         const auto = zipAutoFilled.current;
@@ -610,13 +683,29 @@ export function AffiliateSimpleForm({
 
   async function lookupPostalCode() {
     const digits = onlyDigits(values.postalCode);
-    if (digits.length !== 8 || zipLoading || receiptTabHidden()) return;
+    if (
+      digits.length !== 8 ||
+      zipLoading ||
+      activeZipRequest.current !== null ||
+      receiptTabHidden() ||
+      submitting.current
+    )
+      return;
+    if (preview) {
+      setZipFeedback(
+        "Na prévia, preencha um endereço fictício manualmente. Nenhum CEP é consultado externamente.",
+      );
+      return;
+    }
     const request = ++zipRequest.current;
+    activeZipRequest.current = request;
     setZipLoading(true);
     setZipFeedback("");
     try {
       const res = await fetch("https://viacep.com.br/ws/" + digits + "/json/", {
         signal: AbortSignal.timeout(5000),
+        referrerPolicy: "no-referrer",
+        credentials: "omit",
       });
       // A CEP response has no authority over a form hidden in another tab.
       if (zipRequest.current !== request || receiptTabHidden()) return;
@@ -672,13 +761,20 @@ export function AffiliateSimpleForm({
           "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente.",
         );
     } finally {
+      if (activeZipRequest.current === request) activeZipRequest.current = null;
       if (zipRequest.current === request) setZipLoading(false);
     }
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (sending || submitting.current || sent) return;
+    if (sending || submitting.current || sent || receiptTabHidden()) return;
+    if (paused) {
+      setMessage(
+        "Seu rascunho está preservado. Aguarde a confirmação de disponibilidade antes de enviar.",
+      );
+      return;
+    }
     if (!preview && recoveredAttempt) {
       setMessage(
         "Esta tentativa foi recuperada de outra visita. Consulte o código anterior e descarte-o antes de iniciar uma nova inscrição.",
@@ -756,6 +852,7 @@ export function AffiliateSimpleForm({
     }
     // Ignore any CEP response that arrives after submission starts.
     zipRequest.current++;
+    activeZipRequest.current = null;
     setZipLoading(false);
     submitting.current = true;
     setCodeRevealed(false);
@@ -886,6 +983,36 @@ export function AffiliateSimpleForm({
                 {trackingNavigationError}
               </p>
             )}
+            <div className="mt-4 rounded-xl border border-[#e3ccd0] bg-white p-3 text-left">
+              <p className="text-xs leading-relaxed text-[#775d65]">
+                O código fica disponível para recuperação nesta aba, quando o navegador permite. Ao
+                reabrir o formulário, consulte o resultado antes de tentar outra inscrição.
+              </p>
+              {!recoveryClosed && (
+                <>
+                  <label className="mt-3 flex items-start gap-2 text-xs font-semibold text-[#633a43]">
+                    <input
+                      type="checkbox"
+                      checked={receiptSaved}
+                      onChange={(event) => setReceiptSaved(event.target.checked)}
+                      className="mt-0.5 size-4 shrink-0 accent-[#633a43]"
+                    />
+                    Já guardei meu código privado em local seguro.
+                  </label>
+                  <button
+                    type="button"
+                    disabled={!receiptSaved}
+                    onClick={finishReceiptRecovery}
+                    className="mt-2 min-h-11 rounded-lg border border-[#b9969e] px-3 text-xs font-bold text-[#683643] disabled:opacity-50"
+                  >
+                    Encerrar recuperação nesta aba
+                  </button>
+                </>
+              )}
+              {receiptCloseFeedback && (
+                <p className="mt-2 text-xs text-[#633a43]">{receiptCloseFeedback}</p>
+              )}
+            </div>
             <p className="mt-3 text-xs leading-relaxed text-[#775d65]">
               O código também pode ser digitado mais tarde em{" "}
               <a href="/consultar-candidatura" className="font-semibold underline">
@@ -1158,7 +1285,6 @@ export function AffiliateSimpleForm({
               maxLength: 9,
               inputMode: "numeric",
               autoComplete: "postal-code",
-              onBlur: () => void lookupPostalCode(),
             })}
             <button
               type="button"
@@ -1169,6 +1295,11 @@ export function AffiliateSimpleForm({
               {zipLoading ? "Buscando CEP..." : "Buscar CEP"}
             </button>
           </div>
+          <p className="text-xs leading-relaxed text-[#806a6e]">
+            {preview
+              ? "Use um endereço fictício nesta prévia. Nenhuma consulta externa é feita."
+              : "Buscar CEP é opcional: envia apenas o CEP informado ao serviço ViaCEP para sugerir o endereço. Você pode preencher todos os campos manualmente."}
+          </p>
           {zipFeedback && (
             <p
               role="status"
@@ -1347,13 +1478,42 @@ export function AffiliateSimpleForm({
                 </a>
                 <button
                   type="button"
-                  onClick={() => discardUnconfirmedCode()}
-                  disabled={sending}
+                  onClick={() => setDiscardRequested(true)}
+                  disabled={sending || discardRequested}
                   className="min-h-11 px-4 text-xs underline disabled:opacity-50"
                 >
                   Descartar código e iniciar nova tentativa
                 </button>
               </div>
+              {discardRequested && (
+                <div
+                  role="group"
+                  aria-label="Confirmar descarte do código privado"
+                  className="mt-3 rounded-lg border border-amber-300 bg-white p-3"
+                >
+                  <p className="text-xs font-semibold">
+                    Descartar este código não cancela uma candidatura que já tenha sido salva.
+                    Consulte ou guarde o código antes de continuar.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={sending}
+                      onClick={() => discardUnconfirmedCode()}
+                      className="min-h-11 rounded-lg bg-[#633846] px-3 text-xs font-bold text-white"
+                    >
+                      Confirmar descarte do código
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscardRequested(false)}
+                      className="min-h-11 rounded-lg border border-amber-300 px-3 text-xs font-bold"
+                    >
+                      Manter código
+                    </button>
+                  </div>
+                </div>
+              )}
               {downloadFeedback && (
                 <p className="mt-2 text-xs leading-relaxed">{downloadFeedback}</p>
               )}
@@ -1369,6 +1529,12 @@ export function AffiliateSimpleForm({
               </p>
             </section>
           ) : null}
+          {paused && (
+            <p className="mt-4 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] p-3 text-sm font-semibold text-[#72515f]">
+              Envio temporariamente pausado. Você pode continuar preenchendo e recuperar o código de
+              uma tentativa anterior.
+            </p>
+          )}
           {preview ? (
             <p role="status" className="mt-4 text-sm font-semibold text-[#865667]">
               Prévia: não envia nem armazena candidaturas.
@@ -1386,17 +1552,19 @@ export function AffiliateSimpleForm({
           )}
           <button
             type="submit"
-            disabled={sending || (!preview && recoveredAttempt)}
+            disabled={sending || paused || (!preview && recoveredAttempt)}
             className="mt-6 flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-[#633846] px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-[#7e4e5c] disabled:opacity-50"
           >
             <Send aria-hidden="true" className="h-5 w-5" />
             {sending
               ? "Enviando candidatura..."
-              : !preview && recoveredAttempt
-                ? "Resolva a tentativa anterior para continuar"
-                : preview
-                  ? "Simular envio"
-                  : "Enviar minha inscrição"}
+              : paused
+                ? "Aguardando disponibilidade para enviar"
+                : !preview && recoveredAttempt
+                  ? "Resolva a tentativa anterior para continuar"
+                  : preview
+                    ? "Simular envio"
+                    : "Enviar minha inscrição"}
           </button>
           <p className="mt-4 flex items-center justify-center gap-2 text-center text-xs text-[#937a7d]">
             <ShieldCheck aria-hidden="true" className="h-4 w-4" />

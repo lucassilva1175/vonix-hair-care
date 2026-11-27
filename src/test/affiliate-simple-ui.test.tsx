@@ -438,6 +438,7 @@ describe("Vonix short single-page application form", () => {
           name: "Descartar código e iniciar nova tentativa",
         }),
       );
+      fireEvent.click(screen.getByRole("button", { name: "Confirmar descarte do código" }));
       await act(async () => {
         release();
         await delayed;
@@ -604,7 +605,7 @@ describe("Vonix short single-page application form", () => {
     expect(server.submit).toHaveBeenCalledTimes(2);
     expect(server.submit.mock.calls[0]![0].data.trackingCode).toBe(pendingCode);
     expect(server.submit.mock.calls[1]![0].data.trackingCode).toBe(pendingCode);
-    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(pendingCode);
     expect(
       analytics.track.mock.calls.filter(([name]) => name === "affiliate_application_confirmed"),
     ).toEqual([["affiliate_application_confirmed"]]);
@@ -720,6 +721,7 @@ describe("Vonix short single-page application form", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Descartar código e iniciar nova tentativa" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar descarte do código" }));
     expect(
       screen.queryByLabelText("Código privado da tentativa não confirmada"),
     ).not.toBeInTheDocument();
@@ -1114,6 +1116,7 @@ it("requires an explicit decision before a recovered code can be reused after a 
   fireEvent.click(
     screen.getByRole("button", { name: "Descartar código e iniciar nova tentativa" }),
   );
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar descarte do código" }));
   expect(screen.getByRole("button", { name: "Enviar minha inscrição" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
   await waitFor(() => expect(server.submit).toHaveBeenCalledOnce());
@@ -1170,4 +1173,156 @@ it("does not erase a different local receipt when the current attempt confirms",
   });
   expect(await screen.findByLabelText("Código privado de acompanhamento")).toHaveValue(code);
   expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(another);
+});
+
+describe("candidate continuity safeguards", () => {
+  it("retains a confirmed private code after reload without inventing a second confirmation or conversion", async () => {
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const code = (
+      (await screen.findByLabelText("Código privado de acompanhamento")) as HTMLInputElement
+    ).value;
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
+    cleanup();
+    render(<AffiliateSimpleForm />);
+    expect(await screen.findByLabelText("Código privado da tentativa não confirmada")).toHaveValue(
+      code,
+    );
+    expect(screen.queryByText("Inscrição recebida!")).not.toBeInTheDocument();
+    expect(confirmedSignUpCalls()).toHaveLength(1);
+    expect(server.submit).toHaveBeenCalledOnce();
+  });
+
+  it("clears a confirmed receipt only after an explicit acknowledgement", async () => {
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const code = (
+      (await screen.findByLabelText("Código privado de acompanhamento")) as HTMLInputElement
+    ).value;
+    const button = screen.getByRole("button", { name: "Encerrar recuperação nesta aba" });
+    expect(button).toBeDisabled();
+    fireEvent.click(screen.getByLabelText("Já guardei meu código privado em local seguro."));
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
+    fireEvent.click(button);
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(screen.getByText(/Recuperação nesta aba encerrada/)).toBeInTheDocument();
+  });
+
+  it("does not claim the recovery ended when the browser silently refuses to remove the code", async () => {
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const code = (
+      (await screen.findByLabelText("Código privado de acompanhamento")) as HTMLInputElement
+    ).value;
+    const removal = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {});
+    try {
+      fireEvent.click(screen.getByLabelText("Já guardei meu código privado em local seguro."));
+      fireEvent.click(screen.getByRole("button", { name: "Encerrar recuperação nesta aba" }));
+      expect(screen.getByText(/Não foi possível remover a cópia desta aba/)).toBeInTheDocument();
+      expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
+    } finally {
+      removal.mockRestore();
+    }
+  });
+
+  it("preserves an uncertain real receipt while the program is paused, without treating it as a preview", async () => {
+    server.submit.mockRejectedValueOnce(new Error("synthetic lost response"));
+    const { rerender } = render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const code = (
+      (await screen.findByLabelText(
+        "Código privado da tentativa não confirmada",
+      )) as HTMLInputElement
+    ).value;
+    rerender(<AffiliateSimpleForm preview paused />);
+    expect(screen.getByLabelText("Código privado da tentativa não confirmada")).toHaveValue(code);
+    expect(screen.queryByRole("button", { name: "Simular envio" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Aguardando disponibilidade para enviar" }),
+    ).toBeDisabled();
+    fireEvent.submit(screen.getByRole("form"));
+    expect(server.submit).toHaveBeenCalledOnce();
+    expect(screen.getByRole("alert")).toHaveTextContent(/rascunho está preservado/);
+    rerender(<AffiliateSimpleForm />);
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    expect(await screen.findByLabelText("Código privado de acompanhamento")).toHaveValue(code);
+    expect(server.submit.mock.calls[1]![0].data.trackingCode).toBe(code);
+  });
+
+  it("can cancel destructive discard and keeps the original receipt until confirmation", async () => {
+    server.submit.mockRejectedValueOnce(new Error("synthetic lost response"));
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const code = (
+      (await screen.findByLabelText(
+        "Código privado da tentativa não confirmada",
+      )) as HTMLInputElement
+    ).value;
+    fireEvent.click(
+      screen.getByRole("button", { name: "Descartar código e iniciar nova tentativa" }),
+    );
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(code);
+    fireEvent.click(screen.getByRole("button", { name: "Manter código" }));
+    expect(screen.getByLabelText("Código privado da tentativa não confirmada")).toHaveValue(code);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Descartar código e iniciar nova tentativa" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar descarte do código" }));
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(screen.queryByLabelText("Código privado da tentativa não confirmada")).toBeNull();
+  });
+
+  it("does not transmit a CEP to a third party during a fictional preview", async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    render(<AffiliateSimpleForm preview />);
+    fireEvent.change(screen.getByLabelText(/CEP/), { target: { value: "30110012" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar CEP" }));
+    expect(screen.getByText(/Nenhum CEP é consultado externamente/)).toBeInTheDocument();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(server.submit).not.toHaveBeenCalled();
+  });
+});
+
+it("only requests an address after explicit CEP lookup and avoids referrer or credential transmission", async () => {
+  let finish!: (v: Response) => void;
+  const fetcher = vi.fn(
+    () =>
+      new Promise<Response>((r) => {
+        finish = r;
+      }),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  render(<AffiliateSimpleForm />);
+  const cep = screen.getByLabelText(/CEP/);
+  fireEvent.change(cep, { target: { value: "30110012" } });
+  fireEvent.blur(cep);
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(screen.getByText(/Buscar CEP é opcional/)).toBeInTheDocument();
+  const button = screen.getByRole("button", { name: "Buscar CEP" });
+  act(() => {
+    fireEvent.click(button);
+    fireEvent.click(button);
+  });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(fetcher).toHaveBeenCalledWith(
+    "https://viacep.com.br/ws/30110012/json/",
+    expect.objectContaining({ referrerPolicy: "no-referrer", credentials: "omit" }),
+  );
+  await act(async () =>
+    finish(
+      Response.json({
+        logradouro: "Rua Fictícia",
+        bairro: "Centro",
+        localidade: "Cidade Fictícia",
+        uf: "MG",
+      }),
+    ),
+  );
+  expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveValue("Rua Fictícia");
 });
