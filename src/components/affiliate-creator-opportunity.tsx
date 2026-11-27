@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
@@ -7,6 +7,8 @@ import { illustrativeEarnings, parseIllustrativeSales } from "@/lib/affiliate-ma
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export function AffiliateEarningsSimulator({ compact = false }: { compact?: boolean }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const [sales, setSales] = useState(2500);
   const [includeBonus, setIncludeBonus] = useState(false);
   const [salesText, setSalesText] = useState("2500");
@@ -15,6 +17,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
     return String(value).replace(".", ",");
   }
   function chooseSales(value: number) {
+    if (!ready) return;
     const bounded = illustrativeEarnings(value).sales;
     setSales(bounded);
     setSalesText(amountText(bounded));
@@ -28,6 +31,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
       className={compact ? "py-5 sm:py-7" : "mt-12 border-y border-border py-8 sm:py-12"}
       role="group"
       aria-labelledby="simulator-title"
+      data-interactive={ready ? "true" : "false"}
     >
       <div className="grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-16">
         <div className="min-w-0">
@@ -42,6 +46,11 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
             Não é promessa de ganhos. Depende de aprovação, vendas confirmadas e pagas e regras de
             elegibilidade do bônus. O exemplo não verifica sua elegibilidade.
           </p>
+          {!ready && (
+            <p role="status" className="mt-3 text-xs text-muted-foreground">
+              Preparando o simulador interativo…
+            </p>
+          )}
           <label
             htmlFor="illustrative-sales"
             className="mt-7 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold"
@@ -52,6 +61,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
           <input
             id="illustrative-sales"
             type="range"
+            disabled={!ready}
             min={0}
             max={20000}
             step={0.01}
@@ -79,6 +89,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
               id="illustrative-exact-sales"
               type="text"
               inputMode="decimal"
+              disabled={!ready}
               value={salesText}
               maxLength={18}
               onChange={(event) => {
@@ -116,6 +127,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
               <button
                 key={amount}
                 type="button"
+                disabled={!ready}
                 aria-pressed={sales === amount}
                 onClick={() => chooseSales(amount)}
                 className={
@@ -132,6 +144,7 @@ export function AffiliateEarningsSimulator({ compact = false }: { compact?: bool
           <label className="mt-5 flex min-h-12 cursor-pointer items-start gap-3 rounded-xl border border-[#dfccd0] bg-[#fff8f6] p-3 text-sm text-[#573443]">
             <input
               type="checkbox"
+              disabled={!ready}
               checked={includeBonus}
               onChange={(event) => setIncludeBonus(event.target.checked)}
               className="mt-0.5 size-5 shrink-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2"
