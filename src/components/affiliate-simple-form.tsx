@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { ArrowRight, CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "lucide-react";
 import { affiliateSimpleBaseSchema, affiliateSimpleSchema } from "@/lib/affiliate-simple";
-import { downloadAffiliatePrivateReceipt } from "@/lib/affiliate-private-receipt";
+import {
+  downloadAffiliatePrivateReceipt,
+  pendingReceiptSessionKey,
+} from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 import { submitSimpleAffiliateApplication } from "@/lib/affiliate-functions";
@@ -62,7 +65,6 @@ const validationOrder: ValidationKey[] = [
   "privacyAccepted",
 ];
 
-const pendingReceiptSessionKey = "vonix-affiliate-unconfirmed-code";
 // A deadline only ends the local wait, not the server transaction. The private
 // receipt and exact payload remain available for a safe retry or status lookup.
 const submissionWaitMs = 45000;

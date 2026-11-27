@@ -5,6 +5,11 @@ import { ClipboardCheck, LockKeyhole, CheckCircle2, Clock3, XCircle } from "luci
 import { AffiliateShell } from "@/components/affiliate-shell";
 import { AffiliateStatusGuidance } from "@/components/affiliate-status-guidance";
 import { getAffiliateStatusByCode } from "@/lib/affiliate-functions";
+import {
+  clearMatchingPendingReceipt,
+  hasMatchingPendingReceipt,
+  downloadAffiliatePrivateReceipt,
+} from "@/lib/affiliate-private-receipt";
 import { affiliateRejectionLabel, affiliateRejectionGuidance } from "@/lib/affiliate-rejection";
 
 export const Route = createFileRoute("/consultar-candidatura")({
@@ -46,6 +51,11 @@ export function AffiliateTrackingCodePage() {
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
   const [codeRevealed, setCodeRevealed] = useState(false);
+  const [recoveryAvailable, setRecoveryAvailable] = useState(false);
+  const [recoveryAcknowledged, setRecoveryAcknowledged] = useState(false);
+  const [recoveryFeedback, setRecoveryFeedback] = useState("");
+  const [receiptFeedback, setReceiptFeedback] = useState("");
+  const confirmedLookup = useRef<{ code: string; version: number } | null>(null);
   const lookupVersion = useRef(0);
   // React state can batch two submissions into one render. The ref prevents
   // duplicate private-status requests from spending two rate-limit quotas.
@@ -91,10 +101,60 @@ export function AffiliateTrackingCodePage() {
     }
   }
 
+  function resetRecovery() {
+    confirmedLookup.current = null;
+    setRecoveryAvailable(false);
+    setRecoveryAcknowledged(false);
+    setRecoveryFeedback("");
+    setReceiptFeedback("");
+  }
+
+  function finishRecovery() {
+    const confirmed = confirmedLookup.current;
+    if (
+      !confirmed ||
+      confirmed.code !== code ||
+      confirmed.version !== lookupVersion.current ||
+      !result ||
+      !recoveryAcknowledged ||
+      clipboardTabHidden() ||
+      lookupInFlight.current !== null
+    )
+      return;
+    if (!clearMatchingPendingReceipt(code)) {
+      setRecoveryFeedback(
+        "Não foi possível encerrar a recuperação neste navegador. Seu código continua disponível nesta página. Guarde-o antes de sair.",
+      );
+      return;
+    }
+    setRecoveryAvailable(false);
+    setRecoveryAcknowledged(false);
+    setRecoveryFeedback(
+      "Recuperação encerrada neste navegador. Sua candidatura continua registrada; guarde o código para consultas futuras.",
+    );
+    setCodeRevealed(false);
+  }
+
+  function downloadConfirmedReceipt() {
+    if (
+      !result ||
+      confirmedLookup.current?.code !== code ||
+      confirmedLookup.current?.version !== lookupVersion.current ||
+      clipboardTabHidden()
+    )
+      return;
+    setReceiptFeedback(
+      downloadAffiliatePrivateReceipt(code, true)
+        ? "Download solicitado. Confira seus arquivos e guarde o código em local privado."
+        : "Não foi possível iniciar o download. Copie e guarde o código manualmente.",
+    );
+  }
+
   async function lookup(codeValue: string) {
     if (lookupInFlight.current === codeValue) return;
     lookupInFlight.current = codeValue;
     const requestId = ++lookupVersion.current;
+    resetRecovery();
     setBusy(true);
     setError("");
     setResult(null);
@@ -118,6 +178,8 @@ export function AffiliateTrackingCodePage() {
           setError("Não foi possível validar os dados da candidatura. Tente novamente mais tarde.");
           return;
         }
+        confirmedLookup.current = { code: codeValue, version: requestId };
+        setRecoveryAvailable(hasMatchingPendingReceipt(codeValue));
         setResult(parsed.data);
       }
     } catch {
@@ -160,6 +222,7 @@ export function AffiliateTrackingCodePage() {
       setCopying(false);
       setBusy(false);
       setResult(null);
+      resetRecovery();
       setError("");
       setCopied(false);
       setCodeRevealed(false);
@@ -214,6 +277,7 @@ export function AffiliateTrackingCodePage() {
                   setCopied(false);
                   setCodeRevealed(false);
                   setResult(null);
+                  resetRecovery();
                   setError("");
                 }}
                 placeholder="Cole o código salvo após sua inscrição"
@@ -309,6 +373,55 @@ export function AffiliateTrackingCodePage() {
                   </p>
                 )}
                 <AffiliateStatusGuidance status={result.status} />
+                <button
+                  type="button"
+                  onClick={downloadConfirmedReceipt}
+                  className="mt-4 min-h-11 w-full rounded-full border border-[#b9969e] px-4 text-sm font-bold text-[#633847]"
+                >
+                  Baixar comprovante do código privado
+                </button>
+                {receiptFeedback && (
+                  <p role="status" className="mt-2 text-xs text-[#70525c]">
+                    {receiptFeedback}
+                  </p>
+                )}
+                {recoveryAvailable && (
+                  <div
+                    data-testid="affiliate-c177-recovery"
+                    className="mt-5 rounded-xl border border-[#d9bfc7] bg-white p-4"
+                  >
+                    <h3 className="text-sm font-bold text-[#633847]">
+                      Sua tentativa anterior foi localizada
+                    </h3>
+                    <p className="mt-2 text-xs leading-relaxed text-[#70525c]">
+                      A inscrição foi recebida. Não é necessário reenviar os mesmos dados. Guarde o
+                      código antes de encerrar a recuperação local. Esta ação não exclui a
+                      candidatura.
+                    </p>
+                    <label className="mt-3 flex items-start gap-2 text-sm text-[#633847]">
+                      <input
+                        type="checkbox"
+                        checked={recoveryAcknowledged}
+                        onChange={(event) => setRecoveryAcknowledged(event.target.checked)}
+                        className="mt-1 size-4 shrink-0"
+                      />
+                      Já guardei meu código privado em local seguro.
+                    </label>
+                    <button
+                      type="button"
+                      disabled={!recoveryAcknowledged}
+                      onClick={finishRecovery}
+                      className="mt-3 min-h-11 w-full rounded-full bg-[#633847] px-4 text-sm font-bold text-white disabled:opacity-50"
+                    >
+                      Encerrar recuperação neste navegador
+                    </button>
+                  </div>
+                )}
+                {recoveryFeedback && (
+                  <p role="status" className="mt-3 text-sm text-[#70525c]">
+                    {recoveryFeedback}
+                  </p>
+                )}
               </div>
             )}
             <p className="mt-6 text-xs leading-relaxed text-[#826c70]">

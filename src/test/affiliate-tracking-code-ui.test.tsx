@@ -18,10 +18,110 @@ const code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
+  vi.restoreAllMocks();
   window.sessionStorage.removeItem("vonix-affiliate-once-code");
+  window.sessionStorage.removeItem("vonix-affiliate-unconfirmed-code");
 });
 
 describe("Private Vonix applicant status portal", () => {
+  const pendingKey = "vonix-affiliate-unconfirmed-code";
+  const otherCode = "abcdefghijklmnopqrstuvwxyzABCDEF";
+  const received = {
+    ok: true,
+    status: "pendente",
+    rejectionReason: null,
+    submittedAt: "2026-11-11T12:00:00Z",
+    reviewedAt: null,
+  };
+
+  it("C177 confirms a recovered attempt, preserves the code until acknowledged, then clears only the local pending marker", async () => {
+    window.sessionStorage.setItem(pendingKey, code);
+    window.sessionStorage.setItem("vonix-affiliate-once-code", code);
+    server.getAffiliateStatusByCode.mockResolvedValue(received);
+    render(<AffiliateTrackingCodePage />);
+    expect(await screen.findByText("Sua tentativa anterior foi localizada")).toBeInTheDocument();
+    const finish = screen.getByRole("button", { name: "Encerrar recuperação neste navegador" });
+    expect(finish).toBeDisabled();
+    expect(window.sessionStorage.getItem(pendingKey)).toBe(code);
+    expect(window.sessionStorage.getItem("vonix-affiliate-once-code")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Já guardei meu código privado em local seguro." }),
+    );
+    fireEvent.click(finish);
+    expect(window.sessionStorage.getItem(pendingKey)).toBeNull();
+    expect(screen.getByText(/Recuperação encerrada neste navegador/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Código privado de acompanhamento")).toHaveValue(code);
+    expect(screen.getByText("Candidatura em análise")).toBeInTheDocument();
+    expect(server.getAffiliateStatusByCode).toHaveBeenCalledTimes(1);
+  });
+
+  it("C177 never clears another pending code or clears on a failed query", async () => {
+    window.sessionStorage.setItem(pendingKey, otherCode);
+    server.getAffiliateStatusByCode
+      .mockResolvedValueOnce(received)
+      .mockResolvedValueOnce({ ok: false, reason: "Consulta indisponível" });
+    render(<AffiliateTrackingCodePage />);
+    const field = screen.getByLabelText("Código privado de acompanhamento");
+    fireEvent.change(field, { target: { value: code } });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    await screen.findByText("Candidatura em análise");
+    expect(screen.queryByTestId("affiliate-c177-recovery")).not.toBeInTheDocument();
+    fireEvent.change(field, { target: { value: otherCode } });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    await screen.findByText("Consulta indisponível");
+    expect(screen.queryByTestId("affiliate-c177-recovery")).not.toBeInTheDocument();
+    expect(window.sessionStorage.getItem(pendingKey)).toBe(otherCode);
+  });
+
+  it("C177 fails safely on silent removal failure or a replaced pending code", async () => {
+    window.sessionStorage.setItem(pendingKey, code);
+    server.getAffiliateStatusByCode.mockResolvedValue(received);
+    render(<AffiliateTrackingCodePage />);
+    fireEvent.change(screen.getByLabelText("Código privado de acompanhamento"), {
+      target: { value: code },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    await screen.findByTestId("affiliate-c177-recovery");
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Já guardei meu código privado em local seguro." }),
+    );
+    const finish = screen.getByRole("button", { name: "Encerrar recuperação neste navegador" });
+    const remove = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {});
+    fireEvent.click(finish);
+    expect(screen.getByText(/Não foi possível encerrar a recuperação/)).toBeInTheDocument();
+    expect(window.sessionStorage.getItem(pendingKey)).toBe(code);
+    remove.mockRestore();
+    window.sessionStorage.setItem(pendingKey, otherCode);
+    fireEvent.click(finish);
+    expect(window.sessionStorage.getItem(pendingKey)).toBe(otherCode);
+  });
+
+  it("C177 revokes recovery permission when the code changes or the tab is hidden", async () => {
+    window.sessionStorage.setItem(pendingKey, code);
+    server.getAffiliateStatusByCode.mockResolvedValue(received);
+    render(<AffiliateTrackingCodePage />);
+    const field = screen.getByLabelText("Código privado de acompanhamento");
+    fireEvent.change(field, { target: { value: code } });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    await screen.findByTestId("affiliate-c177-recovery");
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Já guardei meu código privado em local seguro." }),
+    );
+    fireEvent.change(field, { target: { value: otherCode } });
+    expect(screen.queryByTestId("affiliate-c177-recovery")).not.toBeInTheDocument();
+    fireEvent.change(field, { target: { value: code } });
+    fireEvent.click(screen.getByRole("button", { name: "Consultar minha inscrição" }));
+    await screen.findByTestId("affiliate-c177-recovery");
+    expect(
+      screen.getByRole("button", { name: "Encerrar recuperação neste navegador" }),
+    ).toBeDisabled();
+    const spy = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    act(() => document.dispatchEvent(new Event("visibilitychange")));
+    expect(screen.queryByTestId("affiliate-c177-recovery")).not.toBeInTheDocument();
+    expect(window.sessionStorage.getItem(pendingKey)).toBe(code);
+    spy.mockRestore();
+  });
+
   it("clarifies that e-mail does not replace the private tracking code", () => {
     render(<AffiliateTrackingCodePage />);
     expect(

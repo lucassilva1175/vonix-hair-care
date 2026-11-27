@@ -3,6 +3,30 @@
  */
 const CODE = /^[A-Za-z0-9_-]{32}$/;
 
+export const pendingReceiptSessionKey = "vonix-affiliate-unconfirmed-code";
+
+/** Only clear the matching, independently confirmed attempt, on explicit user action.
+ * Storage may be disabled or silently ignore removals. Do not touch another code. */
+export function hasMatchingPendingReceipt(code: string): boolean {
+  if (!CODE.test(code)) return false;
+  try {
+    return window.sessionStorage.getItem(pendingReceiptSessionKey) === code;
+  } catch {
+    return false;
+  }
+}
+
+export function clearMatchingPendingReceipt(code: string): boolean {
+  if (!CODE.test(code)) return false;
+  try {
+    if (window.sessionStorage.getItem(pendingReceiptSessionKey) !== code) return false;
+    window.sessionStorage.removeItem(pendingReceiptSessionKey);
+    return window.sessionStorage.getItem(pendingReceiptSessionKey) === null;
+  } catch {
+    return false;
+  }
+}
+
 export function affiliatePrivateReceiptText(code: string, confirmed: boolean): string {
   if (!CODE.test(code)) return "";
   const status = confirmed ? "INSCRIÇÃO RECEBIDA" : "TENTATIVA AINDA NÃO CONFIRMADA";
