@@ -1472,3 +1472,31 @@ describe("Receipt continuity and paused CEP", () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 });
+
+it("does not submit a late receipt or retain a false attempt when issuance times out", async () => {
+  vi.useFakeTimers();
+  let finish!: (v: unknown) => void;
+  try {
+    server.issue.mockReturnValueOnce(
+      new Promise((r) => {
+        finish = r;
+      }),
+    );
+    render(<AffiliateSimpleForm />);
+    fill();
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" })),
+    );
+    await act(async () => vi.advanceTimersByTimeAsync(15000));
+    expect(screen.getByRole("alert")).toHaveTextContent("Nenhuma inscrição foi enviada");
+    expect(screen.getByRole("button", { name: "Enviar minha inscrição" })).toBeEnabled();
+    await act(async () =>
+      finish({ ok: true, trackingCode: "A".repeat(32), trackingProof: "B".repeat(43) }),
+    );
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
+  } finally {
+    vi.useRealTimers();
+  }
+});

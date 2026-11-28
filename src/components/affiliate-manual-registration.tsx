@@ -7,6 +7,7 @@ import {
 import { affiliateManualSchema, affiliateReceiptTicketSchema } from "@/lib/affiliate-simple";
 import { WIZARD_BRAZIL_STATES } from "@/lib/affiliate-wizard";
 import { downloadAffiliatePrivateReceipt } from "@/lib/affiliate-private-receipt";
+import { createAffiliateIntakeDeadline } from "@/lib/affiliate-intake-deadline";
 
 function registrationTabHidden() {
   return document.visibilityState === "hidden";
@@ -70,32 +71,40 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
 
   useEffect(() => {
     const copyRef = copyVersion;
+    const conceal = () => {
+      epoch.current += 1;
+      copyVersion.current++;
+      copyingRef.current = false;
+      setCopying(false);
+      setReceipt("");
+      setPendingReceipt("");
+      setRevealed(false);
+      setSaved(false);
+      setValues(empty);
+      setConsent(false);
+      attempt.current = null;
+      setFeedback(
+        inFlight.current
+          ? "O cadastro estava em andamento. Confira a lista antes de iniciar outra inscrição."
+          : "",
+      );
+      setError("");
+    };
     const hidden = () => {
-      if (document.visibilityState === "hidden") {
-        epoch.current += 1;
-        copyVersion.current++;
-        copyingRef.current = false;
-        setCopying(false);
-        setReceipt("");
-        setPendingReceipt("");
-        setRevealed(false);
-        setSaved(false);
-        setValues(empty);
-        setConsent(false);
-        attempt.current = null;
-        setFeedback(
-          inFlight.current
-            ? "O cadastro estava em andamento. Confira a lista antes de iniciar outra inscrição."
-            : "",
-        );
-        setError("");
-      }
+      if (document.visibilityState === "hidden") conceal();
+    };
+    const restored = (event: PageTransitionEvent) => {
+      if (event.persisted) conceal();
     };
     document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", conceal);
+    window.addEventListener("pageshow", restored);
     return () => {
       epoch.current += 1;
       copyRef.current++;
       document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", conceal);
+      window.removeEventListener("pageshow", restored);
     };
   }, []);
 
@@ -133,9 +142,12 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
     const requestEpoch = ++epoch.current;
     inFlight.current = true;
     setBusy(true);
+    const deadline = createAffiliateIntakeDeadline();
     try {
       if (!attempt.current) {
-        const issued = await issuePrivateAffiliateReceipt({ data: { scope: "staff" } });
+        const issued = await deadline.wait("issue", () =>
+          issuePrivateAffiliateReceipt({ data: { scope: "staff" } }),
+        );
         if (requestEpoch !== epoch.current || registrationTabHidden()) return;
         const ticket =
           issued.ok &&
@@ -156,9 +168,12 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
       const code = attempt.current.code;
       setPendingReceipt(code);
       setSaved(false);
-      const result = await createManualAffiliateAdmin({
-        data: { ...parsed.data, trackingCode: code, trackingProof: attempt.current.proof },
-      });
+      const proof = attempt.current.proof;
+      const result = await deadline.wait("submit", () =>
+        createManualAffiliateAdmin({
+          data: { ...parsed.data, trackingCode: code, trackingProof: proof },
+        }),
+      );
       if (requestEpoch !== epoch.current || registrationTabHidden()) return;
       if (!result.ok) {
         setError(result.reason);
@@ -411,6 +426,15 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
               </div>
             )}
           </div>
+        )}
+        {busy && (
+          <p
+            role="status"
+            className="mt-4 rounded-xl border border-[#ead7d8] bg-[#fcf5f1] p-3 text-xs leading-relaxed text-[#623d4b]"
+          >
+            Aguarde até 45 segundos. Se o código não for preparado, nenhum cadastro será enviado. Se
+            o envio já começou, confira a tentativa antes de repetir.
+          </p>
         )}
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <button

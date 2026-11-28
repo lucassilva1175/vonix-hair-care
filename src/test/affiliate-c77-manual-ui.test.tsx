@@ -190,3 +190,83 @@ it("conceals manual details and ignores an obsolete completion when the tab beco
     visibility.mockRestore();
   }
 });
+
+it("releases a stalled staff issuance after 15 seconds without sending a candidate", async () => {
+  vi.useFakeTimers();
+  try {
+    server.issuePrivateAffiliateReceipt.mockReturnValueOnce(new Promise(() => {}));
+    render(<AffiliateManualRegistration />);
+    fireEvent.click(screen.getByText("Cadastrar candidata manualmente"));
+    populate();
+    fireEvent.click(screen.getByRole("checkbox"));
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Cadastrar para análise" })),
+    );
+    await act(async () => vi.advanceTimersByTimeAsync(15000));
+    expect(screen.getByRole("alert")).toHaveTextContent("Nenhum cadastro foi enviado");
+    expect(server.createManualAffiliateAdmin).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Nome completo")).toHaveValue("Pessoa Exemplo");
+    expect(screen.getByRole("button", { name: "Cadastrar para análise" })).toBeEnabled();
+    expect(screen.queryByLabelText("Código privado da candidata")).toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("releases a stalled registration, retains exact ticket for retry and ignores late completion", async () => {
+  vi.useFakeTimers();
+  let finish!: (v: unknown) => void;
+  try {
+    server.createManualAffiliateAdmin
+      .mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            finish = r;
+          }),
+      )
+      .mockImplementationOnce(async ({ data }) => ({ ok: true, trackingCode: data.trackingCode }));
+    const onCreated = vi.fn();
+    render(<AffiliateManualRegistration onCreated={onCreated} />);
+    fireEvent.click(screen.getByText("Cadastrar candidata manualmente"));
+    populate();
+    fireEvent.click(screen.getByRole("checkbox"));
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Cadastrar para análise" })),
+    );
+    const first = server.createManualAffiliateAdmin.mock.calls[0]![0].data;
+    await act(async () => vi.advanceTimersByTimeAsync(45000));
+    expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível confirmar o cadastro");
+    expect(screen.getByLabelText("Código privado da candidata")).toHaveValue(first.trackingCode);
+    await act(async () => finish({ ok: true, trackingCode: first.trackingCode }));
+    expect(onCreated).not.toHaveBeenCalled();
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Cadastrar para análise" })),
+    );
+    expect(server.issuePrivateAffiliateReceipt).toHaveBeenCalledOnce();
+    expect(server.createManualAffiliateAdmin.mock.calls[1]![0].data).toEqual(first);
+    expect(onCreated).toHaveBeenCalledOnce();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("clears private data at pagehide even without a visibility event and ignores a late ticket", async () => {
+  let finish!: (v: unknown) => void;
+  server.issuePrivateAffiliateReceipt.mockReturnValueOnce(
+    new Promise((r) => {
+      finish = r;
+    }),
+  );
+  render(<AffiliateManualRegistration />);
+  fireEvent.click(screen.getByText("Cadastrar candidata manualmente"));
+  populate();
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "Cadastrar para análise" }));
+  act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+  expect(screen.getByLabelText("Nome completo")).toHaveValue("");
+  await act(async () =>
+    finish({ ok: true, trackingCode: "A".repeat(32), trackingProof: "B".repeat(43) }),
+  );
+  expect(server.createManualAffiliateAdmin).not.toHaveBeenCalled();
+  expect(screen.queryByLabelText("Código privado da candidata")).toBeNull();
+});

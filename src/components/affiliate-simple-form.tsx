@@ -14,6 +14,7 @@ import {
 } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
+import { createAffiliateIntakeDeadline } from "@/lib/affiliate-intake-deadline";
 import {
   issuePrivateAffiliateReceipt,
   submitSimpleAffiliateApplication,
@@ -74,27 +75,6 @@ const validationOrder: ValidationKey[] = [
   "complement",
   "privacyAccepted",
 ];
-
-// A deadline only ends the local wait, not the server transaction. The private
-// receipt and exact payload remain available for a safe retry or status lookup.
-const submissionWaitMs = 45000;
-
-async function waitForSubmission<T>(request: Promise<T>): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      request,
-      new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(
-          () => reject(new Error("affiliate-submission-wait-expired")),
-          submissionWaitMs,
-        );
-      }),
-    ]);
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
-  }
-}
 
 /** Resolve visibility at callback time, not from TypeScript's earlier narrowing.
  * Clipboard and visibility events can complete between awaited operations.
@@ -895,12 +875,13 @@ export function AffiliateSimpleForm({
     setCodeRevealed(false);
     setSending(true);
     setMessage("");
+    const deadline = createAffiliateIntakeDeadline();
     try {
       // Reuse this 192-bit code on a retry. Without it a lost response might
       // create an unreachable application and a second submission conflict.
       if (!attemptCode.current) {
         const issueEpoch = receiptCopyEpoch.current;
-        const issued = await waitForSubmission(
+        const issued = await deadline.wait("issue", () =>
           issuePrivateAffiliateReceipt({ data: { scope: "public" } }),
         );
         if (
@@ -938,7 +919,7 @@ export function AffiliateSimpleForm({
         submittedPayload.current = payload;
         // If storage is unavailable, the code stays in memory for recovery.
       }
-      const result = await waitForSubmission(
+      const result = await deadline.wait("submit", () =>
         submitSimpleAffiliateApplication({
           data: {
             ...parsed.data,
@@ -1640,8 +1621,9 @@ export function AffiliateSimpleForm({
               data-testid="affiliate-c158-wait-guidance"
               className="mt-4 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] p-3 text-xs leading-relaxed text-[#72515f]"
             >
-              Aguarde a confirmação. Se a conexão não responder em até 45 segundos, você poderá
-              consultar o código da tentativa antes de reenviar.
+              O envio aguarda até 45 segundos no total. Se o código ainda não tiver sido preparado,
+              nenhuma inscrição será enviada. Se o envio já tiver começado, consulte o código da
+              tentativa antes de reenviar.
             </p>
           )}
           <button

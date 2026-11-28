@@ -696,15 +696,18 @@ export function AffiliateAdminPage() {
         if (sessionVersion.current === sessionId) setError(result.reason);
         return;
       } else {
-        const mailNotice = !app.email
-          ? " O motivo está disponível no acompanhamento por código; contato telefônico é manual."
-          : result.notification === "accepted"
-            ? " Notificação aceita pelo provedor; entrega não confirmada."
-            : result.notification === "unconfigured"
-              ? " Provedor de e-mails não configurado. A notificação aguarda configuração."
-              : result.notification === "review"
-                ? " Envio não confirmado. Confira a fila antes de tentar novamente."
-                : " Notificação registrada na fila, ainda sem confirmação de envio.";
+        const mailNotice =
+          result.notification === "not_applicable"
+            ? " Sem e-mail cadastrado. O resultado está disponível no acompanhamento por código; contato telefônico é manual."
+            : result.notification === "accepted"
+              ? " Notificação aceita pelo provedor; entrega não confirmada."
+              : result.notification === "unconfigured"
+                ? " Provedor de e-mails não configurado. A notificação aguarda configuração."
+                : result.notification === "review"
+                  ? " Envio não confirmado. Confira a fila antes de tentar novamente."
+                  : result.notification === "queued"
+                    ? " Notificação registrada na fila, ainda sem confirmação de envio."
+                    : " Situação da notificação não confirmada. Confira a fila.";
         setNotice(
           (decision === "aprovada" ? "Inscrição aprovada." : "Inscrição recusada.") + mailNotice,
         );

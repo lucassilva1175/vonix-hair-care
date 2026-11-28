@@ -16,6 +16,7 @@ const gates = vi.hoisted(() => ({
   allowed: vi.fn(),
   decide: vi.fn(),
   email: vi.fn(),
+  disposition: vi.fn(),
   authorized: vi.fn(),
   sendAuth: vi.fn(),
   sendManaged: vi.fn(),
@@ -83,6 +84,7 @@ vi.mock("@/lib/affiliate-applications.server", () => ({
   listAffiliateApplications: gates.list,
   previewAffiliateRetention: gates.retention,
   processAffiliateEmails: gates.email,
+  readAffiliateDecisionMailDisposition: gates.disposition,
 }));
 
 import {
@@ -125,6 +127,7 @@ beforeEach(() => {
   gates.allowed.mockResolvedValue(true);
   gates.decide.mockResolvedValue(true);
   gates.email.mockResolvedValue({ sent: 0, failed: 0, configured: false });
+  gates.disposition.mockResolvedValue("pendente");
   gates.authorized.mockResolvedValue(true);
   gates.sendAuth.mockResolvedValue(true);
   gates.sendManaged.mockResolvedValue(true);
@@ -358,6 +361,30 @@ describe("Admin decision notification semantics", () => {
       emailSent: false,
     });
     expect(gates.decide).toHaveBeenCalledTimes(4);
+  });
+
+  it("does not invent a queue row when a committed decision has no email or a missing outbox", async () => {
+    gates.email.mockResolvedValue({ sent: 0, failed: 0, configured: true });
+    for (const [disposition, notification] of [
+      ["not_applicable", "not_applicable"],
+      ["missing", "review"],
+      ["incerto", "review"],
+      ["enviado", "accepted"],
+      ["processando", "queued"],
+    ] as const) {
+      gates.disposition.mockResolvedValueOnce(disposition);
+      expect(await review({ data })).toMatchObject({
+        ok: true,
+        notification,
+        emailSent: notification === "accepted",
+      });
+    }
+    gates.disposition.mockRejectedValueOnce(new Error("synthetic read failure"));
+    expect(await review({ data })).toMatchObject({
+      ok: true,
+      notification: "review",
+      emailSent: false,
+    });
   });
 
   it("requires same origin and signed admin session before recording decisions", async () => {

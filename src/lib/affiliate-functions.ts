@@ -49,6 +49,7 @@ import {
   getAffiliateStatusWithCode,
   readAffiliateApplicantEmailForAccessRecovery,
   decideAffiliateApplication,
+  readAffiliateDecisionMailDisposition,
   listAffiliateApplications,
   readAffiliateApplicationPrivateDetail,
   processAffiliateEmails,
@@ -553,16 +554,22 @@ export const reviewAffiliateApplication = createServerFn({ method: "POST" })
         const send = await processAffiliateEmails(1, data.id);
         // Provider acceptance is not delivery, and an unconfigured sender is
         // different from a failed or ambiguous attempt requiring reconciliation.
-        const notification = (
-          send.sent === 1
-            ? "accepted"
-            : !send.configured
-              ? "unconfigured"
-              : send.failed > 0
-                ? "review"
-                : "queued"
-        ) as "accepted" | "unconfigured" | "review" | "queued";
-        return { ok: true as const, emailSent: send.sent === 1, notification };
+        if (send.sent === 1)
+          return { ok: true as const, emailSent: true, notification: "accepted" as const };
+        if (send.failed > 0)
+          return { ok: true as const, emailSent: false, notification: "review" as const };
+        const disposition = await readAffiliateDecisionMailDisposition(data.id);
+        const notification =
+          disposition === "not_applicable"
+            ? "not_applicable"
+            : disposition === "enviado"
+              ? "accepted"
+              : disposition === "pendente" || disposition === "processando"
+                ? send.configured
+                  ? "queued"
+                  : "unconfigured"
+                : "review";
+        return { ok: true as const, emailSent: notification === "accepted", notification };
       } catch {
         return { ok: true as const, emailSent: false, notification: "review" as const };
       }

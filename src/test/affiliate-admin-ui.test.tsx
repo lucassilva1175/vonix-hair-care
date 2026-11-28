@@ -521,6 +521,22 @@ describe("Vonix affiliate private panel", () => {
     expect(screen.queryByText(/Notificação enviada/)).not.toBeInTheDocument();
   });
 
+  it("uses the persisted notification outcome rather than a stale email in the list", async () => {
+    server.reviewAffiliateApplication.mockResolvedValueOnce({
+      ok: true,
+      emailSent: false,
+      notification: "not_applicable",
+    });
+    render(<Page />);
+    await screen.findByText("Segredo da candidata");
+    fireEvent.click(screen.getByRole("button", { name: "APROVAR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    expect(
+      await screen.findByText(/Sem e-mail cadastrado.*contato telefônico é manual/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Notificação registrada na fila/)).not.toBeInTheDocument();
+  });
+
   it("distinguishes provider acceptance from actual delivery", async () => {
     server.reviewAffiliateApplication.mockResolvedValueOnce({
       ok: true,

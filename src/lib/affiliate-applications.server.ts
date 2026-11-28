@@ -792,6 +792,44 @@ export async function readAffiliateApplicantEmailForAccessRecovery(applicationId
   return rows[0]!.email.toLowerCase();
 }
 
+/** Reconcile a committed decision when the immediate worker did not send.
+ * Missing queue rows are not evidence that a notification was scheduled.
+ * Never return recipient details to the operator-facing server action. */
+export async function readAffiliateDecisionMailDisposition(applicationId: string) {
+  const id = z.string().uuid().parse(applicationId);
+  const response = await requestSupabase(
+    "vonix_affiliate_mail_outbox?select=status&application_id=eq." +
+      encodeURIComponent(id) +
+      "&limit=1",
+    { method: "GET" },
+  );
+  if (!response.ok) throw new Error("Decision mail status unavailable.");
+  const rows = z
+    .array(z.object({ status: validMailStatus }))
+    .max(1)
+    .parse(await response.json());
+  if (rows.length === 1) return rows[0]!.status;
+  const candidate = await requestSupabase(
+    "vonix_affiliate_applications?select=id,email,status&id=eq." +
+      encodeURIComponent(id) +
+      "&limit=1",
+    { method: "GET" },
+  );
+  if (!candidate.ok) throw new Error("Decision recipient status unavailable.");
+  const records = z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        email: z.string().email().max(180).nullable(),
+        status: z.enum(["aprovada", "recusada"]),
+      }),
+    )
+    .max(1)
+    .parse(await candidate.json());
+  if (records.length !== 1 || records[0]!.id !== id) throw new Error("Decision not found.");
+  return records[0]!.email === null ? ("not_applicable" as const) : ("missing" as const);
+}
+
 export async function decideAffiliateApplication(
   id: string,
   decision: "aprovada" | "recusada",
