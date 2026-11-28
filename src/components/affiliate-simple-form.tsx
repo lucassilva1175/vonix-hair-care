@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { ArrowRight, CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "lucide-react";
-import { affiliateSimpleBaseSchema, affiliateSimpleSchema } from "@/lib/affiliate-simple";
+import {
+  affiliateReceiptTicketSchema,
+  affiliateSimpleBaseSchema,
+  affiliateSimpleSchema,
+} from "@/lib/affiliate-simple";
 import {
   downloadAffiliatePrivateReceipt,
   releasePendingReceipt,
@@ -10,7 +14,10 @@ import {
 } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
-import { submitSimpleAffiliateApplication } from "@/lib/affiliate-functions";
+import {
+  issuePrivateAffiliateReceipt,
+  submitSimpleAffiliateApplication,
+} from "@/lib/affiliate-functions";
 import { WIZARD_BRAZIL_STATES, onlyDigits } from "@/lib/affiliate-wizard";
 
 type Key =
@@ -94,18 +101,6 @@ async function waitForSubmission<T>(request: Promise<T>): Promise<T> {
  */
 function receiptTabHidden(): boolean {
   return typeof document !== "undefined" && document.visibilityState === "hidden";
-}
-
-/** Web Crypto creates 192 unpredictable bits before the request begins.
- * The code is a private bearer token: never include it in a URL or analytics.
- */
-function createBrowserPrivateReceipt(): string {
-  const bytes = new Uint8Array(24);
-  window.crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
 }
 
 const fields: Record<Key, string> = {
@@ -259,6 +254,7 @@ export function AffiliateSimpleForm({
   const [codeRevealed, setCodeRevealed] = useState(false);
   const [trackingNavigationError, setTrackingNavigationError] = useState("");
   const attemptCode = useRef("");
+  const attemptProof = useRef("");
   // A retry can reuse the private receipt only with exactly the same data.
   // Do not persist the applicant's sensitive form contents across sessions.
   const submittedPayload = useRef<string | null>(null);
@@ -381,6 +377,7 @@ export function AffiliateSimpleForm({
     setUnconfirmedHandoffError("");
     setDownloadFeedback("");
     attemptCode.current = "";
+    attemptProof.current = "";
     submittedPayload.current = null;
     setRecoveredAttempt(false);
     setUnconfirmedCode("");
@@ -902,7 +899,30 @@ export function AffiliateSimpleForm({
       // Reuse this 192-bit code on a retry. Without it a lost response might
       // create an unreachable application and a second submission conflict.
       if (!attemptCode.current) {
-        const freshCode = createBrowserPrivateReceipt();
+        const issueEpoch = receiptCopyEpoch.current;
+        const issued = await waitForSubmission(
+          issuePrivateAffiliateReceipt({ data: { scope: "public" } }),
+        );
+        if (
+          issueEpoch !== receiptCopyEpoch.current ||
+          receiptTabHidden() ||
+          !formElement.current ||
+          pausedRef.current
+        )
+          return;
+        const ticket =
+          issued.ok &&
+          affiliateReceiptTicketSchema.safeParse({
+            trackingCode: issued.trackingCode,
+            trackingProof: issued.trackingProof,
+          });
+        if (!ticket || !ticket.success) {
+          setMessage(
+            "Não foi possível preparar um código privado. Nenhuma inscrição foi enviada. Tente novamente.",
+          );
+          return;
+        }
+        const freshCode = ticket.data.trackingCode;
         const reservation = reservePendingReceipt(freshCode);
         if (reservation.status === "conflict") {
           attemptCode.current = reservation.code;
@@ -914,12 +934,17 @@ export function AffiliateSimpleForm({
           return;
         }
         attemptCode.current = freshCode;
+        attemptProof.current = ticket.data.trackingProof;
         submittedPayload.current = payload;
         // If storage is unavailable, the code stays in memory for recovery.
       }
       const result = await waitForSubmission(
         submitSimpleAffiliateApplication({
-          data: { ...parsed.data, trackingCode: attemptCode.current },
+          data: {
+            ...parsed.data,
+            trackingCode: attemptCode.current,
+            trackingProof: attemptProof.current || undefined,
+          },
         }),
       );
       if (result.ok) {
@@ -952,7 +977,9 @@ export function AffiliateSimpleForm({
     } catch {
       if (attemptCode.current) setUnconfirmedCode(attemptCode.current);
       setMessage(
-        "Não foi possível confirmar o envio. A inscrição pode ter sido salva; guarde o código de tentativa e consulte o portal antes de reenviar.",
+        attemptCode.current
+          ? "Não foi possível confirmar o envio. A inscrição pode ter sido salva; guarde o código de tentativa e consulte o portal antes de reenviar."
+          : "Não foi possível preparar um código privado. Nenhuma inscrição foi enviada. Tente novamente.",
       );
     } finally {
       submitting.current = false;

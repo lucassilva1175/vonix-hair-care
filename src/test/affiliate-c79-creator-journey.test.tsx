@@ -4,6 +4,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const server = vi.hoisted(() => ({ submit: vi.fn() }));
 vi.mock("@/lib/affiliate-functions", () => ({
   submitSimpleAffiliateApplication: server.submit,
+  issuePrivateAffiliateReceipt: () => ({
+    ok: true,
+    trackingCode: btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_"),
+    trackingProof: "B".repeat(43),
+  }),
 }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
 

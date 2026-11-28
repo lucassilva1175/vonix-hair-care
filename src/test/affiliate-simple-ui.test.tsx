@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-const server = vi.hoisted(() => ({ submit: vi.fn(), status: vi.fn() }));
+const server = vi.hoisted(() => ({ submit: vi.fn(), status: vi.fn(), issue: vi.fn() }));
 const analytics = vi.hoisted(() => ({ track: vi.fn() }));
 const receipts = vi.hoisted(() => ({ download: vi.fn() }));
 vi.mock("@/lib/affiliate-private-receipt", async (importOriginal) => ({
@@ -11,6 +11,7 @@ vi.mock("@/lib/affiliate-private-receipt", async (importOriginal) => ({
 vi.mock("@/lib/analytics", () => ({ track: analytics.track }));
 vi.mock("@/lib/affiliate-functions", () => ({
   submitSimpleAffiliateApplication: server.submit,
+  issuePrivateAffiliateReceipt: server.issue,
   getAffiliateStatusByCode: server.status,
 }));
 vi.mock("@/components/affiliate-shell", () => ({
@@ -30,6 +31,13 @@ const confirmedSignUpCalls = () =>
 
 beforeEach(() => {
   vi.resetAllMocks();
+  server.issue.mockImplementation(() => ({
+    ok: true,
+    trackingCode: btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_"),
+    trackingProof: "B".repeat(43),
+  }));
   server.submit.mockImplementation(async (args: { data: { trackingCode?: string } }) => ({
     ok: true,
     trackingCode: args.data.trackingCode,
@@ -67,6 +75,18 @@ function fill() {
 }
 
 describe("Vonix short single-page application form", () => {
+  it("does not send candidate data or claim an uncertain submission when ticket issuance fails", async () => {
+    server.issue.mockRejectedValueOnce(new Error("synthetic issuance failure"));
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nenhuma inscrição foi enviada");
+    expect(server.issue).toHaveBeenCalledWith({ data: { scope: "public" } });
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(screen.getByLabelText(/Nome completo/)).toHaveValue("Maria da Silva");
+    expect(confirmedSignUpCalls()).toHaveLength(0);
+  });
   it("focuses the masked uncertain outcome, then the confirmed receipt on an exact retry", async () => {
     server.submit.mockRejectedValueOnce(new Error("Synthetic response lost"));
     render(<AffiliateSimpleForm />);
@@ -103,6 +123,7 @@ describe("Vonix short single-page application form", () => {
     );
     fill();
     fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    await waitFor(() => expect(server.submit).toHaveBeenCalledOnce());
     const other = screen.getByRole("button", { name: "Outra seção" });
     other.focus();
     await act(async () =>
@@ -175,7 +196,9 @@ describe("Vonix short single-page application form", () => {
     fill();
     vi.useFakeTimers();
     try {
-      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      });
       expect(server.submit).toHaveBeenCalledTimes(1);
       const code = server.submit.mock.calls[0]![0].data.trackingCode;
       expect(screen.getByTestId("affiliate-c158-wait-guidance")).toHaveTextContent("45 segundos");
@@ -1209,6 +1232,7 @@ it("does not erase a different local receipt when the current attempt confirms",
   render(<AffiliateSimpleForm />);
   fill();
   fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+  await waitFor(() => expect(server.submit).toHaveBeenCalledOnce());
   const code = server.submit.mock.calls[0]![0].data.trackingCode;
   const another = "abcdefghijklmnopqrstuvwxyzABCDEF";
   window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", another);

@@ -87,6 +87,7 @@ vi.mock("@/lib/affiliate-applications.server", () => ({
 
 import {
   requestAffiliateAccessEmail,
+  issuePrivateAffiliateReceipt,
   reviewAffiliateApplication,
   getAffiliateApplications,
   getAffiliateOperationalReadiness,
@@ -134,6 +135,59 @@ beforeEach(() => {
   gates.erase.mockResolvedValue(true);
   gates.memberLogin.mockResolvedValue({ ok: true });
   gates.legacyLogin.mockResolvedValue({ ok: true });
+});
+
+describe("Server receipt issuance access boundary", () => {
+  const issue = issuePrivateAffiliateReceipt as unknown as (args: {
+    data: { scope: "public" | "staff" };
+  }) => Promise<{ ok: boolean; trackingCode?: string; trackingProof?: string }>;
+  it("denies foreign origins and closed enrollment before generating a public ticket", async () => {
+    gates.sameOrigin.mockReturnValue(false);
+    expect(await issue({ data: { scope: "public" } })).toEqual({ ok: false });
+    expect(gates.open).not.toHaveBeenCalled();
+    gates.sameOrigin.mockReturnValue(true);
+    gates.open.mockReturnValue(false);
+    expect(await issue({ data: { scope: "public" } })).toEqual({ ok: false });
+    expect(gates.allowed).not.toHaveBeenCalled();
+    expect(gates.createSimple).not.toHaveBeenCalled();
+  });
+  it("requires a staff session and separate available quota", async () => {
+    gates.session.mockReturnValue(false);
+    expect(await issue({ data: { scope: "staff" } })).toEqual({ ok: false });
+    expect(gates.allowed).not.toHaveBeenCalled();
+    gates.session.mockReturnValue(true);
+    gates.allowed.mockResolvedValue(false);
+    expect(await issue({ data: { scope: "staff" } })).toEqual({ ok: false });
+    expect(gates.allowed).toHaveBeenCalledWith("admin");
+    expect(gates.createSimple).not.toHaveBeenCalled();
+  });
+  it("issues random scoped tickets without collecting candidate data or spending write quota", async () => {
+    vi.stubEnv("AFFILIATE_QUESTIONNAIRE_KEY", "0123456789abcdef".repeat(4));
+    try {
+      const first = await issue({ data: { scope: "public" } });
+      const second = await issue({ data: { scope: "public" } });
+      const staff = await issue({ data: { scope: "staff" } });
+      for (const t of [first, second, staff])
+        expect(t).toMatchObject({
+          ok: true,
+          trackingCode: expect.stringMatching(/^[A-Za-z0-9_-]{32}$/),
+          trackingProof: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+        });
+      expect(new Set([first.trackingCode, second.trackingCode, staff.trackingCode]).size).toBe(3);
+      expect(gates.allowed).toHaveBeenCalledWith("submit");
+      expect(gates.allowed).toHaveBeenCalledWith("admin");
+      expect(gates.quota).not.toHaveBeenCalled();
+      expect(gates.createSimple).not.toHaveBeenCalled();
+      expect(gates.sendAuth).not.toHaveBeenCalled();
+      expect(setResponseHeader).toHaveBeenCalledWith(
+        "Cache-Control",
+        "private, no-store, max-age=0",
+      );
+      expect(setResponseHeader).toHaveBeenCalledWith("Referrer-Policy", "no-referrer");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });
 
 describe("Public simplified affiliate submission origin policy", () => {

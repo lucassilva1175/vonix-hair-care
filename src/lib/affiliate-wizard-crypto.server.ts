@@ -1,4 +1,11 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 import { z } from "zod";
 import { env } from "./env.server";
 import type { ValidatedAffiliateWizard } from "./affiliate-wizard";
@@ -33,18 +40,64 @@ function encryptionKey(): Buffer | null {
 
 export const affiliateQuestionnaireEncryptionReady = () => encryptionKey() !== null;
 
+type ReceiptScope = "public" | "staff";
+
+function receiptSignature(scope: ReceiptScope, code: string): Buffer | null {
+  const key = encryptionKey();
+  if (!key) return null;
+  // Derive a distinct key; never use raw questionnaire ciphertext or publish
+  // the encryption key. The stable domain preserves exact retry semantics.
+  const signingKey = createHmac("sha256", key)
+    .update("vonix-affiliate/receipt-signing-key/v1")
+    .digest();
+  return createHmac("sha256", signingKey)
+    .update(scope + ":" + code)
+    .digest();
+}
+
+export function issueAffiliateReceiptTicket(scope: ReceiptScope) {
+  const trackingCode = randomBytes(24).toString("base64url");
+  const signature = receiptSignature(scope, trackingCode);
+  if (!signature) return null;
+  return { trackingCode, trackingProof: signature.toString("base64url") };
+}
+
+export function affiliateReceiptTicketValid(
+  scope: ReceiptScope,
+  code: string,
+  proof?: string,
+): boolean {
+  if (!/^[A-Za-z0-9_-]{32}$/.test(code) || !proof || !/^[A-Za-z0-9_-]{43}$/.test(proof))
+    return false;
+  const expected = receiptSignature(scope, code);
+  const supplied = Buffer.from(proof, "base64url");
+  return (
+    !!expected &&
+    supplied.length === expected.length &&
+    supplied.toString("base64url") === proof &&
+    timingSafeEqual(expected, supplied)
+  );
+}
+
 // New lightweight application data (phone and full postal address) remains
 // encrypted at rest. Old v2 questionnaires are still readable for moderation.
 const simpleAnswersSchema = affiliateSimpleBaseSchema.omit({
   privacyAccepted: true,
   website: true,
   trackingCode: true,
+  trackingProof: true,
 });
 
 export function encryptSimpleAffiliateApplication(data: AffiliateSimpleInput): string {
   const key = encryptionKey();
   if (!key) throw new Error("Criptografia de inscrição não configurada.");
-  const { privacyAccepted: _accepted, website: _trap, trackingCode: _receipt, ...answers } = data;
+  const {
+    privacyAccepted: _accepted,
+    website: _trap,
+    trackingCode: _receipt,
+    trackingProof: _proof,
+    ...answers
+  } = data;
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const plaintext = Buffer.from(

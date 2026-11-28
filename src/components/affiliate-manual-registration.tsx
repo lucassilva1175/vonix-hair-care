@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ClipboardCopy, UserRoundPlus } from "lucide-react";
-import { createManualAffiliateAdmin } from "@/lib/affiliate-functions";
-import { affiliateManualSchema } from "@/lib/affiliate-simple";
+import {
+  createManualAffiliateAdmin,
+  issuePrivateAffiliateReceipt,
+} from "@/lib/affiliate-functions";
+import { affiliateManualSchema, affiliateReceiptTicketSchema } from "@/lib/affiliate-simple";
 import { WIZARD_BRAZIL_STATES } from "@/lib/affiliate-wizard";
 import { downloadAffiliatePrivateReceipt } from "@/lib/affiliate-private-receipt";
-
-function issueManualReceipt() {
-  const bytes = new Uint8Array(24);
-  window.crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
 
 function registrationTabHidden() {
   return document.visibilityState === "hidden";
@@ -68,7 +62,7 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
   const [revealed, setRevealed] = useState(false);
   const [copying, setCopying] = useState(false);
   const [saved, setSaved] = useState(false);
-  const attempt = useRef<{ code: string; payload: string } | null>(null);
+  const attempt = useRef<{ code: string; proof: string; payload: string } | null>(null);
   const copyingRef = useRef(false);
   const copyVersion = useRef(0);
   const inFlight = useRef(false);
@@ -136,21 +130,34 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
       );
       return;
     }
-    try {
-      if (!attempt.current) attempt.current = { code: issueManualReceipt(), payload };
-    } catch {
-      setError("Não foi possível criar um código privado seguro neste navegador.");
-      return;
-    }
-    const code = attempt.current.code;
-    setPendingReceipt(code);
-    setSaved(false);
     const requestEpoch = ++epoch.current;
     inFlight.current = true;
     setBusy(true);
     try {
+      if (!attempt.current) {
+        const issued = await issuePrivateAffiliateReceipt({ data: { scope: "staff" } });
+        if (requestEpoch !== epoch.current || registrationTabHidden()) return;
+        const ticket =
+          issued.ok &&
+          affiliateReceiptTicketSchema.safeParse({
+            trackingCode: issued.trackingCode,
+            trackingProof: issued.trackingProof,
+          });
+        if (!ticket || !ticket.success) {
+          setError("Não foi possível preparar um código privado. Nenhum cadastro foi enviado.");
+          return;
+        }
+        attempt.current = {
+          code: ticket.data.trackingCode,
+          proof: ticket.data.trackingProof,
+          payload,
+        };
+      }
+      const code = attempt.current.code;
+      setPendingReceipt(code);
+      setSaved(false);
       const result = await createManualAffiliateAdmin({
-        data: { ...parsed.data, trackingCode: code },
+        data: { ...parsed.data, trackingCode: code, trackingProof: attempt.current.proof },
       });
       if (requestEpoch !== epoch.current || registrationTabHidden()) return;
       if (!result.ok) {
@@ -177,7 +184,9 @@ export function AffiliateManualRegistration({ onCreated }: { onCreated?: () => v
     } catch {
       if (requestEpoch === epoch.current) {
         setError(
-          "Não foi possível confirmar o cadastro. Pesquise pelo perfil na lista antes de reenviar.",
+          attempt.current
+            ? "Não foi possível confirmar o cadastro. Pesquise pelo perfil na lista antes de reenviar."
+            : "Não foi possível preparar um código privado. Nenhum cadastro foi enviado.",
         );
       }
     } finally {

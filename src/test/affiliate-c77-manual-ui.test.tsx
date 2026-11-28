@@ -1,7 +1,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const server = vi.hoisted(() => ({ createManualAffiliateAdmin: vi.fn() }));
+const server = vi.hoisted(() => ({
+  createManualAffiliateAdmin: vi.fn(),
+  issuePrivateAffiliateReceipt: vi.fn(),
+}));
 vi.mock("@/lib/affiliate-functions", () => server);
 import { AffiliateManualRegistration } from "@/components/affiliate-manual-registration";
 
@@ -23,6 +26,13 @@ function populate() {
 }
 beforeEach(() => {
   vi.resetAllMocks();
+  server.issuePrivateAffiliateReceipt.mockImplementation(() => ({
+    ok: true,
+    trackingCode: btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_"),
+    trackingProof: "B".repeat(43),
+  }));
 });
 afterEach(() => {
   cleanup();
@@ -55,6 +65,8 @@ describe("C77: cadastro manual no painel autenticado", () => {
     const data = server.createManualAffiliateAdmin.mock.calls[0]?.[0]?.data;
     expect(data.candidate.email).toBe("");
     expect(data.consentConfirmed).toBe(true);
+    expect(data.trackingProof).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(server.issuePrivateAffiliateReceipt).toHaveBeenCalledWith({ data: { scope: "staff" } });
     expect(data.candidate.privacyAccepted).toBe(true);
     expect(data.candidate.instagramFollowers).toBe(500);
     expect(screen.getByText(/Candidatura registrada como pendente/)).toBeInTheDocument();
@@ -166,6 +178,7 @@ it("conceals manual details and ignores an obsolete completion when the tab beco
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: "Cadastrar para análise" }));
     expect(screen.getByLabelText("Nome completo")).toBeDisabled();
+    await waitFor(() => expect(server.createManualAffiliateAdmin).toHaveBeenCalledOnce());
     const code = server.createManualAffiliateAdmin.mock.calls[0]![0].data.trackingCode;
     visibility.mockReturnValue("hidden");
     act(() => document.dispatchEvent(new Event("visibilitychange")));

@@ -5,6 +5,13 @@ const server = vi.hoisted(() => ({ status: vi.fn(), submit: vi.fn() }));
 vi.mock("@/lib/affiliate-functions", () => ({
   getAffiliateRecruitmentStatus: server.status,
   submitSimpleAffiliateApplication: server.submit,
+  issuePrivateAffiliateReceipt: () => ({
+    ok: true,
+    trackingCode: btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_"),
+    trackingProof: "B".repeat(43),
+  }),
 }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({

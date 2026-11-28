@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { affiliateSimpleSchema, affiliateSimpleBaseSchema } from "@/lib/affiliate-simple";
 import {
   encryptSimpleAffiliateApplication,
+  issueAffiliateReceiptTicket,
+  affiliateReceiptTicketValid,
   affiliateWizardSummary,
   decryptAffiliateWizardForAdmin,
 } from "@/lib/affiliate-wizard-crypto.server";
@@ -319,8 +321,9 @@ describe("short Vonix affiliate form and compatible encrypted storage", () => {
     expect(JSON.stringify(result)).not.toContain("maria.exemplo");
   });
 
-  it("accepts a browser-issued 192-bit receipt while keeping it out of encrypted candidate data", async () => {
-    const privateCode = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+  it("accepts a server-issued 192-bit receipt and keeps the proof out of encrypted candidate data", async () => {
+    const ticket = issueAffiliateReceiptTicket("public")!;
+    const privateCode = ticket.trackingCode;
     const record: Record<string, unknown>[] = [];
     vi.stubGlobal(
       "fetch",
@@ -329,7 +332,7 @@ describe("short Vonix affiliate form and compatible encrypted storage", () => {
         return new Response(null, { status: 201 });
       }),
     );
-    const candidate = affiliateSimpleSchema.parse({ ...valid, trackingCode: privateCode });
+    const candidate = affiliateSimpleSchema.parse({ ...valid, ...ticket });
     expect(await createSimpleAffiliateApplication(candidate)).toEqual({
       ok: true,
       trackingCode: privateCode,
@@ -339,15 +342,18 @@ describe("short Vonix affiliate form and compatible encrypted storage", () => {
       createHash("sha256").update(privateCode).digest("hex"),
     );
     expect(JSON.stringify(record)).not.toContain(privateCode);
+    expect(JSON.stringify(record)).not.toContain(ticket.trackingProof);
     const restored = decryptAffiliateWizardForAdmin(String(record[0]?.["questionnaire_encrypted"]));
     expect(restored?.kind).toBe("simple");
     expect(restored?.answers.phone).toBe(valid.phone);
     expect(JSON.stringify(restored)).not.toContain(privateCode);
+    expect(JSON.stringify(restored)).not.toContain(ticket.trackingProof);
   });
 
   it("retries an already-committed enrollment with the same code after a lost HTTP response", async () => {
-    const privateCode = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
-    const candidate = affiliateSimpleSchema.parse({ ...valid, trackingCode: privateCode });
+    const ticket = issueAffiliateReceiptTicket("public")!;
+    const privateCode = ticket.trackingCode;
+    const candidate = affiliateSimpleSchema.parse({ ...valid, ...ticket });
     let stored: Record<string, unknown> | null = null;
     let postCount = 0;
     let getCount = 0;
@@ -433,7 +439,7 @@ describe("short Vonix affiliate form and compatible encrypted storage", () => {
         affiliateSimpleSchema.parse({ ...valid, trackingCode: privateCode }),
       ),
     ).toMatchObject({ ok: false });
-    expect(requests).toHaveLength(2);
+    expect(requests).toHaveLength(1);
     expect(JSON.stringify(requests)).not.toContain(privateCode);
     expect(
       affiliateSimpleSchema.safeParse({ ...valid, trackingCode: "A".repeat(31) }).success,
@@ -441,8 +447,9 @@ describe("short Vonix affiliate form and compatible encrypted storage", () => {
   });
 
   it("same-code parallel requests return one private receipt without extra records", async () => {
-    const privateCode = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
-    const candidate = affiliateSimpleSchema.parse({ ...valid, trackingCode: privateCode });
+    const ticket = issueAffiliateReceiptTicket("public")!;
+    const privateCode = ticket.trackingCode;
+    const candidate = affiliateSimpleSchema.parse({ ...valid, ...ticket });
     let accepted: Record<string, unknown> | null = null;
     let postCount = 0;
     vi.stubGlobal(
@@ -472,6 +479,35 @@ describe("short Vonix affiliate form and compatible encrypted storage", () => {
     expect(first).toEqual({ ok: true, trackingCode: privateCode });
     expect(second).toEqual({ ok: true, trackingCode: privateCode });
     expect(postCount).toBe(2);
+  });
+
+  it("rejects unsigned, forged and staff-scope chosen codes without inserting", async () => {
+    const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      expect(init?.method).toBe("GET");
+      return Response.json([]);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const issued = issueAffiliateReceiptTicket("public")!;
+    const staff = issueAffiliateReceiptTicket("staff")!;
+    for (const ticket of [
+      { trackingCode: "A".repeat(32) },
+      { ...issued, trackingCode: "B".repeat(32) },
+      staff,
+    ]) {
+      expect(
+        await createSimpleAffiliateApplication(
+          affiliateSimpleSchema.parse({ ...valid, ...ticket }),
+        ),
+      ).toMatchObject({ ok: false });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(affiliateReceiptTicketValid("public", issued.trackingCode, issued.trackingProof)).toBe(
+      true,
+    );
+    expect(affiliateReceiptTicketValid("staff", issued.trackingCode, issued.trackingProof)).toBe(
+      false,
+    );
+    expect(issueAffiliateReceiptTicket("public")?.trackingCode).not.toBe(issued.trackingCode);
   });
 
   it("honeypot does not persist spam", async () => {

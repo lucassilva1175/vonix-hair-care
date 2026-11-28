@@ -5,7 +5,10 @@ import { isIP } from "node:net";
 import { affiliateDatabaseConfig } from "./affiliate-database.server";
 import { probeAffiliateRecruitment } from "./affiliate-recruitment-probes.server";
 import { VONIX_AFFILIATE_AUTH_URL, VONIX_AFFILIATE_PUBLIC_KEY } from "./vonix-affiliate-auth";
-import { affiliateQuestionnaireEncryptionReady } from "./affiliate-wizard-crypto.server";
+import {
+  affiliateQuestionnaireEncryptionReady,
+  issueAffiliateReceiptTicket,
+} from "./affiliate-wizard-crypto.server";
 import { affiliateApplicationSchema, affiliateAdminSchema } from "./affiliate-application";
 import { affiliateSimpleSchema, affiliateManualSchema } from "./affiliate-simple";
 import { affiliateRejectionReasonSchema } from "./affiliate-rejection";
@@ -118,6 +121,34 @@ export const requestAffiliateAccessEmail = createServerFn({ method: "POST" })
       // Fixed operator-only category: never log the address, code, link or error body.
       console.warn("[vonix-affiliate-auth-mail] request-exception http=none");
       return { status: "requested" as const };
+    }
+  });
+
+/** Issue a server-generated receipt before any application data is sent.
+ * No candidate data, database write or notification is involved in issuance. */
+export const issuePrivateAffiliateReceipt = createServerFn({ method: "POST" })
+  .validator(z.object({ scope: z.enum(["public", "staff"]) }))
+  .handler(async ({ data }) => {
+    privateAffiliateAuthResponse();
+    try {
+      if (data.scope === "staff") {
+        if (
+          !affiliateAdminSameOrigin() ||
+          !(await affiliateAdminSessionAuthorized()) ||
+          !(await affiliateRateLimitAllowed("admin"))
+        )
+          return { ok: false as const };
+      } else if (
+        !affiliateMutationSameOrigin() ||
+        !(await affiliateOperatorIntakeEnabled()) ||
+        !(await affiliateRateLimitAllowed("submit"))
+      ) {
+        return { ok: false as const };
+      }
+      const ticket = issueAffiliateReceiptTicket(data.scope);
+      return ticket ? { ok: true as const, ...ticket } : { ok: false as const };
+    } catch {
+      return { ok: false as const };
     }
   });
 
