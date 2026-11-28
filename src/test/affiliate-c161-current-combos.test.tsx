@@ -37,7 +37,7 @@ describe("C161 current official combo catalog", () => {
       screen.getByRole("button", { name: "Ver todos os " + eligible.length + " combos" }),
     );
     const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(20);
+    expect(links).toHaveLength(eligible.length);
     expect(new Set(links.map((l) => l.getAttribute("href")))).toEqual(
       new Set(eligible.map((p) => "/produto/" + p.slug)),
     );

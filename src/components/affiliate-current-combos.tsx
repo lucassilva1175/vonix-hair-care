@@ -6,6 +6,7 @@ import {
 import { affiliateSearchTerms, matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
 import { ArrowUpRight, Search, PackageOpen, Bookmark, Check, X, ClipboardCopy } from "lucide-react";
 import { isProOnly, vitrine } from "@/lib/store";
+import { thumb } from "@/lib/images";
 import packagingImages from "@/data/sacolinhas.json";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
 
@@ -438,7 +439,7 @@ export function AffiliateCurrentCombos({
                           !failedPackaging.includes(p.slug) &&
                           (packagingImages as Record<string, string>)[p.slug]
                             ? (packagingImages as Record<string, string>)[p.slug]
-                            : "/images/products/" + p.slug + "-480.webp"
+                            : thumb(p.images[0]!)
                         }
                         onError={() => {
                           if (packaging)
