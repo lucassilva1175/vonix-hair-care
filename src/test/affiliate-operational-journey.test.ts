@@ -146,6 +146,8 @@ class Fixture {
   loseInsertResponse = false;
   loseProviderResponse = false;
   dropDecisionOutbox = false;
+  finishFailure: "before" | "after" | null = null;
+  loseDispositionResponse = false;
   nowDue = new Set<string>();
   async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = new URL(String(input));
@@ -268,6 +270,7 @@ class Fixture {
       );
     }
     if (route === "vonix_affiliate_mail_outbox" && method === "GET") {
+      if (this.loseDispositionResponse) throw new TypeError("synthetic disposition read failed");
       expect(url.searchParams.get("select")).toBe("status");
       const id = equal("application_id");
       if (useSql)
@@ -353,12 +356,13 @@ class Fixture {
         );
       const mail = this.mail.find(
         (m) =>
-          m.status === "pendente" &&
-          (m.attempts === 0 || this.nowDue.has(m.id)) &&
+          ((m.status === "pendente" && (m.attempts === 0 || this.nowDue.has(m.id))) ||
+            (m.status === "processando" && this.nowDue.has(m.id))) &&
           (data["p_application_id"] === null || m.application_id === data["p_application_id"]),
       );
       if (!mail) return Response.json([]);
       mail.attempts++;
+      mail.uncertain ||= mail.status === "processando";
       mail.status = "processando";
       this.nowDue.delete(mail.id);
       const app = this.rows.find((r) => r.id === mail.application_id)!;
@@ -373,8 +377,11 @@ class Fixture {
       ]);
     }
     if (rpc === "vonix_affiliate_finish_mail") {
-      if (useSql)
-        return Response.json(
+      const fail = this.finishFailure;
+      this.finishFailure = null;
+      if (fail === "before") throw new TypeError("synthetic finish request lost before commit");
+      if (useSql) {
+        const response = Response.json(
           sql(
             "SELECT public.vonix_affiliate_finish_mail(" +
               literal(data["p_mail_id"]) +
@@ -391,6 +398,9 @@ class Fixture {
               ");",
           ).text === "t",
         );
+        if (fail === "after") throw new TypeError("synthetic committed finish response lost");
+        return response;
+      }
       const m = this.mail.find(
         (x) =>
           x.id === data["p_mail_id"] &&
@@ -407,6 +417,7 @@ class Fixture {
           : "pendente";
       m.uncertain = data["p_success"] ? false : Boolean(data["p_unknown"] || m.uncertain);
       m.provider_id = data["p_success"] ? String(data["p_provider_id"]) : null;
+      if (fail === "after") throw new TypeError("synthetic committed finish response lost");
       return Response.json(true);
     }
     throw Error("Unexpected fixture RPC " + rpc);
@@ -436,7 +447,7 @@ class Fixture {
   makeDue(id: string) {
     if (useSql)
       sql(
-        "UPDATE public.vonix_affiliate_mail_outbox SET next_attempt_at=now()-interval '1 second' WHERE application_id=" +
+        "UPDATE public.vonix_affiliate_mail_outbox SET next_attempt_at=now()-interval '1 second', last_attempt_at=now()-interval '11 minutes' WHERE application_id=" +
           literal(id) +
           "::uuid;",
         false,
@@ -611,6 +622,115 @@ describe(
         configured: true,
       });
       expect(fixture.provider).toHaveLength(2);
+    }, 90000);
+
+    it("reconciles committed finish response loss without a second provider request", async () => {
+      const receipt = await ticket("public");
+      expect(
+        (
+          await submitSimpleAffiliateApplication({
+            data: {
+              ...candidate,
+              email: "finish.after@example.invalid",
+              instagram: "qa.operational.finishafter",
+              ...receipt,
+            },
+          })
+        ).ok,
+      ).toBe(true);
+      const row = fixture.record(receipt.trackingCode)!;
+      fixture.finishFailure = "after";
+      expect(
+        await reviewAffiliateApplication({
+          data: { id: row.id, decision: "aprovada", reason: null },
+        }),
+      ).toMatchObject({ ok: true, emailSent: true, notification: "accepted" });
+      expect(fixture.outbox(row.id)).toHaveLength(1);
+      expect(fixture.outbox(row.id)[0]).toMatchObject({
+        status: "enviado",
+        attempts: 1,
+        provider_id: "synthetic-provider-acceptance",
+      });
+      expect(fixture.provider).toHaveLength(1);
+      expect(await (await receiveAffiliateMailWorker(worker())).json()).toEqual({
+        sent: 0,
+        failed: 0,
+        configured: true,
+      });
+      expect(fixture.provider).toHaveLength(1);
+    }, 90000);
+
+    it("keeps a lost uncommitted finish uncertain, then reclaims the expired lease with the same idempotency key", async () => {
+      const receipt = await ticket("public");
+      expect(
+        (
+          await submitSimpleAffiliateApplication({
+            data: {
+              ...candidate,
+              email: "finish.before@example.invalid",
+              instagram: "qa.operational.finishbefore",
+              ...receipt,
+            },
+          })
+        ).ok,
+      ).toBe(true);
+      const row = fixture.record(receipt.trackingCode)!;
+      fixture.finishFailure = "before";
+      expect(
+        await reviewAffiliateApplication({
+          data: { id: row.id, decision: "aprovada", reason: null },
+        }),
+      ).toMatchObject({ ok: true, emailSent: false, notification: "review" });
+      expect(fixture.outbox(row.id)[0]).toMatchObject({
+        status: "processando",
+        attempts: 1,
+        provider_id: null,
+      });
+      expect(await (await receiveAffiliateMailWorker(worker())).json()).toEqual({
+        sent: 0,
+        failed: 0,
+        configured: true,
+      });
+      expect(fixture.provider).toHaveLength(1);
+      fixture.makeDue(row.id);
+      expect(await (await receiveAffiliateMailWorker(worker())).json()).toEqual({
+        sent: 1,
+        failed: 0,
+        configured: true,
+      });
+      expect(fixture.provider).toHaveLength(2);
+      expect(fixture.provider[0]).toEqual(fixture.provider[1]);
+      expect(fixture.outbox(row.id)[0]).toMatchObject({
+        status: "enviado",
+        attempts: 2,
+        uncertain: false,
+      });
+    }, 90000);
+
+    it("does not claim acceptance when both the finish response and durable status read are unavailable", async () => {
+      const receipt = await ticket("public");
+      expect(
+        (
+          await submitSimpleAffiliateApplication({
+            data: {
+              ...candidate,
+              email: "finish.read@example.invalid",
+              instagram: "qa.operational.finishread",
+              ...receipt,
+            },
+          })
+        ).ok,
+      ).toBe(true);
+      const row = fixture.record(receipt.trackingCode)!;
+      fixture.finishFailure = "after";
+      fixture.loseDispositionResponse = true;
+      expect(
+        await reviewAffiliateApplication({
+          data: { id: row.id, decision: "aprovada", reason: null },
+        }),
+      ).toMatchObject({ ok: true, emailSent: false, notification: "review" });
+      expect(fixture.outbox(row.id)[0]).toMatchObject({ status: "enviado", attempts: 1 });
+      expect(fixture.provider).toHaveLength(1);
     }, 90000);
 
     it("distinguishes phone-only decisions from a missing notification row without false success", async () => {

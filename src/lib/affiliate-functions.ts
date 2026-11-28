@@ -575,6 +575,15 @@ export const reviewAffiliateApplication = createServerFn({ method: "POST" })
                 : "review";
         return { ok: true as const, emailSent: notification === "accepted", notification };
       } catch {
+        // The provider or database may have committed before the response was lost.
+        // Reconcile only durable acceptance; never send again here, and never
+        // turn a pending/in-flight/unknown state into a confirmed delivery.
+        try {
+          if ((await readAffiliateDecisionMailDisposition(data.id)) === "enviado")
+            return { ok: true as const, emailSent: true, notification: "accepted" as const };
+        } catch {
+          // A failed reconciliation remains explicitly uncertain.
+        }
         return { ok: true as const, emailSent: false, notification: "review" as const };
       }
     } catch {
