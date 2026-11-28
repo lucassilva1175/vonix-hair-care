@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { BadgeCheck, Check, Heart, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { toItem, track } from "@/lib/analytics";
 import { FaqSection } from "@/components/faq";
 import { openCartDrawer } from "@/components/cart-drawer";
 import { FAQ_LOJA } from "@/lib/faq";
+import { useYouShopCheckout } from "@/lib/youshop";
 import { useServerFn } from "@tanstack/react-start";
 import { lookupAddress } from "@/lib/address.functions";
 import { quoteShipping } from "@/lib/checkout.functions";
@@ -346,197 +347,17 @@ function ComboDestaque({ slug }: { slug: string }) {
   );
 }
 
-type YouShopOffer = { code: string; priceCents: number; enabled?: true };
-
-// An offer is enabled here after its public checkout is verified.
-const YOUSHOP_OFFERS: Readonly<
-  Partial<Record<string, Readonly<Partial<Record<string, YouShopOffer>>>>>
-> = {
-  "ampola-de-hidratacao-mousse-flash": {
-    "18ml": { code: "1KHF5WDSOGP2AG4O", priceCents: 6090 },
-  },
-  "botox-line": {
-    "1Kg": { code: "SLNGCFMJO4ECD13J", priceCents: 16690 },
-  },
-  "botox-line-matizador": {
-    "1Kg": { code: "ZE4MIBFIBP8JT0JN", priceCents: 17190 },
-  },
-  "botox-vonix": {
-    "1Kg": { code: "QGMEUFLC4GYFB04Q", priceCents: 17390 },
-  },
-  "botox-vonix-matizador": {
-    "1Kg": { code: "G1M1PYWDZZYHA9VH", priceCents: 17990 },
-  },
-  "combo-botox-line-shampoo": {
-    "Combo": { code: "T6C2BO9VI5OIFIC1", priceCents: 19551 },
-  },
-  "combo-botox-vonix-nutri-repair": {
-    "Combo": { code: "UGCZWRQ0EIEEJJVR", priceCents: 23590 },
-  },
-  "combo-botox-vonix-shampoo": {
-    "Combo": { code: "BZKW737HOQOHHNGJ", priceCents: 20121 },
-  },
-  "combo-diamond-defrizante": {
-    "Combo": { code: "VWVIDXK41IFTDSWL", priceCents: 25052 },
-  },
-  "combo-diamond-shampoo-anti-residuo": {
-    "Combo": { code: "8UUT2ILWWQPDDQWJ", priceCents: 19266 },
-  },
-  "combo-finalizacao-serum": {
-    "Combo": { code: "PW7JHJUXHJHO3PTY", priceCents: 20872 },
-  },
-  "combo-fio-de-luz-completo": {
-    "Combo": { code: "ODHPD5GUZL3O4OV0", priceCents: 28990 },
-  },
-  "combo-fio-de-luz-serum": {
-    "Combo": { code: "DV9YVOJSM1IZLGCN", priceCents: 28947 },
-  },
-  "combo-fio-de-luz-shampoo-anti-residuo": {
-    "Combo": { code: "9FYT8MBGSKLI6WNM", priceCents: 22590 },
-  },
-  "combo-lift-em-gel-serum": {
-    "Combo": { code: "SJ1IF774XBQLIQ4U", priceCents: 28947 },
-  },
-  "combo-lift-em-gel-shampoo": {
-    "Combo": { code: "PG0RYMULAO44O5WP", priceCents: 20596 },
-  },
-  "combo-queratina-em-massa-shampoo": {
-    "Combo": { code: "TZZTDGYX11RZY12M", priceCents: 15590 },
-  },
-  "combo-selagem-diamond-shampoo": {
-    "Combo": { code: "M6XCLTBGJZHCQZHD", priceCents: 20596 },
-  },
-  "combo-sos-queratina-cistina": {
-    "Combo": { code: "JKU7SBPIPJOHUQJG", priceCents: 20990, enabled: true },
-  },
-  "combo-sos-reconstrutor": {
-    "Combo": { code: "G86VM5YJ694LDILS", priceCents: 26762 },
-  },
-  "combo-sos-shampoo": {
-    "Combo": { code: "L8YFCK8YBJILPM8B", priceCents: 20026 },
-  },
-  "combo-special-matizadora-reparador": {
-    "Combo": { code: "S7QSENMTLYEW7LPI", priceCents: 27332 },
-  },
-  "combo-special-matizadora-shampoo": {
-    "Combo": { code: "T7NBA5DFMJX5SKP5", priceCents: 20596 },
-  },
-  "combo-teia-anabolizante-shampoo": {
-    "Combo": { code: "MQSSAOBCGR1GNISZ", priceCents: 17390 },
-  },
-  "combo-teia-coco-nutri-shampoo": {
-    "Combo": { code: "TFGSKDKBWYPLSEEV", priceCents: 17390 },
-  },
-  "combo-trio-shampoos-hidratantes": {
-    "Combo": { code: "3DKOCK2POWMBPJFX", priceCents: 20207 },
-  },
-  "defrizante": {
-    "1L": { code: "SEIT8PIYCTGYDSHV", priceCents: 8790 },
-    "300ml": { code: "EV2FJJ9T3RJUEEEU", priceCents: 6090 },
-  },
-  "kit-matizador-shampoo-e-mascara": {
-    "Kit": { code: "LWF1IR4RCS6CEXF7", priceCents: 7090 },
-  },
-  "mascara-efeito-teia-anabolizante": {
-    "1Kg": { code: "UX8KYMLOLB67EMPA", priceCents: 10090 },
-  },
-  "mascara-efeito-teia-coco-nutri": {
-    "1Kg": { code: "5CZB6VTYDFDUFBA2", priceCents: 10090 },
-  },
-  "mascara-efeito-teia-desmaia-cabelo": {
-    "1Kg": { code: "PENQHPAIY6AJWI8A", priceCents: 10090 },
-  },
-  "mascara-efeito-teia-tomba-cabelo": {
-    "1Kg": { code: "COBHKJY7BZXDBMH7", priceCents: 10090 },
-  },
-  "mascara-hidratacao-lanolina-karite": {
-    "960g": { code: "XVGEKR1W9Q8MWXHI", priceCents: 8790 },
-  },
-  "mascara-hidratante-argan-cartamo-coco": {
-    "1Kg": { code: "BJTWW5F4NDIZSYV1", priceCents: 10090 },
-  },
-  "mascara-reparacao-nutri-repair": {
-    "1Kg": { code: "9QWKOZ2JUATZP3QB", priceCents: 8790 },
-  },
-  "mousse-flash": {
-    "500ml": { code: "8EXHOXYFGWCHWX7R", priceCents: 9590 },
-  },
-  "progressiva-diamond": {
-    "1L": { code: "ODAJY3QAKI3PKOB6", priceCents: 16490 },
-  },
-  "progressiva-fio-de-luz": {
-    "1L": { code: "04W3W4NPON34NRRK", priceCents: 17990, enabled: true },
-  },
-  "progressiva-lift-em-gel": {
-    "1L": { code: "EBEUQZVCOCGVLKTE", priceCents: 16590 },
-  },
-  "progressiva-vonix-special-matizadora": {
-    "1L": { code: "H38CBPNH3OLVCATP", priceCents: 17890 },
-  },
-  "queratina-com-cistina-molecular": {
-    "35ml": { code: "LBG53KWPDEFROLGP", priceCents: 6090 },
-  },
-  "queratina-em-gel": {
-    "500ml": { code: "ADJDHPMGRWNHGGCN", priceCents: 7090 },
-  },
-  "queratina-em-massa": {
-    "500g": { code: "ISGZRMVPPCWQWPIF", priceCents: 7090 },
-  },
-  "reparador-de-pontas": {
-    "60ml": { code: "RPWCIXDLCEA6CMU4", priceCents: 7090 },
-  },
-  "selagem-termica-diamond": {
-    "1 L": { code: "MO1TIBBRLDYRFS1J", priceCents: 14590 },
-  },
-  "serum-argan": {
-    "60ml": { code: "N75NJXGTR6UO5IKT", priceCents: 8790 },
-  },
-  "shampoo-diamond-anti-residuo": {
-    "1L": { code: "U8QX2HGIIEFJEC1O", priceCents: 7090 },
-  },
-  "shampoo-fio-de-luz-anti-residuo": {
-    "1L": { code: "JRUIQARE7OKVMXCZ", priceCents: 7090 },
-  },
-  "shampoo-hidratante-anabolizante-capilar": {
-    "1L": { code: "5GCOEIRNASZTYYE8", priceCents: 7090 },
-  },
-  "shampoo-hidratante-dep-toc": {
-    "1L": { code: "6DRKGNXOFSYAZWBX", priceCents: 7090 },
-  },
-  "shampoo-hidratante-desmaia-cabelo": {
-    "1L": { code: "ILRCURHEKY1QDRXV", priceCents: 7090 },
-  },
-  "sos-reconstrutor-capilar": {
-    "1000ml": { code: "THKAVDTTR6Y37M2T", priceCents: 17190 },
-  },
-};
-
 function ProductPage() {
   const p = Route.useLoaderData();
   const cart = useCart();
   const fav = useFavorites();
   const { audience } = useAudience();
   const nav = useNavigate();
-  const search = useLocation({ select: (location) => location.searchStr });
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
   const v = p.variants[vi] ?? p.variants[0]!;
   const sel = lineTotals(v.price, qty, undefined, p.slug);
-  const offer = YOUSHOP_OFFERS[p.slug]?.[v.label];
-  const youshopOffer =
-    qty === 1 && offer?.enabled && offer.priceCents === Math.round(sel.net * 100)
-      ? offer
-      : undefined;
-  const youshopCheckout = youshopOffer
-    ? new URL(youshopOffer.code, "https://pay.youshop.com.br/")
-    : undefined;
-  if (youshopCheckout) {
-    for (const [key, value] of new URLSearchParams(search)) {
-      if (key.startsWith("utm_") && !youshopCheckout.searchParams.has(key)) {
-        youshopCheckout.searchParams.append(key, value);
-      }
-    }
-  }
+  const youshopCheckout = useYouShopCheckout(p.slug, v.label, sel.net, qty === 1 && cart.count === 0);
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
   const related = forAudience(
@@ -576,25 +397,31 @@ function ProductPage() {
             <Stars slug={p.slug} />
             <ReviewStrip slug={p.slug} />
             <div className="mt-4" data-testid="product-price-block">
-              <div className="flex flex-wrap items-center gap-2">
-                {comboPct(p.slug) > 0 ? (
-                  <>
-                    <span className="text-body text-muted-foreground line-through">{brl(v.price)}</span>
-                    <span className="money text-h1 font-bold leading-none">{brl(pixPrice(lineTotals(v.price, 1, undefined, p.slug).net))}</span>
-                    <span className="text-body">no Pix</span>
-                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">{comboPct(p.slug)}% + 5% OFF</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
-                    <span className="text-body">no Pix</span>
-                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
-                  </>
-                )}
-              </div>
-              <p className="mt-1 text-small text-muted-foreground">
-                {comboPct(p.slug) > 0 ? <>Ou <b className="font-semibold">{brl(lineTotals(v.price, 1, undefined, p.slug).net)}</b> em até <b className="font-semibold">{installments(lineTotals(v.price, 1, undefined, p.slug).net).count}x de {brl(installments(lineTotals(v.price, 1, undefined, p.slug).net).value)}</b> sem juros. O desconto de 5% do combo já está no preço e o Pix dá mais 5%.</> : <>Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros</>}
-              </p>
+              {youshopCheckout ? (
+                <span className="money text-h1 font-bold leading-none">{brl(sel.net)}</span>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {comboPct(p.slug) > 0 ? (
+                      <>
+                        <span className="text-body text-muted-foreground line-through">{brl(v.price)}</span>
+                        <span className="money text-h1 font-bold leading-none">{brl(pixPrice(lineTotals(v.price, 1, undefined, p.slug).net))}</span>
+                        <span className="text-body">no Pix</span>
+                        <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">{comboPct(p.slug)}% + 5% OFF</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
+                        <span className="text-body">no Pix</span>
+                        <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="mt-1 text-small text-muted-foreground">
+                    {comboPct(p.slug) > 0 ? <>Ou <b className="font-semibold">{brl(lineTotals(v.price, 1, undefined, p.slug).net)}</b> em até <b className="font-semibold">{installments(lineTotals(v.price, 1, undefined, p.slug).net).count}x de {brl(installments(lineTotals(v.price, 1, undefined, p.slug).net).value)}</b> sem juros. O desconto de 5% do combo já está no preço e o Pix dá mais 5%.</> : <>Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros</>}
+                  </p>
+                </>
+              )}
             </div>
             <p className="mt-3 flex items-center gap-2 text-body font-semibold text-emerald-700" data-testid="frete-no-preco">
               <Truck className="h-5 w-5 shrink-0" aria-hidden="true" /> Frete grátis · entrega de 3 a 5 dias úteis em SP e MG
@@ -775,15 +602,21 @@ function ProductPage() {
               </button>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button
-                className="rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5"
-                onClick={() => {
-                  add();
-                  nav({ to: "/checkout" });
-                }}
-              >
-                Comprar agora
-              </button>
+              {youshopCheckout ? (
+                <a href={youshopCheckout} data-testid="youshop-buy-now" className="rounded-md bg-black py-3.5 text-center font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99]">
+                  Comprar agora na YouShop
+                </a>
+              ) : (
+                <button
+                  className="rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5"
+                  onClick={() => {
+                    add();
+                    nav({ to: "/checkout" });
+                  }}
+                >
+                  Comprar agora
+                </button>
+              )}
               <button
                 className="rounded-md border-2 border-foreground py-3.5 font-medium"
                 onClick={() => {
@@ -794,22 +627,21 @@ function ProductPage() {
                 Adicionar ao carrinho
               </button>
             </div>
-            {youshopCheckout && youshopOffer && (
-              <a
-                href={youshopCheckout.href}
-                target="_blank"
-                rel="noopener"
-                className="mt-3 block rounded-md border border-foreground px-4 py-3 text-center font-medium"
-              >
-                Comprar 1 unidade na YouShop · {brl(youshopOffer.priceCents / 100)}
-              </a>
+            {youshopCheckout && (
+              <p className="mt-2 text-small text-muted-foreground">
+                Confira frete e condições de pagamento no checkout da YouShop.
+              </p>
             )}
-            <div className="mt-4">
-              <PaymentMethods />
-            </div>
-            <div className="mt-3">
-              <SecuritySeal />
-            </div>
+            {!youshopCheckout && (
+              <>
+                <div className="mt-4">
+                  <PaymentMethods />
+                </div>
+                <div className="mt-3">
+                  <SecuritySeal />
+                </div>
+              </>
+            )}
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
                 Frete grátis em todos os produtos, em qualquer pedido · entrega de 3 a 5 dias úteis
@@ -870,19 +702,25 @@ function ProductPage() {
         <div className="min-w-0 leading-tight">
           <div className="text-small text-muted-foreground line-through">{brl(discounted ? sel.gross : total)}</div>
           <div className="flex flex-wrap items-center gap-x-2">
-            <span className="text-h2 font-bold leading-tight">{brl(discounted && !isComboLine ? total : pixPrice(total))}</span>
-            <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">{discounted && !isComboLine ? `-${linePct(qty, p.slug)}%` : "-5% PIX"}</span>
+            <span className="text-h2 font-bold leading-tight">{brl(youshopCheckout || (discounted && !isComboLine) ? total : pixPrice(total))}</span>
+            {!youshopCheckout && <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">{discounted && !isComboLine ? `-${linePct(qty, p.slug)}%` : "-5% PIX"}</span>}
           </div>
         </div>
-        <button
-          className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]"
-          onClick={() => {
-            add();
-            openCartDrawer();
-          }}
-        >
-          <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
-        </button>
+        {youshopCheckout ? (
+          <a href={youshopCheckout} data-testid="youshop-sticky-buy" className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]">
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
+          </a>
+        ) : (
+          <button
+            className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]"
+            onClick={() => {
+              add();
+              openCartDrawer();
+            }}
+          >
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
+          </button>
+        )}
       </div>
     </Shell>
   );
