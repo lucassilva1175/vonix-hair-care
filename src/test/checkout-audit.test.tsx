@@ -16,6 +16,7 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
   notFound: vi.fn(),
   useNavigate: () => vi.fn(),
+  useLocation: ({ select }: { select: (value: { searchStr: string }) => unknown }) => select({ searchStr: "" }),
 }));
 vi.mock("@/components/site", () => ({
   Shell: ({ children }: { children: React.ReactNode }) => <>{children}</>,

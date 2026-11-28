@@ -7,6 +7,7 @@ import { toItem, track } from "@/lib/analytics";
 import { isValidCpf } from "@/lib/cpf";
 import { boletoDueDateLabel, type BoletoPayment } from "@/lib/boleto";
 import { clearRef, getRef } from "@/lib/affiliate-ref";
+import { useYouShopCheckout } from "@/lib/youshop";
 import { registerCartLead } from "@/lib/leads.functions";
 import {
   createPayment,
@@ -371,6 +372,16 @@ function Checkout() {
   }, []);
   const c = useCart();
   const hydrated = useHydrated();
+  const singleLine = c.lines.length === 1 ? c.lines[0] : undefined;
+  const youshopCheckout = useYouShopCheckout(
+    singleLine?.slug ?? "",
+    singleLine?.variant ?? "",
+    singleLine?.net ?? 0,
+    hydrated && singleLine?.qty === 1 && !singleLine.offer && !getRef(),
+  );
+  useEffect(() => {
+    if (youshopCheckout) window.location.replace(youshopCheckout);
+  }, [youshopCheckout]);
   const [f, setF] = useState({
     nome: "",
     email: "",
