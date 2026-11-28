@@ -8,13 +8,27 @@ export const affiliateDocumentPaths = [
   "/admin/afiliadas",
 ] as const;
 
-export function isAffiliateDocumentPath(pathname: string): boolean {
+function normalizeAffiliatePath(pathname: string): string | null {
   try {
-    const normalized = decodeURIComponent(pathname).replace(/\/+$/, "").toLowerCase();
-    return (affiliateDocumentPaths as readonly string[]).includes(normalized);
+    return decodeURIComponent(pathname).replace(/\/+$/, "").toLowerCase();
   } catch {
-    return false;
+    return null;
   }
+}
+
+export function isAffiliateDocumentPath(pathname: string): boolean {
+  const normalized = normalizeAffiliatePath(pathname);
+  return normalized !== null && (affiliateDocumentPaths as readonly string[]).includes(normalized);
+}
+
+/** Recruitment is public, but candidate and team documents are never cacheable. */
+export function isPrivateAffiliateDocumentPath(pathname: string): boolean {
+  const normalized = normalizeAffiliatePath(pathname);
+  return (
+    normalized !== null &&
+    normalized !== "/seja-afiliada" &&
+    (affiliateDocumentPaths as readonly string[]).includes(normalized)
+  );
 }
 
 /** The same path policy in a trusted inline bootstrap, before hydration.

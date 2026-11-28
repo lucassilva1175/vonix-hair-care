@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { ClipboardCheck, LockKeyhole, CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { AffiliateShell } from "@/components/affiliate-shell";
 import { AffiliateStatusGuidance } from "@/components/affiliate-status-guidance";
 import { getAffiliateStatusByCode } from "@/lib/affiliate-functions";
 import {
   clearMatchingPendingReceipt,
+  consumeOneTimeReceipt,
   hasMatchingPendingReceipt,
   downloadAffiliatePrivateReceipt,
   maxPrivateReceiptBytes,
@@ -133,13 +134,13 @@ export function AffiliateTrackingCodePage() {
     }
   }
 
-  function resetRecovery() {
+  const resetRecovery = useCallback(() => {
     confirmedLookup.current = null;
     setRecoveryAvailable(false);
     setRecoveryAcknowledged(false);
     setRecoveryFeedback("");
     setReceiptFeedback("");
-  }
+  }, []);
 
   function replacePrivateCode(value: string) {
     lookupVersion.current++;
@@ -151,6 +152,7 @@ export function AffiliateTrackingCodePage() {
     setCopyFeedback("");
     setBusy(false);
     setCode(value);
+    setPendingAvailable(Boolean(readPendingReceiptCode()));
     setCopied(false);
     setCodeRevealed(false);
     setResult(null);
@@ -225,79 +227,75 @@ export function AffiliateTrackingCodePage() {
     );
   }
 
-  async function lookup(codeValue: string) {
-    if (clipboardTabHidden() || lookupInFlight.current === codeValue) return;
-    lookupInFlight.current = codeValue;
-    const requestId = ++lookupVersion.current;
-    resetRecovery();
-    setBusy(true);
-    setError("");
-    setResult(null);
-    try {
-      const response = await waitForPrivateLookup(
-        getAffiliateStatusByCode({ data: { code: codeValue } }),
-      );
-      // Each result is only valid for the code used by this exact request.
-      // Changing codes or launching a newer query invalidates older replies.
-      if (lookupVersion.current !== requestId) return;
-      // A background-tab request might complete before the visibility event.
-      // Never expose a private status before the tab becomes visible.
-      if (document.visibilityState === "hidden") {
-        setCodeRevealed(false);
-        setResult(null);
-        setError("");
-        return;
-      }
-      if (!response.ok) setError(response.reason);
-      else {
-        const parsed = privateStatusResponseSchema.safeParse(response);
-        if (!parsed.success) {
-          setError("Não foi possível validar os dados da candidatura. Tente novamente mais tarde.");
+  const lookup = useCallback(
+    async (codeValue: string) => {
+      if (clipboardTabHidden() || lookupInFlight.current === codeValue) return;
+      lookupInFlight.current = codeValue;
+      const requestId = ++lookupVersion.current;
+      resetRecovery();
+      setBusy(true);
+      setError("");
+      setResult(null);
+      try {
+        const response = await waitForPrivateLookup(
+          getAffiliateStatusByCode({ data: { code: codeValue } }),
+        );
+        // Each result is only valid for the code used by this exact request.
+        // Changing codes or launching a newer query invalidates older replies.
+        if (lookupVersion.current !== requestId) return;
+        // A background-tab request might complete before the visibility event.
+        // Never expose a private status before the tab becomes visible.
+        if (document.visibilityState === "hidden") {
+          setCodeRevealed(false);
+          setResult(null);
+          setError("");
           return;
         }
-        confirmedLookup.current = { code: codeValue, version: requestId };
-        setRecoveryAvailable(hasMatchingPendingReceipt(codeValue));
-        setResult(parsed.data);
+        if (!response.ok) setError(response.reason);
+        else {
+          const parsed = privateStatusResponseSchema.safeParse(response);
+          if (!parsed.success) {
+            setError(
+              "Não foi possível validar os dados da candidatura. Tente novamente mais tarde.",
+            );
+            return;
+          }
+          confirmedLookup.current = { code: codeValue, version: requestId };
+          setRecoveryAvailable(hasMatchingPendingReceipt(codeValue));
+          setResult(parsed.data);
+        }
+      } catch {
+        if (lookupVersion.current === requestId && document.visibilityState !== "hidden") {
+          setError("Falha ao consultar. Confira sua conexão e tente novamente.");
+          // The deadline ends only this browser wait; a late reply cannot
+          // change the current screen or consume another quota automatically.
+        }
+      } finally {
+        if (lookupVersion.current === requestId) {
+          if (lookupInFlight.current === codeValue) lookupInFlight.current = null;
+          setBusy(false);
+        }
       }
-    } catch {
-      if (lookupVersion.current === requestId && document.visibilityState !== "hidden") {
-        setError("Falha ao consultar. Confira sua conexão e tente novamente.");
-        // The deadline ends only this browser wait; a late reply cannot
-        // change the current screen or consume another quota automatically.
-      }
-    } finally {
-      if (lookupVersion.current === requestId) {
-        if (lookupInFlight.current === codeValue) lookupInFlight.current = null;
-        setBusy(false);
-      }
-    }
-  }
+    },
+    [resetRecovery],
+  );
 
   useEffect(() => {
     setBusy(false);
     setPendingAvailable(Boolean(readPendingReceiptCode()));
-    let oneTimeCode = "";
-    let consumed = false;
-    try {
-      oneTimeCode = window.sessionStorage.getItem("vonix-affiliate-once-code") ?? "";
-      window.sessionStorage.removeItem("vonix-affiliate-once-code");
-      consumed = window.sessionStorage.getItem("vonix-affiliate-once-code") === null;
-    } catch {
-      // If reading succeeded but deletion failed, preserve the masked code.
-      // Never repeatedly consume quota on reload from a failed handoff.
-    }
-    if (/^[A-Za-z0-9_-]{32}$/.test(oneTimeCode)) {
-      setCode(oneTimeCode);
-      if (!consumed) {
+    const handoff = consumeOneTimeReceipt();
+    if (handoff) {
+      setCode(handoff.code);
+      if (!handoff.consumed) {
         setImportFeedback(
           "Código carregado. O navegador não confirmou a remoção da transferência temporária; consulte manualmente para confirmar o status.",
         );
         return;
       }
       // Auto lookup is allowed only after a verified one-time transfer.
-      if (document.visibilityState === "visible") void lookup(oneTimeCode);
+      if (document.visibilityState === "visible") void lookup(handoff.code);
     }
-  }, []);
+  }, [lookup]);
 
   // Private statuses should not remain visible when a shared device changes tabs.
   // Retain the code for the applicant, but mask it and require another explicit lookup.
@@ -340,7 +338,7 @@ export function AffiliateTrackingCodePage() {
       clipboardRef.current++;
       lookupInFlight.current = null;
     };
-  }, []);
+  }, [resetRecovery]);
 
   async function check(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -609,15 +607,51 @@ export function AffiliateTrackingCodePage() {
                 )}
               </div>
             )}
-            <p className="mt-6 text-xs leading-relaxed text-[#826c70]">
-              Se não salvou o código, entre em contato com a equipe por um canal oficial. Não é
-              possível recuperar seu código somente com o Instagram; isso protege seus dados.
-              Inscrições antigas com e-mail continuam no{" "}
-              <a href="/acompanhar-inscricao" className="font-semibold underline">
-                portal de e-mail
-              </a>
-              .
-            </p>
+            <details className="mt-6 rounded-2xl border border-[#e8d7d3] bg-[#fffaf7] p-4 sm:p-5">
+              <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-bold text-[#633847] focus-visible:outline-2">
+                <LockKeyhole aria-hidden="true" className="size-4 shrink-0" />
+                Não encontrou seu código privado?
+              </summary>
+              <ol className="mt-2 space-y-3 text-sm leading-relaxed text-[#70525c]">
+                <li>
+                  <strong>1. Confira seus arquivos.</strong> Procure o comprovante
+                  vonixhair-codigo-candidatura.txt, que você pode importar nesta página sem enviar o
+                  arquivo.
+                </li>
+                <li>
+                  <strong>2. Confira a mesma aba.</strong> Se uma tentativa anterior estiver salva
+                  nesta sessão, use a opção de recuperar o código acima. Isso não comprova o
+                  recebimento da inscrição.
+                </li>
+                <li>
+                  <strong>3. Se não tiver o código, procure a equipe.</strong> A equipe poderá
+                  orientar sobre a situação, sem garantir recuperação do código ou acesso à
+                  candidatura.
+                </li>
+              </ol>
+              <p className="mt-3 text-xs leading-relaxed text-[#826c70]">
+                Não envie senhas ou códigos em comentários ou redes sociais. Não é possível
+                recuperar o código somente com o Instagram. Inscrições antigas com acesso por e-mail
+                podem utilizar o portal correspondente; isso não substitui o código das novas
+                candidaturas.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a
+                  href="/sobre"
+                  rel="noreferrer"
+                  className="inline-flex min-h-11 items-center rounded-xl border border-[#d9bfc7] bg-white px-3 text-xs font-bold text-[#633847] underline underline-offset-4"
+                >
+                  Consultar canais oficiais da Vonix
+                </a>
+                <a
+                  href="/acompanhar-inscricao"
+                  rel="noreferrer"
+                  className="inline-flex min-h-11 items-center rounded-xl border border-[#d9bfc7] bg-white px-3 text-xs font-bold text-[#633847] underline underline-offset-4"
+                >
+                  Acessar portal de e-mail de inscrições antigas
+                </a>
+              </div>
+            </details>
           </section>
         </div>
       </div>

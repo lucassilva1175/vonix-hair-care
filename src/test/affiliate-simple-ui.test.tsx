@@ -1326,3 +1326,81 @@ it("only requests an address after explicit CEP lookup and avoids referrer or cr
   );
   expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveValue("Rua Fictícia");
 });
+
+describe("Receipt continuity and paused CEP", () => {
+  it("does not replace a valid pending code added after mounting the form", async () => {
+    render(<AffiliateSimpleForm />);
+    fill();
+    const existing = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", existing);
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    expect(await screen.findByLabelText("Código privado da tentativa não confirmada")).toHaveValue(
+      existing,
+    );
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(existing);
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/Nome completo/)).toHaveValue("Maria da Silva");
+  });
+  it("keeps native clipboard copy single-flight through concealment and a second code", async () => {
+    server.submit.mockRejectedValueOnce(new Error("synthetic lost response"));
+    let finish!: () => void;
+    const writeText = vi
+      .fn()
+      .mockReturnValueOnce(new Promise<void>((r) => (finish = r)))
+      .mockResolvedValue(undefined);
+    const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    try {
+      render(<AffiliateSimpleForm />);
+      fill();
+      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      await screen.findByLabelText("Código privado da tentativa não confirmada");
+      fireEvent.click(screen.getByRole("button", { name: "Copiar código de tentativa" }));
+      act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+      act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+      expect(screen.getByRole("button", { name: "Copiar código de tentativa" })).toBeDisabled();
+      expect(writeText).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      await screen.findByLabelText("Código privado de acompanhamento");
+      expect(screen.getByRole("button", { name: /^Copiar código$/ })).toBeDisabled();
+      await act(async () => finish());
+      expect(screen.queryByRole("button", { name: "Código copiado!" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: /^Copiar código$/ }));
+      await screen.findByRole("button", { name: "Código copiado!" });
+      expect(writeText).toHaveBeenCalledTimes(2);
+    } finally {
+      if (original) Object.defineProperty(navigator, "clipboard", original);
+      else Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+  it("ignores a delayed CEP response after readiness pauses and permits manual edits", async () => {
+    let finish!: (r: Response) => void;
+    const fetcher = vi.fn().mockReturnValue(new Promise<Response>((r) => (finish = r)));
+    vi.stubGlobal("fetch", fetcher);
+    const { rerender } = render(<AffiliateSimpleForm />);
+    fireEvent.change(screen.getByLabelText(/CEP/), { target: { value: "30110012" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar CEP" }));
+    expect(fetcher).toHaveBeenCalledOnce();
+    rerender(<AffiliateSimpleForm preview paused />);
+    expect(screen.getByRole("button", { name: "Buscar CEP" })).toBeDisabled();
+    await act(async () =>
+      finish(
+        new Response(
+          JSON.stringify({
+            logradouro: "Rua obsoleta",
+            bairro: "Bairro QA",
+            localidade: "Cidade QA",
+            uf: "MG",
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+    expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveValue("");
+    fireEvent.change(screen.getByLabelText(/Rua \/ Avenida/), { target: { value: "Rua manual" } });
+    rerender(<AffiliateSimpleForm />);
+    expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveValue("Rua manual");
+    expect(screen.getByRole("button", { name: "Buscar CEP" })).toBeEnabled();
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+});

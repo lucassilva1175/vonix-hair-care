@@ -202,6 +202,9 @@ describe("Página pública de inscrições da Vonix", () => {
       window.dispatchEvent(new Event("focus"));
       document.dispatchEvent(new Event("visibilitychange"));
     });
+    expect(server.status).toHaveBeenCalledTimes(2);
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
     await waitFor(() => expect(server.status).toHaveBeenCalledTimes(3));
     await act(async () => finishOld({ open: false }));
     expect(screen.getByText("Formulário de envio")).toBeInTheDocument();

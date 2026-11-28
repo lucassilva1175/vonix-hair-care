@@ -92,8 +92,13 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   useEffect(() => {
     let active = true;
     let latestRequest = 0;
+    let inFlight = false;
+    let suspended = false;
     const statusTimeouts = new Set<number>();
     async function refreshStatus() {
+      const pageHidden = () => document.visibilityState === "hidden";
+      if (!active || inFlight || suspended || pageHidden()) return;
+      inFlight = true;
       const requestId = ++latestRequest;
       let timeoutId: number | undefined;
       // Never trust a previously OPEN session while the next GET is pending.
@@ -132,7 +137,13 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
             statusTimeouts.add(timeoutId);
           }),
         ]);
-        if (!active || requestId !== latestRequest) return;
+        if (
+          !active ||
+          suspended ||
+          document.visibilityState === "hidden" ||
+          requestId !== latestRequest
+        )
+          return;
         setBackendDiagnostics({
           storage: storageReachable,
           storageDiagnostic,
@@ -148,7 +159,12 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
       } catch {
         // A failed GET is not proof the program is closed. Fail closed for
         // submissions, but give applicants an explicit retry action.
-        if (active && requestId === latestRequest) {
+        if (
+          active &&
+          !suspended &&
+          document.visibilityState !== "hidden" &&
+          requestId === latestRequest
+        ) {
           setBackendDiagnostics({
             storage: false,
             storageDiagnostic: "unavailable",
@@ -160,6 +176,7 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
           setRecruitment("unavailable");
         }
       } finally {
+        if (requestId === latestRequest) inFlight = false;
         if (timeoutId !== undefined) {
           window.clearTimeout(timeoutId);
           statusTimeouts.delete(timeoutId);
@@ -171,10 +188,36 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
     const onFocus = () => {
       if (document.visibilityState === "visible") void refreshStatus();
     };
+    const invalidate = () => {
+      latestRequest++;
+      inFlight = false;
+      setRecruitment("loading");
+      setBackendDiagnostics({
+        storage: false,
+        storageDiagnostic: "checking",
+        publicNetworkDiagnostic: "checking",
+        ingress: false,
+        encryption: false,
+        emailConfigured: false,
+      });
+    };
     const onVisible = () => {
-      if (document.visibilityState === "visible") void refreshStatus();
+      if (document.visibilityState === "hidden") invalidate();
+      else if (document.visibilityState === "visible") void refreshStatus();
+    };
+    const onPageHide = () => {
+      suspended = true;
+      invalidate();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted && !suspended) return;
+      suspended = false;
+      invalidate();
+      void refreshStatus();
     };
     window.addEventListener("focus", onFocus);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       active = false;
@@ -182,6 +225,8 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
       statusTimeouts.forEach((timeout) => window.clearTimeout(timeout));
       statusTimeouts.clear();
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [retryAvailability]);

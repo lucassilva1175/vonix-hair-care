@@ -66,6 +66,32 @@ describe("Integrated Vonix editorial journey", () => {
     expect(within(planner).queryByLabelText("Plano editorial para copiar manualmente")).toBeNull();
     expect(within(planner).getByText("1 de 3 ideias preparadas")).toBeInTheDocument();
   });
+  it("connects video inspiration, the current catalog and the planner with a shared bounded list", () => {
+    render(<AffiliateLandingDiscovery sourceLinked recruitmentStatus="open" />);
+    const videos = screen.getByTestId("affiliate-c156-source-videos");
+    const catalog = screen.getByTestId("affiliate-c161-combos");
+    const planner = screen.getByTestId("affiliate-editorial-planner");
+    const buttons = within(videos).getAllByRole("button", { name: /Adicionar .* ao planejamento/ });
+    fireEvent.click(buttons[0]!);
+    expect(buttons[0]).toHaveAttribute("aria-pressed", "true");
+    const refs = within(planner).getByRole("complementary", {
+      name: "Referências do seu planejamento",
+    });
+    expect(within(refs).getAllByRole("link").length).toBeGreaterThan(0);
+    expect(within(videos).getByRole("link", { name: "Abrir meu planejamento" })).toHaveAttribute(
+      "href",
+      "#planejamento-criativo",
+    );
+    fireEvent.click(within(catalog).getByRole("button", { name: "Explorar novos combos" }));
+    const list = within(catalog).getByRole("list", { name: "Produtos selecionados" });
+    expect(within(list).getAllByRole("link")).toHaveLength(1);
+    fireEvent.click(within(refs).getByRole("button", { name: /Remover .* das referências/ }));
+    expect(buttons[0]).toHaveAttribute("aria-pressed", "false");
+    expect(
+      within(planner).queryByRole("complementary", { name: "Referências do seu planejamento" }),
+    ).toBeNull();
+    expect(within(catalog).queryByRole("list", { name: "Produtos selecionados" })).toBeNull();
+  });
   it("invalidates a pending clipboard result when the catalog selection changes", async () => {
     let finish!: () => void;
     const write = vi.fn(() => new Promise<void>((r) => (finish = r)));

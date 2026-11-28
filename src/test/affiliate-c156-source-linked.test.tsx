@@ -132,6 +132,26 @@ describe("C156 public source-linked media release", () => {
       expect(image.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+-480\.webp$/);
     for (const link of within(videos).getAllByRole("link"))
       expect(link.getAttribute("href")).toMatch(/^\/produto\/[a-z0-9-]+$/);
+    const quickFilter = within(videos).getByRole("button", { name: "Rotina de cachos" });
+    expect(quickFilter).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(quickFilter);
+    expect(quickFilter).toHaveAttribute("aria-pressed", "true");
+    expect(within(videos).getByRole("searchbox")).toHaveValue("cachos");
+    expect(
+      within(videos)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toContain("/produto/kit-cachos");
+    const professionalFilter = within(videos).getByRole("button", {
+      name: "Conteúdo profissional",
+    });
+    fireEvent.click(professionalFilter);
+    expect(quickFilter).toHaveAttribute("aria-pressed", "false");
+    expect(professionalFilter).toHaveAttribute("aria-pressed", "true");
+    expect(within(videos).getByRole("searchbox")).toHaveValue("progressiva");
+    fireEvent.click(professionalFilter);
+    expect(within(videos).getByRole("searchbox")).toHaveValue("");
+    expect(within(videos).getAllByRole("link")).toHaveLength(6);
     const more = within(videos).getByRole("button", { name: "Explorar mais 8 produtos do acervo" });
     expect(more).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(more);

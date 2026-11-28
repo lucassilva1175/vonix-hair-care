@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ClipboardCopy, Check, ArrowUpRight } from "lucide-react";
+import { CalendarDays, ClipboardCopy, Check, ArrowUpRight, Download } from "lucide-react";
 import {
   buildEditorialPlan,
   editorialProfiles,
@@ -17,10 +17,12 @@ export function AffiliateEditorialPlanner({
   recruitmentOpen = false,
   onSafePreview,
   referenceSlugs = [],
+  onRemoveReference,
 }: {
   recruitmentOpen?: boolean;
   onSafePreview?: (() => void) | undefined;
   referenceSlugs?: readonly string[];
+  onRemoveReference?: (slug: string) => void;
 }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -60,6 +62,33 @@ export function AffiliateEditorialPlanner({
     } finally {
       copying.current = false;
       if (version !== copyVersion.current) setCopy("idle");
+    }
+  }
+  const [downloadError, setDownloadError] = useState(false);
+  function downloadPlan() {
+    if (!ready) return;
+    setDownloadError(false);
+    let url: string | undefined;
+    let anchor: HTMLAnchorElement | undefined;
+    try {
+      const checklist = plan.entries.map(
+        (item) => (done.includes(item.day) ? "[x] " : "[ ] ") + item.day + ": " + item.title,
+      );
+      const documentText = copyText + "\n\nMINHA LISTA DE PREPARAÇÃO\n" + checklist.join("\n");
+      url = URL.createObjectURL(new Blob([documentText], { type: "text/plain;charset=utf-8" }));
+      anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "meu-plano-editorial-vonix.txt";
+      document.body.appendChild(anchor);
+      anchor.click();
+    } catch {
+      setDownloadError(true);
+    } finally {
+      anchor?.remove();
+      if (url) {
+        const objectUrl = url;
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      }
     }
   }
   const control =
@@ -229,6 +258,17 @@ export function AffiliateEditorialPlanner({
                       {item.category}
                       {item.professional ? " · Uso exclusivamente profissional" : ""}
                     </p>
+                    {onRemoveReference && (
+                      <button
+                        type="button"
+                        disabled={!ready}
+                        onClick={() => onRemoveReference(item.slug)}
+                        aria-label={"Remover " + item.name + " das referências"}
+                        className="mt-2 inline-flex min-h-11 items-center text-xs font-bold text-[#633847] underline underline-offset-4 focus-visible:outline-2"
+                      >
+                        Remover referência
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -250,6 +290,15 @@ export function AffiliateEditorialPlanner({
               <ClipboardCopy aria-hidden="true" className="size-4" />
               {copy === "copying" ? "Copiando plano..." : "Copiar meu plano editorial"}
             </button>
+            <button
+              type="button"
+              disabled={!ready}
+              onClick={downloadPlan}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#d9bec5] px-5 text-sm font-bold text-[#633847] disabled:opacity-50"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              Baixar plano e checklist
+            </button>
             <a
               href="#vitrine-afiliadas"
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#d9bec5] px-5 text-sm font-bold text-[#633847]"
@@ -265,6 +314,11 @@ export function AffiliateEditorialPlanner({
               Limpar marcações
             </button>
           </div>
+          {downloadError && (
+            <p role="status" className="mt-3 text-xs font-semibold text-[#633847]">
+              Não foi possível iniciar o download. Você ainda pode copiar seu plano editorial.
+            </p>
+          )}
           {copy === "copied" && (
             <p
               role="status"

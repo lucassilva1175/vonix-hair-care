@@ -3,6 +3,9 @@ import {
   affiliatePrivateReceiptText,
   parseAffiliatePrivateReceipt,
   downloadAffiliatePrivateReceipt,
+  reserveOneTimeReceipt,
+  consumeOneTimeReceipt,
+  oneTimeReceiptSessionKey,
 } from "@/lib/affiliate-private-receipt";
 
 const token = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
@@ -68,6 +71,37 @@ describe("local-only, user-triggered private candidate receipt", () => {
     });
     vi.stubGlobal("URL", { createObjectURL: create, revokeObjectURL: vi.fn() });
     expect(downloadAffiliatePrivateReceipt(token, true)).toBe(false);
+  });
+});
+
+describe("private one-time receipt handoff", () => {
+  afterEach(() => window.sessionStorage.removeItem(oneTimeReceiptSessionKey));
+  it("preserves an existing different handoff and consumes it only once", () => {
+    const other = "abcdefghijklmnopqrstuvwxyzABCDEF";
+    expect(reserveOneTimeReceipt(token)).toBe(true);
+    expect(reserveOneTimeReceipt(other)).toBe(false);
+    expect(consumeOneTimeReceipt()).toEqual({ code: token, consumed: true });
+    expect(consumeOneTimeReceipt()).toBeNull();
+    expect(reserveOneTimeReceipt(other)).toBe(true);
+    expect(consumeOneTimeReceipt()).toEqual({ code: other, consumed: true });
+  });
+  it("reports an unconsumed code if storage silently refuses removal", () => {
+    expect(reserveOneTimeReceipt(token)).toBe(true);
+    const remove = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {});
+    expect(consumeOneTimeReceipt()).toEqual({ code: token, consumed: false });
+    remove.mockRestore();
+  });
+  it("does not throw when browser cleanup is blocked", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("URL", {
+      createObjectURL: () => "blob:local",
+      revokeObjectURL: () => {
+        throw Error("blocked");
+      },
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    expect(downloadAffiliatePrivateReceipt(token, true)).toBe(true);
+    expect(() => vi.runAllTimers()).not.toThrow();
   });
 });
 

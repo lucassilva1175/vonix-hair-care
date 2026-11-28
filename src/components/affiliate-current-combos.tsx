@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import {
   EDITORIAL_REFERENCE_LIMIT,
   resolveEditorialReferences,
+  toggleEditorialReference,
 } from "@/lib/affiliate-editorial-references";
 import { affiliateSearchTerms, matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
 import { ArrowUpRight, Search, PackageOpen, Bookmark, Check, X, ClipboardCopy } from "lucide-react";
@@ -74,15 +75,15 @@ export function AffiliateCurrentCombos({
     // so an older write cannot overwrite a newer explicit copy.
     if (!shortlistCopying.current) setCopyState("idle");
   }
+  // Changes made in the video gallery or planner must invalidate feedback here too.
+  const shortlistKey = selectedProducts.map((item) => item.slug).join("|");
+  useEffect(() => {
+    shortlistCopyVersion.current++;
+    if (!shortlistCopying.current) setCopyState("idle");
+  }, [shortlistKey]);
   function toggleShortlist(slug: string) {
     invalidateCopy();
-    setShortlist((prev) =>
-      prev.includes(slug)
-        ? prev.filter((x) => x !== slug)
-        : prev.length < EDITORIAL_REFERENCE_LIMIT
-          ? [...prev, slug]
-          : prev,
-    );
+    setShortlist((prev) => toggleEditorialReference(prev, slug));
   }
   async function copyShortlist() {
     if (!selectedProducts.length || shortlistCopying.current) return;

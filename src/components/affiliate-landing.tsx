@@ -178,6 +178,74 @@ function normalizeFaqSearch(value: string) {
     .trim();
 }
 
+// Keep search local: tolerate everyday wording and reordered keywords without
+// sending visitors' queries to analytics or external services.
+const faqSearchAliases = [
+  "idade menor maior 18 anos requisitos elegibilidade participar",
+  "iniciante poucos seguidores audiencia influencer perfil pequeno portfolio",
+  "investimento custo taxa pagar estoque dinheiro comprar produto gratis",
+  "remuneracao porcentagem bonus meta vendas ganhos pagamento supervisora",
+  "prazo demora retorno resposta analise selecao aprovacao recusa",
+  "codigo perdido perdi esqueci recuperar comprovante acompanhar cadastro consulta erro envio",
+  "inscricoes abertas fechadas disponibilidade cadastro formulario previa",
+] as const;
+
+const faqStopWords = new Set([
+  "a",
+  "o",
+  "as",
+  "os",
+  "um",
+  "uma",
+  "de",
+  "do",
+  "da",
+  "dos",
+  "das",
+  "e",
+  "ou",
+  "eu",
+  "me",
+  "meu",
+  "minha",
+  "meus",
+  "minhas",
+  "para",
+  "por",
+  "com",
+  "como",
+  "que",
+  "qual",
+  "quais",
+  "quanto",
+  "quanta",
+  "se",
+  "tenho",
+  "preciso",
+  "posso",
+  "fazer",
+  "ser",
+]);
+
+function matchesFaq(question: (typeof questions)[number], query: string) {
+  const original = normalizeFaqSearch(question.question + " " + question.answer);
+  if (original.includes(query)) return true;
+  const terms = query.match(/[a-z0-9]+/g)?.filter((term) => !faqStopWords.has(term)) ?? [];
+  if (!terms.length) return false;
+  const text = original + " " + faqSearchAliases[questions.indexOf(question)];
+  return terms.every((term) => text.includes(term));
+}
+
+const faqActions = [
+  { href: "#como-funciona", label: "Ver etapas da seleção" },
+  { href: "#formatos", label: "Conhecer formatos de conteúdo" },
+  { href: "#ganhos", label: "Conferir condições do programa" },
+  { href: "#simular-comissoes", label: "Explorar cálculo ilustrativo" },
+  { href: "/consultar-candidatura", label: "Acompanhar minha candidatura" },
+  { href: "/consultar-candidatura", label: "Consultar ou recuperar meu acesso" },
+  { href: "#inscricao", label: "Conferir disponibilidade" },
+] as const;
+
 function Eyebrow({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
   return (
     <p
@@ -475,7 +543,10 @@ export function AffiliateLandingDiscovery({
       {sourceLinked ? (
         <>
           <AffiliateCurrentCombos referenceSelection={referenceSelection} />
-          <AffiliateOfficialEvidenceLinks variant="videos" />
+          <AffiliateOfficialEvidenceLinks
+            variant="videos"
+            referenceSelection={referenceSelection}
+          />
           <div className="bg-[#fbf5f2] px-5 pb-8 sm:pb-12">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e5d2d4] bg-white p-4 sm:p-6">
               <p className="max-w-lg text-sm leading-relaxed text-[#755d66]">
@@ -566,6 +637,9 @@ export function AffiliateLandingDiscovery({
           recruitmentOpen={isOpen}
           onSafePreview={onSafePreview}
           referenceSlugs={referenceSelection[0]}
+          onRemoveReference={(slug) =>
+            referenceSelection[1]((previous) => previous.filter((item) => item !== slug))
+          }
         />
       )}
 
@@ -748,9 +822,7 @@ export function AffiliateLandingFAQ({
   const [faqQuery, setFaqQuery] = useState("");
   const normalizedQuery = normalizeFaqSearch(faqQuery);
   const matchingQuestions = normalizedQuery
-    ? questions.filter(({ question, answer }) =>
-        normalizeFaqSearch(question + " " + answer).includes(normalizedQuery),
-      )
+    ? questions.filter((question) => matchesFaq(question, normalizedQuery))
     : questions;
 
   return (
@@ -862,26 +934,56 @@ export function AffiliateLandingFAQ({
               .
             </div>
           )}
-          {matchingQuestions.map(({ question, answer }, i) => (
-            <details
-              key={question}
-              className="group rounded-lg border border-border bg-card px-5 py-1 shadow-sm open:border-border sm:px-7"
-            >
-              <summary className="flex min-h-[4.6rem] cursor-pointer list-none items-center gap-4 py-4 text-left font-semibold text-muted-foreground marker:hidden [&::-webkit-details-marker]:hidden">
-                <span className="shrink-0 font-display text-xl text-muted-foreground">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="flex-1 text-sm leading-relaxed sm:text-base">{question}</span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="h-5 w-5 shrink-0 text-muted-foreground motion-safe:transition-transform group-open:rotate-180"
-                />
-              </summary>
-              <p className="border-t border-border pb-6 pt-4 text-sm leading-[1.85] text-muted-foreground">
-                {answer}
-              </p>
-            </details>
-          ))}
+          {matchingQuestions.map((item) => {
+            const { question, answer } = item;
+            const i = questions.indexOf(item);
+            const action = faqActions[i]!;
+            return (
+              <details
+                key={question}
+                className="group rounded-lg border border-border bg-card px-5 py-1 shadow-sm open:border-border sm:px-7"
+              >
+                <summary className="flex min-h-[4.6rem] cursor-pointer list-none items-center gap-4 py-4 text-left font-semibold text-muted-foreground marker:hidden [&::-webkit-details-marker]:hidden">
+                  <span className="shrink-0 font-display text-xl text-muted-foreground">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="flex-1 text-sm leading-relaxed sm:text-base">{question}</span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0 text-muted-foreground motion-safe:transition-transform group-open:rotate-180"
+                  />
+                </summary>
+                <div className="border-t border-border pb-6 pt-4 text-sm leading-[1.85] text-muted-foreground">
+                  <p>{answer}</p>
+                  {i === 5 && (
+                    <p className="mt-3">
+                      Se perdeu o código, abra a consulta de candidatura para conhecer as opções de
+                      recuperação disponíveis. Não compartilhe seu código em comentários ou redes
+                      sociais.
+                    </p>
+                  )}
+                  {i === 6 ? (
+                    <AffiliateApplyLink
+                      recruitmentOpen={isOpen}
+                      onSafePreview={onSafePreview}
+                      className="mt-3 inline-flex min-h-11 items-center gap-2 font-bold text-primary underline underline-offset-4 focus-visible:outline-2"
+                    >
+                      {isOpen ? action.label : "Conhecer a prévia sem envio"}
+                      <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+                    </AffiliateApplyLink>
+                  ) : (
+                    <a
+                      href={action.href}
+                      className="mt-3 inline-flex min-h-11 items-center gap-2 font-bold text-primary underline underline-offset-4 focus-visible:outline-2"
+                    >
+                      {action.label}
+                      <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+                    </a>
+                  )}
+                </div>
+              </details>
+            );
+          })}
         </div>
       </div>
 

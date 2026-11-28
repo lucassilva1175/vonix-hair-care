@@ -4,7 +4,63 @@
 const CODE = /^[A-Za-z0-9_-]{32}$/;
 
 export const pendingReceiptSessionKey = "vonix-affiliate-unconfirmed-code";
+export const oneTimeReceiptSessionKey = "vonix-affiliate-once-code";
+
+/** Explicit one-time transfer, with readback. Never overwrite a different code
+ * if the current tab still holds an unconsumed handoff. */
+export function reserveOneTimeReceipt(code: string): boolean {
+  if (!CODE.test(code)) return false;
+  try {
+    const previous = window.sessionStorage.getItem(oneTimeReceiptSessionKey);
+    if (previous && CODE.test(previous) && previous !== code) return false;
+    window.sessionStorage.setItem(oneTimeReceiptSessionKey, code);
+    return window.sessionStorage.getItem(oneTimeReceiptSessionKey) === code;
+  } catch {
+    return false;
+  }
+}
+
+export function consumeOneTimeReceipt(): { code: string; consumed: boolean } | null {
+  let code = "";
+  try {
+    code = window.sessionStorage.getItem(oneTimeReceiptSessionKey) ?? "";
+    if (!CODE.test(code)) return null;
+    window.sessionStorage.removeItem(oneTimeReceiptSessionKey);
+    return { code, consumed: window.sessionStorage.getItem(oneTimeReceiptSessionKey) === null };
+  } catch {
+    return CODE.test(code) ? { code, consumed: false } : null;
+  }
+}
+
+/** Cleanup is best-effort in restricted browser implementations. */
+function revokeReceiptUrl(url: string) {
+  try {
+    URL.revokeObjectURL?.(url);
+  } catch {
+    // Do not throw from an asynchronous cleanup or mask the initial failure.
+  }
+}
 export const maxPrivateReceiptBytes = 4096;
+
+/** Reserve a fresh code without replacing another valid attempt in this tab.
+ * Storage failure retains the existing in-memory recovery contract. */
+export function reservePendingReceipt(
+  code: string,
+): { status: "reserved" | "unavailable" } | { status: "conflict"; code: string } {
+  if (!CODE.test(code)) return { status: "unavailable" };
+  try {
+    const previous = window.sessionStorage.getItem(pendingReceiptSessionKey);
+    if (previous && CODE.test(previous) && previous !== code)
+      return { status: "conflict", code: previous };
+    window.sessionStorage.setItem(pendingReceiptSessionKey, code);
+    const current = window.sessionStorage.getItem(pendingReceiptSessionKey);
+    if (current === code) return { status: "reserved" };
+    if (current && CODE.test(current)) return { status: "conflict", code: current };
+    return { status: "unavailable" };
+  } catch {
+    return { status: "unavailable" };
+  }
+}
 
 /** Local recovery only: never look up a saved attempt until the user asks. */
 export function readPendingReceiptCode(): string | null {
@@ -104,10 +160,10 @@ export function downloadAffiliatePrivateReceipt(code: string, confirmed: boolean
     // Browsers may not have finished initiating the download immediately.
     // The private Blob URL is always revoked after the brief handoff.
     const privateBlobUrl = objectUrl;
-    window.setTimeout(() => URL.revokeObjectURL(privateBlobUrl), 30000);
+    window.setTimeout(() => revokeReceiptUrl(privateBlobUrl), 30000);
     return true;
   } catch {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    if (objectUrl) revokeReceiptUrl(objectUrl);
     return false;
   }
 }

@@ -123,6 +123,18 @@ describe("Private Vonix applicant status portal", () => {
     spy.mockRestore();
   });
 
+  it("offers official recovery guidance without revealing or querying a private code", () => {
+    render(<AffiliateTrackingCodePage />);
+    fireEvent.click(screen.getByText("Não encontrou seu código privado?"));
+    expect(
+      screen.getByRole("link", { name: "Consultar canais oficiais da Vonix" }),
+    ).toHaveAttribute("href", "/sobre");
+    expect(
+      screen.getByRole("link", { name: "Acessar portal de e-mail de inscrições antigas" }),
+    ).toHaveAttribute("href", "/acompanhar-inscricao");
+    expect(screen.getByText(/sem garantir recuperação do código/)).toBeInTheDocument();
+    expect(server.getAffiliateStatusByCode).not.toHaveBeenCalled();
+  });
   it("clarifies that e-mail does not replace the private tracking code", () => {
     render(<AffiliateTrackingCodePage />);
     expect(
