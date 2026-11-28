@@ -35,13 +35,20 @@ export function AffiliateEditorialPlanner({
   const copying = useRef(false);
   const plan = buildEditorialPlan(profile, cadence, format);
   const references = resolveEditorialReferences(referenceSlugs);
-  const copyText = appendEditorialReferences(plan.text, referenceSlugs);
+  const checklist = plan.entries.map(
+    (item) => (done.includes(item.day) ? "[x] " : "[ ] ") + item.day + ": " + item.title,
+  );
+  const copyText =
+    appendEditorialReferences(plan.text, referenceSlugs) +
+    "\n\nMINHA LISTA DE PREPARAÇÃO\n" +
+    checklist.join("\n");
   // Changing catalog selections invalidates any previous clipboard feedback.
   const referenceKey = references.map((item) => item.slug).join("|");
+  const checklistKey = done.join("|");
   useEffect(() => {
     copyVersion.current++;
     if (!copying.current) setCopy("idle");
-  }, [referenceKey]);
+  }, [referenceKey, checklistKey]);
   function change(update: () => void) {
     if (!ready) return;
     update();
@@ -71,11 +78,7 @@ export function AffiliateEditorialPlanner({
     let url: string | undefined;
     let anchor: HTMLAnchorElement | undefined;
     try {
-      const checklist = plan.entries.map(
-        (item) => (done.includes(item.day) ? "[x] " : "[ ] ") + item.day + ": " + item.title,
-      );
-      const documentText = copyText + "\n\nMINHA LISTA DE PREPARAÇÃO\n" + checklist.join("\n");
-      url = URL.createObjectURL(new Blob([documentText], { type: "text/plain;charset=utf-8" }));
+      url = URL.createObjectURL(new Blob([copyText], { type: "text/plain;charset=utf-8" }));
       anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = "meu-plano-editorial-vonix.txt";
@@ -87,7 +90,13 @@ export function AffiliateEditorialPlanner({
       anchor?.remove();
       if (url) {
         const objectUrl = url;
-        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        window.setTimeout(() => {
+          try {
+            URL.revokeObjectURL?.(objectUrl);
+          } catch {
+            /* Restricted browsers may deny cleanup. */
+          }
+        }, 1000);
       }
     }
   }
@@ -316,7 +325,8 @@ export function AffiliateEditorialPlanner({
           </div>
           {downloadError && (
             <p role="status" className="mt-3 text-xs font-semibold text-[#633847]">
-              Não foi possível iniciar o download. Você ainda pode copiar seu plano editorial.
+              Não foi possível iniciar o download. Copie seu plano editorial com as marcações do
+              checklist.
             </p>
           )}
           {copy === "copied" && (
@@ -330,7 +340,7 @@ export function AffiliateEditorialPlanner({
           {copy === "failed" && (
             <div className="mt-3">
               <p role="status" className="text-xs font-semibold text-[#633847]">
-                Selecione o plano abaixo para copiar manualmente.
+                Selecione o plano e o checklist abaixo para copiar manualmente.
               </p>
               <textarea
                 readOnly
