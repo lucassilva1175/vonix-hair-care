@@ -154,6 +154,14 @@ export function AffiliateShell({
               ref={mobileMenuRef}
               data-testid="affiliate-c138-mobile-menu"
               className="relative shrink-0 sm:hidden"
+              onBlur={(event) => {
+                if (
+                  event.relatedTarget instanceof Node &&
+                  !event.currentTarget.contains(event.relatedTarget)
+                ) {
+                  event.currentTarget.open = false;
+                }
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   event.currentTarget.open = false;
@@ -235,6 +243,7 @@ export function AffiliateShell({
               recruitmentOpen={recruitmentStatus === "open"}
               onSafePreview={onSafePreview}
               data-testid="affiliate-c127-header-apply"
+              onClick={closeMobileMenu}
               title={
                 recruitmentStatus === "open"
                   ? "Ir à candidatura"
@@ -319,7 +328,7 @@ export function AffiliateShell({
         )}
       </header>
 
-      <main id="conteudo-afiliadas" tabIndex={-1}>
+      <main id="conteudo-afiliadas" tabIndex={-1} className="scroll-mt-36">
         {children}
       </main>
 
@@ -389,6 +398,12 @@ export function AffiliateShell({
             >
               Inscrições antigas por e-mail
             </Link>
+            <a
+              href="/politica-de-privacidade"
+              className="underline decoration-border underline-offset-4 hover:text-primary-foreground"
+            >
+              Política de Privacidade
+            </a>
             <a
               href={INSTAGRAM}
               target="_blank"

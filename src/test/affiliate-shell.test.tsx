@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -20,6 +20,25 @@ import { AffiliateTrackingCodePage } from "@/routes/consultar-candidatura";
 afterEach(cleanup);
 
 describe("Vonix affiliate dedicated recruitment shell", () => {
+  it("closes mobile navigation when keyboard focus leaves and exposes privacy policy", () => {
+    render(
+      <AffiliateShell>
+        <p>Conteúdo</p>
+      </AffiliateShell>,
+    );
+    const menu = screen.getByTestId("affiliate-c138-mobile-menu") as HTMLDetailsElement;
+    const trigger = screen.getByTestId("affiliate-c138-mobile-menu-trigger");
+    const apply = screen.getByTestId("affiliate-c127-header-apply");
+    menu.open = true;
+    fireEvent.blur(trigger, { relatedTarget: apply });
+    expect(menu.open).toBe(false);
+    expect(screen.getByRole("main")).toHaveClass("scroll-mt-36");
+    expect(
+      within(screen.getByRole("contentinfo")).getByRole("link", {
+        name: "Política de Privacidade",
+      }),
+    ).toHaveAttribute("href", "/politica-de-privacidade");
+  });
   it("replaces the tall shopping chrome with a short authentic recruitment header", () => {
     render(
       <AffiliateShell>

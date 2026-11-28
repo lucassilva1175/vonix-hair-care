@@ -35,6 +35,16 @@ export function AffiliateApplyLink({
       return;
     trackAffiliateFunnel("affiliate_application_interest");
     if (!recruitmentOpen) onSafePreview?.();
+    // Keep the native fragment/history behavior, but place keyboard focus on
+    // the named, programmatically focusable application section immediately.
+    const destination = document.getElementById("inscricao");
+    if (
+      destination instanceof HTMLElement &&
+      destination.tabIndex === -1 &&
+      destination.hasAttribute("tabindex")
+    ) {
+      destination.focus({ preventScroll: true });
+    }
   }
 
   return (
