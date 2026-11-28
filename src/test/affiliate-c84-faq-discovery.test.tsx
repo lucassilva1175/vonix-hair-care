@@ -69,6 +69,25 @@ describe("C84 Vonix: perguntas frequentes encontráveis sem coleta de dados", ()
     expect(within(faq).queryByRole("button", { name: "Limpar busca" })).not.toBeInTheDocument();
   });
 
+  it("encontra dúvidas em linguagem natural e oferece o caminho de recuperação correto", () => {
+    render(<AffiliateLandingFAQ />);
+    const faq = screen.getByTestId("vonix-affiliate-faq");
+    const search = within(faq).getByRole("searchbox", { name: "Encontre sua resposta" });
+    fireEvent.change(search, { target: { value: "perdi meu código" } });
+    const recovery = within(faq).getByText("E-mail é obrigatório para se candidatar?");
+    fireEvent.click(recovery);
+    expect(
+      within(faq).getByRole("link", { name: "Consultar ou recuperar meu acesso" }),
+    ).toHaveAttribute("href", "/consultar-candidatura");
+    fireEvent.change(search, { target: { value: "quanto de comissão" } });
+    const terms = within(faq).getByText(/Vou receber produtos, cupom, pagamento ou comissão/i);
+    fireEvent.click(terms);
+    expect(within(faq).getByRole("link", { name: "Explorar cálculo ilustrativo" })).toHaveAttribute(
+      "href",
+      "#simular-comissoes",
+    );
+  });
+
   it("mostra estado vazio útil e não registra palavras em URL ou requisições", () => {
     const requests = vi.spyOn(globalThis, "fetch");
     const locationBefore = window.location.href;

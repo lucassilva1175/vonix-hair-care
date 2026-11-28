@@ -13,6 +13,13 @@ import {
 const socialHandle = z.string().trim().min(1, "Informe o usuário da rede social.").max(50);
 const followerCount = z.number().int().min(0).max(1_000_000_000);
 
+const receiptCodeSchema = z.string().regex(/^[A-Za-z0-9_-]{32}$/);
+const receiptProofSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+export const affiliateReceiptTicketSchema = z.object({
+  trackingCode: receiptCodeSchema,
+  trackingProof: receiptProofSchema,
+});
+
 // Keep the original object schema for read-only decoding of historical v3
 // ciphertexts. New submissions must always use the refined public schema.
 export const affiliateSimpleBaseSchema = z
@@ -74,13 +81,10 @@ export const affiliateSimpleBaseSchema = z
       .default(""),
     tiktokFollowers: followerCount.nullable().default(null),
     privacyAccepted: z.literal(true),
-    // An optional browser-issued 192-bit private receipt makes ambiguous
-    // network failures retryable without querying an applicant by Instagram.
-    // Older clients omit it; the server then issues a fresh secure receipt.
-    trackingCode: z
-      .string()
-      .regex(/^[A-Za-z0-9_-]{32}$/)
-      .optional(),
+    // The server issues the unpredictable code and authenticates its origin.
+    // A legacy unsigned code can only reconcile an existing exact receipt.
+    trackingCode: receiptCodeSchema.optional(),
+    trackingProof: receiptProofSchema.optional(),
     website: z.string().max(120).default(""), // anti-bot honeypot
   })
   .strict();
@@ -108,14 +112,15 @@ export const affiliateSimpleSchema = affiliateSimpleBaseSchema.superRefine((valu
  * an email; staff can record a phone-only applicant when no usable address exists. */
 export const affiliateManualSchema = z
   .object({
-    candidate: affiliateSimpleBaseSchema.omit({ website: true, trackingCode: true }),
+    candidate: affiliateSimpleBaseSchema.omit({
+      website: true,
+      trackingCode: true,
+      trackingProof: true,
+    }),
     consentConfirmed: z.literal(true),
-    // Optional for older staff clients. New clients keep the same strong
-    // receipt for retries of the exact same authorized registration.
-    trackingCode: z
-      .string()
-      .regex(/^[A-Za-z0-9_-]{32}$/)
-      .optional(),
+    // Scope-bound server issuance for new records; legacy exact retries remain valid.
+    trackingCode: receiptCodeSchema.optional(),
+    trackingProof: receiptProofSchema.optional(),
   })
   .strict()
   .superRefine(({ candidate }, ctx) => {

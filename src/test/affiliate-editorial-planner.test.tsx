@@ -55,6 +55,63 @@ describe("Vonix editorial planner", () => {
     expect(fetcher).not.toHaveBeenCalled();
     expect(set).not.toHaveBeenCalled();
   });
+  it("exports the current plan and preparation checklist as a local text file", async () => {
+    const create = vi.fn((_blob: Blob) => "blob:local-plan");
+    const revoke = vi.fn();
+    vi.stubGlobal(
+      "URL",
+      class extends URL {
+        static override createObjectURL = create;
+        static override revokeObjectURL = revoke;
+      },
+    );
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      expect(this.download).toBe("meu-plano-editorial-vonix.txt");
+    });
+    render(<AffiliateEditorialPlanner referenceSlugs={["kit-cachos"]} />);
+    fireEvent.click(screen.getAllByRole("checkbox")[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Baixar plano e checklist" }));
+    expect(click).toHaveBeenCalledOnce();
+    expect(create).toHaveBeenCalledOnce();
+    const blob = create.mock.calls[0]![0];
+    const content = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = reject;
+      reader.readAsText(blob);
+    });
+    expect(content).toContain("MINHA LISTA DE PREPARAÇÃO");
+    expect(content).toContain("[x] ");
+    expect(content).toContain("[ ] ");
+    expect(content).toContain("PLANO EDITORIAL PESSOAL");
+    expect(document.querySelector('a[download="meu-plano-editorial-vonix.txt"]')).toBeNull();
+  });
+  it("keeps the copy option available when local export is unavailable", async () => {
+    vi.stubGlobal(
+      "URL",
+      class extends URL {
+        static override createObjectURL(): never {
+          throw new Error("not available");
+        }
+      },
+    );
+    render(<AffiliateEditorialPlanner />);
+    fireEvent.click(screen.getByRole("button", { name: "Baixar plano e checklist" }));
+    expect(screen.getByText(/Não foi possível iniciar o download/)).toBeInTheDocument();
+    vi.stubGlobal("navigator", { ...navigator, clipboard: undefined });
+    fireEvent.click(screen.getAllByRole("checkbox")[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Copiar meu plano editorial" }));
+    const text = (
+      (await screen.findByLabelText(
+        "Plano editorial para copiar manualmente",
+      )) as HTMLTextAreaElement
+    ).value;
+    expect(text).toContain("MINHA LISTA DE PREPARAÇÃO");
+    expect(text).toContain("[x] ");
+    expect(text).toContain("[ ] ");
+  });
   it("offers a manual copy fallback without a browser clipboard", async () => {
     vi.stubGlobal("navigator", { ...navigator, clipboard: undefined });
     render(<AffiliateEditorialPlanner />);
@@ -76,6 +133,18 @@ describe("Vonix editorial planner", () => {
     expect(screen.queryByText(/Plano copiado/)).toBeNull();
     expect(screen.getByRole("button", { name: "Copiar meu plano editorial" })).toBeEnabled();
     expect(write).toHaveBeenCalledOnce();
+  });
+  it("invalidates a pending copy when checklist marks change", async () => {
+    let resolve!: () => void;
+    const write = vi.fn(() => new Promise<void>((r) => (resolve = r)));
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: write } });
+    render(<AffiliateEditorialPlanner />);
+    fireEvent.click(screen.getByRole("button", { name: "Copiar meu plano editorial" }));
+    expect(write.mock.calls[0]).toBeDefined();
+    fireEvent.click(screen.getAllByRole("checkbox")[0]!);
+    await act(async () => resolve());
+    expect(screen.queryByText(/Plano copiado/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Copiar meu plano editorial" })).toBeEnabled();
   });
   it("renders only in the source-linked portal and keeps previews separate", () => {
     const preview = vi.fn();

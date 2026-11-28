@@ -1,7 +1,10 @@
 import { pathToFileURL } from "node:url";
 
 const official = "https://vonixhair.com";
-const alias = "https://vonix-haircare-showcase.lovable.app";
+const aliases = [
+  "https://vonix-haircare-showcase.lovable.app",
+  "https://vonixhaircosmeticos.com.br",
+];
 const worker = "/api/internal/affiliate-mail-worker";
 const landing = "/seja-afiliada";
 const privatePages = [
@@ -54,7 +57,7 @@ export async function checkAffiliatePublicRelease({
     throw new Error("invalid_expected_entry");
   const results = [];
   let deployedEntry = null;
-  for (const domain of [official, alias]) {
+  for (const domain of [official, ...aliases]) {
     for (const route of routes) {
       for (const method of ["GET", "HEAD"]) {
         const row = { domain, route, method, ok: false, issues: [], warnings: [] };
@@ -69,20 +72,36 @@ export async function checkAffiliatePublicRelease({
           });
           row.status = response.status;
           if (response.redirected) row.issues.push("unexpected_followed_redirect");
-          if (domain === alias && isRedirect(response.status)) {
+          if (domain !== official && isRedirect(response.status)) {
             const location = header(response, "location");
             if (!location || new URL(location, domain).href !== official + route)
               row.issues.push("unexpected_alias_redirect");
             else row.canonicalRedirect = true;
           } else {
+            // A separate direct-serving alias can create a second authentication realm.
+            if (domain !== official)
+              (strictReferrer ? row.issues : row.warnings).push("alias_not_canonical");
             const expected = route === worker ? (method === "GET" ? 405 : 401) : 200;
             if (response.status !== expected) row.issues.push("unexpected_status");
             if (route !== landing) {
               const cache = directives(header(response, "cache-control"));
-              if (!cache.includes("no-store") || !cache.includes("private"))
+              if (
+                !cache.includes("no-store") ||
+                !cache.includes("private") ||
+                cache.includes("public") ||
+                cache.some((x) => /^s-maxage\s*=/.test(x))
+              )
                 row.issues.push("private_cache_missing");
-              if (!directives(header(response, "x-robots-tag")).includes("noindex"))
-                row.issues.push("noindex_missing");
+              const robots = directives(header(response, "x-robots-tag"));
+              if (!robots.includes("noindex")) row.issues.push("noindex_missing");
+              if (
+                !robots.includes("nofollow") ||
+                !robots.includes("noarchive") ||
+                robots.includes("index") ||
+                robots.includes("follow") ||
+                robots.includes("archive")
+              )
+                row.issues.push("robots_privacy_incomplete");
               if (header(response, "referrer-policy")?.trim().toLowerCase() !== "no-referrer") {
                 (strictReferrer ? row.issues : row.warnings).push("edge_referrer_policy_mismatch");
               }
@@ -121,6 +140,11 @@ export async function checkAffiliatePublicRelease({
   return {
     ok: results.every((row) => row.ok),
     checked: results.length,
+    domains: [official, ...aliases],
+    strictReferrer,
+    strictPublicChecksPassed: strictReferrer && results.every((row) => row.ok),
+    candidateEntryMatched: expectedEntry !== undefined && expectedEntry === deployedEntry,
+    productionAcceptanceVerified: false,
     deployedEntry,
     warningCount: results.reduce((n, row) => n + row.warnings.length, 0),
     readOnly: true,

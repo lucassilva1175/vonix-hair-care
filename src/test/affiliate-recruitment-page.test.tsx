@@ -46,6 +46,27 @@ afterEach(() => {
 });
 
 describe("Página pública de inscrições da Vonix", () => {
+  it("keeps a named application focus target when opening and discarding a preview", async () => {
+    server.status.mockResolvedValue({ open: false });
+    render(<Page />);
+    const section = screen.getByRole("region", { name: "Sua inscrição, de um jeito simples." });
+    expect(section).toHaveAttribute("tabindex", "-1");
+    const start = await screen.findByRole("button", { name: /Visualizar formulário/ });
+    start.focus();
+    fireEvent.click(start);
+    expect(section).toHaveFocus();
+    fireEvent.change(screen.getByRole("textbox", { name: "Rascunho sintético" }), {
+      target: { value: "Dados sintéticos" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Fechar prévia" }));
+    expect(screen.getByRole("group", { name: "Confirmar saída da prévia" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Continuar preenchendo" }));
+    expect(section).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Fechar prévia" }));
+    fireEvent.click(screen.getByRole("button", { name: "Descartar dados e fechar prévia" }));
+    expect(section).toHaveFocus();
+    expect(screen.queryByTestId("wizard")).not.toBeInTheDocument();
+  });
   it("mantém a prévia protegida após reabertura das inscrições e exige reinício para envio real", async () => {
     server.status.mockResolvedValueOnce({ open: false }).mockResolvedValueOnce({ open: true });
     render(<Page />);
@@ -202,6 +223,9 @@ describe("Página pública de inscrições da Vonix", () => {
       window.dispatchEvent(new Event("focus"));
       document.dispatchEvent(new Event("visibilitychange"));
     });
+    expect(server.status).toHaveBeenCalledTimes(2);
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
     await waitFor(() => expect(server.status).toHaveBeenCalledTimes(3));
     await act(async () => finishOld({ open: false }));
     expect(screen.getByText("Formulário de envio")).toBeInTheDocument();

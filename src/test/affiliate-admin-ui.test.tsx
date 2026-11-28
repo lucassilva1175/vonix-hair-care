@@ -521,6 +521,22 @@ describe("Vonix affiliate private panel", () => {
     expect(screen.queryByText(/Notificação enviada/)).not.toBeInTheDocument();
   });
 
+  it("uses the persisted notification outcome rather than a stale email in the list", async () => {
+    server.reviewAffiliateApplication.mockResolvedValueOnce({
+      ok: true,
+      emailSent: false,
+      notification: "not_applicable",
+    });
+    render(<Page />);
+    await screen.findByText("Segredo da candidata");
+    fireEvent.click(screen.getByRole("button", { name: "APROVAR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    expect(
+      await screen.findByText(/Sem e-mail cadastrado.*contato telefônico é manual/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Notificação registrada na fila/)).not.toBeInTheDocument();
+  });
+
   it("distinguishes provider acceptance from actual delivery", async () => {
     server.reviewAffiliateApplication.mockResolvedValueOnce({
       ok: true,
@@ -1666,5 +1682,159 @@ describe("Pending queue navigation", () => {
     fireEvent.click(within(oldest).getByRole("button", { name: "Voltar à primeira página" }));
     await screen.findByText("Inscrições 1–40 de 81");
     expect(server.reviewAffiliateApplication).not.toHaveBeenCalled();
+  });
+});
+
+describe("Bounded staff mutation reconciliation", () => {
+  const second = {
+    ...candidate,
+    id: "00000000-0000-4000-8000-000000000003",
+    full_name: "Outra candidata sintética",
+  };
+  async function initialList() {
+    render(<Page />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByText(candidate.full_name)).toBeInTheDocument();
+  }
+  function card(name: string) {
+    const element = screen.getByText(name).closest("article");
+    if (!element) throw new Error("Candidate card missing");
+    return within(element);
+  }
+  it("releases a stalled decision after 45 seconds, locks only the affected candidate and ignores late success", async () => {
+    vi.useFakeTimers();
+    let finish!: (v: unknown) => void;
+    try {
+      server.getAffiliateApplications.mockResolvedValue(list([candidate, second]));
+      server.reviewAffiliateApplication.mockReturnValueOnce(
+        new Promise((r) => {
+          finish = r;
+        }),
+      );
+      await initialList();
+      fireEvent.click(card(candidate.full_name).getByRole("button", { name: "APROVAR" }));
+      fireEvent.click(
+        card(candidate.full_name).getByRole("button", { name: "Confirmar aprovação" }),
+      );
+      expect(server.reviewAffiliateApplication).toHaveBeenCalledOnce();
+      await act(async () => vi.advanceTimersByTimeAsync(45000));
+      expect(
+        card(candidate.full_name).getByText(/Resultado da decisão não confirmado/),
+      ).toBeInTheDocument();
+      expect(card(candidate.full_name).getByRole("button", { name: "APROVAR" })).toBeDisabled();
+      expect(card(candidate.full_name).getByRole("button", { name: "RECUSAR" })).toBeDisabled();
+      expect(
+        card(candidate.full_name).getByRole("button", { name: "Reenviar acesso" }),
+      ).toBeDisabled();
+      expect(card(second.full_name).getByRole("button", { name: "APROVAR" })).toBeEnabled();
+      await act(async () => finish({ ok: true, emailSent: true, notification: "accepted" }));
+      expect(screen.queryByText(/Inscrição aprovada\./)).not.toBeInTheDocument();
+      expect(server.reviewAffiliateApplication).toHaveBeenCalledOnce();
+      expect(server.getAffiliateApplications).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("resolves an uncertain decision only from a fresh explicit terminal record", async () => {
+    server.reviewAffiliateApplication.mockResolvedValueOnce({
+      ok: false,
+      uncertain: true,
+      reason: "Resultado não confirmado",
+    });
+    render(<Page />);
+    await screen.findByText(candidate.full_name);
+    fireEvent.click(card(candidate.full_name).getByRole("button", { name: "APROVAR" }));
+    fireEvent.click(card(candidate.full_name).getByRole("button", { name: "Confirmar aprovação" }));
+    await screen.findByText(/Resultado da decisão não confirmado/);
+    expect(card(candidate.full_name).getByRole("button", { name: "APROVAR" })).toBeDisabled();
+    server.getAffiliateApplications.mockResolvedValueOnce({
+      ...list([]),
+      stats: { pendente: 0, aprovada: 1, recusada: 0 },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Ver notificações: incertos" }));
+    await screen.findByText("Nenhuma inscrição encontrada");
+    expect(
+      screen.getByText(/Operações com resultado pendente de confirmação: 1/),
+    ).toBeInTheDocument();
+    server.getAffiliateApplications.mockResolvedValueOnce({
+      ...list([{ ...candidate, status: "aprovada", reviewed_at: "2026-11-28T12:00:00Z" }]),
+      stats: { pendente: 0, aprovada: 1, recusada: 0 },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Ver notificações: falhas" }));
+    await screen.findByText(candidate.full_name);
+    expect(screen.queryByText(/Operações com resultado pendente de confirmação/)).toBeNull();
+    expect(
+      card(candidate.full_name).getByRole("button", { name: "Reenviar acesso" }),
+    ).toBeEnabled();
+    expect(server.reviewAffiliateApplication).toHaveBeenCalledOnce();
+  });
+  it("keeps an uncertain invitation guarded and never claims delivery on a late completion", async () => {
+    vi.useFakeTimers();
+    let finish!: (v: unknown) => void;
+    try {
+      server.resendAffiliateApplicantInvite.mockReturnValueOnce(
+        new Promise((r) => {
+          finish = r;
+        }),
+      );
+      await initialList();
+      fireEvent.click(screen.getByRole("button", { name: "Reenviar acesso" }));
+      fireEvent.click(screen.getByRole("button", { name: "Confirmar tentativa de convite" }));
+      await act(async () => vi.advanceTimersByTimeAsync(45000));
+      expect(
+        screen.getByText(/Resultado da solicitação de convite não confirmado/),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Reenviar acesso" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Ver notificações: incertos" })).toBeEnabled();
+      await act(async () => finish({ ok: true }));
+      expect(screen.queryByText(/O Supabase aceitou uma nova tentativa/)).toBeNull();
+      expect(server.resendAffiliateApplicantInvite).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("does not treat disappearance from a filtered page as confirmed deletion", async () => {
+    server.eraseAffiliateApplicationAdmin.mockResolvedValueOnce({
+      ok: false,
+      uncertain: true,
+      reason: "Não foi possível confirmar a exclusão",
+    });
+    server.getAffiliateApplications
+      .mockResolvedValueOnce(list())
+      .mockResolvedValueOnce(list([]))
+      .mockResolvedValueOnce(list());
+    render(<Page />);
+    await screen.findByText(candidate.full_name);
+    fireEvent.click(screen.getByRole("button", { name: /Exclusão de dados/i }));
+    fireEvent.change(screen.getByLabelText(/Confirme digitando o e-mail da candidata/i), {
+      target: { value: candidate.email },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Confirmar exclusão definitiva/i }));
+    await screen.findByText("Nenhuma inscrição encontrada");
+    expect(
+      screen.getByText(/Operações com resultado pendente de confirmação: 1/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Candidatura excluída\./)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Ver notificações: incertos" }));
+    await screen.findByText(candidate.full_name);
+    expect(screen.getByText(/Resultado da exclusão não confirmado/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Exclusão de dados/i })).toBeDisabled();
+    expect(server.eraseAffiliateApplicationAdmin).toHaveBeenCalledOnce();
+  });
+  it("does not lock a definitively rejected operation", async () => {
+    server.reviewAffiliateApplication.mockResolvedValueOnce({
+      ok: false,
+      reason: "Inscrição já analisada ou não encontrada. Atualize a lista.",
+    });
+    render(<Page />);
+    await screen.findByText(candidate.full_name);
+    fireEvent.click(screen.getByRole("button", { name: "APROVAR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    await screen.findByText(/Inscrição já analisada ou não encontrada/);
+    expect(screen.queryByText(/Operações com resultado pendente de confirmação/)).toBeNull();
+    expect(screen.getByRole("button", { name: "APROVAR" })).toBeEnabled();
   });
 });

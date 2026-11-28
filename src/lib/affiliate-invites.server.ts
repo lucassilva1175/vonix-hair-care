@@ -3,6 +3,7 @@ import { affiliateDatabaseConfig } from "./affiliate-database.server";
 import {
   affiliateCustomAuthEmailReady,
   sendAffiliateAuthEmailWithResend,
+  reserveAffiliateAuthMailCooldown,
 } from "./affiliate-auth-delivery.server";
 
 const invitedEmailSchema = z.string().email().max(180);
@@ -27,6 +28,9 @@ export async function invitePersistedAffiliateApplicant(email: string): Promise<
       return false;
     }
   }
+  // Corporate delivery already reserves this same quota. Reserve only in
+  // the managed invitation branch so one attempt is never debited twice.
+  if (!(await reserveAffiliateAuthMailCooldown(validated.data, db))) return false;
   try {
     const response = await fetch(
       db.url +

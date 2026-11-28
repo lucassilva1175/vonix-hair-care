@@ -340,32 +340,6 @@ export function AffiliateEditorialHero({
               </a>
             )}
           </div>
-          <div className="order-7 mt-2 flex flex-wrap items-start gap-x-3 gap-y-1 border-t border-[#e4d1d1] pt-2">
-            <Button asChild variant="link" className="h-auto min-h-11 whitespace-normal px-1">
-              <a href="#ganhos">
-                Conhecer as condições
-                <ArrowDownRight aria-hidden="true" className="size-4" />
-              </a>
-            </Button>
-            {sourceLinked && (
-              <a
-                href="#vitrine-afiliadas"
-                className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                Montar minha lista de referências
-                <ArrowDownRight aria-hidden="true" className="size-4" />
-              </a>
-            )}
-            {sourceLinked && (
-              <a
-                href="#planejamento-criativo"
-                className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                Planejar conteúdo da semana <ArrowDownRight aria-hidden="true" className="size-4" />
-              </a>
-            )}
-            <AffiliateProgramShare />
-          </div>
           <ul
             data-testid="affiliate-c118-hero-benefits"
             aria-label="Condições e informações da candidatura"
@@ -411,6 +385,32 @@ export function AffiliateEditorialHero({
               Entenda as três etapas da candidatura
             </a>
           </p>
+          <div className="order-7 mt-2 grid grid-cols-2 items-start gap-x-2 gap-y-1 border-t border-[#e4d1d1] pt-2 sm:flex sm:flex-wrap sm:gap-x-3 [&>[data-testid=vonix-c67-public-share]]:col-span-2">
+            <Button asChild variant="link" className="h-auto min-h-11 whitespace-normal px-1">
+              <a href="#ganhos">
+                Conhecer as condições
+                <ArrowDownRight aria-hidden="true" className="size-4" />
+              </a>
+            </Button>
+            {sourceLinked && (
+              <a
+                href="#vitrine-afiliadas"
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Montar minha lista de referências
+                <ArrowDownRight aria-hidden="true" className="size-4" />
+              </a>
+            )}
+            {sourceLinked && (
+              <a
+                href="#planejamento-criativo"
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-xs font-bold text-[#714458] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Planejar conteúdo da semana <ArrowDownRight aria-hidden="true" className="size-4" />
+              </a>
+            )}
+            <AffiliateProgramShare />
+          </div>
         </div>
 
         <figure

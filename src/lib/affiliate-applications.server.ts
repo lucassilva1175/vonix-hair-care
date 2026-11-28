@@ -31,6 +31,7 @@ import {
   encryptSimpleAffiliateApplication,
   decryptAffiliateWizardForAdmin,
   matchesEncryptedSimpleAffiliateApplication,
+  affiliateReceiptTicketValid,
   MAX_AFFILIATE_QUESTIONNAIRE_CIPHERTEXT_LENGTH,
 } from "./affiliate-wizard-crypto.server";
 
@@ -267,9 +268,21 @@ export async function createSimpleAffiliateApplication(raw: AffiliateSimpleInput
   const data = affiliateSimpleSchema.parse(raw);
   if (data.website) return { ok: true as const };
   const socials = simpleAffiliateSocialUrls(data);
-  // One-time private tracking code, never stored in plaintext or sent to Meta.
+  // A caller-chosen unsigned code must never create a new status bearer.
   const trackingCode = data.trackingCode ?? randomBytes(24).toString("base64url");
   const statusTokenHash = createHash("sha256").update(trackingCode).digest("hex");
+  if (
+    data.trackingCode &&
+    !affiliateReceiptTicketValid("public", trackingCode, data.trackingProof)
+  ) {
+    if (await matchingSimplePrivateReceipt(statusTokenHash, socials.instagram_url, data))
+      return { ok: true as const, trackingCode };
+    return {
+      ok: false as const,
+      reason:
+        "Código de tentativa não confirmado. Consulte o código existente e atualize o formulário antes de iniciar outra inscrição.",
+    };
+  }
   const record = {
     status_token_hash: statusTokenHash,
     full_name: data.fullName,
@@ -309,7 +322,11 @@ export async function createSimpleAffiliateApplication(raw: AffiliateSimpleInput
  * A candidate enters moderation as "pendente"; approval stays a separate action.
  * A missing email is explicitly represented by SQL NULL, not a fake address. */
 export async function createManualAffiliateApplication(raw: AffiliateManualInput) {
-  const { candidate, trackingCode: requestedCode } = affiliateManualSchema.parse(raw);
+  const {
+    candidate,
+    trackingCode: requestedCode,
+    trackingProof,
+  } = affiliateManualSchema.parse(raw);
   const completeCandidate = affiliateSimpleBaseSchema.parse({
     ...candidate,
     website: "",
@@ -318,6 +335,17 @@ export async function createManualAffiliateApplication(raw: AffiliateManualInput
   const socials = simpleAffiliateSocialUrls(completeCandidate);
   const trackingCode = requestedCode ?? randomBytes(24).toString("base64url");
   const statusTokenHash = createHash("sha256").update(trackingCode).digest("hex");
+  if (requestedCode && !affiliateReceiptTicketValid("staff", trackingCode, trackingProof)) {
+    if (
+      await matchingSimplePrivateReceipt(statusTokenHash, socials.instagram_url, completeCandidate)
+    )
+      return { ok: true as const, trackingCode };
+    return {
+      ok: false as const,
+      reason:
+        "Código de tentativa não confirmado. Confira a lista e atualize o painel antes de iniciar outro cadastro.",
+    };
+  }
   const record = {
     status_token_hash: statusTokenHash,
     full_name: candidate.fullName,
@@ -762,6 +790,44 @@ export async function readAffiliateApplicantEmailForAccessRecovery(applicationId
     .parse(await response.json());
   if (rows.length !== 1 || rows[0]!.id !== id || !rows[0]!.email) return null;
   return rows[0]!.email.toLowerCase();
+}
+
+/** Reconcile a committed decision when the immediate worker did not send.
+ * Missing queue rows are not evidence that a notification was scheduled.
+ * Never return recipient details to the operator-facing server action. */
+export async function readAffiliateDecisionMailDisposition(applicationId: string) {
+  const id = z.string().uuid().parse(applicationId);
+  const response = await requestSupabase(
+    "vonix_affiliate_mail_outbox?select=status&application_id=eq." +
+      encodeURIComponent(id) +
+      "&limit=1",
+    { method: "GET" },
+  );
+  if (!response.ok) throw new Error("Decision mail status unavailable.");
+  const rows = z
+    .array(z.object({ status: validMailStatus }))
+    .max(1)
+    .parse(await response.json());
+  if (rows.length === 1) return rows[0]!.status;
+  const candidate = await requestSupabase(
+    "vonix_affiliate_applications?select=id,email,status&id=eq." +
+      encodeURIComponent(id) +
+      "&limit=1",
+    { method: "GET" },
+  );
+  if (!candidate.ok) throw new Error("Decision recipient status unavailable.");
+  const records = z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        email: z.string().email().max(180).nullable(),
+        status: z.enum(["aprovada", "recusada"]),
+      }),
+    )
+    .max(1)
+    .parse(await candidate.json());
+  if (records.length !== 1 || records[0]!.id !== id) throw new Error("Decision not found.");
+  return records[0]!.email === null ? ("not_applicable" as const) : ("missing" as const);
 }
 
 export async function decideAffiliateApplication(

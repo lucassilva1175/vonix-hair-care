@@ -118,3 +118,47 @@ describe("Checklist do cadastro sem serviços de comissão", () => {
     }
   }, 20_000); // Six isolated Windows child processes can exceed the default 5s under full-suite CI.
 });
+
+describe("Readiness matches deployed credential formats", () => {
+  it("accepts the generated alphanumeric encryption key and formatted TOTP used by the server", () => {
+    const r = runReadiness({
+      AFFILIATE_QUESTIONNAIRE_KEY: "G7h9".repeat(16),
+      AFFILIATE_ADMIN_TOTP_SECRET: "GEZDGNBV GY3TQOJQ GEZDGNBV GY3TQOJQ",
+    });
+    expect(r.status).toBe(0);
+  });
+  it("rejects publishable and whitespace-containing database keys", () => {
+    for (const key of ["sb_publishable_synthetic_not_service", "synthetic key with spaces"]) {
+      const r = runReadiness({ AFFILIATE_SUPABASE_SERVICE_ROLE_KEY: key });
+      expect(r.status).toBe(2);
+      expect(r.output.missing).toContain("database_pair");
+    }
+  });
+  it("rejects checkout credentials even if their whitespace differs", () => {
+    const r = runReadiness({ SUPABASE_SERVICE_ROLE_KEY: " synthetic-only-credential-1234 " });
+    expect(r.status).toBe(2);
+    expect(r.output.missing).toContain("database_pair");
+  });
+  it("recognizes the isolated Resend key and named sender; malformed worker secret stays pending", () => {
+    const r = runReadiness({
+      AFFILIATE_RESEND_API_KEY: "synthetic-resend-key-123456",
+      AFFILIATE_FROM_EMAIL: "Vonix Afiliadas <qa@example.invalid>",
+      AFFILIATE_WORKER_SECRET: "synthetic worker secret with spaces",
+    });
+    expect(r.status).toBe(0);
+    expect(r.output.optionalNotificationsMissing).toEqual(["worker_secret"]);
+    expect(r.output).toMatchObject({
+      notificationConfigurationPresent: false,
+      productionAcceptanceVerified: false,
+    });
+  });
+  it("does not hide a malformed preferred key behind a valid fallback", () => {
+    const r = runReadiness({
+      AFFILIATE_RESEND_API_KEY: "short",
+      RESEND_API_KEY: "synthetic-fallback-key-12345",
+      AFFILIATE_FROM_EMAIL: "qa@example.invalid",
+      AFFILIATE_WORKER_SECRET: "synthetic-worker-secret-12345",
+    });
+    expect(r.output.optionalNotificationsMissing).toEqual(["resend"]);
+  });
+});

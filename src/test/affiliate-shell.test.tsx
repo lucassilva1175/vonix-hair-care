@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -6,9 +6,10 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({
     children,
     to,
+    reloadDocument,
     ...rest
-  }: React.PropsWithChildren<{ to: string; "aria-label"?: string }>) => (
-    <a href={to} {...rest}>
+  }: React.PropsWithChildren<{ to: string; "aria-label"?: string; reloadDocument?: boolean }>) => (
+    <a href={to} data-reload-document={reloadDocument ? "true" : undefined} {...rest}>
       {children}
     </a>
   ),
@@ -20,6 +21,48 @@ import { AffiliateTrackingCodePage } from "@/routes/consultar-candidatura";
 afterEach(cleanup);
 
 describe("Vonix affiliate dedicated recruitment shell", () => {
+  it("uses document navigation from recruitment to preserve the native unsaved-draft warning", () => {
+    render(
+      <AffiliateShell>
+        <p>Conteúdo</p>
+      </AffiliateShell>,
+    );
+    for (const id of ["affiliate-c112-returning-desktop", "affiliate-c112-returning-mobile"]) {
+      expect(screen.getByTestId(id)).toHaveAttribute("data-reload-document", "true");
+    }
+    const menu = screen.getByTestId("affiliate-c138-mobile-menu") as HTMLDetailsElement;
+    menu.open = true;
+    expect(within(menu).getByRole("link", { name: "Já me inscrevi" })).toHaveAttribute(
+      "data-reload-document",
+      "true",
+    );
+    const footer = screen.getByRole("contentinfo");
+    expect(
+      within(footer).getByRole("link", { name: "Acompanhar inscrição por código" }),
+    ).toHaveAttribute("data-reload-document", "true");
+    expect(
+      within(footer).getByRole("link", { name: "Inscrições antigas por e-mail" }),
+    ).toHaveAttribute("data-reload-document", "true");
+  });
+  it("closes mobile navigation when keyboard focus leaves and exposes privacy policy", () => {
+    render(
+      <AffiliateShell>
+        <p>Conteúdo</p>
+      </AffiliateShell>,
+    );
+    const menu = screen.getByTestId("affiliate-c138-mobile-menu") as HTMLDetailsElement;
+    const trigger = screen.getByTestId("affiliate-c138-mobile-menu-trigger");
+    const apply = screen.getByTestId("affiliate-c127-header-apply");
+    menu.open = true;
+    fireEvent.blur(trigger, { relatedTarget: apply });
+    expect(menu.open).toBe(false);
+    expect(screen.getByRole("main")).toHaveClass("scroll-mt-36");
+    expect(
+      within(screen.getByRole("contentinfo")).getByRole("link", {
+        name: "Política de Privacidade",
+      }),
+    ).toHaveAttribute("href", "/politica-de-privacidade");
+  });
   it("replaces the tall shopping chrome with a short authentic recruitment header", () => {
     render(
       <AffiliateShell>

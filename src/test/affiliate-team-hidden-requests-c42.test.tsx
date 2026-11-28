@@ -187,3 +187,23 @@ describe("C42 private team recovery after interrupted provider requests", () => 
     }
   });
 });
+
+it("recovers from an identity read that does not settle and ignores its late completion", async () => {
+  vi.useFakeTimers();
+  const old = deferred<{ data: { user: null }; error: null }>();
+  mocks.getUser.mockReturnValueOnce(old.promise);
+  try {
+    render(<AffiliateTeamAccess />);
+    expect(screen.getByText(/Verificando sua identidade/)).toBeInTheDocument();
+    await act(async () => vi.advanceTimersByTimeAsync(15000));
+    expect(screen.getByLabelText("E-mail autorizado")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /Não foi possível confirmar sua identidade/,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Já tenho senha/ }));
+    await act(async () => old.resolve({ data: { user: null }, error: null }));
+    expect(screen.getByRole("heading", { name: "Entrar com senha pessoal" })).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
+});

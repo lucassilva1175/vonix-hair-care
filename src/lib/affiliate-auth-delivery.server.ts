@@ -151,6 +151,38 @@ async function requestAffiliateSupabaseManagedOtp(
   }
 }
 
+/** Reserve the shared recipient cooldown before ANY Auth invitation or OTP.
+ * A missing/failed/malformed RPC must not permit another provider request.
+ * Callers still verify identity and authorization before reaching this helper.
+ */
+export async function reserveAffiliateAuthMailCooldown(
+  email: string,
+  config: NonNullable<ReturnType<typeof affiliateDatabaseConfig>>,
+): Promise<boolean> {
+  const fingerprint = affiliateAccessEmailFingerprint(email);
+  if (!fingerprint) return false;
+  try {
+    const quota = await fetch(
+      config.url + "/rest/v1/rpc/vonix_affiliate_consume_auth_mail_cooldown",
+      {
+        method: "POST",
+        headers: config.headers,
+        body: JSON.stringify({ p_fingerprint: fingerprint }),
+        redirect: "manual",
+        signal: AbortSignal.timeout(4500),
+      },
+    );
+    if (!quota.ok) {
+      auditAffiliateAuthMailFailure("recipient-cooldown-rpc-http", quota.status);
+      return false;
+    }
+    return (await quota.json()) === true;
+  } catch {
+    auditAffiliateAuthMailFailure("recipient-cooldown-rpc-unavailable");
+    return false;
+  }
+}
+
 /** Fallback for an authorized, server-checked portal identity ONLY.
  * The calling server function must enforce same-origin, IP quotas and the
  * persisted application/owner roster before invoking this helper.
@@ -163,24 +195,7 @@ export async function sendAffiliateManagedAuthOtp(
   const parsed = emailSchema.safeParse(email);
   const config = affiliateDatabaseConfig();
   if (!parsed.success || !config) return false;
-  const fingerprint = affiliateAccessEmailFingerprint(parsed.data);
-  if (!fingerprint) return false;
-  try {
-    // Preserve the same durable per-recipient cooldown as corporate delivery.
-    const quota = await fetch(
-      config.url + "/rest/v1/rpc/vonix_affiliate_consume_auth_mail_cooldown",
-      {
-        method: "POST",
-        headers: config.headers,
-        body: JSON.stringify({ p_fingerprint: fingerprint }),
-        redirect: "manual",
-        signal: AbortSignal.timeout(4500),
-      },
-    );
-    if (!quota.ok || (await quota.json()) !== true) return false;
-  } catch {
-    return false;
-  }
+  if (!(await reserveAffiliateAuthMailCooldown(parsed.data, config))) return false;
   return requestAffiliateSupabaseManagedOtp(
     parsed.data,
     purpose === "owner"
@@ -204,22 +219,8 @@ export async function sendAffiliateAuthEmailWithResend(
   const address = emailSchema.safeParse(email);
   const db = affiliateDatabaseConfig();
   if (!address.success || !db || !affiliateCustomAuthEmailReady()) return false;
-  const fingerprint = affiliateAccessEmailFingerprint(address.data);
-  if (!fingerprint) return false;
-  // Atomic recipient cooldown: a bot cannot repeatedly invalidate another
-  // applicant's OTP by rotating IP addresses or pressing resend.
-  const quota = await fetch(db.url + "/rest/v1/rpc/vonix_affiliate_consume_auth_mail_cooldown", {
-    method: "POST",
-    headers: db.headers,
-    body: JSON.stringify({ p_fingerprint: fingerprint }),
-    redirect: "manual",
-    signal: AbortSignal.timeout(4500),
-  });
-  if (!quota.ok) {
-    auditAffiliateAuthMailFailure("recipient-cooldown-rpc-http", quota.status);
-    return false;
-  }
-  if ((await quota.json()) !== true) return false;
+  // Atomic recipient cooldown shared by all invitation and OTP entry points.
+  if (!(await reserveAffiliateAuthMailCooldown(address.data, db))) return false;
   const redirectUrl =
     purpose === "owner"
       ? "https://vonixhair.com/acesso-equipe-afiliadas"

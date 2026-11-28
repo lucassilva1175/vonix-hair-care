@@ -7,6 +7,11 @@ describe("Private affiliate document origin headers", () => {
     "/acompanhar-inscricao",
     "/consultar-candidatura",
     "/consultar-candidatura/",
+    "/CONSULTAR-CANDIDATURA/",
+    "/%63onsultar-candidatura",
+    "/admin%2Fafiliadas",
+    "/ACESSO-EQUIPE-AFILIADAS",
+    "/%61companhar-inscricao///",
   ])("protects %s including query parameters", async (path) => {
     const original = new Response("private shell", {
       status: 200,
@@ -36,6 +41,10 @@ describe("Private affiliate document origin headers", () => {
     "/admin/afiliadas-preview",
     "/produtos",
     "/assets/index.js",
+    "/SEJA-AFILIADA/",
+    "/%73eja-afiliada",
+    "/%ZZ",
+    "/admin/afiliadas/extra",
   ])("leaves unrelated route %s unchanged", (path) => {
     const original = new Response("public", { headers: { "Cache-Control": "public,max-age=60" } });
     expect(

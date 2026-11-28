@@ -223,3 +223,29 @@ describe("Current invite and fresh Auth identity mandatory for first admin activ
     await waitFor(() => expect(mocks.loginAffiliateAdminMember).toHaveBeenCalledOnce());
   });
 });
+
+it("does not repeat first activation on synchronous duplicate submits", async () => {
+  mocks.getUser.mockResolvedValueOnce(noUser).mockResolvedValue(yesUser);
+  await verifyFreshOtp();
+  let finish!: (v: unknown) => void;
+  mocks.updateUser.mockReturnValueOnce(
+    new Promise((r) => {
+      finish = r;
+    }),
+  );
+  fireEvent.change(screen.getByLabelText("Nova senha"), {
+    target: { value: "SyntheticNewPassword2026!" },
+  });
+  fireEvent.change(screen.getByLabelText("Confirme a senha"), {
+    target: { value: "SyntheticNewPassword2026!" },
+  });
+  const form = screen.getByRole("button", { name: "Ativar acesso seguro" }).closest("form")!;
+  act(() => {
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+  });
+  await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledOnce());
+  await act(async () => finish({ error: null }));
+  await waitFor(() => expect(mocks.rpc).toHaveBeenCalledOnce());
+  expect(mocks.loginAffiliateAdminMember).toHaveBeenCalledOnce();
+});

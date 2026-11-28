@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-const server = vi.hoisted(() => ({ submit: vi.fn(), status: vi.fn() }));
+const server = vi.hoisted(() => ({ submit: vi.fn(), status: vi.fn(), issue: vi.fn() }));
 const analytics = vi.hoisted(() => ({ track: vi.fn() }));
 const receipts = vi.hoisted(() => ({ download: vi.fn() }));
 vi.mock("@/lib/affiliate-private-receipt", async (importOriginal) => ({
@@ -11,6 +11,7 @@ vi.mock("@/lib/affiliate-private-receipt", async (importOriginal) => ({
 vi.mock("@/lib/analytics", () => ({ track: analytics.track }));
 vi.mock("@/lib/affiliate-functions", () => ({
   submitSimpleAffiliateApplication: server.submit,
+  issuePrivateAffiliateReceipt: server.issue,
   getAffiliateStatusByCode: server.status,
 }));
 vi.mock("@/components/affiliate-shell", () => ({
@@ -30,6 +31,13 @@ const confirmedSignUpCalls = () =>
 
 beforeEach(() => {
   vi.resetAllMocks();
+  server.issue.mockImplementation(() => ({
+    ok: true,
+    trackingCode: btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_"),
+    trackingProof: "B".repeat(43),
+  }));
   server.submit.mockImplementation(async (args: { data: { trackingCode?: string } }) => ({
     ok: true,
     trackingCode: args.data.trackingCode,
@@ -67,6 +75,63 @@ function fill() {
 }
 
 describe("Vonix short single-page application form", () => {
+  it("does not send candidate data or claim an uncertain submission when ticket issuance fails", async () => {
+    server.issue.mockRejectedValueOnce(new Error("synthetic issuance failure"));
+    render(<AffiliateSimpleForm />);
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nenhuma inscrição foi enviada");
+    expect(server.issue).toHaveBeenCalledWith({ data: { scope: "public" } });
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(screen.getByLabelText(/Nome completo/)).toHaveValue("Maria da Silva");
+    expect(confirmedSignUpCalls()).toHaveLength(0);
+  });
+  it("focuses the masked uncertain outcome, then the confirmed receipt on an exact retry", async () => {
+    server.submit.mockRejectedValueOnce(new Error("Synthetic response lost"));
+    render(<AffiliateSimpleForm />);
+    fill();
+    const action = screen.getByRole("button", { name: "Enviar minha inscrição" });
+    action.focus();
+    fireEvent.click(action);
+    const field = await screen.findByLabelText("Código privado da tentativa não confirmada");
+    expect(field).toHaveAttribute("type", "password");
+    expect(
+      screen.getByRole("region", { name: "Tentativa de inscrição não confirmada" }),
+    ).toHaveFocus();
+    const link = screen.getByRole("link", { name: "Consultar código no portal" });
+    fireEvent.click(link, { ctrlKey: true });
+    expect(sessionStorage.getItem("vonix-affiliate-once-code")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    await screen.findByLabelText("Código privado de acompanhamento");
+    expect(screen.getByRole("heading", { name: "Inscrição recebida!" })).toHaveFocus();
+    expect(server.submit).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not steal focus from another section when a delayed receipt arrives", async () => {
+    let resolve!: (value: { ok: true; trackingCode: string }) => void;
+    server.submit.mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r;
+      }),
+    );
+    render(
+      <>
+        <button type="button">Outra seção</button>
+        <AffiliateSimpleForm />
+      </>,
+    );
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    await waitFor(() => expect(server.submit).toHaveBeenCalledOnce());
+    const other = screen.getByRole("button", { name: "Outra seção" });
+    other.focus();
+    await act(async () =>
+      resolve({ ok: true, trackingCode: server.submit.mock.calls[0]![0].data.trackingCode }),
+    );
+    expect(screen.getByRole("heading", { name: "Inscrição recebida!" })).toBeInTheDocument();
+    expect(other).toHaveFocus();
+  });
   it("confirma declaração explícita de maioridade sem coletar data de nascimento", () => {
     render(<AffiliateSimpleForm />);
     const confirmation = screen.getByRole("checkbox", { name: /Autorizo o uso destes dados/ });
@@ -131,7 +196,9 @@ describe("Vonix short single-page application form", () => {
     fill();
     vi.useFakeTimers();
     try {
-      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      });
       expect(server.submit).toHaveBeenCalledTimes(1);
       const code = server.submit.mock.calls[0]![0].data.trackingCode;
       expect(screen.getByTestId("affiliate-c158-wait-guidance")).toHaveTextContent("45 segundos");
@@ -1165,6 +1232,7 @@ it("does not erase a different local receipt when the current attempt confirms",
   render(<AffiliateSimpleForm />);
   fill();
   fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+  await waitFor(() => expect(server.submit).toHaveBeenCalledOnce());
   const code = server.submit.mock.calls[0]![0].data.trackingCode;
   const another = "abcdefghijklmnopqrstuvwxyzABCDEF";
   window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", another);
@@ -1325,4 +1393,110 @@ it("only requests an address after explicit CEP lookup and avoids referrer or cr
     ),
   );
   expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveValue("Rua Fictícia");
+});
+
+describe("Receipt continuity and paused CEP", () => {
+  it("does not replace a valid pending code added after mounting the form", async () => {
+    render(<AffiliateSimpleForm />);
+    fill();
+    const existing = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    window.sessionStorage.setItem("vonix-affiliate-unconfirmed-code", existing);
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    expect(await screen.findByLabelText("Código privado da tentativa não confirmada")).toHaveValue(
+      existing,
+    );
+    expect(window.sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBe(existing);
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/Nome completo/)).toHaveValue("Maria da Silva");
+  });
+  it("keeps native clipboard copy single-flight through concealment and a second code", async () => {
+    server.submit.mockRejectedValueOnce(new Error("synthetic lost response"));
+    let finish!: () => void;
+    const writeText = vi
+      .fn()
+      .mockReturnValueOnce(new Promise<void>((r) => (finish = r)))
+      .mockResolvedValue(undefined);
+    const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    try {
+      render(<AffiliateSimpleForm />);
+      fill();
+      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      await screen.findByLabelText("Código privado da tentativa não confirmada");
+      fireEvent.click(screen.getByRole("button", { name: "Copiar código de tentativa" }));
+      act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+      act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+      expect(screen.getByRole("button", { name: "Copiar código de tentativa" })).toBeDisabled();
+      expect(writeText).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+      await screen.findByLabelText("Código privado de acompanhamento");
+      expect(screen.getByRole("button", { name: /^Copiar código$/ })).toBeDisabled();
+      await act(async () => finish());
+      expect(screen.queryByRole("button", { name: "Código copiado!" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: /^Copiar código$/ }));
+      await screen.findByRole("button", { name: "Código copiado!" });
+      expect(writeText).toHaveBeenCalledTimes(2);
+    } finally {
+      if (original) Object.defineProperty(navigator, "clipboard", original);
+      else Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+  it("ignores a delayed CEP response after readiness pauses and permits manual edits", async () => {
+    let finish!: (r: Response) => void;
+    const fetcher = vi.fn().mockReturnValue(new Promise<Response>((r) => (finish = r)));
+    vi.stubGlobal("fetch", fetcher);
+    const { rerender } = render(<AffiliateSimpleForm />);
+    fireEvent.change(screen.getByLabelText(/CEP/), { target: { value: "30110012" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar CEP" }));
+    expect(fetcher).toHaveBeenCalledOnce();
+    rerender(<AffiliateSimpleForm preview paused />);
+    expect(screen.getByRole("button", { name: "Buscar CEP" })).toBeDisabled();
+    await act(async () =>
+      finish(
+        new Response(
+          JSON.stringify({
+            logradouro: "Rua obsoleta",
+            bairro: "Bairro QA",
+            localidade: "Cidade QA",
+            uf: "MG",
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+    expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveValue("");
+    fireEvent.change(screen.getByLabelText(/Rua \/ Avenida/), { target: { value: "Rua manual" } });
+    rerender(<AffiliateSimpleForm />);
+    expect(screen.getByLabelText(/Rua \/ Avenida/)).toHaveValue("Rua manual");
+    expect(screen.getByRole("button", { name: "Buscar CEP" })).toBeEnabled();
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+});
+
+it("does not submit a late receipt or retain a false attempt when issuance times out", async () => {
+  vi.useFakeTimers();
+  let finish!: (v: unknown) => void;
+  try {
+    server.issue.mockReturnValueOnce(
+      new Promise((r) => {
+        finish = r;
+      }),
+    );
+    render(<AffiliateSimpleForm />);
+    fill();
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" })),
+    );
+    await act(async () => vi.advanceTimersByTimeAsync(15000));
+    expect(screen.getByRole("alert")).toHaveTextContent("Nenhuma inscrição foi enviada");
+    expect(screen.getByRole("button", { name: "Enviar minha inscrição" })).toBeEnabled();
+    await act(async () =>
+      finish({ ok: true, trackingCode: "A".repeat(32), trackingProof: "B".repeat(43) }),
+    );
+    expect(server.submit).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("vonix-affiliate-unconfirmed-code")).toBeNull();
+    expect(confirmedSignUpCalls()).toHaveLength(0);
+  } finally {
+    vi.useRealTimers();
+  }
 });

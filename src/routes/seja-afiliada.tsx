@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RecruitmentStatus } from "@/components/affiliate-editorial-hero";
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import { AffiliateShell } from "@/components/affiliate-shell";
@@ -84,6 +84,12 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   });
   const [previewHasDraft, setPreviewHasDraft] = useState(false);
   const [confirmPreviewExit, setConfirmPreviewExit] = useState(false);
+  const applicationRef = useRef<HTMLElement>(null);
+  const exitConfirmationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (confirmPreviewExit) exitConfirmationRef.current?.focus();
+  }, [confirmPreviewExit]);
   // Keep an already-started application mounted if the operator closes
   // recruitment while somebody is filling it in. Its submission pauses,
   // but the real draft and recovery controls stay available.
@@ -92,8 +98,13 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   useEffect(() => {
     let active = true;
     let latestRequest = 0;
+    let inFlight = false;
+    let suspended = false;
     const statusTimeouts = new Set<number>();
     async function refreshStatus() {
+      const pageHidden = () => document.visibilityState === "hidden";
+      if (!active || inFlight || suspended || pageHidden()) return;
+      inFlight = true;
       const requestId = ++latestRequest;
       let timeoutId: number | undefined;
       // Never trust a previously OPEN session while the next GET is pending.
@@ -132,7 +143,13 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
             statusTimeouts.add(timeoutId);
           }),
         ]);
-        if (!active || requestId !== latestRequest) return;
+        if (
+          !active ||
+          suspended ||
+          document.visibilityState === "hidden" ||
+          requestId !== latestRequest
+        )
+          return;
         setBackendDiagnostics({
           storage: storageReachable,
           storageDiagnostic,
@@ -148,7 +165,12 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
       } catch {
         // A failed GET is not proof the program is closed. Fail closed for
         // submissions, but give applicants an explicit retry action.
-        if (active && requestId === latestRequest) {
+        if (
+          active &&
+          !suspended &&
+          document.visibilityState !== "hidden" &&
+          requestId === latestRequest
+        ) {
           setBackendDiagnostics({
             storage: false,
             storageDiagnostic: "unavailable",
@@ -160,6 +182,7 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
           setRecruitment("unavailable");
         }
       } finally {
+        if (requestId === latestRequest) inFlight = false;
         if (timeoutId !== undefined) {
           window.clearTimeout(timeoutId);
           statusTimeouts.delete(timeoutId);
@@ -171,10 +194,36 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
     const onFocus = () => {
       if (document.visibilityState === "visible") void refreshStatus();
     };
+    const invalidate = () => {
+      latestRequest++;
+      inFlight = false;
+      setRecruitment("loading");
+      setBackendDiagnostics({
+        storage: false,
+        storageDiagnostic: "checking",
+        publicNetworkDiagnostic: "checking",
+        ingress: false,
+        encryption: false,
+        emailConfigured: false,
+      });
+    };
     const onVisible = () => {
-      if (document.visibilityState === "visible") void refreshStatus();
+      if (document.visibilityState === "hidden") invalidate();
+      else if (document.visibilityState === "visible") void refreshStatus();
+    };
+    const onPageHide = () => {
+      suspended = true;
+      invalidate();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted && !suspended) return;
+      suspended = false;
+      invalidate();
+      void refreshStatus();
     };
     window.addEventListener("focus", onFocus);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       active = false;
@@ -182,6 +231,8 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
       statusTimeouts.forEach((timeout) => window.clearTimeout(timeout));
       statusTimeouts.clear();
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [retryAvailability]);
@@ -194,6 +245,11 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
     // A live form already paused by the server is itself a safe view. Do not
     // remount it with a preview key and discard an in-progress application.
     if (liveFormStarted && !preview) return;
+    // The status-card button disappears when the preview mounts. Keep focus
+    // at the application rather than dropping it on the document body.
+    if (applicationRef.current?.contains(document.activeElement)) {
+      applicationRef.current.focus({ preventScroll: true });
+    }
     setConfirmPreviewExit(false);
     setPreview(true);
   }
@@ -207,6 +263,7 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
   }
 
   function finishPreviewExit() {
+    applicationRef.current?.focus();
     setPreview(false);
     setPreviewHasDraft(false);
     setConfirmPreviewExit(false);
@@ -276,6 +333,9 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
 
         <section
           id="inscricao"
+          ref={applicationRef}
+          tabIndex={-1}
+          aria-labelledby="affiliate-application-heading"
           data-storage-check={backendDiagnostics.storage ? "ok" : "unavailable"}
           data-storage-diagnostic={backendDiagnostics.storageDiagnostic}
           data-network-diagnostic={backendDiagnostics.publicNetworkDiagnostic}
@@ -298,7 +358,10 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
                       ? "Disponibilidade não confirmada"
                       : "Programa de afiliados"}
               </p>
-              <h2 className="mt-2 max-w-2xl font-display text-[clamp(1.75rem,5vw,3rem)] leading-[1.12] tracking-tight text-[#4c3040] sm:mt-3">
+              <h2
+                id="affiliate-application-heading"
+                className="mt-2 max-w-2xl font-display text-[clamp(1.75rem,5vw,3rem)] leading-[1.12] tracking-tight text-[#4c3040] sm:mt-3"
+              >
                 Sua inscrição, de um jeito simples.
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-[1.6] text-[#725867] sm:mt-3 sm:text-base sm:leading-[1.7]">
@@ -445,6 +508,8 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
                 <div className="mt-6 text-center">
                   {confirmPreviewExit ? (
                     <div
+                      ref={exitConfirmationRef}
+                      tabIndex={-1}
                       role="group"
                       aria-label="Confirmar saída da prévia"
                       className="mx-auto max-w-xl rounded-lg border border-border bg-card p-6 text-left shadow-sm"
@@ -470,7 +535,10 @@ export function AffiliateApplicationPage({ sourceLinked = true }: { sourceLinked
                           type="button"
                           variant="outline"
                           className="h-auto whitespace-normal min-h-11 rounded-lg border border-border px-5 text-sm font-semibold text-muted-foreground"
-                          onClick={() => setConfirmPreviewExit(false)}
+                          onClick={() => {
+                            applicationRef.current?.focus({ preventScroll: true });
+                            setConfirmPreviewExit(false);
+                          }}
                         >
                           Continuar preenchendo
                         </Button>

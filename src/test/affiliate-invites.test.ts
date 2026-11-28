@@ -1,9 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const deps = vi.hoisted(() => ({ config: vi.fn(), mailReady: vi.fn(), sendMail: vi.fn() }));
+const deps = vi.hoisted(() => ({
+  config: vi.fn(),
+  mailReady: vi.fn(),
+  sendMail: vi.fn(),
+  reserve: vi.fn(),
+}));
 vi.mock("@/lib/affiliate-auth-delivery.server", () => ({
   affiliateCustomAuthEmailReady: deps.mailReady,
   sendAffiliateAuthEmailWithResend: deps.sendMail,
+  reserveAffiliateAuthMailCooldown: deps.reserve,
 }));
 vi.mock("@/lib/affiliate-database.server", () => ({
   affiliateDatabaseConfig: deps.config,
@@ -16,6 +22,7 @@ describe("Vonix affiliate account invitation after durable registration", () => 
     vi.restoreAllMocks();
     deps.mailReady.mockReset().mockReturnValue(false);
     deps.sendMail.mockReset();
+    deps.reserve.mockReset().mockResolvedValue(true);
     deps.config.mockReset();
     deps.config.mockReturnValue({
       url: "https://synthetic-reference-123.supabase.co",
@@ -24,7 +31,6 @@ describe("Vonix affiliate account invitation after durable registration", () => 
   });
 
   afterEach(() => {
-    expect(deps.sendMail).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
@@ -33,6 +39,10 @@ describe("Vonix affiliate account invitation after durable registration", () => 
     vi.stubGlobal("fetch", request);
     expect(await invitePersistedAffiliateApplicant("creator@example.invalid")).toBe(true);
     expect(request).toHaveBeenCalledTimes(1);
+    expect(deps.reserve).toHaveBeenCalledExactlyOnceWith(
+      "creator@example.invalid",
+      expect.objectContaining({ url: "https://synthetic-reference-123.supabase.co" }),
+    );
     const [url, options] = request.mock.calls[0]!;
     expect(url).toContain("/auth/v1/invite?redirect_to=");
     expect(decodeURIComponent(url)).toContain("https://vonixhair.com/acompanhar-inscricao");
@@ -76,6 +86,26 @@ describe("Vonix affiliate account invitation after durable registration", () => 
     const request = vi.fn();
     vi.stubGlobal("fetch", request);
     expect(await invitePersistedAffiliateApplicant("invalid-value")).toBe(false);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it("never contacts the managed provider when the shared recipient cooldown rejects the attempt", async () => {
+    deps.reserve.mockResolvedValueOnce(false);
+    const request = vi.fn();
+    vi.stubGlobal("fetch", request);
+    expect(await invitePersistedAffiliateApplicant("creator@example.invalid")).toBe(false);
+    expect(deps.reserve).toHaveBeenCalledOnce();
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it("does not reserve a second cooldown before corporate delivery", async () => {
+    deps.mailReady.mockReturnValue(true);
+    deps.sendMail.mockResolvedValue(true);
+    const request = vi.fn();
+    vi.stubGlobal("fetch", request);
+    expect(await invitePersistedAffiliateApplicant("creator@example.invalid")).toBe(true);
+    expect(deps.sendMail).toHaveBeenCalledExactlyOnceWith("creator@example.invalid", "applicant");
+    expect(deps.reserve).not.toHaveBeenCalled();
     expect(request).not.toHaveBeenCalled();
   });
 

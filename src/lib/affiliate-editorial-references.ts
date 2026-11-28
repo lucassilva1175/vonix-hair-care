@@ -20,6 +20,13 @@ export function resolveEditorialReferences(slugs: readonly string[]) {
     })
     .slice(0, EDITORIAL_REFERENCE_LIMIT);
 }
+export function toggleEditorialReference(slugs: readonly string[], slug: string) {
+  const valid = resolveEditorialReferences(slugs).map((item) => item.slug);
+  if (valid.includes(slug)) return valid.filter((item) => item !== slug);
+  if (valid.length >= EDITORIAL_REFERENCE_LIMIT || !resolveEditorialReferences([slug]).length)
+    return valid;
+  return [...valid, slug];
+}
 export function appendEditorialReferences(plan: string, slugs: readonly string[]) {
   const references = resolveEditorialReferences(slugs);
   if (!references.length) return plan;

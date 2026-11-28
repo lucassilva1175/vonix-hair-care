@@ -108,7 +108,7 @@ describe("C71: consulta de retomada não confia em OPEN antigo", () => {
     expect(await screen.findByText("Envio autorizado C71")).toBeInTheDocument();
   });
 
-  it("GET antigo OPEN não anula CLOSED mais recente após dois focos", async () => {
+  it("GET antigo OPEN não anula CLOSED mais recente após restauração pelo histórico", async () => {
     const earlier = pending<typeof open>();
     const latest = pending<typeof closed>();
     server.status
@@ -119,7 +119,11 @@ describe("C71: consulta de retomada não confia em OPEN antigo", () => {
     await screen.findByText("Envio autorizado C71");
     await act(async () => window.dispatchEvent(new Event("focus")));
     await act(async () => window.dispatchEvent(new Event("focus")));
+    expect(server.status).toHaveBeenCalledTimes(2);
     expect(screen.getByText("Envio bloqueado C71")).toBeInTheDocument();
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    expect(server.status).toHaveBeenCalledTimes(3);
     await act(async () => latest.resolve(closed));
     expect(screen.getByText(/cadastro não recebe candidaturas/i)).toBeInTheDocument();
     await act(async () => earlier.resolve(open));

@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { affiliateManualSchema } from "@/lib/affiliate-simple";
 import { createManualAffiliateApplication } from "@/lib/affiliate-applications.server";
-import { decryptAffiliateWizardForAdmin } from "@/lib/affiliate-wizard-crypto.server";
+import {
+  decryptAffiliateWizardForAdmin,
+  issueAffiliateReceiptTicket,
+} from "@/lib/affiliate-wizard-crypto.server";
 
 const valid = {
   candidate: {
@@ -176,8 +179,9 @@ describe("C77: registro manual isolado de convite e email", () => {
 });
 
 it("reconciles an exact manually issued private receipt without confirming altered data", async () => {
-  const trackingCode = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
-  const input = affiliateManualSchema.parse({ ...valid, trackingCode });
+  const ticket = issueAffiliateReceiptTicket("staff")!;
+  const trackingCode = ticket.trackingCode;
+  const input = affiliateManualSchema.parse({ ...valid, ...ticket });
   let stored: Record<string, unknown> | undefined;
   const fetcher = vi.fn(async (url: string, init: RequestInit) => {
     if (init.method === "POST") {
@@ -203,4 +207,10 @@ it("reconciles an exact manually issued private receipt without confirming alter
   expect(await createManualAffiliateApplication(changed)).toMatchObject({ ok: false });
   expect(fetcher).toHaveBeenCalledTimes(5);
   expect(stored).not.toHaveProperty("trackingCode");
+  expect(JSON.stringify(stored)).not.toContain(ticket.trackingProof);
+  const before = fetcher.mock.calls.length;
+  const legacy = affiliateManualSchema.parse({ ...valid, trackingCode });
+  expect(await createManualAffiliateApplication(legacy)).toEqual({ ok: true, trackingCode });
+  expect(fetcher.mock.calls.length).toBe(before + 1);
+  expect(fetcher.mock.calls.at(-1)?.[1].method).toBe("GET");
 });

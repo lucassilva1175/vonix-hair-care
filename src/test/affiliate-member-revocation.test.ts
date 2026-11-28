@@ -201,9 +201,17 @@ describe("Affiliate admin current roster session revocation", () => {
 describe("Affiliate server handler revocation coverage", () => {
   it("rechecks the live roster before confidential reads and applicant mutations as well as session UI", () => {
     const source = readFileSync(resolve(process.cwd(), "src/lib/affiliate-functions.ts"), "utf8");
-    // 7 protected POST handlers (including C77 manual registration) plus GET session state. Owner erasure has a
+    // 8 protected POST handlers (including manual registration and private
+    // receipt issuance for staff) plus GET session state. Owner erasure has a
     // separate stricter C22 authorization and onboarding is independently gated.
-    expect(source.match(/await affiliateAdminSessionAuthorized\(\)/g)).toHaveLength(8);
+    expect(source.match(/await affiliateAdminSessionAuthorized\(\)/g)).toHaveLength(9);
+    const issuance = source.slice(
+      source.indexOf("export const issuePrivateAffiliateReceipt"),
+      source.indexOf("export const submitSimpleAffiliateApplication"),
+    );
+    expect(issuance).toContain('data.scope === "staff"');
+    expect(issuance).toContain("await affiliateAdminSessionAuthorized()");
+    expect(issuance).toContain("affiliateAdminSameOrigin()");
     expect(source).not.toMatch(/affiliateAdminSessionValid\(/);
     expect(source).toContain("affiliateActivatedOwnerStillAuthorized()");
   });

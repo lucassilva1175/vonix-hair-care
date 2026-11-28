@@ -13,6 +13,25 @@ afterEach(() => {
 });
 
 describe("C140 — conversão direta na faixa de valor, sem falsas promessas", () => {
+  it("moves focus to the existing application without taking over modified link clicks", () => {
+    const preview = vi.fn();
+    render(
+      <>
+        <AffiliateEarlyValueBand recruitmentOpen={false} onSafePreview={preview} />
+        <section id="inscricao" tabIndex={-1}>
+          Inscrição
+        </section>
+      </>,
+    );
+    const action = screen.getByTestId("affiliate-c140-value-apply");
+    action.focus();
+    fireEvent.click(action, { ctrlKey: true });
+    expect(action).toHaveFocus();
+    expect(preview).not.toHaveBeenCalled();
+    fireEvent.click(action);
+    expect(document.getElementById("inscricao")).toHaveFocus();
+    expect(preview).toHaveBeenCalledTimes(1);
+  });
   it("mantém CTA real após aprovação OPEN com foco, destino único e regras acessíveis", () => {
     const preview = vi.fn();
     render(<AffiliateEarlyValueBand recruitmentOpen onSafePreview={preview} />);

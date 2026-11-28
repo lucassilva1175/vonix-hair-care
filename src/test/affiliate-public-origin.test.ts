@@ -15,7 +15,10 @@ const gates = vi.hoisted(() => ({
   session: vi.fn(),
   allowed: vi.fn(),
   decide: vi.fn(),
+  readApplicantEmail: vi.fn(),
+  invite: vi.fn(),
   email: vi.fn(),
+  disposition: vi.fn(),
   authorized: vi.fn(),
   sendAuth: vi.fn(),
   sendManaged: vi.fn(),
@@ -45,6 +48,9 @@ vi.mock("@/lib/affiliate-auth-delivery.server", () => ({
   affiliateEmailAuthorizedForPortal: gates.authorized,
   sendAffiliateAuthEmailWithResend: gates.sendAuth,
   sendAffiliateManagedAuthOtp: gates.sendManaged,
+}));
+vi.mock("@/lib/affiliate-invites.server", () => ({
+  invitePersistedAffiliateApplicant: gates.invite,
 }));
 vi.mock("@/lib/affiliate-admin-auth.server", () => ({
   attemptAffiliateAdminLogin: gates.legacyLogin,
@@ -83,15 +89,19 @@ vi.mock("@/lib/affiliate-applications.server", () => ({
   listAffiliateApplications: gates.list,
   previewAffiliateRetention: gates.retention,
   processAffiliateEmails: gates.email,
+  readAffiliateDecisionMailDisposition: gates.disposition,
+  readAffiliateApplicantEmailForAccessRecovery: gates.readApplicantEmail,
 }));
 
 import {
   requestAffiliateAccessEmail,
+  issuePrivateAffiliateReceipt,
   reviewAffiliateApplication,
   getAffiliateApplications,
   getAffiliateOperationalReadiness,
   getAffiliateRetentionPreview,
   eraseAffiliateApplicationAdmin,
+  resendAffiliateApplicantInvite,
   submitAffiliateApplication,
   submitSimpleAffiliateApplication,
   loginAffiliateAdminMember,
@@ -124,6 +134,7 @@ beforeEach(() => {
   gates.allowed.mockResolvedValue(true);
   gates.decide.mockResolvedValue(true);
   gates.email.mockResolvedValue({ sent: 0, failed: 0, configured: false });
+  gates.disposition.mockResolvedValue("pendente");
   gates.authorized.mockResolvedValue(true);
   gates.sendAuth.mockResolvedValue(true);
   gates.sendManaged.mockResolvedValue(true);
@@ -134,6 +145,59 @@ beforeEach(() => {
   gates.erase.mockResolvedValue(true);
   gates.memberLogin.mockResolvedValue({ ok: true });
   gates.legacyLogin.mockResolvedValue({ ok: true });
+});
+
+describe("Server receipt issuance access boundary", () => {
+  const issue = issuePrivateAffiliateReceipt as unknown as (args: {
+    data: { scope: "public" | "staff" };
+  }) => Promise<{ ok: boolean; trackingCode?: string; trackingProof?: string }>;
+  it("denies foreign origins and closed enrollment before generating a public ticket", async () => {
+    gates.sameOrigin.mockReturnValue(false);
+    expect(await issue({ data: { scope: "public" } })).toEqual({ ok: false });
+    expect(gates.open).not.toHaveBeenCalled();
+    gates.sameOrigin.mockReturnValue(true);
+    gates.open.mockReturnValue(false);
+    expect(await issue({ data: { scope: "public" } })).toEqual({ ok: false });
+    expect(gates.allowed).not.toHaveBeenCalled();
+    expect(gates.createSimple).not.toHaveBeenCalled();
+  });
+  it("requires a staff session and separate available quota", async () => {
+    gates.session.mockReturnValue(false);
+    expect(await issue({ data: { scope: "staff" } })).toEqual({ ok: false });
+    expect(gates.allowed).not.toHaveBeenCalled();
+    gates.session.mockReturnValue(true);
+    gates.allowed.mockResolvedValue(false);
+    expect(await issue({ data: { scope: "staff" } })).toEqual({ ok: false });
+    expect(gates.allowed).toHaveBeenCalledWith("admin");
+    expect(gates.createSimple).not.toHaveBeenCalled();
+  });
+  it("issues random scoped tickets without collecting candidate data or spending write quota", async () => {
+    vi.stubEnv("AFFILIATE_QUESTIONNAIRE_KEY", "0123456789abcdef".repeat(4));
+    try {
+      const first = await issue({ data: { scope: "public" } });
+      const second = await issue({ data: { scope: "public" } });
+      const staff = await issue({ data: { scope: "staff" } });
+      for (const t of [first, second, staff])
+        expect(t).toMatchObject({
+          ok: true,
+          trackingCode: expect.stringMatching(/^[A-Za-z0-9_-]{32}$/),
+          trackingProof: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+        });
+      expect(new Set([first.trackingCode, second.trackingCode, staff.trackingCode]).size).toBe(3);
+      expect(gates.allowed).toHaveBeenCalledWith("submit");
+      expect(gates.allowed).toHaveBeenCalledWith("admin");
+      expect(gates.quota).not.toHaveBeenCalled();
+      expect(gates.createSimple).not.toHaveBeenCalled();
+      expect(gates.sendAuth).not.toHaveBeenCalled();
+      expect(setResponseHeader).toHaveBeenCalledWith(
+        "Cache-Control",
+        "private, no-store, max-age=0",
+      );
+      expect(setResponseHeader).toHaveBeenCalledWith("Referrer-Policy", "no-referrer");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });
 
 describe("Public simplified affiliate submission origin policy", () => {
@@ -304,6 +368,30 @@ describe("Admin decision notification semantics", () => {
       emailSent: false,
     });
     expect(gates.decide).toHaveBeenCalledTimes(4);
+  });
+
+  it("does not invent a queue row when a committed decision has no email or a missing outbox", async () => {
+    gates.email.mockResolvedValue({ sent: 0, failed: 0, configured: true });
+    for (const [disposition, notification] of [
+      ["not_applicable", "not_applicable"],
+      ["missing", "review"],
+      ["incerto", "review"],
+      ["enviado", "accepted"],
+      ["processando", "queued"],
+    ] as const) {
+      gates.disposition.mockResolvedValueOnce(disposition);
+      expect(await review({ data })).toMatchObject({
+        ok: true,
+        notification,
+        emailSent: notification === "accepted",
+      });
+    }
+    gates.disposition.mockRejectedValueOnce(new Error("synthetic read failure"));
+    expect(await review({ data })).toMatchObject({
+      ok: true,
+      notification: "review",
+      emailSent: false,
+    });
   });
 
   it("requires same origin and signed admin session before recording decisions", async () => {
@@ -491,5 +579,54 @@ describe("C29: authenticated session endpoints do not expose cacheable credentia
       status: "requested",
     });
     privacyHeaders();
+  });
+});
+
+describe("Irreversible actions distinguish uncertain outcomes from definitive refusals", () => {
+  const id = "00000000-0000-4000-8000-000000000999";
+  it("does not tell operators to retry an unconfirmed decision or send mail prematurely", async () => {
+    gates.decide.mockRejectedValueOnce(new Error("synthetic committed response lost"));
+    expect(
+      await reviewAffiliateApplication({ data: { id, decision: "aprovada", reason: null } }),
+    ).toMatchObject({ ok: false, uncertain: true });
+    expect(gates.email).not.toHaveBeenCalled();
+    gates.decide.mockResolvedValueOnce(false);
+    const refusal = await reviewAffiliateApplication({
+      data: { id, decision: "aprovada", reason: null },
+    });
+    expect(refusal.ok).toBe(false);
+    expect(refusal).not.toHaveProperty("uncertain");
+  });
+  it("distinguishes an ambiguous deletion from a confirmed negative result", async () => {
+    const data = {
+      id,
+      emailConfirmation: "synthetic@example.invalid",
+      reason: "solicitacao_titular" as const,
+    };
+    gates.erase.mockRejectedValueOnce(new Error("synthetic connection loss"));
+    expect(await eraseAffiliateApplicationAdmin({ data })).toMatchObject({
+      ok: false,
+      uncertain: true,
+    });
+    gates.erase.mockResolvedValueOnce(false);
+    const refusal = await eraseAffiliateApplicationAdmin({ data });
+    expect(refusal.ok).toBe(false);
+    expect(refusal).not.toHaveProperty("uncertain");
+  });
+  it("does not claim provider delivery or expose internal error details when invite outcome is ambiguous", async () => {
+    gates.readApplicantEmail.mockResolvedValue("synthetic@example.invalid");
+    gates.invite.mockRejectedValueOnce(new Error("SYNTHETIC_PRIVATE_PROVIDER_DETAIL"));
+    const result = await resendAffiliateApplicantInvite({ data: { id } });
+    expect(result).toMatchObject({ ok: false, uncertain: true });
+    expect(JSON.stringify(result)).not.toContain("SYNTHETIC_PRIVATE_PROVIDER_DETAIL");
+    gates.invite.mockResolvedValueOnce(false);
+    expect(await resendAffiliateApplicantInvite({ data: { id } })).toMatchObject({
+      ok: false,
+      uncertain: true,
+    });
+    gates.readApplicantEmail.mockResolvedValueOnce(null);
+    const absent = await resendAffiliateApplicantInvite({ data: { id } });
+    expect(absent.ok).toBe(false);
+    expect(absent).not.toHaveProperty("uncertain");
   });
 });

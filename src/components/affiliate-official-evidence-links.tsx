@@ -1,7 +1,22 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  EDITORIAL_REFERENCE_LIMIT,
+  resolveEditorialReferences,
+  toggleEditorialReference,
+} from "@/lib/affiliate-editorial-references";
 import { affiliateSearchTerms, matchesAffiliateSearch } from "@/lib/affiliate-catalog-search";
-import { ArrowUpRight, Film, Images, MessageSquareText, Search, Star } from "lucide-react";
-import { getProduct, OUT_OF_STOCK } from "@/lib/store";
+import {
+  ArrowUpRight,
+  Bookmark,
+  Check,
+  Film,
+  Images,
+  MessageSquareText,
+  Search,
+  Star,
+} from "lucide-react";
+import { getProduct, OUT_OF_STOCK, vitrine } from "@/lib/store";
+import { soldFor } from "@/lib/sales";
 import publishedMedia from "@/data/provas-em-video.json";
 import reviews from "@/data/reviews.json";
 import packagingImages from "@/data/sacolinhas.json";
@@ -50,16 +65,36 @@ const additionalVideoProducts = [
   { slug: "mascara-monovonix", idea: "Explore a apresentação da máscara e as instruções de uso." },
 ] as const;
 
+// Product sales are first-party catalog data, not affiliate sales or earnings.
+const marketEvidence = [
+  "progressiva-fio-de-luz",
+  "shampoo-fio-de-luz-anti-residuo",
+  "botox-vonix",
+].flatMap((slug) => {
+  const product = vitrine.find((item) => item.slug === slug);
+  const units = soldFor(slug);
+  return product && Number.isSafeInteger(units) && units > 0
+    ? [{ slug, name: product.name, units }]
+    : [];
+});
+
 export function AffiliateOfficialEvidenceLinks({
   variant,
+  referenceSelection,
 }: {
   variant: "teaser" | "preview" | "reviews" | "videos";
+  referenceSelection?: readonly [string[], Dispatch<SetStateAction<string[]>>];
 }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  const selectedReferences = referenceSelection?.[0] ?? [];
+  const selectedCount = resolveEditorialReferences(selectedReferences).length;
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [packagingView, setPackagingView] = useState(false);
   const [failedPackaging, setFailedPackaging] = useState<string[]>([]);
+  const [photoAttempts, setPhotoAttempts] = useState<Record<string, number>>({});
   const videos = variant === "videos";
   const compact = variant === "teaser";
   const id =
@@ -198,6 +233,27 @@ export function AffiliateOfficialEvidenceLinks({
                   ))}
                 </select>
               </div>
+              <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+                <span className="text-xs font-semibold text-[#795e69]">Ideias para começar:</span>
+                {[
+                  { label: "Rotina de cachos", term: "cachos" },
+                  { label: "Conteúdo profissional", term: "progressiva" },
+                  { label: "Resenha de Botox", term: "botox" },
+                ].map(({ label, term }) => (
+                  <button
+                    key={term}
+                    type="button"
+                    aria-pressed={query === term && !category}
+                    onClick={() => {
+                      setCategory("");
+                      setQuery(query === term && !category ? "" : term);
+                    }}
+                    className="min-h-11 rounded-full border border-[#d8bfc5] bg-white px-3 text-xs font-bold text-[#724155] aria-pressed:border-[#784254] aria-pressed:bg-[#784254] aria-pressed:text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               {searching && (
                 <button
                   type="button"
@@ -253,56 +309,133 @@ export function AffiliateOfficialEvidenceLinks({
               className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
             >
               {visibleProducts.map(({ slug, name, category, count, idea, packaging }) => {
-                const productPhoto = "/images/products/" + slug + "-480.webp";
+                const selectable = Boolean(
+                  referenceSelection && resolveEditorialReferences([slug]).length,
+                );
+                const selected = selectedReferences.includes(slug);
+                const photoBase = "/images/products/" + slug;
+                const photoSources = [
+                  photoBase + "-480.webp",
+                  photoBase + ".webp",
+                  photoBase + ".jpg",
+                ];
+                const photoAttempt = photoAttempts[slug] ?? 0;
+                const productPhoto = photoSources[photoAttempt];
                 const showPackaging =
                   packagingView &&
                   typeof packaging === "string" &&
                   /^\/images\/sacolinhas\/[a-z0-9-]+\.webp$/.test(packaging) &&
                   !failedPackaging.includes(slug);
                 return (
-                  <a
+                  <article
                     key={slug}
-                    href={"/produto/" + slug}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
-                    className="group flex min-h-24 min-w-0 items-start gap-3 overflow-hidden rounded-2xl border border-[#e5d2d4] bg-white p-3 text-sm font-bold text-[#724155] shadow-[0_6px_20px_rgba(83,42,58,.05)] hover:border-[#b98b9c] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-2 sm:flex-col sm:gap-2 sm:p-4"
+                    className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e5d2d4] bg-white shadow-[0_6px_20px_rgba(83,42,58,.05)]"
                   >
-                    <img
-                      src={showPackaging ? packaging : productPhoto}
-                      onError={() => {
-                        if (showPackaging)
-                          setFailedPackaging((previous) =>
-                            previous.includes(slug) ? previous : [...previous, slug],
-                          );
-                      }}
-                      alt=""
-                      width={480}
-                      height={480}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-semibold uppercase tracking-wider text-[#89586a]">
-                        {category}
+                    <a
+                      href={"/produto/" + slug}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
+                      className="group flex min-h-24 min-w-0 flex-1 items-start gap-3 rounded-2xl bg-white p-3 text-sm font-bold text-[#724155] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-[-2px] sm:flex-col sm:gap-2 sm:p-4"
+                    >
+                      {showPackaging || productPhoto ? (
+                        <img
+                          src={showPackaging ? packaging : productPhoto}
+                          onError={() => {
+                            if (showPackaging) {
+                              setFailedPackaging((previous) =>
+                                previous.includes(slug) ? previous : [...previous, slug],
+                              );
+                            } else {
+                              setPhotoAttempts((previous) =>
+                                (previous[slug] ?? 0) === photoAttempt
+                                  ? { ...previous, [slug]: photoAttempt + 1 }
+                                  : previous,
+                              );
+                            }
+                          }}
+                          alt=""
+                          width={480}
+                          height={480}
+                          loading="lazy"
+                          decoding="async"
+                          className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full"
+                        />
+                      ) : (
+                        <span
+                          className="grid size-24 shrink-0 place-items-center rounded-xl bg-[#fbf5f2] text-[#89586a] sm:aspect-square sm:h-auto sm:w-full"
+                          aria-hidden="true"
+                        >
+                          <Images className="size-8" />
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[10px] font-semibold uppercase tracking-wider text-[#89586a]">
+                          {category}
+                        </span>
+                        <span className="mt-1 block leading-tight sm:text-base">{name}</span>
+                        <span className="mt-1 block text-[11px] font-semibold text-[#89586a]">
+                          {count} {count === 1 ? "vídeo associado" : "vídeos associados"}
+                        </span>
+                        <span className="mt-1 block text-xs font-normal leading-relaxed text-[#795e69]">
+                          {idea}
+                        </span>
+                        <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#724155] underline underline-offset-4">
+                          Ver demonstrações na loja (nova aba){" "}
+                          <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+                        </span>
                       </span>
-                      <span className="mt-1 block leading-tight sm:text-base">{name}</span>
-                      <span className="mt-1 block text-[11px] font-semibold text-[#89586a]">
-                        {count} {count === 1 ? "vídeo associado" : "vídeos associados"}
-                      </span>
-                      <span className="mt-1 block text-xs font-normal leading-relaxed text-[#795e69]">
-                        {idea}
-                      </span>
-                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#724155] underline underline-offset-4">
-                        Ver demonstrações na loja (nova aba){" "}
-                        <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
-                      </span>
-                    </span>
-                  </a>
+                    </a>
+                    {selectable && (
+                      <button
+                        type="button"
+                        disabled={
+                          !ready || (!selected && selectedCount >= EDITORIAL_REFERENCE_LIMIT)
+                        }
+                        aria-pressed={selected}
+                        aria-label={
+                          (selected ? "Remover " : "Adicionar ") +
+                          name +
+                          (selected ? " do planejamento" : " ao planejamento")
+                        }
+                        onClick={() =>
+                          referenceSelection?.[1]((previous) =>
+                            toggleEditorialReference(previous, slug),
+                          )
+                        }
+                        className="mx-3 mb-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d8bfc5] bg-[#fff9f6] px-3 py-2 text-xs font-bold text-[#724155] aria-pressed:border-[#784254] aria-pressed:bg-[#784254] aria-pressed:text-white disabled:opacity-50 focus-visible:outline-2 sm:mx-4"
+                      >
+                        {selected ? (
+                          <Check aria-hidden="true" className="size-4" />
+                        ) : (
+                          <Bookmark aria-hidden="true" className="size-4" />
+                        )}
+                        {selected ? "No seu planejamento" : "Salvar como referência"}
+                      </button>
+                    )}
+                    {referenceSelection && !selectable && (
+                      <p className="mx-3 mb-3 rounded-lg bg-[#fbf5f2] p-2 text-xs leading-relaxed text-[#795e69] sm:mx-4">
+                        Acervo de linhas anteriores. Consulte como inspiração; a lista de
+                        planejamento aceita apenas itens da vitrine atual.
+                      </p>
+                    )}
+                  </article>
                 );
               })}
             </div>
+            {referenceSelection && selectedCount > 0 && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e5d2d4] bg-[#fff9f6] p-4">
+                <p aria-live="polite" className="text-sm font-semibold text-[#724155]">
+                  {selectedCount} de {EDITORIAL_REFERENCE_LIMIT} referências selecionadas.
+                </p>
+                <a
+                  href="#planejamento-criativo"
+                  className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#724155] underline underline-offset-4 focus-visible:outline-2"
+                >
+                  Abrir meu planejamento <ArrowUpRight aria-hidden="true" className="size-4" />
+                </a>
+              </div>
+            )}
             {searching && visibleProducts.length === 0 && (
               <p className="mt-4 rounded-xl bg-[#fff8f6] p-4 text-sm text-[#755d66]">
                 Nenhuma inspiração encontrada. Tente outro produto ou categoria.
@@ -443,6 +576,48 @@ export function AffiliateOfficialEvidenceLinks({
                   </article>
                 )}
               </div>
+            )}
+            {variant === "reviews" && marketEvidence.length > 0 && (
+              <section
+                aria-labelledby="affiliate-market-evidence-title"
+                data-testid="affiliate-market-evidence"
+                className="w-full rounded-2xl border border-[#e5d2d4] bg-[#fffaf7] p-4 sm:p-5"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#89586a]">
+                  Conheça a presença dos produtos no mercado
+                </p>
+                <h3
+                  id="affiliate-market-evidence-title"
+                  className="mt-1 font-display text-xl text-[#523342]"
+                >
+                  Produtos com vendas registradas no catálogo
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-[#755d66]">
+                  Dados de unidades vendidas informados pela própria loja. Não representam vendas,
+                  ganhos ou desempenho de afiliadas, nem uma previsão de resultados.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {marketEvidence.map(({ slug, name, units }) => (
+                    <a
+                      key={slug}
+                      href={"/produto/" + slug}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-w-0 flex-col rounded-xl border border-[#e5d2d4] bg-white p-3 text-[#724155] hover:bg-[#fbf5f2] focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      <strong className="font-display text-3xl text-[#784254]">
+                        {units.toLocaleString("pt-BR")}
+                      </strong>
+                      <span className="text-xs font-medium">unidades vendidas no catálogo</span>
+                      <span className="mt-2 text-sm font-bold leading-tight">{name}</span>
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold underline underline-offset-4">
+                        Consultar fonte (nova aba)
+                        <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </section>
             )}
             {!compact && summary.count > 0 && (
               <div

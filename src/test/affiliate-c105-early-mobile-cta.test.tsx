@@ -74,6 +74,20 @@ describe("C105 — CTA mais imediato sem omitir contexto da candidatura", () => 
     },
   );
 
+  it("keeps the steps link before secondary shortcuts in keyboard reading order", () => {
+    render(<AffiliateEditorialHero recruitmentStatus="closed" sourceLinked />);
+    const hero = screen.getByTestId("vonix-affiliate-hero");
+    const step = within(hero).getByRole("link", { name: "Entenda as três etapas da candidatura" });
+    const terms = within(hero).getByRole("link", { name: "Conhecer as condições" });
+    const share = within(hero).getByRole("button", { name: "Compartilhar programa" });
+    expect(step.compareDocumentPosition(terms) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(terms.compareDocumentPosition(share) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(share.closest('[data-testid="vonix-c67-public-share"]')?.parentElement).toHaveClass(
+      "grid-cols-2",
+      "sm:flex",
+    );
+  });
+
   it("conserva todos os produtos do catálogo sem atribuir imagens a criadoras", () => {
     render(<AffiliateEditorialHero recruitmentStatus="closed" />);
     const hero = screen.getByTestId("vonix-affiliate-hero");

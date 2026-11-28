@@ -5,7 +5,10 @@ import { isIP } from "node:net";
 import { affiliateDatabaseConfig } from "./affiliate-database.server";
 import { probeAffiliateRecruitment } from "./affiliate-recruitment-probes.server";
 import { VONIX_AFFILIATE_AUTH_URL, VONIX_AFFILIATE_PUBLIC_KEY } from "./vonix-affiliate-auth";
-import { affiliateQuestionnaireEncryptionReady } from "./affiliate-wizard-crypto.server";
+import {
+  affiliateQuestionnaireEncryptionReady,
+  issueAffiliateReceiptTicket,
+} from "./affiliate-wizard-crypto.server";
 import { affiliateApplicationSchema, affiliateAdminSchema } from "./affiliate-application";
 import { affiliateSimpleSchema, affiliateManualSchema } from "./affiliate-simple";
 import { affiliateRejectionReasonSchema } from "./affiliate-rejection";
@@ -46,6 +49,7 @@ import {
   getAffiliateStatusWithCode,
   readAffiliateApplicantEmailForAccessRecovery,
   decideAffiliateApplication,
+  readAffiliateDecisionMailDisposition,
   listAffiliateApplications,
   readAffiliateApplicationPrivateDetail,
   processAffiliateEmails,
@@ -118,6 +122,34 @@ export const requestAffiliateAccessEmail = createServerFn({ method: "POST" })
       // Fixed operator-only category: never log the address, code, link or error body.
       console.warn("[vonix-affiliate-auth-mail] request-exception http=none");
       return { status: "requested" as const };
+    }
+  });
+
+/** Issue a server-generated receipt before any application data is sent.
+ * No candidate data, database write or notification is involved in issuance. */
+export const issuePrivateAffiliateReceipt = createServerFn({ method: "POST" })
+  .validator(z.object({ scope: z.enum(["public", "staff"]) }))
+  .handler(async ({ data }) => {
+    privateAffiliateAuthResponse();
+    try {
+      if (data.scope === "staff") {
+        if (
+          !affiliateAdminSameOrigin() ||
+          !(await affiliateAdminSessionAuthorized()) ||
+          !(await affiliateRateLimitAllowed("admin"))
+        )
+          return { ok: false as const };
+      } else if (
+        !affiliateMutationSameOrigin() ||
+        !(await affiliateOperatorIntakeEnabled()) ||
+        !(await affiliateRateLimitAllowed("submit"))
+      ) {
+        return { ok: false as const };
+      }
+      const ticket = issueAffiliateReceiptTicket(data.scope);
+      return ticket ? { ok: true as const, ...ticket } : { ok: false as const };
+    } catch {
+      return { ok: false as const };
     }
   });
 
@@ -250,13 +282,16 @@ export const resendAffiliateApplicantInvite = createServerFn({ method: "POST" })
           ok: false as const,
           reason:
             "O provedor não confirmou o convite. Se a conta já existir, oriente a candidata a solicitar um código no portal de acompanhamento.",
+          uncertain: true as const,
         };
       }
       return { ok: true as const };
     } catch {
       return {
         ok: false as const,
-        reason: "Não foi possível solicitar o acesso. Verifique a conexão com o Supabase.",
+        uncertain: true as const,
+        reason:
+          "Não foi possível confirmar a solicitação de acesso. Confira com a candidata antes de repetir.",
       };
     }
   });
@@ -455,7 +490,8 @@ export const eraseAffiliateApplicationAdmin = createServerFn({ method: "POST" })
     } catch {
       return {
         ok: false as const,
-        reason: "Não foi possível executar a exclusão. Verifique a migração de governança.",
+        uncertain: true as const,
+        reason: "Não foi possível confirmar a exclusão. Verifique o resultado antes de repetir.",
       };
     }
   });
@@ -522,23 +558,39 @@ export const reviewAffiliateApplication = createServerFn({ method: "POST" })
         const send = await processAffiliateEmails(1, data.id);
         // Provider acceptance is not delivery, and an unconfigured sender is
         // different from a failed or ambiguous attempt requiring reconciliation.
-        const notification = (
-          send.sent === 1
-            ? "accepted"
-            : !send.configured
-              ? "unconfigured"
-              : send.failed > 0
-                ? "review"
-                : "queued"
-        ) as "accepted" | "unconfigured" | "review" | "queued";
-        return { ok: true as const, emailSent: send.sent === 1, notification };
+        if (send.sent === 1)
+          return { ok: true as const, emailSent: true, notification: "accepted" as const };
+        if (send.failed > 0)
+          return { ok: true as const, emailSent: false, notification: "review" as const };
+        const disposition = await readAffiliateDecisionMailDisposition(data.id);
+        const notification =
+          disposition === "not_applicable"
+            ? "not_applicable"
+            : disposition === "enviado"
+              ? "accepted"
+              : disposition === "pendente" || disposition === "processando"
+                ? send.configured
+                  ? "queued"
+                  : "unconfigured"
+                : "review";
+        return { ok: true as const, emailSent: notification === "accepted", notification };
       } catch {
+        // The provider or database may have committed before the response was lost.
+        // Reconcile only durable acceptance; never send again here, and never
+        // turn a pending/in-flight/unknown state into a confirmed delivery.
+        try {
+          if ((await readAffiliateDecisionMailDisposition(data.id)) === "enviado")
+            return { ok: true as const, emailSent: true, notification: "accepted" as const };
+        } catch {
+          // A failed reconciliation remains explicitly uncertain.
+        }
         return { ok: true as const, emailSent: false, notification: "review" as const };
       }
     } catch {
       return {
         ok: false as const,
-        reason: "Não foi possível registrar a decisão. Tente novamente.",
+        uncertain: true as const,
+        reason: "Não foi possível confirmar a decisão. Consulte o status antes de repetir.",
       };
     }
   });

@@ -16,7 +16,9 @@ import {
   affiliateEmailAuthorizedForPortal,
   sendAffiliateAuthEmailWithResend,
   sendAffiliateManagedAuthOtp,
+  reserveAffiliateAuthMailCooldown,
 } from "@/lib/affiliate-auth-delivery.server";
+import { invitePersistedAffiliateApplicant } from "@/lib/affiliate-invites.server";
 
 const base = "https://synthetic-reference-123.supabase.co";
 const inbox = "candidate@example.invalid";
@@ -699,4 +701,53 @@ it("uses managed OTP when the admin link-generation success payload has no link"
   expect(await sendAffiliateAuthEmailWithResend(inbox, "owner")).toBe(true);
   expect(fetcher).toHaveBeenCalledTimes(3);
   expect(String(fetcher.mock.calls[2]![0])).toContain("/auth/v1/otp?");
+});
+
+describe("Shared invitation and OTP recipient reservation", () => {
+  it("uses one normalized fingerprint across administrative invite and candidate OTP; no second provider call", async () => {
+    deps.values.set("RESEND_API_KEY", "");
+    const request = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json(true))
+      .mockResolvedValueOnce(Response.json({}))
+      .mockResolvedValueOnce(Response.json(false));
+    vi.stubGlobal("fetch", request);
+    expect(await invitePersistedAffiliateApplicant("Candidate@Example.Invalid")).toBe(true);
+    expect(await sendAffiliateManagedAuthOtp(inbox, "applicant")).toBe(false);
+    expect(request).toHaveBeenCalledTimes(3);
+    const first = JSON.parse(request.mock.calls[0]![1].body);
+    const second = JSON.parse(request.mock.calls[2]![1].body);
+    expect(first).toEqual(second);
+    expect(first.p_fingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(first)).not.toContain(inbox);
+    expect(request.mock.calls[1]![0]).toContain("/auth/v1/invite?");
+    expect(request.mock.calls.filter((c) => String(c[0]).includes("/auth/v1/otp"))).toHaveLength(0);
+  });
+  it.each([false, null, { ok: true }, "true"])(
+    "rejects malformed or negative cooldown receipt %j",
+    async (value) => {
+      const fetcher = vi.fn().mockResolvedValueOnce(Response.json(value));
+      vi.stubGlobal("fetch", fetcher);
+      expect(await reserveAffiliateAuthMailCooldown(inbox, deps.config())).toBe(false);
+      expect(fetcher).toHaveBeenCalledOnce();
+    },
+  );
+  it("fails closed for both managed and corporate delivery when cooldown transport fails", async () => {
+    const request = vi.fn().mockRejectedValue(new Error("SYNTHETIC_PRIVATE_DETAIL"));
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      vi.stubGlobal("fetch", request);
+      expect(await sendAffiliateAuthEmailWithResend(inbox, "applicant")).toBe(false);
+      deps.values.set("RESEND_API_KEY", "");
+      expect(await invitePersistedAffiliateApplicant(inbox)).toBe(false);
+      expect(request).toHaveBeenCalledTimes(2);
+      expect(
+        request.mock.calls.every((c) => String(c[0]).includes("consume_auth_mail_cooldown")),
+      ).toBe(true);
+      expect(JSON.stringify(warning.mock.calls)).not.toContain("SYNTHETIC_PRIVATE_DETAIL");
+      expect(JSON.stringify(warning.mock.calls)).not.toContain(inbox);
+    } finally {
+      warning.mockRestore();
+    }
+  });
 });

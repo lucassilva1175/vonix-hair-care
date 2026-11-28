@@ -32,6 +32,12 @@ jobs:
         run: node --test scripts/qa-affiliate-mail-scheduler.test.mjs scripts/qa-affiliate-public-release.test.mjs
       - name: Run all application tests
         run: bun run test
+      - name: Integrated affiliate journey against networkless PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull postgres:16
+          node scripts/qa-affiliate-operational-journey.cjs
       - name: TypeScript check
         run: bunx tsc --noEmit
       - name: Lint affiliate files only

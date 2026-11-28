@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -208,4 +209,116 @@ describe("Vonix affiliate already-activated owner password sign-in", () => {
     fireEvent.click(screen.getByRole("button", { name: /Acessar candidaturas/ }));
     expect(mocks.loginAffiliateAdminMember).not.toHaveBeenCalled();
   });
+});
+
+describe("Team access lifecycle and duplicate protection", () => {
+  it("clears the new rotation password across a back-forward cache restore", async () => {
+    mocks.loginAffiliateAdminMember.mockResolvedValueOnce({
+      ok: false,
+      requiresPasswordChange: true,
+      reason: "temporary",
+    });
+    window.history.replaceState({}, "", "/acesso-equipe-afiliadas?login=senha");
+    render(<AffiliateTeamAccess />);
+    fireEvent.change(await screen.findByLabelText("E-mail administrativo"), {
+      target: { value: "owner@example.invalid" },
+    });
+    fireEvent.change(screen.getByLabelText("Senha pessoal"), {
+      target: { value: "TemporarySyntheticPassword2026!" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Acessar candidaturas/ }));
+    const field = await screen.findByLabelText("Nova senha pessoal");
+    fireEvent.change(field, { target: { value: "NewSyntheticPassword2026!" } });
+    fireEvent.change(screen.getByLabelText("Confirmar nova senha"), {
+      target: { value: "NewSyntheticPassword2026!" },
+    });
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    expect(screen.queryByDisplayValue("NewSyntheticPassword2026!")).toBeNull();
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    await screen.findByLabelText("Senha pessoal");
+    mocks.loginAffiliateAdminMember.mockResolvedValueOnce({
+      ok: false,
+      requiresPasswordChange: true,
+      reason: "temporary",
+    });
+    fireEvent.change(screen.getByLabelText("E-mail administrativo"), {
+      target: { value: "owner@example.invalid" },
+    });
+    fireEvent.change(screen.getByLabelText("Senha pessoal"), {
+      target: { value: "TemporarySyntheticPassword2026!" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Acessar candidaturas/ }));
+    expect(await screen.findByLabelText("Nova senha pessoal")).toHaveValue("");
+    expect(screen.getByLabelText("Confirmar nova senha")).toHaveValue("");
+  });
+  it("sends only one password grant for same-tick submits", async () => {
+    let finish!: (v: unknown) => void;
+    mocks.loginAffiliateAdminMember.mockReturnValueOnce(
+      new Promise((r) => {
+        finish = r;
+      }),
+    );
+    render(<AffiliateTeamAccess />);
+    fireEvent.click(await screen.findByRole("button", { name: /Já tenho senha/ }));
+    fireEvent.change(screen.getByLabelText("E-mail administrativo"), {
+      target: { value: "owner@example.invalid" },
+    });
+    fireEvent.change(screen.getByLabelText("Senha pessoal"), {
+      target: { value: "SyntheticPassword2026!" },
+    });
+    const form = screen.getByRole("button", { name: /Acessar candidaturas/ }).closest("form")!;
+    act(() => {
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+    });
+    expect(mocks.loginAffiliateAdminMember).toHaveBeenCalledOnce();
+    await act(async () => finish({ ok: false, reason: "Synthetic denial" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Synthetic denial");
+  });
+  it("ignores an older manual invitation response after a restored page has entered password mode", async () => {
+    let finish!: (v: unknown) => void;
+    window.history.replaceState({}, "", "/acesso-equipe-afiliadas#vonix_invite=" + "z".repeat(64));
+    mocks.verifyOtp.mockReturnValueOnce(
+      new Promise((r) => {
+        finish = r;
+      }),
+    );
+    render(<AffiliateTeamAccess />);
+    fireEvent.click(await screen.findByRole("button", { name: "Confirmar ativação" }));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+    act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+    fireEvent.click(await screen.findByRole("button", { name: /Já tenho senha/ }));
+    await act(async () => finish({ data: {}, error: null }));
+    expect(screen.getByRole("heading", { name: "Entrar com senha pessoal" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar ativação" })).toBeNull();
+  });
+});
+
+it("does not rehydrate a suspended document on an auth callback until pageshow", async () => {
+  let callback!: () => void;
+  mocks.onAuthStateChange.mockImplementation((fn: () => void) => {
+    callback = fn;
+    return { data: { subscription: { unsubscribe: vi.fn() } } };
+  });
+  render(<AffiliateTeamAccess />);
+  await screen.findByLabelText("E-mail autorizado");
+  act(() => window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true })));
+  await act(async () => callback());
+  expect(mocks.getUser).toHaveBeenCalledOnce();
+  expect(screen.getByText(/Verificando sua identidade/)).toBeInTheDocument();
+  act(() => window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+  await screen.findByLabelText("E-mail autorizado");
+  expect(mocks.getUser).toHaveBeenCalledTimes(2);
+});
+it("preserves explicit confirmation of an unredeemed link through effect replay", async () => {
+  window.history.replaceState({}, "", "/acesso-equipe-afiliadas#vonix_invite=" + "k".repeat(64));
+  render(
+    <StrictMode>
+      <AffiliateTeamAccess />
+    </StrictMode>,
+  );
+  expect(await screen.findByRole("button", { name: "Confirmar ativação" })).toBeInTheDocument();
+  expect(mocks.getUser).not.toHaveBeenCalled();
+  expect(mocks.verifyOtp).not.toHaveBeenCalled();
+  expect(window.location.hash).toBe("");
 });

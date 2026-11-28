@@ -1,14 +1,24 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { ArrowRight, CheckCircle2, MapPin, Send, ShieldCheck, Instagram } from "lucide-react";
-import { affiliateSimpleBaseSchema, affiliateSimpleSchema } from "@/lib/affiliate-simple";
+import {
+  affiliateReceiptTicketSchema,
+  affiliateSimpleBaseSchema,
+  affiliateSimpleSchema,
+} from "@/lib/affiliate-simple";
 import {
   downloadAffiliatePrivateReceipt,
   releasePendingReceipt,
   pendingReceiptSessionKey,
+  reservePendingReceipt,
+  reserveOneTimeReceipt,
 } from "@/lib/affiliate-private-receipt";
 import { track } from "@/lib/analytics";
 import { trackAffiliateFunnel } from "@/lib/affiliate-funnel";
-import { submitSimpleAffiliateApplication } from "@/lib/affiliate-functions";
+import { createAffiliateIntakeDeadline } from "@/lib/affiliate-intake-deadline";
+import {
+  issuePrivateAffiliateReceipt,
+  submitSimpleAffiliateApplication,
+} from "@/lib/affiliate-functions";
 import { WIZARD_BRAZIL_STATES, onlyDigits } from "@/lib/affiliate-wizard";
 
 type Key =
@@ -66,44 +76,11 @@ const validationOrder: ValidationKey[] = [
   "privacyAccepted",
 ];
 
-// A deadline only ends the local wait, not the server transaction. The private
-// receipt and exact payload remain available for a safe retry or status lookup.
-const submissionWaitMs = 45000;
-
-async function waitForSubmission<T>(request: Promise<T>): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      request,
-      new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(
-          () => reject(new Error("affiliate-submission-wait-expired")),
-          submissionWaitMs,
-        );
-      }),
-    ]);
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
-  }
-}
-
 /** Resolve visibility at callback time, not from TypeScript's earlier narrowing.
  * Clipboard and visibility events can complete between awaited operations.
  */
 function receiptTabHidden(): boolean {
   return typeof document !== "undefined" && document.visibilityState === "hidden";
-}
-
-/** Web Crypto creates 192 unpredictable bits before the request begins.
- * The code is a private bearer token: never include it in a URL or analytics.
- */
-function createBrowserPrivateReceipt(): string {
-  const bytes = new Uint8Array(24);
-  window.crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
 }
 
 const fields: Record<Key, string> = {
@@ -251,9 +228,13 @@ export function AffiliateSimpleForm({
   const receiptCopyEpoch = useRef(0);
   const leavingWithVerifiedHandoff = useRef(false);
   const receiptCopying = useRef(false);
+  const [receiptCopyBusy, setReceiptCopyBusy] = useState(false);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   const [codeRevealed, setCodeRevealed] = useState(false);
   const [trackingNavigationError, setTrackingNavigationError] = useState("");
   const attemptCode = useRef("");
+  const attemptProof = useRef("");
   // A retry can reuse the private receipt only with exactly the same data.
   // Do not persist the applicant's sensitive form contents across sessions.
   const submittedPayload = useRef<string | null>(null);
@@ -290,7 +271,8 @@ export function AffiliateSimpleForm({
   useEffect(() => {
     const concealReceipt = () => {
       receiptCopyEpoch.current++;
-      receiptCopying.current = false;
+      focusAfterSubmission.current = false;
+      // The clipboard write itself cannot be cancelled on concealment.
       setCodeRevealed(false);
       setTrackingCopied(false);
       setUnconfirmedCopied(false);
@@ -337,6 +319,7 @@ export function AffiliateSimpleForm({
       return;
     const epoch = ++receiptCopyEpoch.current;
     receiptCopying.current = true;
+    setReceiptCopyBusy(true);
     setUnconfirmedCopied(false);
     try {
       await navigator.clipboard.writeText(unconfirmedCode);
@@ -351,10 +334,13 @@ export function AffiliateSimpleForm({
       setDownloadFeedback(
         "Não foi possível copiar automaticamente. Mostre o código e selecione-o manualmente ou baixe o arquivo privado.",
       );
-      field?.focus();
-      field?.select();
+      if (field?.type === "text") {
+        field.focus();
+        field.select();
+      }
     } finally {
-      if (epoch === receiptCopyEpoch.current) receiptCopying.current = false;
+      receiptCopying.current = false;
+      setReceiptCopyBusy(false);
     }
   }
 
@@ -368,10 +354,10 @@ export function AffiliateSimpleForm({
       return;
     }
     receiptCopyEpoch.current++;
-    receiptCopying.current = false;
     setUnconfirmedHandoffError("");
     setDownloadFeedback("");
     attemptCode.current = "";
+    attemptProof.current = "";
     submittedPayload.current = null;
     setRecoveredAttempt(false);
     setUnconfirmedCode("");
@@ -387,12 +373,14 @@ export function AffiliateSimpleForm({
       event.preventDefault();
       return;
     }
+    // Opening the public portal in another tab is not a one-time handoff in
+    // this tab. Preserve native navigation without writing a stale transfer.
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+      return;
     try {
       // The browser may throw OR silently ignore storage writes. Do not
       // navigate away with the only copy of this unconfirmed private token.
-      window.sessionStorage.setItem("vonix-affiliate-once-code", unconfirmedCode);
-      if (window.sessionStorage.getItem("vonix-affiliate-once-code") !== unconfirmedCode)
-        throw new Error("Private handoff unavailable.");
+      if (!reserveOneTimeReceipt(unconfirmedCode)) throw new Error("Private handoff unavailable.");
       setUnconfirmedHandoffError("");
     } catch {
       event.preventDefault();
@@ -407,6 +395,7 @@ export function AffiliateSimpleForm({
     if (!trackingCode || receiptCopying.current || receiptTabHidden()) return;
     const epoch = ++receiptCopyEpoch.current;
     receiptCopying.current = true;
+    setReceiptCopyBusy(true);
     setTrackingCopied(false);
     try {
       await navigator.clipboard.writeText(trackingCode);
@@ -420,7 +409,8 @@ export function AffiliateSimpleForm({
       );
       document.getElementById("affiliate-confirmed-code")?.focus();
     } finally {
-      if (epoch === receiptCopyEpoch.current) receiptCopying.current = false;
+      receiptCopying.current = false;
+      setReceiptCopyBusy(false);
     }
   }
 
@@ -442,9 +432,7 @@ export function AffiliateSimpleForm({
   function openTrackingWithCode() {
     if (receiptTabHidden() || !/^[A-Za-z0-9_-]{32}$/.test(trackingCode)) return;
     try {
-      window.sessionStorage.setItem("vonix-affiliate-once-code", trackingCode);
-      if (window.sessionStorage.getItem("vonix-affiliate-once-code") !== trackingCode)
-        throw new Error("One-time handoff is unavailable.");
+      if (!reserveOneTimeReceipt(trackingCode)) throw new Error("One-time handoff is unavailable.");
     } catch {
       // A confirmed receipt exists only in this UI if the browser denies storage.
       // Never navigate away while losing the only accessible private code.
@@ -476,11 +464,26 @@ export function AffiliateSimpleForm({
   );
   const submitting = useRef(false);
   const formElement = useRef<HTMLFormElement | null>(null);
+  const confirmedReceiptHeading = useRef<HTMLHeadingElement>(null);
+  const uncertainReceiptRegion = useRef<HTMLElement>(null);
+  const focusAfterSubmission = useRef(false);
   const optionalTikTokRef = useRef<HTMLDetailsElement | null>(null);
   const formSeen = useRef(false);
   const formStarted = useRef(false);
   const dirty = Object.values(values).some(Boolean) || accepted || !!trap;
   const invalidKeys = validationOrder.filter((key) => Boolean(errors[key]));
+
+  // Only focus outcomes of an explicit local submit, not a recovered visit or
+  // a response received while the applicant is in another part of the page.
+  useEffect(() => {
+    if (sending || !focusAfterSubmission.current) return;
+    focusAfterSubmission.current = false;
+    if (receiptTabHidden()) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && !formElement.current?.contains(active)) return;
+    if (sent) confirmedReceiptHeading.current?.focus();
+    else if (unconfirmedCode) uncertainReceiptRegion.current?.focus();
+  }, [sending, sent, unconfirmedCode]);
 
   // Focus only after a new invalid submit, never while the applicant fixes a field.
   useEffect(() => {
@@ -604,16 +607,27 @@ export function AffiliateSimpleForm({
   // Address data returned by a third-party CEP provider must not silently
   // update a private application draft while the page is backgrounded.
   useEffect(() => {
-    const onVisibility = () => {
-      if (!receiptTabHidden()) return;
-      zipRequest.current++;
-      activeZipRequest.current = null;
+    const requestVersion = zipRequest;
+    const activeRequest = activeZipRequest;
+    const invalidate = () => {
+      requestVersion.current++;
+      activeRequest.current = null;
       setZipLoading(false);
       setZipFeedback("");
     };
+    const onVisibility = () => {
+      if (receiptTabHidden()) invalidate();
+    };
+    if (paused) invalidate();
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
+    window.addEventListener("pagehide", invalidate);
+    return () => {
+      requestVersion.current++;
+      activeRequest.current = null;
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", invalidate);
+    };
+  }, [paused]);
 
   useEffect(() => {
     onDraftChange?.(dirty && !sent);
@@ -685,6 +699,7 @@ export function AffiliateSimpleForm({
     const digits = onlyDigits(values.postalCode);
     if (
       digits.length !== 8 ||
+      pausedRef.current ||
       zipLoading ||
       activeZipRequest.current !== null ||
       receiptTabHidden() ||
@@ -708,7 +723,7 @@ export function AffiliateSimpleForm({
         credentials: "omit",
       });
       // A CEP response has no authority over a form hidden in another tab.
-      if (zipRequest.current !== request || receiptTabHidden()) return;
+      if (zipRequest.current !== request || pausedRef.current || receiptTabHidden()) return;
       if (!res.ok) {
         if (zipRequest.current === request)
           setZipFeedback(
@@ -717,7 +732,7 @@ export function AffiliateSimpleForm({
         return;
       }
       const data: unknown = await res.json();
-      if (zipRequest.current !== request || receiptTabHidden()) return;
+      if (zipRequest.current !== request || pausedRef.current || receiptTabHidden()) return;
       if (typeof data !== "object" || !data || "erro" in data) {
         setZipFeedback("CEP não encontrado. Preencha o endereço manualmente.");
         return;
@@ -736,6 +751,7 @@ export function AffiliateSimpleForm({
       setValues((prev) => {
         if (
           zipRequest.current !== request ||
+          pausedRef.current ||
           receiptTabHidden() ||
           onlyDigits(prev.postalCode) !== digits
         )
@@ -756,7 +772,7 @@ export function AffiliateSimpleForm({
         return next;
       });
     } catch {
-      if (zipRequest.current === request && !receiptTabHidden())
+      if (zipRequest.current === request && !pausedRef.current && !receiptTabHidden())
         setZipFeedback(
           "Não foi possível consultar o CEP. Você pode preencher o endereço manualmente.",
         );
@@ -855,24 +871,61 @@ export function AffiliateSimpleForm({
     activeZipRequest.current = null;
     setZipLoading(false);
     submitting.current = true;
+    focusAfterSubmission.current = true;
     setCodeRevealed(false);
     setSending(true);
     setMessage("");
+    const deadline = createAffiliateIntakeDeadline();
     try {
       // Reuse this 192-bit code on a retry. Without it a lost response might
       // create an unreachable application and a second submission conflict.
       if (!attemptCode.current) {
-        attemptCode.current = createBrowserPrivateReceipt();
-        submittedPayload.current = payload;
-        try {
-          window.sessionStorage.setItem(pendingReceiptSessionKey, attemptCode.current);
-        } catch {
-          // Secure in-memory fallback; show the code after any uncertain reply.
+        const issueEpoch = receiptCopyEpoch.current;
+        const issued = await deadline.wait("issue", () =>
+          issuePrivateAffiliateReceipt({ data: { scope: "public" } }),
+        );
+        if (
+          issueEpoch !== receiptCopyEpoch.current ||
+          receiptTabHidden() ||
+          !formElement.current ||
+          pausedRef.current
+        )
+          return;
+        const ticket =
+          issued.ok &&
+          affiliateReceiptTicketSchema.safeParse({
+            trackingCode: issued.trackingCode,
+            trackingProof: issued.trackingProof,
+          });
+        if (!ticket || !ticket.success) {
+          setMessage(
+            "Não foi possível preparar um código privado. Nenhuma inscrição foi enviada. Tente novamente.",
+          );
+          return;
         }
+        const freshCode = ticket.data.trackingCode;
+        const reservation = reservePendingReceipt(freshCode);
+        if (reservation.status === "conflict") {
+          attemptCode.current = reservation.code;
+          setUnconfirmedCode(reservation.code);
+          setRecoveredAttempt(true);
+          setMessage(
+            "Encontramos outra tentativa nesta aba. Consulte ou guarde o código anterior antes de iniciar uma nova inscrição.",
+          );
+          return;
+        }
+        attemptCode.current = freshCode;
+        attemptProof.current = ticket.data.trackingProof;
+        submittedPayload.current = payload;
+        // If storage is unavailable, the code stays in memory for recovery.
       }
-      const result = await waitForSubmission(
+      const result = await deadline.wait("submit", () =>
         submitSimpleAffiliateApplication({
-          data: { ...parsed.data, trackingCode: attemptCode.current },
+          data: {
+            ...parsed.data,
+            trackingCode: attemptCode.current,
+            trackingProof: attemptProof.current || undefined,
+          },
         }),
       );
       if (result.ok) {
@@ -905,7 +958,9 @@ export function AffiliateSimpleForm({
     } catch {
       if (attemptCode.current) setUnconfirmedCode(attemptCode.current);
       setMessage(
-        "Não foi possível confirmar o envio. A inscrição pode ter sido salva; guarde o código de tentativa e consulte o portal antes de reenviar.",
+        attemptCode.current
+          ? "Não foi possível confirmar o envio. A inscrição pode ter sido salva; guarde o código de tentativa e consulte o portal antes de reenviar."
+          : "Não foi possível preparar um código privado. Nenhuma inscrição foi enviada. Tente novamente.",
       );
     } finally {
       submitting.current = false;
@@ -920,7 +975,13 @@ export function AffiliateSimpleForm({
         className="rounded-[2rem] border border-[#e9d7d0] bg-white px-8 py-14 text-center shadow-lg"
       >
         <CheckCircle2 aria-hidden="true" className="mx-auto h-14 w-14 text-[#38705a]" />
-        <h3 className="mt-5 font-display text-4xl text-[#482b37]">Inscrição recebida!</h3>
+        <h3
+          ref={confirmedReceiptHeading}
+          tabIndex={-1}
+          className="mt-5 scroll-mt-40 font-display text-4xl text-[#482b37]"
+        >
+          Inscrição recebida!
+        </h3>
         <p className="mx-auto mt-4 max-w-lg text-[#70575e]">
           Obrigada pelo interesse na Vonix Hair. Nossa equipe analisará seu Instagram e, se
           informado, seu TikTok e, caso necessário, entrará em contato pelos canais informados.
@@ -941,7 +1002,9 @@ export function AffiliateSimpleForm({
               spellCheck={false}
               aria-label="Código privado de acompanhamento"
               value={trackingCode}
-              onFocus={(event) => event.currentTarget.select()}
+              onFocus={(event) => {
+                if (event.currentTarget.type === "text") event.currentTarget.select();
+              }}
               className="mt-3 w-full rounded-lg border border-[#d5bac0] bg-white px-3 py-3 text-center font-semibold text-sm tracking-wider text-[#49323a]"
             />
             <button
@@ -956,6 +1019,8 @@ export function AffiliateSimpleForm({
               <button
                 type="button"
                 onClick={() => void copyTrackingCode()}
+                disabled={receiptCopyBusy}
+                aria-busy={receiptCopyBusy}
                 className="min-h-12 rounded-full border border-[#b9969e] px-4 text-sm font-bold text-[#683643]"
               >
                 {trackingCopied ? "Código copiado!" : "Copiar código"}
@@ -1289,16 +1354,20 @@ export function AffiliateSimpleForm({
             <button
               type="button"
               onClick={() => void lookupPostalCode()}
-              disabled={sending || zipLoading || onlyDigits(values.postalCode).length !== 8}
+              disabled={
+                paused || sending || zipLoading || onlyDigits(values.postalCode).length !== 8
+              }
               className="min-h-12 rounded-xl border border-[#c9aeb2] px-5 text-sm font-semibold text-[#633a43] disabled:opacity-50"
             >
               {zipLoading ? "Buscando CEP..." : "Buscar CEP"}
             </button>
           </div>
           <p className="text-xs leading-relaxed text-[#806a6e]">
-            {preview
-              ? "Use um endereço fictício nesta prévia. Nenhuma consulta externa é feita."
-              : "Buscar CEP é opcional: envia apenas o CEP informado ao serviço ViaCEP para sugerir o endereço. Você pode preencher todos os campos manualmente."}
+            {paused
+              ? "A consulta externa está pausada enquanto verificamos a disponibilidade. Você pode preencher o endereço manualmente."
+              : preview
+                ? "Use um endereço fictício nesta prévia. Nenhuma consulta externa é feita."
+                : "Buscar CEP é opcional: envia apenas o CEP informado ao serviço ViaCEP para sugerir o endereço. Você pode preencher todos os campos manualmente."}
           </p>
           {zipFeedback && (
             <p
@@ -1423,6 +1492,8 @@ export function AffiliateSimpleForm({
           ) : null}
           {!preview && unconfirmedCode ? (
             <section
+              ref={uncertainReceiptRegion}
+              tabIndex={-1}
               aria-label="Tentativa de inscrição não confirmada"
               className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-[#604448]"
             >
@@ -1440,7 +1511,9 @@ export function AffiliateSimpleForm({
                 aria-label="Código privado da tentativa não confirmada"
                 readOnly
                 value={unconfirmedCode}
-                onFocus={(event) => event.currentTarget.select()}
+                onFocus={(event) => {
+                  if (event.currentTarget.type === "text") event.currentTarget.select();
+                }}
                 className="mt-3 w-full rounded-lg border border-amber-200 bg-white p-3 text-center font-semibold tracking-wide"
               />
               <button
@@ -1455,6 +1528,8 @@ export function AffiliateSimpleForm({
                 <button
                   type="button"
                   onClick={() => void copyUnconfirmedCode()}
+                  disabled={receiptCopyBusy}
+                  aria-busy={receiptCopyBusy}
                   className="min-h-11 rounded-full border border-[#b9969e] px-4 font-bold"
                 >
                   {unconfirmedCopied
@@ -1546,8 +1621,9 @@ export function AffiliateSimpleForm({
               data-testid="affiliate-c158-wait-guidance"
               className="mt-4 rounded-xl border border-[#e5d2d4] bg-[#fff8f6] p-3 text-xs leading-relaxed text-[#72515f]"
             >
-              Aguarde a confirmação. Se a conexão não responder em até 45 segundos, você poderá
-              consultar o código da tentativa antes de reenviar.
+              O envio aguarda até 45 segundos no total. Se o código ainda não tiver sido preparado,
+              nenhuma inscrição será enviada. Se o envio já tiver começado, consulte o código da
+              tentativa antes de reenviar.
             </p>
           )}
           <button

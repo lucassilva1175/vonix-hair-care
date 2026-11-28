@@ -132,6 +132,26 @@ describe("C156 public source-linked media release", () => {
       expect(image.getAttribute("src")).toMatch(/^\/images\/products\/[a-z0-9-]+-480\.webp$/);
     for (const link of within(videos).getAllByRole("link"))
       expect(link.getAttribute("href")).toMatch(/^\/produto\/[a-z0-9-]+$/);
+    const quickFilter = within(videos).getByRole("button", { name: "Rotina de cachos" });
+    expect(quickFilter).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(quickFilter);
+    expect(quickFilter).toHaveAttribute("aria-pressed", "true");
+    expect(within(videos).getByRole("searchbox")).toHaveValue("cachos");
+    expect(
+      within(videos)
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("href")),
+    ).toContain("/produto/kit-cachos");
+    const professionalFilter = within(videos).getByRole("button", {
+      name: "Conteúdo profissional",
+    });
+    fireEvent.click(professionalFilter);
+    expect(quickFilter).toHaveAttribute("aria-pressed", "false");
+    expect(professionalFilter).toHaveAttribute("aria-pressed", "true");
+    expect(within(videos).getByRole("searchbox")).toHaveValue("progressiva");
+    fireEvent.click(professionalFilter);
+    expect(within(videos).getByRole("searchbox")).toHaveValue("");
+    expect(within(videos).getAllByRole("link")).toHaveLength(6);
     const more = within(videos).getByRole("button", { name: "Explorar mais 8 produtos do acervo" });
     expect(more).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(more);
@@ -180,6 +200,54 @@ describe("C156 public source-linked media release", () => {
     expect(more).toHaveAttribute("aria-expanded", "false");
     expect(container.innerHTML).not.toMatch(forbidden);
     expect(container.querySelectorAll("video,iframe,blockquote")).toHaveLength(0);
+    expect(server.submit).not.toHaveBeenCalled();
+  });
+  it("recovers official product photos without borrowing another product image or removing the source link", async () => {
+    render(<AffiliateApplicationPage />);
+    await screen.findByText("Inscrições em preparação");
+    fireEvent.click(screen.getByTestId("affiliate-c152-video-link"));
+    const videos = screen.getByTestId("affiliate-c156-source-videos");
+    const link = videos.querySelector('a[href="/produto/kit-banana-e-mel"]')!;
+    const other = videos.querySelector('a[href="/produto/botox-vonix"] img')!;
+    const image = link.querySelector("img")!;
+    expect(image).toHaveAttribute("src", "/images/products/kit-banana-e-mel-480.webp");
+    fireEvent.error(image);
+    expect(image).toHaveAttribute("src", "/images/products/kit-banana-e-mel.webp");
+    fireEvent.error(image);
+    expect(image).toHaveAttribute("src", "/images/products/kit-banana-e-mel.jpg");
+    fireEvent.error(image);
+    expect(link.querySelector("img")).toBeNull();
+    expect(link).toHaveTextContent("Ver demonstrações na loja");
+    expect(other).toHaveAttribute("src", "/images/products/botox-vonix-480.webp");
+    const packaging = within(videos).getByTestId("affiliate-c159-packaging");
+    fireEvent.click(packaging);
+    expect(link.querySelector("img")).toHaveAttribute(
+      "src",
+      "/images/sacolinhas/kit-banana-e-mel.webp",
+    );
+    fireEvent.click(packaging);
+    expect(link.querySelector("img")).toBeNull();
+    expect(server.submit).not.toHaveBeenCalled();
+  });
+  it("shows first-party product sales with direct sources, separate from affiliate earnings", async () => {
+    render(<AffiliateApplicationPage />);
+    await screen.findByText("Inscrições em preparação");
+    const section = screen.getByTestId("affiliate-market-evidence");
+    expect(section).toHaveTextContent("Não representam vendas, ganhos ou desempenho de afiliadas");
+    const items = within(section).getAllByRole("link", { hidden: true });
+    expect(items).toHaveLength(3);
+    for (const [slug, units] of [
+      ["progressiva-fio-de-luz", "128"],
+      ["shampoo-fio-de-luz-anti-residuo", "75"],
+      ["botox-vonix", "58"],
+    ] as const) {
+      const source = items.find((item) => item.getAttribute("href") === "/produto/" + slug);
+      expect(source).toHaveTextContent(units);
+      expect(source).toHaveAttribute("target", "_blank");
+      expect(source).toHaveAttribute("rel", "noopener noreferrer");
+    }
+    expect(section.querySelector('a[href="/produto/plex-vonix"]')).toBeNull();
+    expect(section.innerHTML).not.toMatch(forbidden);
     expect(server.submit).not.toHaveBeenCalled();
   });
   it("keeps safe preview fail-closed and does not submit or change intake", async () => {

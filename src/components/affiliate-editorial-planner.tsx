@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ClipboardCopy, Check, ArrowUpRight } from "lucide-react";
+import { CalendarDays, ClipboardCopy, Check, ArrowUpRight, Download } from "lucide-react";
 import {
   buildEditorialPlan,
   editorialProfiles,
@@ -8,6 +8,8 @@ import {
   type EditorialFormat,
 } from "@/lib/affiliate-editorial-plan";
 import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
+import { AffiliateEditorialProjectActions } from "@/components/affiliate-editorial-project-actions";
+import type { EditorialProject } from "@/lib/affiliate-editorial-project";
 import {
   appendEditorialReferences,
   resolveEditorialReferences,
@@ -17,10 +19,14 @@ export function AffiliateEditorialPlanner({
   recruitmentOpen = false,
   onSafePreview,
   referenceSlugs = [],
+  onRemoveReference,
+  onRestoreReferences,
 }: {
   recruitmentOpen?: boolean;
   onSafePreview?: (() => void) | undefined;
   referenceSlugs?: readonly string[];
+  onRemoveReference?: (slug: string) => void;
+  onRestoreReferences?: (slugs: string[]) => void;
 }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -33,19 +39,37 @@ export function AffiliateEditorialPlanner({
   const copying = useRef(false);
   const plan = buildEditorialPlan(profile, cadence, format);
   const references = resolveEditorialReferences(referenceSlugs);
-  const copyText = appendEditorialReferences(plan.text, referenceSlugs);
+  const checklist = plan.entries.map(
+    (item) => (done.includes(item.day) ? "[x] " : "[ ] ") + item.day + ": " + item.title,
+  );
+  const copyText =
+    appendEditorialReferences(plan.text, referenceSlugs) +
+    "\n\nMINHA LISTA DE PREPARAÇÃO\n" +
+    checklist.join("\n");
   // Changing catalog selections invalidates any previous clipboard feedback.
   const referenceKey = references.map((item) => item.slug).join("|");
+  const checklistKey = done.join("|");
   useEffect(() => {
     copyVersion.current++;
     if (!copying.current) setCopy("idle");
-  }, [referenceKey]);
+  }, [referenceKey, checklistKey]);
   function change(update: () => void) {
     if (!ready) return;
     update();
     setDone([]);
     copyVersion.current++;
     if (!copying.current) setCopy("idle");
+  }
+  function restoreProject(project: EditorialProject) {
+    if (!ready || !onRestoreReferences) return;
+    setProfile(project.profile);
+    setCadence(project.cadence);
+    setFormat(project.format);
+    setDone(project.done);
+    onRestoreReferences(project.references);
+    copyVersion.current++;
+    if (!copying.current) setCopy("idle");
+    setDownloadError(false);
   }
   async function copyPlan() {
     if (!ready || copying.current) return;
@@ -60,6 +84,35 @@ export function AffiliateEditorialPlanner({
     } finally {
       copying.current = false;
       if (version !== copyVersion.current) setCopy("idle");
+    }
+  }
+  const [downloadError, setDownloadError] = useState(false);
+  function downloadPlan() {
+    if (!ready) return;
+    setDownloadError(false);
+    let url: string | undefined;
+    let anchor: HTMLAnchorElement | undefined;
+    try {
+      url = URL.createObjectURL(new Blob([copyText], { type: "text/plain;charset=utf-8" }));
+      anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "meu-plano-editorial-vonix.txt";
+      document.body.appendChild(anchor);
+      anchor.click();
+    } catch {
+      setDownloadError(true);
+    } finally {
+      anchor?.remove();
+      if (url) {
+        const objectUrl = url;
+        window.setTimeout(() => {
+          try {
+            URL.revokeObjectURL?.(objectUrl);
+          } catch {
+            /* Restricted browsers may deny cleanup. */
+          }
+        }, 1000);
+      }
     }
   }
   const control =
@@ -147,7 +200,7 @@ export function AffiliateEditorialPlanner({
             </p>
           )}
           <p className="mt-5 text-xs text-[#765c67]">
-            As escolhas e marcações ficam nesta página. Não são enviadas nem salvas após recarregar.
+            As escolhas e marcações ficam nesta página. Não são enviadas nem salvas automaticamente.
             Alterar o plano reinicia a lista de preparação.
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
@@ -229,6 +282,17 @@ export function AffiliateEditorialPlanner({
                       {item.category}
                       {item.professional ? " · Uso exclusivamente profissional" : ""}
                     </p>
+                    {onRemoveReference && (
+                      <button
+                        type="button"
+                        disabled={!ready}
+                        onClick={() => onRemoveReference(item.slug)}
+                        aria-label={"Remover " + item.name + " das referências"}
+                        className="mt-2 inline-flex min-h-11 items-center text-xs font-bold text-[#633847] underline underline-offset-4 focus-visible:outline-2"
+                      >
+                        Remover referência
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -250,6 +314,15 @@ export function AffiliateEditorialPlanner({
               <ClipboardCopy aria-hidden="true" className="size-4" />
               {copy === "copying" ? "Copiando plano..." : "Copiar meu plano editorial"}
             </button>
+            <button
+              type="button"
+              disabled={!ready}
+              onClick={downloadPlan}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#d9bec5] px-5 text-sm font-bold text-[#633847] disabled:opacity-50"
+            >
+              <Download aria-hidden="true" className="size-4" />
+              Baixar plano e checklist
+            </button>
             <a
               href="#vitrine-afiliadas"
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#d9bec5] px-5 text-sm font-bold text-[#633847]"
@@ -265,6 +338,26 @@ export function AffiliateEditorialPlanner({
               Limpar marcações
             </button>
           </div>
+          {onRestoreReferences && (
+            <AffiliateEditorialProjectActions
+              ready={ready}
+              project={{
+                version: 1,
+                profile,
+                cadence,
+                format,
+                done,
+                references: references.map((item) => item.slug),
+              }}
+              onRestore={restoreProject}
+            />
+          )}
+          {downloadError && (
+            <p role="status" className="mt-3 text-xs font-semibold text-[#633847]">
+              Não foi possível iniciar o download. Copie seu plano editorial com as marcações do
+              checklist.
+            </p>
+          )}
           {copy === "copied" && (
             <p
               role="status"
@@ -276,7 +369,7 @@ export function AffiliateEditorialPlanner({
           {copy === "failed" && (
             <div className="mt-3">
               <p role="status" className="text-xs font-semibold text-[#633847]">
-                Selecione o plano abaixo para copiar manualmente.
+                Selecione o plano e o checklist abaixo para copiar manualmente.
               </p>
               <textarea
                 readOnly
