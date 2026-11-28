@@ -52,6 +52,19 @@ function unauthenticatedTeamAccessStage(): Stage {
     : "email";
 }
 
+// Bound identity reads without claiming cancellation of provider mutations.
+function waitForTeamIdentity<T>(read: PromiseLike<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    Promise.resolve(read),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("team-identity-timeout")), 15000);
+    }),
+  ]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
+}
+
 export function AffiliateTeamAccess() {
   const [email, setEmail] = useState("");
   const [stage, setStage] = useState<Stage>("checking");
@@ -81,15 +94,18 @@ export function AffiliateTeamAccess() {
   // for the exact owner address. A pre-existing browser session is not proof.
   const freshVerifiedAddress = useRef<string | null>(null);
   const rotatingTemporaryPassword = useRef(false);
+  const passwordActionPending = useRef(false);
+  const pageSuspended = useRef(false);
 
   const inspectIdentity = useCallback(async () => {
+    if (pageSuspended.current || teamTabHidden()) return;
     const requestId = ++identityVersion.current;
     // Clear the previous owner's onboarding state while revalidating Auth.
     setStage("checking");
     setEmail("");
     if (teamTabHidden()) return;
     try {
-      const identity = await vonixAffiliateAuth.auth.getUser();
+      const identity = await waitForTeamIdentity(vonixAffiliateAuth.auth.getUser());
       if (requestId !== identityVersion.current || teamTabHidden()) return;
       const user = identity.data.user;
       if (identity.error || !user?.email || !user.email_confirmed_at) {
@@ -99,11 +115,13 @@ export function AffiliateTeamAccess() {
       }
       const normalized = user.email.toLowerCase();
       setEmail(normalized);
-      const row = await vonixAffiliateAuth
-        .from("vonix_affiliate_admin_invites")
-        .select("role,password_set_at,ever_activated_at")
-        .eq("email", normalized)
-        .maybeSingle();
+      const row = await waitForTeamIdentity(
+        vonixAffiliateAuth
+          .from("vonix_affiliate_admin_invites")
+          .select("role,password_set_at,ever_activated_at")
+          .eq("email", normalized)
+          .maybeSingle(),
+      );
       if (requestId !== identityVersion.current || teamTabHidden()) return;
       if (row.error || !row.data) {
         freshVerifiedAddress.current = null;
@@ -131,8 +149,14 @@ export function AffiliateTeamAccess() {
             : "password",
       );
     } catch {
-      if (requestId === identityVersion.current && !teamTabHidden())
+      if (requestId === identityVersion.current && !teamTabHidden()) {
+        freshVerifiedAddress.current = null;
+        setEmail("");
         setStage(unauthenticatedTeamAccessStage());
+        setError(
+          "Não foi possível confirmar sua identidade. Entre novamente ou confira a conexão.",
+        );
+      }
     }
   }, []);
 
@@ -148,7 +172,9 @@ export function AffiliateTeamAccess() {
       window.history.replaceState(window.history.state, "", window.location.pathname);
     }
     // Links shared privately by an owner are never redeemed by URL preview crawlers.
-    const tokenHash = new URLSearchParams(window.location.hash.slice(1)).get("vonix_invite");
+    const tokenHash =
+      new URLSearchParams(window.location.hash.slice(1)).get("vonix_invite") ??
+      pendingManualHash.current;
     const manualLink = tokenHash && /^[A-Za-z0-9_-]{32,256}$/.test(tokenHash) ? tokenHash : null;
     if (manualLink) {
       pendingManualHash.current = manualLink;
@@ -167,50 +193,80 @@ export function AffiliateTeamAccess() {
       queueMicrotask(() => {
         if (
           active &&
+          !pageSuspended.current &&
           !teamTabHidden() &&
           !leavingIdentity.current &&
           !pendingManualHash.current &&
-          !rotatingTemporaryPassword.current
+          !rotatingTemporaryPassword.current &&
+          !passwordActionPending.current
         )
           void inspectIdentity();
       });
     });
+    const conceal = () => {
+      if (!active) return;
+      const consumedOrPending = manualInvitationPending.current;
+      ++versionRef.current;
+      ++visibilityEpoch.current;
+      ++emailRequestVersion.current;
+      emailRequestPending.current = false;
+      ++otpVerificationVersion.current;
+      otpVerificationPending.current = false;
+      manualInvitationPending.current = false;
+      passwordActionPending.current = false;
+      rotatingTemporaryPassword.current = false;
+      leavingIdentity.current = false;
+      freshVerifiedAddress.current = null;
+      setBusy(false);
+      setEmail("");
+      setPassword("");
+      setNextPassword("");
+      setRepeatPassword("");
+      setOtp("");
+      setNotice("");
+      setError("");
+      // A link that may have been redeemed cannot safely be retried.
+      if (consumedOrPending) {
+        pendingManualHash.current = null;
+        setStage("email");
+      } else if (!pendingManualHash.current) setStage("checking");
+    };
     const onVisibilityChange = () => {
       if (!active) return;
-      if (teamTabHidden()) {
-        // A temporary OTP proof must not survive leaving a shared-device tab.
-        // Invalidate pending identity lookups and clear secrets from the DOM.
-        ++versionRef.current;
-        ++visibilityEpoch.current;
-        ++emailRequestVersion.current;
-        emailRequestPending.current = false;
-        ++otpVerificationVersion.current;
-        otpVerificationPending.current = false;
-        manualInvitationPending.current = false;
-        // A provider Promise may never settle while the tab is backgrounded.
-        // A new visible flow must not inherit a stale disabled state.
-        setBusy(false);
-        leavingIdentity.current = false;
-        freshVerifiedAddress.current = null;
-        setPassword("");
-        setRepeatPassword("");
-        setOtp("");
-        setNotice("");
-        setError("");
-        if (!pendingManualHash.current) setStage("checking");
-      } else if (
-        document.visibilityState === "visible" &&
-        !leavingIdentity.current &&
-        !pendingManualHash.current
-      ) {
+      if (teamTabHidden()) conceal();
+      else if (!pageSuspended.current && !leavingIdentity.current && !pendingManualHash.current)
         void inspectIdentity();
+    };
+    const onPageHide = () => {
+      pageSuspended.current = true;
+      conceal();
+      pendingManualHash.current = null;
+      setStage("checking");
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted && active) {
+        pageSuspended.current = false;
+        conceal();
+        pendingManualHash.current = null;
+        if (!teamTabHidden()) void inspectIdentity();
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       active = false;
       ++versionRef.current;
+      ++visibilityEpoch.current;
+      ++emailRequestVersion.current;
+      ++otpVerificationVersion.current;
+      // The ref is discarded on actual unmount; preserve an unredeemed link
+      // across React's development-only effect replay.
+      if (manualInvitationPending.current) pendingManualHash.current = null;
+      freshVerifiedAddress.current = null;
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
       subscription.unsubscribe();
     };
   }, [inspectIdentity]);
@@ -261,13 +317,7 @@ export function AffiliateTeamAccess() {
         token_hash: tokenHash,
         type: "magiclink",
       });
-      if (epoch !== visibilityEpoch.current || teamTabHidden()) {
-        pendingManualHash.current = null;
-        // The one-use link may already have been consumed. Offer a fresh
-        // email proof instead of leaving a confirmation button with no token.
-        setStage("email");
-        return;
-      }
+      if (epoch !== visibilityEpoch.current || teamTabHidden()) return;
       pendingManualHash.current = null;
       if (result.error) {
         setStage("email");
@@ -288,10 +338,8 @@ export function AffiliateTeamAccess() {
       freshVerifiedAddress.current = identity.data.user.email.toLowerCase();
       await inspectIdentity();
     } catch {
-      pendingManualHash.current = null;
-      // A provider error may arrive after the tab was hidden. The one-time
-      // invitation is no longer safe to retry; avoid restoring an old stage.
       if (epoch === visibilityEpoch.current && !teamTabHidden()) {
+        pendingManualHash.current = null;
         setStage("email");
         setError("Não foi possível validar o convite. Confira sua conexão ou solicite outro link.");
       }
@@ -394,7 +442,7 @@ export function AffiliateTeamAccess() {
 
   async function activatePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || teamTabHidden()) return;
+    if (busy || passwordActionPending.current || teamTabHidden()) return;
     const epoch = visibilityEpoch.current;
     const active = () => epoch === visibilityEpoch.current && !teamTabHidden();
     const verified = freshVerifiedAddress.current;
@@ -406,6 +454,7 @@ export function AffiliateTeamAccess() {
       setError("Crie uma senha de pelo menos 12 caracteres e confirme-a corretamente.");
       return;
     }
+    passwordActionPending.current = true;
     setBusy(true);
     setError("");
     try {
@@ -466,13 +515,16 @@ export function AffiliateTeamAccess() {
           "Não foi possível concluir a ativação. Confira sua sessão ou solicite novo acesso.",
         );
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        passwordActionPending.current = false;
+        setBusy(false);
+      }
     }
   }
 
   async function resetPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || teamTabHidden()) return;
+    if (busy || passwordActionPending.current || teamTabHidden()) return;
     const epoch = visibilityEpoch.current;
     const active = () => epoch === visibilityEpoch.current && !teamTabHidden();
     const verified = freshVerifiedAddress.current;
@@ -484,6 +536,7 @@ export function AffiliateTeamAccess() {
       setError("Use uma senha de 12 a 128 caracteres e confirme-a corretamente.");
       return;
     }
+    passwordActionPending.current = true;
     setBusy(true);
     setError("");
     let passwordUpdated = false;
@@ -537,13 +590,16 @@ export function AffiliateTeamAccess() {
             : "Não foi possível redefinir a senha. Confirme novamente seu e-mail ou solicite outro código.",
         );
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        passwordActionPending.current = false;
+        setBusy(false);
+      }
     }
   }
 
   async function rotateTemporaryPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || teamTabHidden()) return;
+    if (busy || passwordActionPending.current || teamTabHidden()) return;
     const normalized = email.trim().toLowerCase();
     const epoch = visibilityEpoch.current;
     const current = () => epoch === visibilityEpoch.current && !teamTabHidden();
@@ -557,6 +613,7 @@ export function AffiliateTeamAccess() {
       setError("A nova senha precisa ter pelo menos 14 caracteres e ser diferente da provisória.");
       return;
     }
+    passwordActionPending.current = true;
     setBusy(true);
     setError("");
     let changed = false;
@@ -622,24 +679,30 @@ export function AffiliateTeamAccess() {
         );
       }
     } finally {
-      rotatingTemporaryPassword.current = false;
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        rotatingTemporaryPassword.current = false;
+        passwordActionPending.current = false;
+        setBusy(false);
+      }
     }
   }
 
   async function loginPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || teamTabHidden()) return;
+    if (busy || passwordActionPending.current || teamTabHidden()) return;
     const epoch = visibilityEpoch.current;
     const identityId = identityVersion.current;
+    const emailVersion = emailEditVersion.current;
     const stillCurrent = () =>
       epoch === visibilityEpoch.current &&
       identityId === identityVersion.current &&
+      emailVersion === emailEditVersion.current &&
       !teamTabHidden();
     if (password.length < 12 || password.length > 128 || !email.trim()) {
       setError("Informe o e-mail administrativo e sua senha pessoal de pelo menos 12 caracteres.");
       return;
     }
+    passwordActionPending.current = true;
     setBusy(true);
     setError("");
     try {
@@ -662,7 +725,10 @@ export function AffiliateTeamAccess() {
     } catch {
       if (stillCurrent()) setError("Login não autorizado. Confira seu e-mail e sua senha pessoal.");
     } finally {
-      if (epoch === visibilityEpoch.current) setBusy(false);
+      if (epoch === visibilityEpoch.current) {
+        passwordActionPending.current = false;
+        setBusy(false);
+      }
     }
   }
 
@@ -775,6 +841,7 @@ export function AffiliateTeamAccess() {
                   <button
                     type="button"
                     className="mt-3 min-h-11 w-full rounded-full border border-[#c6a8ad] px-5 font-semibold text-[#6a3c4b]"
+                    disabled={busy}
                     onClick={() => {
                       setStage("existing-password");
                       setError("");
@@ -830,6 +897,7 @@ export function AffiliateTeamAccess() {
                   </label>
                   <input
                     id="team-existing-email"
+                    disabled={busy}
                     type="email"
                     autoComplete="username"
                     required
@@ -880,6 +948,7 @@ export function AffiliateTeamAccess() {
                 <button
                   type="button"
                   className="mt-5 text-sm font-semibold text-[#79515d] underline"
+                  disabled={busy}
                   onClick={() => {
                     setStage("email");
                     setPassword("");
