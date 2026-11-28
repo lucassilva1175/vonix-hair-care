@@ -50,7 +50,7 @@ function MonteSeuCombo() {
       <div className="container-site pb-32 pt-6 md:pt-10">
         <h1 className="font-display text-h2">Monte seu combo</h1>
         <p className="mt-2 max-w-2xl text-body text-muted-foreground">
-          Escolha os produtos que você quer, na quantidade que quiser, e leve tudo em um só pedido. Monte com 2 produtos ou mais e ganhe 5% OFF em cada item, mais 5% no Pix. Frete grátis.
+          Escolha os produtos que você quer, na quantidade que quiser, e leve tudo em um só pedido. Monte com 2 produtos ou mais e ganhe 5% OFF em cada item, mais 5% no Pix. Frete grátis em SP e MG.
         </p>
 
         <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center">

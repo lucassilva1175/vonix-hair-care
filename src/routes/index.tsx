@@ -12,9 +12,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { name: "description", content: "Site feito para cabeleireiras e donas de salão: progressivas, botox e combos profissionais. Fio de Luz, a mais vendida em São Paulo e Minas Gerais. Até 6x sem juros e frete grátis para todo o Brasil." },
+      { name: "description", content: "Site feito para cabeleireiras e donas de salão: progressivas, botox e combos profissionais. Fio de Luz, a mais vendida em São Paulo e Minas Gerais. Até 6x sem juros e frete grátis em SP e MG." },
       { property: "og:title", content: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { property: "og:description", content: "Cosméticos capilares profissionais para donas de salão de todo o Brasil. Até 6x sem juros e frete grátis para todo o Brasil." },
+      { property: "og:description", content: "Cosméticos capilares profissionais para donas de salão de todo o Brasil. Até 6x sem juros e frete grátis em SP e MG." },
       { property: "og:url", content: SITE_URL },
       { property: "og:image", content: `${SITE_URL}/og-vonix.jpg` },
       { name: "twitter:image", content: `${SITE_URL}/og-vonix.jpg` },
@@ -90,7 +90,7 @@ function Home() {
         <div className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-[#faf6f1] p-6 md:flex-row md:items-center md:justify-between md:p-8">
           <div className="max-w-xl">
             <h2 className="font-display text-h2">Monte o kit de progressiva do seu salão</h2>
-            <p className="mt-2 text-body text-muted-foreground">Escolha a progressiva, o shampoo anti-resíduo, o defrizante e o perfume, na quantidade que o seu salão precisa. Tudo em um só pedido, com frete grátis.</p>
+            <p className="mt-2 text-body text-muted-foreground">Escolha a progressiva, o shampoo anti-resíduo, o defrizante e o perfume, na quantidade que o seu salão precisa. Tudo em um só pedido, com frete grátis para SP e MG.</p>
           </div>
           <Link to="/monte-seu-combo" search={{ cat: "quimica" }} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-foreground px-6 font-medium text-background">
             Montar meu kit <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -114,7 +114,7 @@ function Home() {
         </section>
       )}
 
-      {/* 5) Quem quer só um item leva só um item (e completa o carrinho até o frete grátis) */}
+      {/* 5) Quem quer só um item leva só um item */}
       {avulsos.length > 0 && (
         <section className="container-site mt-16" data-testid="home-avulsos">
           <Title a="Avulsos dos" b="Kits" to={{ tiposProduto: "Avulsos" }} />

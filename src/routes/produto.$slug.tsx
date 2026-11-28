@@ -20,7 +20,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { lookupAddress } from "@/lib/address.functions";
 import { quoteShipping } from "@/lib/checkout.functions";
 import {
-  FREE_SHIPPING_ABOVE,
   WHATSAPP,
   brl,
   discountPct,
@@ -28,7 +27,6 @@ import {
   SITE_URL,
   forAudience,
   getSavedCep,
-  hasFreeShipping,
   installments,
   pixPrice,
   kitItems,
@@ -64,7 +62,7 @@ export const Route = createFileRoute("/produto/$slug")({
     // Prévia no WhatsApp/Facebook e Google exigem endereço completo da imagem.
     const images = p.images.map((src) => (src.startsWith("http") ? src : `${SITE_URL}${src}`));
     const url = `${SITE_URL}/produto/${p.slug}`;
-    const description = `${p.short || p.name} Até 6x sem juros e frete grátis em todos os produtos. Vonix Hair.`;
+    const description = `${p.short || p.name} Até 6x sem juros e frete grátis em SP e MG. Vonix Hair.`;
     const rated = reviewsFor(p.slug);
     return {
       meta: [
@@ -125,12 +123,10 @@ export const Route = createFileRoute("/produto/$slug")({
 });
 
 export function ShippingCalc({
-  subtotal,
   slug,
   variant,
   qty,
 }: {
-  subtotal: number;
   slug: string;
   variant: string;
   qty: number;
@@ -242,13 +238,8 @@ export function ShippingCalc({
               ? `Entrega para ${dest.city}/${dest.uf}`
               : `Estimativa de frete para o CEP ${cep}`}
           </p>
-          {hasFreeShipping(subtotal) ? (
-            <p className="mt-1 font-medium">
-              Frete Grátis em todos os produtos, em qualquer pedido (vale mesmo após
-              o desconto do Pix).
-            </p>
-          ) : (
-            opts.some((o) => o.free) && <p className="mt-1 font-medium">Frete Grátis para o seu endereço, em qualquer pedido.</p>
+          {opts.some((o) => o.free) && (
+            <p className="mt-1 font-medium">Frete grátis para o seu endereço.</p>
           )}
           <ul className="mt-2 space-y-1">
             {opts.map((o) => (
@@ -416,7 +407,7 @@ function ProductPage() {
               </p>
             </div>
             <p className="mt-3 flex items-center gap-2 text-body font-semibold text-emerald-700" data-testid="frete-no-preco">
-              <Truck className="h-5 w-5 shrink-0" aria-hidden="true" /> Frete grátis · prazo calculado pelo seu CEP
+              <Truck className="h-5 w-5 shrink-0" aria-hidden="true" /> Frete grátis em SP e MG · valor e prazo pelo CEP
             </p>
             <ComboDestaque slug={p.slug} />
             {provaDe(p).selo && (
@@ -621,7 +612,7 @@ function ProductPage() {
             </div>
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
-                Frete grátis em todos os produtos, em qualquer pedido · prazo calculado pelo seu CEP
+                Frete grátis em SP e MG · valor e prazo pelo CEP
               </li>
               <li>
                 <Link
