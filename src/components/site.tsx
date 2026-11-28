@@ -63,7 +63,7 @@ function GoldLogo({ className = "h-12" }: { className?: string }) {
 const MARQUEE = [
   "SITE FEITO PARA CABELEIREIRAS E DONAS DE SALÃO · COMBOS: 5% OFF + 5% NO PIX",
   "LEVE 2 UNIDADES: 12% OFF · LEVE 3: 15% OFF",
-  "FRETE GRÁTIS · ENTREGAMOS EM SÃO PAULO E MINAS GERAIS",
+  "FRETE GRÁTIS · ENTREGAMOS PARA TODO O BRASIL",
   "PARCELAMENTO EM ATÉ 6X SEM JUROS",
   "PIX COM 5% OFF NOS ITENS SEM OUTRA OFERTA",
 ];
@@ -160,7 +160,7 @@ export function SecuritySeal({ dark = false }: { dark?: boolean }) {
 /** Reassurance strip: only conditions the store already advertises. */
 export function Benefits() {
   const items = [
-    { Icon: Truck, title: "Frete grátis", text: "entregamos em São Paulo e Minas Gerais" },
+    { Icon: Truck, title: "Frete grátis", text: "entregamos para todo o Brasil" },
     { Icon: CreditCard, title: "Até 6x sem juros", text: "no cartão de crédito" },
     { Icon: QrCode, title: "Pix com 5% OFF", text: "nos itens sem outra oferta" },
     { Icon: ShieldCheck, title: "Compra segura", text: "seus dados protegidos" },
@@ -431,16 +431,16 @@ function Footer() {
   return (
     <footer className="mt-10 bg-marquee text-marquee-foreground">
       <div className="container-site grid gap-6 border-b border-marquee-foreground/15 py-6 text-center text-body sm:grid-cols-4">
-        <span>Entregamos em São Paulo e Minas Gerais</span>
+        <span>Entregamos para todo o Brasil</span>
         <span>Compra 100% segura</span>
         <span>Até 6x sem juros no cartão</span>
-        <span>Frete grátis · entrega de 3 a 5 dias úteis</span>
+        <span>Frete grátis · prazo calculado pelo seu CEP</span>
       </div>
       <div className="container-site grid gap-8 py-8 text-body sm:grid-cols-4">
         <div>
           <div className="mb-4"><GoldLogo className="h-14" /></div>
           <p className="opacity-80">
-            Cosméticos capilares profissionais, com entrega em São Paulo e Minas Gerais.
+            Cosméticos capilares profissionais, com entrega para todo o Brasil.
           </p>
         </div>
         <div className="flex flex-col gap-1 [&_a]:py-1.5">

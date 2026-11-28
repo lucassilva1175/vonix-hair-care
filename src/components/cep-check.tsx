@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cepAtendido } from "@/lib/free-shipping-region";
+import { CEP_INVALIDO_MSG, cepAtendido } from "@/lib/free-shipping-region";
 import { getSavedCep, maskCep, saveCep } from "@/lib/store";
 
 /** "Entregamos no seu CEP?": resposta na hora, sem cálculo de frete, para ninguém montar o pedido e só descobrir no carrinho. */
@@ -26,13 +26,13 @@ export function CepCheck({ className = "", compact = false }: { className?: stri
         onChange={(e) => {
           const v = maskCep(e.target.value);
           setCep(v);
-          if (v.replace(/\D/g, "").length === 8) saveCep(v);
+          if (cepAtendido(v)) saveCep(v);
         }}
         className={`mt-2 w-full rounded-full border border-border bg-background px-4 text-body ${compact ? "h-10" : "h-11"}`}
       />
-      {ok === true && <p className="mt-2 text-small font-medium text-emerald-700" role="status">Entregamos no seu CEP. Frete grátis, direto da Vonix.</p>}
-      {ok === false && <p className="mt-2 text-small font-medium text-red-700" role="status">Por enquanto entregamos somente em São Paulo e Minas Gerais. Em breve chegamos ao seu estado.</p>}
-      {ok === null && <p className="mt-2 text-small text-muted-foreground">Entregamos em São Paulo e Minas Gerais.</p>}
+      {ok === true && <p className="mt-2 text-small font-medium text-emerald-700" role="status">Confira o prazo de entrega para esse CEP no carrinho.</p>}
+      {ok === false && <p className="mt-2 text-small font-medium text-red-700" role="status">{CEP_INVALIDO_MSG}</p>}
+      {ok === null && <p className="mt-2 text-small text-muted-foreground">Entregamos para todo o Brasil.</p>}
     </div>
   );
 }
