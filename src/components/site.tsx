@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import logoUrl from "@/assets/vonix-logo.webp";
 import { usePaidVisit } from "@/lib/paid-visit";
+import { rememberYouShopCampaign, useYouShopCheckout } from "@/lib/youshop";
 import { BfPopup } from "@/components/bf-popup";
 import { CartDrawer, openCartDrawer } from "@/components/cart-drawer";
 import { reviewsFor } from "@/components/reviews";
@@ -225,6 +226,8 @@ function SearchBox({ onDone, autoFocus = false }: { onDone?: () => void; autoFoc
 export function Shell({ children, onBack, compactCheckout = false }: { children: ReactNode; onBack?: () => void; compactCheckout?: boolean }) {
   const { count } = useCart();
   const { audience, set: setAudience } = useAudience();
+  const campaignSearch = useLocation({ select: (location) => location.searchStr });
+  useEffect(() => { rememberYouShopCampaign(campaignSearch); }, [campaignSearch]);
   const paidVisit = usePaidVisit();
   // Sem separação entre salão e casa: se alguma escolha antiga ficou salva no navegador, ela é limpa.
   useEffect(() => {
@@ -565,6 +568,11 @@ export function ProductCard({ p }: { p: Product }) {
   const comboNet = comboOff > 0 ? lineTotals(pricing.price, 1, undefined, p.slug).net : 0;
   const off = comboOff > 0 ? comboOff : discountPct(p.compareBase, pricing.price);
   const cart = useCart();
+  const variant = p.variants[0];
+  const offerPrice = lineTotals(variant.price, 1, undefined, p.slug).net;
+  const youshopCheckout = useYouShopCheckout(
+    p.slug, variant.label, offerPrice, p.variants.length === 1 && cart.count === 0,
+  );
   const nav = useNavigate();
   const par = installments(comboNet > 0 ? comboNet : pricing.price);
   // Peso ou volume de cada apresentação (1Kg, 300ml, 1L...). Variantes sem medida ("Kit", "Unidade") não entram.
@@ -608,8 +616,8 @@ export function ProductCard({ p }: { p: Product }) {
           {pricing.professional && (
             <span className="rounded bg-muted px-1 py-px text-[12px] font-semibold">Leve 2: 12% · Leve 3: 15%</span>
           )}
-          {comboOff > 0 && <span className="rounded bg-[#e7fbfa] px-1 py-px text-[12px] font-semibold text-[#007979]">{comboOff}% OFF no combo + 5% no Pix</span>}
-          {comboOff === 0 && pricing.pix < pricing.price && (
+          {!youshopCheckout && comboOff > 0 && <span className="rounded bg-[#e7fbfa] px-1 py-px text-[12px] font-semibold text-[#007979]">{comboOff}% OFF no combo + 5% no Pix</span>}
+          {!youshopCheckout && comboOff === 0 && pricing.pix < pricing.price && (
             <span className="rounded bg-[#e7fbfa] px-1 py-px text-[12px] font-semibold text-[#007979]">5% OFF no Pix</span>
           )}
           {hasFreeShipping(pricing.price) && (
@@ -619,7 +627,9 @@ export function ProductCard({ p }: { p: Product }) {
           )}
         </div>
         <div className="mt-1.5 leading-tight">
-          {comboOff > 0 ? (
+          {youshopCheckout ? (
+            <div className="text-[16px] font-bold">{brl(offerPrice)}</div>
+          ) : comboOff > 0 ? (
             <>
               <div className="text-[12px] text-[#505052] line-through">{brl(pricing.price)}</div>
               <div className="text-[16px] font-bold">{brl(pixPrice(comboNet))} <span className="text-[12px] font-normal">no Pix</span></div>
@@ -634,14 +644,24 @@ export function ProductCard({ p }: { p: Product }) {
           )}
         </div>
         <div className="mt-auto pt-3">
-          <button
-            type="button"
-            onClick={bag}
-            aria-label={`Adicionar ${p.name} à sacola`}
-            className="relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#091413] px-4 text-[14px] font-semibold text-white transition-transform active:scale-[.98]"
-          >
-            <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
-          </button>
+          {youshopCheckout ? (
+            <a
+              href={youshopCheckout}
+              aria-label={`Comprar ${p.name} na YouShop`}
+              className="relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#091413] px-4 text-[14px] font-semibold text-white transition-transform active:scale-[.98]"
+            >
+              <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={bag}
+              aria-label={`Adicionar ${p.name} à sacola`}
+              className="relative z-10 flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#091413] px-4 text-[14px] font-semibold text-white transition-transform active:scale-[.98]"
+            >
+              <ShoppingBag className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Comprar
+            </button>
+          )}
         </div>
       </div>
     </div>
