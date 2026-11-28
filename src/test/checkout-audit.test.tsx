@@ -98,7 +98,6 @@ const showDelivery = async () => {
   fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "teste@example.com" } });
   expect(screen.getByRole("group", { name: "Entrega" })).toBeVisible();
   expect(screen.getByLabelText("CPF")).not.toBeVisible();
-  expect(screen.getByTestId("checkout-total-topo")).toHaveTextContent("Frete a calcular");
 };
 const showPayment = () => {
   fireEvent.click(screen.getByRole("button", { name: "Continuar para o pagamento" }));
@@ -411,6 +410,7 @@ describe("C86 — parcela em destaque e total informado no cartão do checkout",
     });
     render(<Checkout />);
     await showDelivery();
+    expect(screen.getByTestId("checkout-total-topo")).toHaveTextContent("Frete a calcular");
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
     await screen.findByText(/Correios PAC/);
     fireEvent.click(screen.getByRole("radio", { name: /Correios PAC/ }));
