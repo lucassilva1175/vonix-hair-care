@@ -106,7 +106,7 @@ export function provaDe(p: Product): ProvaView {
   const cat = POR_CATEGORIA[p.slug.startsWith("combo-") ? "kits" : p.category] ?? POR_CATEGORIA["quimica"]!;
   const vendidos = SOLD[p.slug] ?? 0;
   const quantidade = p.variants.map((v) => v.label).join(" ou ");
-  const pontos = base?.pontos ?? [p.short, `Quantidade: ${quantidade}`, "Frete grátis", "Pix com 5% OFF nos itens sem outra oferta"];
+  const pontos = base?.pontos ?? [p.short, `Quantidade: ${quantidade}`, "Frete grátis em SP e MG", "Pix com 5% OFF nos itens sem outra oferta"];
   const prova: Prova = base ?? { dor: cat.dor, solucao: cat.solucao, pontos };
   const selo = base?.selo ?? (vendidos >= 10 ? `${vendidos} unidades vendidas` : undefined);
   return { ...prova, ...(selo ? { selo } : {}), nome: p.name, quantidade, vendidos };

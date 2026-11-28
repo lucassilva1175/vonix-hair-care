@@ -19,7 +19,7 @@ export const FAQ_LOJA: FaqItem[] = [
   },
   {
     q: "Para onde vocês entregam?",
-    a: "Entregamos para todo o Brasil, com frete grátis. Consulte a disponibilidade e o prazo de entrega pelo CEP no carrinho ou no checkout.",
+    a: "Entregamos para todo o Brasil. O frete é grátis em SP e MG. Nos demais estados, o valor é calculado pelo CEP. Consulte o prazo no carrinho ou no checkout.",
   },
   {
     q: "Quais são as formas de pagamento?",
