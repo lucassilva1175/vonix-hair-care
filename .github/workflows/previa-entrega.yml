@@ -1,0 +1,63 @@
+name: Prévia de entrega nacional
+on:
+  push:
+    branches: [qa/previa-entrega-todo-brasil]
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Instalar navegador para revisão visual
+        run: |
+          npm install --prefix "$RUNNER_TEMP/vonix-preview" playwright@1.56.1 --no-audit --no-fund
+          "$RUNNER_TEMP/vonix-preview/node_modules/.bin/playwright" install chromium
+      - name: Verificar CEP e capturar prévias sem acessar pagamentos
+        run: |
+          bun run dev --host 127.0.0.1 --port 4173 > "$RUNNER_TEMP/vonix-preview/vite.log" 2>&1 &
+          curl --silent --show-error --fail --retry 30 --retry-connrefused --retry-delay 2 http://127.0.0.1:4173/produto/progressiva-fio-de-luz -o /dev/null || { cat "$RUNNER_TEMP/vonix-preview/vite.log"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/vonix-preview/screens"
+          cat > "$RUNNER_TEMP/vonix-preview/capture.mjs" <<'JS'
+          import { chromium, devices } from 'playwright';
+          import { join } from 'node:path';
+          const browser = await chromium.launch();
+          try {
+            for (const [name, options] of [
+              ['computador', { viewport: { width: 1440, height: 1000 } }],
+              ['celular', devices['iPhone 13']],
+            ]) {
+              const context = await browser.newContext(options);
+              await context.route('**/*', (route) =>
+                new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+              const page = await context.newPage();
+              await page.goto('http://127.0.0.1:4173/produto/progressiva-fio-de-luz', { waitUntil: 'networkidle' });
+              const cepCheck = page.getByTestId('cep-check');
+              const input = cepCheck.locator('input');
+              await cepCheck.getByText('Entregamos para todo o Brasil.').waitFor();
+              await input.fill('00000000');
+              await cepCheck.getByText('Informe um CEP válido com 8 dígitos para continuar.').waitFor();
+              await input.fill('69005070');
+              await cepCheck.getByText('Confira o prazo de entrega para esse CEP no carrinho.').waitFor();
+              await input.blur();
+              await input.scrollIntoViewIfNeeded();
+              await page.screenshot({ path: join(import.meta.dirname, 'screens', name + '.png') });
+              await context.close();
+              console.log(name + ': CEP inválido rejeitado e CEP de Manaus aceito.');
+            }
+          } finally {
+            await browser.close();
+          }
+          JS
+          node "$RUNNER_TEMP/vonix-preview/capture.mjs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: previas-entrega-nacional
+          path: ${{ runner.temp }}/vonix-preview/screens/*.png
+          if-no-files-found: error
+          retention-days: 7
