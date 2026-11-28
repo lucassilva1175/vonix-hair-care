@@ -1,0 +1,83 @@
+name: Prévia de preços e checkout YouShop
+on:
+  push:
+    branches: [qa/previa-youshop-catalogo]
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Instalar navegador para revisão visual
+        run: |
+          npm install --prefix "$RUNNER_TEMP/vonix-preview" playwright@1.56.1 --no-audit --no-fund
+          "$RUNNER_TEMP/vonix-preview/node_modules/.bin/playwright" install chromium
+      - name: Verificar preço e destino do checkout sem acessar pagamentos
+        run: |
+          bun run dev --host 127.0.0.1 --port 4173 > "$RUNNER_TEMP/vonix-preview/vite.log" 2>&1 &
+          curl --silent --show-error --fail --retry 30 --retry-connrefused --retry-delay 2 http://127.0.0.1:4173/produto/progressiva-fio-de-luz -o /dev/null || { cat "$RUNNER_TEMP/vonix-preview/vite.log"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/vonix-preview/screens"
+          cat > "$RUNNER_TEMP/vonix-preview/capture.mjs" <<'JS'
+          import { chromium, devices } from 'playwright';
+          import { join } from 'node:path';
+          const browser = await chromium.launch();
+          try {
+            for (const [name, options] of [
+              ['computador', { viewport: { width: 1440, height: 1000 } }],
+              ['celular', devices['iPhone 13']],
+            ]) {
+              const context = await browser.newContext(options);
+              await context.route('**/*', (route) =>
+                new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+              const page = await context.newPage();
+              await page.goto('http://127.0.0.1:4173/produto/progressiva-fio-de-luz?utm_source=preview&utm_campaign=precos', { waitUntil: 'networkidle' });
+              const checkout = page.getByRole('link', { name: 'Comprar 1 unidade na YouShop' });
+              await checkout.waitFor();
+              const actual = new URL(await checkout.getAttribute('href'));
+              if (actual.origin !== 'https://pay.youshop.com.br' || actual.pathname !== '/04W3W4NPON34NRRK' ||
+                  actual.searchParams.get('utm_source') !== 'preview' || actual.searchParams.get('utm_campaign') !== 'precos') {
+                throw new Error('Checkout ou campanha incorretos: ' + actual.href);
+              }
+              await page.getByText(/R\$\s*179,90/).first().waitFor();
+              await checkout.scrollIntoViewIfNeeded();
+              await page.screenshot({ path: join(import.meta.dirname, 'screens', name + '.png') });
+              await page.getByRole('button', { name: 'Aumentar', exact: true }).click();
+              await checkout.waitFor({ state: 'hidden' });
+              await page.goto('http://127.0.0.1:4173/produto/combo-sos-queratina-cistina?utm_source=preview', { waitUntil: 'networkidle' });
+              await page.getByRole('heading', { name: 'Combo SOS Reconstrutor + Queratina com Cistina', exact: true }).waitFor();
+              await page.getByText(/R\$\s*209,90/).first().waitFor();
+              const comboCheckout = page.getByRole('link', { name: 'Comprar 1 unidade na YouShop' });
+              await comboCheckout.waitFor();
+              const comboUrl = new URL(await comboCheckout.getAttribute('href'));
+              if (comboUrl.origin !== 'https://pay.youshop.com.br' ||
+                  comboUrl.pathname !== '/JKU7SBPIPJOHUQJG' ||
+                  comboUrl.searchParams.get('utm_source') !== 'preview') {
+                throw new Error('Destino do combo incorreto: ' + comboUrl.href);
+              }
+              await comboCheckout.scrollIntoViewIfNeeded();
+              await page.screenshot({ path: join(import.meta.dirname, 'screens', name + '-combo.png') });
+              await page.goto('http://127.0.0.1:4173/produto/botox-vonix', { waitUntil: 'networkidle' });
+              await page.getByRole('button', { name: 'Comprar agora', exact: true }).first().waitFor();
+              if (await page.getByRole('link', { name: 'Comprar 1 unidade na YouShop' }).count()) {
+                throw new Error('A oferta pausada recebeu um link de compra');
+              }
+              await context.close();
+              console.log(name + ': Conferidos preços da Fio de Luz e do combo SOS, link oficial e UTMs.');
+            }
+          } finally {
+            await browser.close();
+          }
+          JS
+          node "$RUNNER_TEMP/vonix-preview/capture.mjs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: previas-checkout-youshop
+          path: ${{ runner.temp }}/vonix-preview/screens/*.png
+          if-no-files-found: error
+          retention-days: 7
