@@ -67,6 +67,50 @@ function fill() {
 }
 
 describe("Vonix short single-page application form", () => {
+  it("focuses the masked uncertain outcome, then the confirmed receipt on an exact retry", async () => {
+    server.submit.mockRejectedValueOnce(new Error("Synthetic response lost"));
+    render(<AffiliateSimpleForm />);
+    fill();
+    const action = screen.getByRole("button", { name: "Enviar minha inscrição" });
+    action.focus();
+    fireEvent.click(action);
+    const field = await screen.findByLabelText("Código privado da tentativa não confirmada");
+    expect(field).toHaveAttribute("type", "password");
+    expect(
+      screen.getByRole("region", { name: "Tentativa de inscrição não confirmada" }),
+    ).toHaveFocus();
+    const link = screen.getByRole("link", { name: "Consultar código no portal" });
+    fireEvent.click(link, { ctrlKey: true });
+    expect(sessionStorage.getItem("vonix-affiliate-once-code")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    await screen.findByLabelText("Código privado de acompanhamento");
+    expect(screen.getByRole("heading", { name: "Inscrição recebida!" })).toHaveFocus();
+    expect(server.submit).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not steal focus from another section when a delayed receipt arrives", async () => {
+    let resolve!: (value: { ok: true; trackingCode: string }) => void;
+    server.submit.mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r;
+      }),
+    );
+    render(
+      <>
+        <button type="button">Outra seção</button>
+        <AffiliateSimpleForm />
+      </>,
+    );
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar minha inscrição" }));
+    const other = screen.getByRole("button", { name: "Outra seção" });
+    other.focus();
+    await act(async () =>
+      resolve({ ok: true, trackingCode: server.submit.mock.calls[0]![0].data.trackingCode }),
+    );
+    expect(screen.getByRole("heading", { name: "Inscrição recebida!" })).toBeInTheDocument();
+    expect(other).toHaveFocus();
+  });
   it("confirma declaração explícita de maioridade sem coletar data de nascimento", () => {
     render(<AffiliateSimpleForm />);
     const confirmation = screen.getByRole("checkbox", { name: /Autorizo o uso destes dados/ });

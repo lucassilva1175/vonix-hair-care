@@ -295,6 +295,7 @@ export function AffiliateSimpleForm({
   useEffect(() => {
     const concealReceipt = () => {
       receiptCopyEpoch.current++;
+      focusAfterSubmission.current = false;
       // The clipboard write itself cannot be cancelled on concealment.
       setCodeRevealed(false);
       setTrackingCopied(false);
@@ -395,6 +396,10 @@ export function AffiliateSimpleForm({
       event.preventDefault();
       return;
     }
+    // Opening the public portal in another tab is not a one-time handoff in
+    // this tab. Preserve native navigation without writing a stale transfer.
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+      return;
     try {
       // The browser may throw OR silently ignore storage writes. Do not
       // navigate away with the only copy of this unconfirmed private token.
@@ -482,11 +487,26 @@ export function AffiliateSimpleForm({
   );
   const submitting = useRef(false);
   const formElement = useRef<HTMLFormElement | null>(null);
+  const confirmedReceiptHeading = useRef<HTMLHeadingElement>(null);
+  const uncertainReceiptRegion = useRef<HTMLElement>(null);
+  const focusAfterSubmission = useRef(false);
   const optionalTikTokRef = useRef<HTMLDetailsElement | null>(null);
   const formSeen = useRef(false);
   const formStarted = useRef(false);
   const dirty = Object.values(values).some(Boolean) || accepted || !!trap;
   const invalidKeys = validationOrder.filter((key) => Boolean(errors[key]));
+
+  // Only focus outcomes of an explicit local submit, not a recovered visit or
+  // a response received while the applicant is in another part of the page.
+  useEffect(() => {
+    if (sending || !focusAfterSubmission.current) return;
+    focusAfterSubmission.current = false;
+    if (receiptTabHidden()) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && !formElement.current?.contains(active)) return;
+    if (sent) confirmedReceiptHeading.current?.focus();
+    else if (unconfirmedCode) uncertainReceiptRegion.current?.focus();
+  }, [sending, sent, unconfirmedCode]);
 
   // Focus only after a new invalid submit, never while the applicant fixes a field.
   useEffect(() => {
@@ -874,6 +894,7 @@ export function AffiliateSimpleForm({
     activeZipRequest.current = null;
     setZipLoading(false);
     submitting.current = true;
+    focusAfterSubmission.current = true;
     setCodeRevealed(false);
     setSending(true);
     setMessage("");
@@ -946,7 +967,13 @@ export function AffiliateSimpleForm({
         className="rounded-[2rem] border border-[#e9d7d0] bg-white px-8 py-14 text-center shadow-lg"
       >
         <CheckCircle2 aria-hidden="true" className="mx-auto h-14 w-14 text-[#38705a]" />
-        <h3 className="mt-5 font-display text-4xl text-[#482b37]">Inscrição recebida!</h3>
+        <h3
+          ref={confirmedReceiptHeading}
+          tabIndex={-1}
+          className="mt-5 scroll-mt-40 font-display text-4xl text-[#482b37]"
+        >
+          Inscrição recebida!
+        </h3>
         <p className="mx-auto mt-4 max-w-lg text-[#70575e]">
           Obrigada pelo interesse na Vonix Hair. Nossa equipe analisará seu Instagram e, se
           informado, seu TikTok e, caso necessário, entrará em contato pelos canais informados.
@@ -1457,6 +1484,8 @@ export function AffiliateSimpleForm({
           ) : null}
           {!preview && unconfirmedCode ? (
             <section
+              ref={uncertainReceiptRegion}
+              tabIndex={-1}
               aria-label="Tentativa de inscrição não confirmada"
               className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-[#604448]"
             >

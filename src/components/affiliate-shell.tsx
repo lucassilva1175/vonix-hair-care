@@ -108,6 +108,7 @@ export function AffiliateShell({
               className="hidden items-center gap-3 xl:flex"
             >
               <Link
+                reloadDocument
                 to="/consultar-candidatura"
                 data-testid="affiliate-c112-returning-desktop"
                 className="inline-flex min-h-11 items-center rounded-full border border-[#d7bec4] bg-[#faf2ef] px-3 text-xs font-bold text-[#754256] transition hover:bg-[#f1e5e6] focus-visible:outline-2 focus-visible:outline-offset-4"
@@ -182,6 +183,7 @@ export function AffiliateShell({
                 className="fixed inset-x-3 top-[4.75rem] z-[70] grid max-h-[calc(100dvh-6rem)] gap-1 overflow-y-auto overscroll-contain rounded-2xl border border-[#dac6c8] bg-[#fffaf7] p-2 text-sm font-semibold text-[#754256] shadow-[0_18px_40px_rgba(65,36,49,.18)]"
               >
                 <Link
+                  reloadDocument
                   to="/consultar-candidatura"
                   onClick={closeMobileMenu}
                   className="flex items-center rounded-xl bg-[#f0e2e4] px-4 py-3"
@@ -278,6 +280,7 @@ export function AffiliateShell({
             tabIndex={0}
           >
             <Link
+              reloadDocument
               to="/consultar-candidatura"
               data-testid="affiliate-c112-returning-mobile"
               className="inline-flex min-h-11 shrink-0 snap-start items-center rounded-lg bg-[#f0e2e4] px-3 font-bold text-[#754256]"
@@ -379,6 +382,7 @@ export function AffiliateShell({
               <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Visitar a loja oficial
             </Link>
             <Link
+              reloadDocument={mode === "landing"}
               to="/consultar-candidatura"
               className="underline decoration-border underline-offset-4 hover:text-primary-foreground"
             >
@@ -393,6 +397,7 @@ export function AffiliateShell({
               </a>
             )}
             <Link
+              reloadDocument={mode === "landing"}
               to="/acompanhar-inscricao"
               className="underline decoration-border underline-offset-4 hover:text-primary-foreground"
             >
