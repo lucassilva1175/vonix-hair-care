@@ -70,22 +70,29 @@ const providerKey = "synthetic-operational-resend-key";
 const useSql = process.env["VONIX_QA_OPERATIONS_SQL"] === "1";
 const qaContainer = "vonix-pr343-operational-qa-20261128";
 const qaDatabase = "vonix_pr343_qa";
+const qaContainerId = process.env["VONIX_QA_OPERATIONS_CONTAINER_ID"];
 
 // This transport can use real SQL ONLY in a disposable, labelled, networkless
 // fixture created by the local QA runner. No provider request is ever sent.
+function isolatedContainerId(): string {
+  if (!qaContainerId || !/^[a-f0-9]{64}$/.test(qaContainerId))
+    throw Error("SQL fixture must be created by the isolated journey runner");
+  return qaContainerId;
+}
 function assertSqlFixture() {
+  const id = isolatedContainerId();
   const value = execFileSync(
     "docker",
     [
       "inspect",
       "--format",
-      '{{.HostConfig.NetworkMode}}|{{index .Config.Labels "vonix.qa"}}|{{.Config.Image}}',
-      qaContainer,
+      '{{.Id}}|{{.Name}}|{{.HostConfig.NetworkMode}}|{{index .Config.Labels "vonix.qa"}}|{{.Config.Image}}',
+      id,
     ],
     { encoding: "utf8", timeout: 10000 },
   ).trim();
-  if (value !== "none|affiliate-operational-20261128|postgres:16")
-    throw Error("Refusing non-isolated SQL fixture");
+  if (value !== id + "|/" + qaContainer + "|none|affiliate-operational-20261128|postgres:16")
+    throw Error("Refusing non-isolated or different SQL fixture");
 }
 function sql(statement: string, service = true) {
   const result = spawnSync(
@@ -93,7 +100,7 @@ function sql(statement: string, service = true) {
     [
       "exec",
       "-i",
-      qaContainer,
+      isolatedContainerId(),
       "psql",
       "-X",
       "-qAt",
