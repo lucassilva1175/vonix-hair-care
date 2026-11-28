@@ -7,7 +7,7 @@ describe("feed do catálogo da Meta", () => {
     const csv = await handler().text();
     const rows = csv.split("\r\n").slice(1).filter(Boolean);
     expect(rows.length).toBeGreaterThan(40);
-    expect(rows.filter((r) => r.includes("/produto/combo-"))).toHaveLength(21);
+    expect(rows.filter((r) => r.includes("/produto/combo-"))).toHaveLength(22);
     expect(rows.some((r) => /\/produto\/[^"]*whey/i.test(r))).toBe(false);
     expect(rows.some((r) => r.includes("/produto/kit-banana-e-mel"))).toBe(false);
   });

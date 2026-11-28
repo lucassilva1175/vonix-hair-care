@@ -18,8 +18,8 @@ describe("ambiente e preços dos cards", () => {
   it("Fio de Luz no salão: preço novo, Pix com 5% de desconto e promoção de kits", () => {
     const p = getProduct("progressiva-fio-de-luz");
     if (!p) throw new Error("Produto obrigatório ausente");
-    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 145.9, pix: 138.61, parcels: { count: 6, value: 24.31, first: 24.35 } });
-    expect(cardPricing(p, "casa").price).toBe(145.9);
+    expect(cardPricing(p, "salao")).toMatchObject({ professional: true, price: 179.9, pix: 170.91, parcels: { count: 6, value: 29.98, first: 30 } });
+    expect(cardPricing(p, "casa").price).toBe(179.9);
   });
   it("kits prontos também têm a promoção de levar 2 ou 3, e o Pix com 5%, no salão e em casa", () => {
     const p = getProduct("kit-banana-e-mel");
@@ -52,14 +52,14 @@ describe("ambiente e preços dos cards", () => {
 });
 
 describe("regras comerciais", () => {
-  it("catálogo tem 95 produtos (solos, kits antigos escondidos da vitrine e os 21 combos para donas de salão)", () => expect(products.length).toBe(95));
+  it("catálogo tem 96 produtos (solos, kits antigos escondidos da vitrine e os 22 combos para donas de salão)", () => expect(products.length).toBe(96));
   it("com o teste encerrado (14/11) valem os preços de products.json", () => {
-    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(145.9);
+    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(179.9);
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([70.9, 155.9]);
   });
   it("depois da data, os preços seguem os de products.json (teste encerrado)", () => {
     vi.setSystemTime(new Date("2026-11-21T00:00:01-03:00"));
-    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(145.9);
+    expect(getProduct("progressiva-fio-de-luz")!.variants[0]?.price).toBe(179.9);
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([70.9, 155.9]);
     vi.setSystemTime(new Date("2026-11-14T12:00:00-03:00"));
   });
@@ -211,5 +211,16 @@ describe("classificação e complementos", () => {
     expect(s).not.toContain("serum-argan");
     expect(s).not.toContain("kit-banana-e-mel");
     expect(s.every((slug) => getProduct(slug)!.category !== "kits")).toBe(true);
+  });
+});
+
+describe("preços da YouShop no site", () => {
+  it.each([
+    ["combo-fio-de-luz-shampoo-anti-residuo", 225.90],
+    ["combo-botox-vonix-nutri-repair", 235.90],
+    ["combo-sos-queratina-cistina", 209.90],
+  ] as const)("exibe %s pelo preço da oferta após o desconto de combo", (slug, price) => {
+    const product = getProduct(slug)!;
+    expect(lineTotals(product.variants[0].price, 1, undefined, slug).net).toBe(price);
   });
 });
