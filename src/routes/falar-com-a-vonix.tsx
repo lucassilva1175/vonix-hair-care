@@ -66,7 +66,7 @@ function FalarComAVonix() {
         <div className="rounded-2xl bg-card p-6 text-center">
           <p className="text-small font-semibold uppercase tracking-[0.2em] text-muted-foreground">Feito para cabeleireiras e donas de salão</p>
           <h1 className="mt-2 font-display text-h2">Combos com 5% OFF + 5% no Pix</h1>
-          <p className="mt-2 text-body text-muted-foreground">Responda 3 perguntas rápidas e a gente leva você para o lugar certo. Entregamos em São Paulo e Minas Gerais, com frete grátis.</p>
+          <p className="mt-2 text-body text-muted-foreground">Responda 3 perguntas rápidas e a gente leva você para o lugar certo. Entregamos para todo o Brasil, com frete grátis.</p>
 
           <Escolha titulo="1. Você é cabeleireira ou tem salão?" opcoes={PERFIS} valor={perfil} onChange={setPerfil} />
           <Escolha titulo="2. O que você procura?" opcoes={PRODUTOS} valor={produto} onChange={setProduto} />
@@ -117,7 +117,7 @@ function FalarComAVonix() {
           )}
 
           <ul className="mt-6 grid gap-2 text-left text-small text-muted-foreground">
-            <li className="flex items-center gap-2"><Truck className="h-4 w-4 shrink-0" aria-hidden="true" /> Entregamos em São Paulo e Minas Gerais, com frete grátis</li>
+            <li className="flex items-center gap-2"><Truck className="h-4 w-4 shrink-0" aria-hidden="true" /> Entregamos para todo o Brasil, com frete grátis</li>
             <li className="flex items-center gap-2"><QrCode className="h-4 w-4 shrink-0" aria-hidden="true" /> Combos com 5% OFF e mais 5% no Pix</li>
             <li className="flex items-center gap-2"><CreditCard className="h-4 w-4 shrink-0" aria-hidden="true" /> Cartão em até 6x sem juros</li>
             <li className="flex items-center gap-2"><Gift className="h-4 w-4 shrink-0" aria-hidden="true" /> Sacolinha Vonix de mimo em todo pedido</li>

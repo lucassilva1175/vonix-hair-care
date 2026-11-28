@@ -87,7 +87,7 @@ function CartShipping({
         <Truck className="h-4 w-4" strokeWidth={1.5} />
         Calcule o frete antes de finalizar
       </div>
-      <p className="mt-1 text-small text-muted-foreground">Entregamos somente em São Paulo e Minas Gerais.</p>
+      <p className="mt-1 text-small text-muted-foreground">Entregamos para todo o Brasil. Prazo calculado pelo seu CEP.</p>
       <div className="mt-2 flex gap-2">
         <input
           inputMode="numeric"

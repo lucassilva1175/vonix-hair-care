@@ -12,9 +12,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { name: "description", content: "Site feito para cabeleireiras e donas de salão: progressivas, botox e combos profissionais. Fio de Luz, a mais vendida em São Paulo e Minas Gerais. Até 6x sem juros e frete grátis." },
+      { name: "description", content: "Site feito para cabeleireiras e donas de salão: progressivas, botox e combos profissionais. Fio de Luz, a mais vendida em São Paulo e Minas Gerais. Até 6x sem juros e frete grátis para todo o Brasil." },
       { property: "og:title", content: "Vonix Hair — Cosméticos Capilares Profissionais" },
-      { property: "og:description", content: "Para donas de salão de São Paulo e Minas Gerais. Até 6x sem juros e frete grátis." },
+      { property: "og:description", content: "Cosméticos capilares profissionais para donas de salão de todo o Brasil. Até 6x sem juros e frete grátis para todo o Brasil." },
       { property: "og:url", content: SITE_URL },
       { property: "og:image", content: `${SITE_URL}/og-vonix.jpg` },
       { name: "twitter:image", content: `${SITE_URL}/og-vonix.jpg` },

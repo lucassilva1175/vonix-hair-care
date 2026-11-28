@@ -416,7 +416,7 @@ function ProductPage() {
               </p>
             </div>
             <p className="mt-3 flex items-center gap-2 text-body font-semibold text-emerald-700" data-testid="frete-no-preco">
-              <Truck className="h-5 w-5 shrink-0" aria-hidden="true" /> Frete grátis · entrega de 3 a 5 dias úteis em SP e MG
+              <Truck className="h-5 w-5 shrink-0" aria-hidden="true" /> Frete grátis · prazo calculado pelo seu CEP
             </p>
             <ComboDestaque slug={p.slug} />
             {provaDe(p).selo && (
@@ -621,7 +621,7 @@ function ProductPage() {
             </div>
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
-                Frete grátis em todos os produtos, em qualquer pedido · entrega de 3 a 5 dias úteis
+                Frete grátis em todos os produtos, em qualquer pedido · prazo calculado pelo seu CEP
               </li>
               <li>
                 <Link
