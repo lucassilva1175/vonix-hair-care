@@ -98,7 +98,6 @@ const showDelivery = async () => {
   fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "teste@example.com" } });
   expect(screen.getByRole("group", { name: "Entrega" })).toBeVisible();
   expect(screen.getByLabelText("CPF")).not.toBeVisible();
-  expect(screen.getByTestId("checkout-total-topo")).toHaveTextContent("Frete grátis");
 };
 const showPayment = () => {
   fireEvent.click(screen.getByRole("button", { name: "Continuar para o pagamento" }));
@@ -344,7 +343,7 @@ describe("checkout auditado sem chamadas reais", () => {
   });
   it("produto exibe estimativa mesmo quando endereço falha", async () => {
     mocks.address.mockRejectedValue(new Error("network"));
-    render(<ShippingCalc subtotal={154.9} slug="kit-banana-e-mel" variant="Kit" qty={1} />);
+    render(<ShippingCalc slug="kit-banana-e-mel" variant="Kit" qty={1} />);
     fireEvent.change(screen.getByLabelText("CEP de entrega"), { target: { value: "69005070" } });
     fireEvent.click(screen.getByRole("button", { name: "Calcular" }));
     expect(await screen.findByText(/Estimativa de frete/)).toBeInTheDocument();
@@ -411,11 +410,13 @@ describe("C86 — parcela em destaque e total informado no cartão do checkout",
     });
     render(<Checkout />);
     await showDelivery();
+    expect(screen.getByTestId("checkout-total-topo")).toHaveTextContent("Frete a calcular");
     fireEvent.change(screen.getByLabelText("CEP"), { target: { value: "30140010" } });
     await screen.findByText(/Correios PAC/);
     fireEvent.click(screen.getByRole("radio", { name: /Correios PAC/ }));
     fireEvent.change(screen.getByLabelText("Número"), { target: { value: "10" } });
     showPayment();
+    expect(screen.getByTestId("checkout-total-topo")).toHaveTextContent(/Frete: R\$\s*12,03/);
     const total = getProduct("kit-banana-e-mel")!.variants[0]!.price + 12.03;
     const amount = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
       .format(total)

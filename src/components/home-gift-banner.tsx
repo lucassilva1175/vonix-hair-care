@@ -12,7 +12,7 @@ export function HomeGiftBanner() {
         <ul className="gift-banner-benefits" aria-label="Condições de pagamento e entrega" data-testid="home-banner-benefits">
           <li><QrCode aria-hidden="true" /><strong>5% OFF no combo + 5% no Pix</strong></li>
           <li><CreditCard aria-hidden="true" /><span>Até <strong>6x sem juros</strong></span></li>
-          <li><Truck aria-hidden="true" /><strong>Frete grátis</strong></li>
+          <li><Truck aria-hidden="true" /><strong>Frete grátis em SP e MG</strong></li>
         </ul>
         <Link to="/loja" search={{ tiposProduto: "Kits" }} className="gift-banner-cta">Quero o meu combo <ArrowRight aria-hidden="true" /></Link>
       </div>

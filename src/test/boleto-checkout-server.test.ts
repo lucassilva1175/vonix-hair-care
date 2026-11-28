@@ -12,10 +12,10 @@ vi.mock("@tanstack/react-start", () => ({ createServerFn: () => ({
 vi.mock("@tanstack/react-start/server", () => ({ getRequestHeader: () => "127.0.0.1" }));
 vi.mock("@/lib/env.server", () => ({ env: (name: string, fallback = "") => name === "APPMAX_BOLETO_ENABLED" ? (mocks.disabled ? "false" : "true") : name.startsWith("APPMAX_CLIENT_") ? "test-only" : fallback }));
 vi.mock("@/lib/appmax.server", () => ({ createCustomer: mocks.customer, createOrder: mocks.order, payWithBoleto: mocks.boleto, payWithPix: mocks.pix, payWithCard: mocks.card, getOrder: mocks.status, isPaid: () => false }));
-vi.mock("@/lib/melhorenvio.server", () => ({ calculateShipping: async () => [{ id: 1, name: "PAC", company: "Correios", price: 0, days: 5 }], unitWeightKg: () => 1 }));
+vi.mock("@/lib/melhorenvio.server", () => ({ calculateShipping: async () => [{ id: 1, name: "PAC", company: "Correios", price: 37.34, days: 5 }], unitWeightKg: () => 1 }));
 vi.mock("@/lib/affiliate-notify.server", () => ({ notifyAffiliateSale: mocks.notify }));
 vi.mock("@/lib/affiliate-coupon.server", () => ({ resolveAffiliateCoupon: vi.fn(), lastAffiliateLookupError: null }));
-import { createPayment } from "@/lib/checkout.functions";
+import { createPayment, quoteShipping } from "@/lib/checkout.functions";
 
 const request = () => ({
   customer: { nome: "Pessoa Teste", email: "teste@example.com", cpf: "52998224725", whatsapp: "31999999999" },
@@ -51,5 +51,28 @@ describe("pagamento de boleto no servidor", () => {
     await expect(createPayment({ data: request() })).resolves.toMatchObject({ ok: false });
     expect(mocks.notify).not.toHaveBeenCalledWith(expect.objectContaining({ status: "pago" }));
     log.mockRestore();
+  });
+});
+
+describe("frete regional no checkout", () => {
+  it.each([
+    ["01001000", true, 0],
+    ["30140010", true, 0],
+    ["69005070", false, 37.34],
+  ] as const)("cota o CEP %s e envia o frete ao pedido", async (cep, free, shipping) => {
+    const data = request();
+    const address = { ...data.address, cep };
+    await expect(quoteShipping({ data: { cep, items: data.items } })).resolves.toMatchObject({
+      ok: true,
+      options: [{ id: 1, free, price: shipping }],
+    });
+    const productPrice = getProduct("kit-banana-e-mel")!.variants[0]!.price;
+    await expect(createPayment({ data: { ...data, address } })).resolves.toMatchObject({
+      ok: true,
+      total: productPrice + shipping,
+    });
+    expect(mocks.order).toHaveBeenCalledWith(expect.objectContaining({
+      shipping_value: Math.round(shipping * 100),
+    }));
   });
 });

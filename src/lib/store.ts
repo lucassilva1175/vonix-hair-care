@@ -67,7 +67,6 @@ const SOLTOS_OCULTOS = (p: Product) =>
 const SEM_WHEY = (p: Product) => !/whey/i.test(p.slug);
 export const vitrine = products.filter((p) => !SOLTOS_OCULTOS(p) && SEM_WHEY(p));
 
-export const FREE_SHIPPING_ABOVE = 0; // 0 = frete grátis em todos os produtos e em qualquer valor de pedido (ordem do Lucas, 19/11/2026). Para exigir um mínimo, ponha o valor aqui
 export const MAX_INSTALLMENTS = 6;
 /** Desconto no Pix: 5% (volta em 16/11/2026), só em itens sem outra oferta e sem cupom por cima. */
 export const PIX_DISCOUNT = 0.05;
@@ -97,9 +96,6 @@ export function installments(total: number, n = MAX_INSTALLMENTS) {
   return { count: n, value: base / 100, first: first / 100 };
 }
 
-/** Free shipping strictly ABOVE R$ 150,00 of product subtotal (after discounts). */
-export const hasFreeShipping = (subtotal: number) => subtotal > FREE_SHIPPING_ABOVE;
-
 const CEP_KEY = "vonix-cep";
 export const getSavedCep = () => (typeof window === "undefined" ? "" : (localStorage.getItem(CEP_KEY) ?? ""));
 export const saveCep = (cep: string) => {
@@ -109,8 +105,6 @@ export const maskCep = (v: string) => {
   const d = v.replace(/\D/g, "").slice(0, 8);
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
 };
-export const missingForFreeShipping = (subtotal: number) =>
-  hasFreeShipping(subtotal) ? 0 : Math.max(0, cents(FREE_SHIPPING_ABOVE + 0.01 - subtotal) / 100);
 
 /** What the customer gets in the item: kit piece count (from "O QUE VEM NO KIT") and/or the size(s). */
 export function contentLabel(p: Product, short = false) {
@@ -371,7 +365,6 @@ export function checkoutTotals(
     pixDiscount: (-pixDisc + 0) / 100,
     discount: (gross - total) / 100,
     net: total / 100,
-    freeShipping: gross > FREE_SHIPPING_ABOVE * 100,
     hasOffers: lines.some(lineHasOffer),
   };
 }
@@ -502,38 +495,6 @@ export function complementsFor(cartSlugs: string[], max = 3): Product[] {
     seen.add(s);
     const p = getProduct(s);
     if (p && p.category !== "kits") out.push(p);
-    if (out.length >= max) break;
-  }
-  return out;
-}
-
-/**
- * Unidades avulsas dos kits que ajudam a chegar ao frete grátis: só aparecem quando ainda falta valor
- * (subtotal antes dos descontos, a mesma conta do frete). Primeiro as que sozinhas completam o que falta,
- * da mais barata para a mais cara; se nenhuma completa, as mais caras (menos itens para chegar lá).
- * Nunca repete um produto que já está no carrinho.
- */
-export function fillersForFreeShipping(cartSlugs: string[], subtotal: number, max = 3): { product: Product; variant: Product["variants"][number] }[] {
-  const missing = missingForFreeShipping(subtotal);
-  if (missing <= 0) return [];
-  const inCart = new Set(cartSlugs);
-  const options = products
-    .filter((p) => p.category === "avulsos" && !inCart.has(p.slug))
-    .map((p) => {
-      const reach = p.variants.filter((v) => v.price >= missing).sort((a, b) => a.price - b.price)[0];
-      const variant = reach ?? [...p.variants].sort((a, b) => b.price - a.price)[0]!;
-      return { product: p, variant, reaches: !!reach };
-    });
-  const reaching = options.filter((o) => o.reaches).sort((a, b) => a.variant.price - b.variant.price);
-  const rest = options.filter((o) => !o.reaches).sort((a, b) => b.variant.price - a.variant.price);
-  // no máximo uma sugestão por linha (ex.: Banana e Mel), para a lista não ficar repetitiva
-  const seenLine = new Set<string>();
-  const out: { product: Product; variant: Product["variants"][number] }[] = [];
-  for (const o of [...reaching, ...rest]) {
-    const line = o.product.slug.replace(/^(shampoo|condicionador|mascara|leave-in|modelador|finalizador|keratina)-/, "");
-    if (seenLine.has(line)) continue;
-    seenLine.add(line);
-    out.push({ product: o.product, variant: o.variant });
     if (out.length >= max) break;
   }
   return out;

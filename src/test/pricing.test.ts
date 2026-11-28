@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { USAGE, cardPricing, forAudience, resolveAudience, checkoutTotals, complementsFor, getProduct, hasFreeShipping, installments, missingForFreeShipping, isProOnly, lineHasOffer, lineTotals, migrateCart, pixPrice, products, volumePct } from "@/lib/store";
+import { USAGE, cardPricing, forAudience, resolveAudience, checkoutTotals, complementsFor, getProduct, installments, isProOnly, lineHasOffer, lineTotals, migrateCart, pixPrice, products, volumePct } from "@/lib/store";
 
 // O teste de preços (13/11 a 20/11/2026) lê a data na hora: fixamos "hoje" dentro do prazo para os números ficarem estáveis.
 beforeAll(() => {
@@ -63,12 +63,6 @@ describe("regras comerciais", () => {
     expect(getProduct("kit-cachos")!.variants.map((v) => v.price)).toEqual([70.9, 155.9]);
     vi.setSystemTime(new Date("2026-11-14T12:00:00-03:00"));
   });
-  it("frete grátis em todos os produtos e em qualquer valor de pedido", () => {
-    expect(hasFreeShipping(0.01)).toBe(true);
-    expect(hasFreeShipping(32.9)).toBe(true);
-    expect(hasFreeShipping(150)).toBe(true);
-    expect(missingForFreeShipping(32.9)).toBe(0);
-  });
   it("6x sem juros soma o total exato", () => {
     const i = installments(174.9);
     expect(i.count).toBe(6);
@@ -82,11 +76,6 @@ describe("ofertas por linha (não cumulativas)", () => {
     expect(lineTotals(174.9, 1)).toMatchObject({ net: 174.9, gross: 174.9, units: 1 });
     expect(lineTotals(174.9, 1, "kit2")).toMatchObject({ net: 307.82, gross: 349.8, units: 2 });
     expect(lineTotals(174.9, 1, "kit3")).toMatchObject({ net: 446, gross: 524.7, units: 3 });
-  });
-  it("frete grátis considera o valor antes do desconto do kit, mesmo que o total fique abaixo de 150", () => {
-    const t = lineTotals(84.9, 1, "kit2"); // 169,80 antes do desconto, 149,42 depois
-    expect(t.net).toBeLessThan(150);
-    expect(checkoutTotals([{ gross: t.gross, net: t.net, offer: "kit2" }], "pix").freeShipping).toBe(true);
   });
   it("complemento consumidor: Sérum Argan 84,90 → 80,66 (economia 4,24)", () => {
     const t = lineTotals(84.9, 1, "comp5");
@@ -152,19 +141,14 @@ describe("desconto por quantidade (segue a quantidade, em qualquer lugar)", () =
 
 describe("checkout", () => {
   const line = (gross: number, net = gross, offer?: "comp5" | "kit2" | "kit3") => ({ gross, net, offer });
-  it("Banana e Mel no Pix: 147,16 (5% off) COM frete grátis", () => {
-    expect(checkoutTotals([line(154.9)], "pix")).toMatchObject({ net: 147.16, pixDiscount: 7.74, freeShipping: true });
+  it("Banana e Mel no Pix: 147,16 (5% off)", () => {
+    expect(checkoutTotals([line(154.9)], "pix")).toMatchObject({ net: 147.16, pixDiscount: 7.74 });
   });
-  it("Banana e Mel no cartão: 154,90 com frete grátis", () => {
-    expect(checkoutTotals([line(154.9)], "card")).toMatchObject({ net: 154.9, freeShipping: true });
+  it("Banana e Mel no cartão: 154,90", () => {
+    expect(checkoutTotals([line(154.9)], "card")).toMatchObject({ net: 154.9 });
   });
-  it("cupom de 10%: 139,41 e mantém o frete grátis", () => {
-    expect(checkoutTotals([line(154.9)], "card", 0.1)).toMatchObject({ net: 139.41, couponDiscount: 15.49, freeShipping: true });
-  });
-  it("frete grátis vale para qualquer valor de pedido", () => {
-    expect(checkoutTotals([line(32.9)], "pix").freeShipping).toBe(true);
-    expect(checkoutTotals([line(100)], "pix").freeShipping).toBe(true);
-    expect(checkoutTotals([line(150.01)], "pix").freeShipping).toBe(true);
+  it("cupom de 10%: 139,41", () => {
+    expect(checkoutTotals([line(154.9)], "card", 0.1)).toMatchObject({ net: 139.41, couponDiscount: 15.49 });
   });
   it("pedido misto: 2 Banana e Mel + 1 Café Verde = 424,70 no cartão; Sérum com 5% soma 80,66 → 505,36", () => {
     const lines = [line(309.8), line(114.9), line(84.9, 80.66, "comp5")];

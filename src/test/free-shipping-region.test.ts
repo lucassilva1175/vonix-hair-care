@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isFreeShippingCep } from "@/lib/free-shipping-region";
+import { cepAtendido, isFreeShippingCep } from "@/lib/free-shipping-region";
 
 describe("frete grátis para SP e MG", () => {
   it("São Paulo (01000-000 a 19999-999)", () => {
@@ -20,4 +20,16 @@ describe("frete grátis para SP e MG", () => {
     expect(isFreeShippingCep("3014")).toBe(false);
     expect(isFreeShippingCep("")).toBe(false);
   });
+});
+
+describe("atendimento nacional por CEP", () => {
+  it.each(["69005-070", "50010000", "70040-010", "80010-000", "01001-000", "30140-071"])(
+    "aceita o CEP brasileiro %s",
+    (cep) => expect(cepAtendido(cep)).toBe(true),
+  );
+
+  it.each(["", "00000-000", "00999-999", "01001", "010010000", "01.001-000", "SP01001000"])(
+    "rejeita o CEP inválido %s",
+    (cep) => expect(cepAtendido(cep)).toBe(false),
+  );
 });

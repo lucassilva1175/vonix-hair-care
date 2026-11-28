@@ -22,7 +22,6 @@ import {
   getSavedCep,
   installments,
   maskCep,
-  missingForFreeShipping,
   saveCep,
   shippingText,
   useCart,
@@ -848,8 +847,7 @@ function Checkout() {
 
   const cardTotal = tCard.net + shipping;
   const card6 = installments(cardTotal, 6);
-  const freeShip = missingForFreeShipping(gross) === 0;
-  const shipNote = chosen ? (chosen.free ? "frete grátis" : "com frete") : freeShip ? "frete grátis" : "sem frete";
+  const shipNote = chosen ? (chosen.free ? "frete grátis" : "com frete") : "frete a calcular";
   const selectedInstallments = installmentText(total, parcels);
   const payDisabled = busy || quoting || !chosen || !cfg || !cfg.pixEnabled || (pay === "boleto" && !cfg.boletoEnabled);
   const paymentButton = (
@@ -920,15 +918,15 @@ function Checkout() {
                 )}
                 <div className="flex justify-between">
                   <span>Frete</span>
-                  <span className="text-right">{chosen ? (chosen.free ? "Grátis" : brl(chosen.price)) : freeShip ? "Grátis" : "A calcular"}</span>
+                  <span className="text-right">{chosen ? (chosen.free ? "Grátis" : brl(chosen.price)) : "A calcular"}</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-neutral-200 bg-neutral-100 px-3 py-2.5 text-name font-bold text-black">
                   <span className="min-w-0">
-                    {chosen || freeShip ? `Total ${pay === "pix" ? "no Pix" : pay === "boleto" ? "no boleto" : "no cartão"}` : `Produtos ${pay === "pix" ? "no Pix" : pay === "boleto" ? "no boleto" : "no cartão"}`}
+                    {chosen ? `Total ${pay === "pix" ? "no Pix" : pay === "boleto" ? "no boleto" : "no cartão"}` : `Produtos ${pay === "pix" ? "no Pix" : pay === "boleto" ? "no boleto" : "no cartão"}`}
                   </span>
                   <span className="money text-h2">{brl(total)}</span>
                 </div>
-                {!(chosen ? chosen.free : freeShip) && (
+                {!chosen?.free && (
                   <p className="text-small text-muted-foreground">
                     {chosen ? "Total com o frete escolhido." : "Total final após calcular o frete."}
                   </p>
@@ -954,10 +952,12 @@ function Checkout() {
             </header>
             <p data-testid="checkout-total-topo" className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-xl border border-border bg-card px-4 py-3 text-body">
               <span>
-                Total <b className="money text-name">{brl(tPix.net + shipping)}</b> no Pix
+                {chosen ? "Total" : "Produtos"} <b className="money text-name">{brl(tPix.net + shipping)}</b> no Pix
                 <span className="block text-small text-muted-foreground">ou {brl(tCard.net + shipping)} no cartão</span>
               </span>
-              <span className="text-small font-semibold text-emerald-700">Frete grátis</span>
+              <span className={`text-small font-semibold ${chosen?.free ? "text-emerald-700" : "text-muted-foreground"}`}>
+                {chosen ? (chosen.free ? "Frete grátis" : `Frete: ${brl(chosen.price)}`) : "Frete a calcular"}
+              </span>
             </p>
 
             <ol aria-label="Etapas do checkout" className="grid grid-cols-2 gap-2 px-1 text-small">
@@ -1213,7 +1213,7 @@ function Checkout() {
                     <span className="money block text-name font-semibold">{brl(chosen ? tPix.net + shipping : tPix.net)}</span>
                     {tPix.pixDiscount > 0 && <span className={`block text-small font-semibold ${pay === "pix" ? "text-white" : "text-black"}`}>5% OFF no Pix</span>}
                     {applied && tPix.pixDiscount === 0 && <span className={`block text-small ${pay === "pix" ? "text-white/80" : "text-muted-foreground"}`}>Com cupom, o Pix não tem 5% OFF</span>}
-                    {(!chosen || chosen.free) && <span className={`block text-small ${pay === "pix" ? "text-white/70" : "text-muted-foreground"}`}>{chosen?.free || freeShip ? "Frete grátis" : "sem frete"}</span>}
+                    {(!chosen || chosen.free) && <span className={`block text-small ${pay === "pix" ? "text-white/70" : "text-muted-foreground"}`}>{chosen?.free ? "Frete grátis" : "Frete a calcular"}</span>}
                   </span>
                 </label>
                 <label data-testid="pay-option-card" className={payTile(pay === "card")}>
