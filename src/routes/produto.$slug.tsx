@@ -16,6 +16,7 @@ import { toItem, track } from "@/lib/analytics";
 import { FaqSection } from "@/components/faq";
 import { openCartDrawer } from "@/components/cart-drawer";
 import { FAQ_LOJA } from "@/lib/faq";
+import { useYouShopCheckout } from "@/lib/youshop";
 import { useServerFn } from "@tanstack/react-start";
 import { lookupAddress } from "@/lib/address.functions";
 import { quoteShipping } from "@/lib/checkout.functions";
@@ -355,13 +356,14 @@ function ProductPage() {
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
   const v = p.variants[vi] ?? p.variants[0]!;
+  const sel = lineTotals(v.price, qty, undefined, p.slug);
+  const youshopCheckout = useYouShopCheckout(p.slug, v.label, sel.net, qty === 1 && cart.count === 0);
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
   const related = forAudience(
     vitrine.filter((x) => x.category === p.category && x.slug !== p.slug),
     audience,
   ).slice(0, 4);
-  const sel = lineTotals(v.price, qty, undefined, p.slug);
   const discounted = sel.net < sel.gross;
   const unitPrice = sel.net / sel.units;
   useEffect(() => {
@@ -395,25 +397,31 @@ function ProductPage() {
             <Stars slug={p.slug} />
             <ReviewStrip slug={p.slug} />
             <div className="mt-4" data-testid="product-price-block">
-              <div className="flex flex-wrap items-center gap-2">
-                {comboPct(p.slug) > 0 ? (
-                  <>
-                    <span className="text-body text-muted-foreground line-through">{brl(v.price)}</span>
-                    <span className="money text-h1 font-bold leading-none">{brl(pixPrice(lineTotals(v.price, 1, undefined, p.slug).net))}</span>
-                    <span className="text-body">no Pix</span>
-                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">{comboPct(p.slug)}% + 5% OFF</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
-                    <span className="text-body">no Pix</span>
-                    <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
-                  </>
-                )}
-              </div>
-              <p className="mt-1 text-small text-muted-foreground">
-                {comboPct(p.slug) > 0 ? <>Ou <b className="font-semibold">{brl(lineTotals(v.price, 1, undefined, p.slug).net)}</b> em até <b className="font-semibold">{installments(lineTotals(v.price, 1, undefined, p.slug).net).count}x de {brl(installments(lineTotals(v.price, 1, undefined, p.slug).net).value)}</b> sem juros. O desconto de 5% do combo já está no preço e o Pix dá mais 5%.</> : <>Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros</>}
-              </p>
+              {youshopCheckout ? (
+                <span className="money text-h1 font-bold leading-none">{brl(sel.net)}</span>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {comboPct(p.slug) > 0 ? (
+                      <>
+                        <span className="text-body text-muted-foreground line-through">{brl(v.price)}</span>
+                        <span className="money text-h1 font-bold leading-none">{brl(pixPrice(lineTotals(v.price, 1, undefined, p.slug).net))}</span>
+                        <span className="text-body">no Pix</span>
+                        <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">{comboPct(p.slug)}% + 5% OFF</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="money text-h1 font-bold leading-none">{brl(pixPrice(v.price))}</span>
+                        <span className="text-body">no Pix</span>
+                        <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-small font-bold text-white">5% OFF</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="mt-1 text-small text-muted-foreground">
+                    {comboPct(p.slug) > 0 ? <>Ou <b className="font-semibold">{brl(lineTotals(v.price, 1, undefined, p.slug).net)}</b> em até <b className="font-semibold">{installments(lineTotals(v.price, 1, undefined, p.slug).net).count}x de {brl(installments(lineTotals(v.price, 1, undefined, p.slug).net).value)}</b> sem juros. O desconto de 5% do combo já está no preço e o Pix dá mais 5%.</> : <>Ou <b className="font-semibold">{brl(v.price)}</b> em até <b className="font-semibold">{installments(v.price).count}x de {brl(installments(v.price).value)}</b> sem juros</>}
+                  </p>
+                </>
+              )}
             </div>
             <p className="mt-3 flex items-center gap-2 text-body font-semibold text-emerald-700" data-testid="frete-no-preco">
               <Truck className="h-5 w-5 shrink-0" aria-hidden="true" /> Frete grátis · entrega de 3 a 5 dias úteis em SP e MG
@@ -594,15 +602,21 @@ function ProductPage() {
               </button>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button
-                className="rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5"
-                onClick={() => {
-                  add();
-                  nav({ to: "/checkout" });
-                }}
-              >
-                Comprar agora
-              </button>
+              {youshopCheckout ? (
+                <a href={youshopCheckout} data-testid="youshop-buy-now" className="rounded-md bg-black py-3.5 text-center font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99]">
+                  Comprar agora na YouShop
+                </a>
+              ) : (
+                <button
+                  className="rounded-md bg-black font-bold text-white shadow-[0_10px_22px_-12px_rgba(0,0,0,0.6)] transition hover:bg-neutral-800 active:scale-[0.99] py-3.5"
+                  onClick={() => {
+                    add();
+                    nav({ to: "/checkout" });
+                  }}
+                >
+                  Comprar agora
+                </button>
+              )}
               <button
                 className="rounded-md border-2 border-foreground py-3.5 font-medium"
                 onClick={() => {
@@ -613,12 +627,21 @@ function ProductPage() {
                 Adicionar ao carrinho
               </button>
             </div>
-            <div className="mt-4">
-              <PaymentMethods />
-            </div>
-            <div className="mt-3">
-              <SecuritySeal />
-            </div>
+            {youshopCheckout && (
+              <p className="mt-2 text-small text-muted-foreground">
+                Confira frete e condições de pagamento no checkout da YouShop.
+              </p>
+            )}
+            {!youshopCheckout && (
+              <>
+                <div className="mt-4">
+                  <PaymentMethods />
+                </div>
+                <div className="mt-3">
+                  <SecuritySeal />
+                </div>
+              </>
+            )}
             <ul className="mt-4 space-y-1 text-body text-muted-foreground">
               <li>
                 Frete grátis em todos os produtos, em qualquer pedido · entrega de 3 a 5 dias úteis
@@ -679,19 +702,25 @@ function ProductPage() {
         <div className="min-w-0 leading-tight">
           <div className="text-small text-muted-foreground line-through">{brl(discounted ? sel.gross : total)}</div>
           <div className="flex flex-wrap items-center gap-x-2">
-            <span className="text-h2 font-bold leading-tight">{brl(discounted && !isComboLine ? total : pixPrice(total))}</span>
-            <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">{discounted && !isComboLine ? `-${linePct(qty, p.slug)}%` : "-5% PIX"}</span>
+            <span className="text-h2 font-bold leading-tight">{brl(youshopCheckout || (discounted && !isComboLine) ? total : pixPrice(total))}</span>
+            {!youshopCheckout && <span className="rounded bg-[#e7fbfa] px-1.5 py-px text-small font-semibold text-[#007979]">{discounted && !isComboLine ? `-${linePct(qty, p.slug)}%` : "-5% PIX"}</span>}
           </div>
         </div>
-        <button
-          className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]"
-          onClick={() => {
-            add();
-            openCartDrawer();
-          }}
-        >
-          <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
-        </button>
+        {youshopCheckout ? (
+          <a href={youshopCheckout} data-testid="youshop-sticky-buy" className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]">
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
+          </a>
+        ) : (
+          <button
+            className="ml-auto flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#091413] px-7 text-body font-semibold text-white transition active:scale-[0.99]"
+            onClick={() => {
+              add();
+              openCartDrawer();
+            }}
+          >
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" /> Comprar
+          </button>
+        )}
       </div>
     </Shell>
   );
