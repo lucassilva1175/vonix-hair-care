@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useLocation, useNavigate } from "@tanstack/react-router";
 import { BadgeCheck, Check, Heart, Minus, Plus, ShoppingCart, Truck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -352,6 +352,13 @@ function ProductPage() {
   const fav = useFavorites();
   const { audience } = useAudience();
   const nav = useNavigate();
+  const search = useLocation({ select: (location) => location.searchStr });
+  const youshopCheckout = new URL("https://pay.youshop.com.br/04W3W4NPON34NRRK");
+  for (const [key, value] of new URLSearchParams(search)) {
+    if (key.startsWith("utm_") && !youshopCheckout.searchParams.has(key)) {
+      youshopCheckout.searchParams.append(key, value);
+    }
+  }
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
   const v = p.variants[vi] ?? p.variants[0]!;
@@ -613,6 +620,16 @@ function ProductPage() {
                 Adicionar ao carrinho
               </button>
             </div>
+            {p.slug === "progressiva-fio-de-luz" && (
+              <a
+                href={youshopCheckout.href}
+                target="_blank"
+                rel="noopener"
+                className="mt-3 block rounded-md border border-foreground px-4 py-3 text-center font-medium"
+              >
+                Comprar 1 unidade na YouShop
+              </a>
+            )}
             <div className="mt-4">
               <PaymentMethods />
             </div>
