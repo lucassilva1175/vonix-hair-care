@@ -19,7 +19,7 @@ export const FAQ_LOJA: FaqItem[] = [
   },
   {
     q: "Para onde vocês entregam?",
-    a: "Por enquanto entregamos em São Paulo e Minas Gerais, com frete grátis. Se o CEP for de outro estado, o site avisa antes do pagamento.",
+    a: "Entregamos para todo o Brasil, com frete grátis. Consulte a disponibilidade e o prazo de entrega pelo CEP no carrinho ou no checkout.",
   },
   {
     q: "Quais são as formas de pagamento?",
@@ -35,7 +35,7 @@ export const FAQ_LOJA: FaqItem[] = [
   },
   {
     q: "Em quanto tempo o meu pedido chega e como acompanho?",
-    a: "A entrega é de 3 a 5 dias úteis em São Paulo e Minas Gerais. O prazo exato aparece na página do produto e no checkout, conforme o seu CEP. Quando a transportadora disponibiliza, enviamos o código ou o link de rastreamento por e-mail ou WhatsApp.",
+    a: "O prazo é calculado pelo seu CEP e aparece no carrinho ou no checkout. Quando a transportadora disponibiliza, enviamos o código ou o link de rastreamento por e-mail ou WhatsApp.",
   },
   {
     q: "Posso trocar ou devolver?",
