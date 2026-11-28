@@ -26,7 +26,9 @@ const validUrl = (key) => {
   }
 };
 // The checkout Supabase must never be used for confidential applicant records.
-const projectRef = raw["AFFILIATE_SUPABASE_PROJECT_REF"] || "";
+const projectRef = (raw["AFFILIATE_SUPABASE_PROJECT_REF"] || "").trim();
+const affiliateDbKey = (raw["AFFILIATE_SUPABASE_SERVICE_ROLE_KEY"] || "").trim();
+const checkoutDbKey = (raw["SUPABASE_SERVICE_ROLE_KEY"] || "").trim();
 const projectPinned =
   /^[a-z0-9]{20}$/.test(projectRef) &&
   (() => {
@@ -46,25 +48,35 @@ const sameAsCheckout = (() => {
     return false;
   }
 })();
-const sameAsCheckoutKey = Boolean(
-  raw["SUPABASE_SERVICE_ROLE_KEY"] &&
-  raw["SUPABASE_SERVICE_ROLE_KEY"] === raw["AFFILIATE_SUPABASE_SERVICE_ROLE_KEY"],
-);
+const sameAsCheckoutKey = Boolean(checkoutDbKey && checkoutDbKey === affiliateDbKey);
 const db =
   !sameAsCheckout &&
   !sameAsCheckoutKey &&
   validUrl("AFFILIATE_SUPABASE_URL") &&
-  present("AFFILIATE_SUPABASE_SERVICE_ROLE_KEY", 16) &&
+  affiliateDbKey.length >= 16 &&
+  !/\s/.test(affiliateDbKey) &&
+  (!affiliateDbKey.startsWith("sb_") || affiliateDbKey.startsWith("sb_secret_")) &&
   projectPinned;
 const encryptionKey = (() => {
   const value = raw["AFFILIATE_QUESTIONNAIRE_KEY"] || "";
-  if (/^[a-f0-9]{64}$/i.test(value)) return true;
+  // Both legacy hex and Lovable-generated 64-character alphanumeric keys
+  // are accepted by the production key derivation. Never print the material.
+  if (/^[A-Za-z0-9]{64}$/.test(value)) return true;
   if (!/^[A-Za-z0-9_-]{43}$/.test(value)) return false;
   // Match the server's canonical decoder check. Padding-bit variations and
   // copied garbage must not make the production readiness report green.
   const decoded = Buffer.from(value, "base64url");
   return decoded.length === 32 && decoded.toString("base64url") === value;
 })();
+const resendKey = raw["AFFILIATE_RESEND_API_KEY"] || raw["RESEND_API_KEY"] || "";
+const sender = (raw["AFFILIATE_FROM_EMAIL"] || "").trim();
+const senderAddress = /^.{1,120}\s<([^<>]+)>$/.exec(sender)?.[1] || sender;
+const senderDomain = senderAddress.split("@")[1] || "";
+const senderLooksValid =
+  sender.length >= 6 &&
+  sender.length <= 240 &&
+  /^[^@\s<>]+@[^@\s<>]+$/.test(senderAddress) &&
+  /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i.test(senderDomain);
 const checks = [
   {
     id: "database_pair",
@@ -86,7 +98,7 @@ const checks = [
   },
   {
     id: "totp",
-    ok: /^[A-Z2-7]{32,128}$/i.test(raw["AFFILIATE_ADMIN_TOTP_SECRET"] || ""),
+    ok: /^[A-Z2-7]{32,128}$/i.test((raw["AFFILIATE_ADMIN_TOTP_SECRET"] || "").replace(/\s+/g, "")),
     kind: "configuration",
     description: "TOTP de produção",
   },
@@ -112,19 +124,19 @@ const checks = [
   },
   {
     id: "resend",
-    ok: present("RESEND_API_KEY", 10),
+    ok: resendKey.length >= 20 && !/\s/.test(resendKey),
     kind: "optional_notification",
     description: "Chave Resend (opcional para candidaturas)",
   },
   {
     id: "resend_sender",
-    ok: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw["AFFILIATE_FROM_EMAIL"] || ""),
+    ok: senderLooksValid,
     kind: "optional_notification",
     description: "Endereço remetente (opcional)",
   },
   {
     id: "worker_secret",
-    ok: present("AFFILIATE_WORKER_SECRET", 24),
+    ok: present("AFFILIATE_WORKER_SECRET", 24) && !/\s/.test(raw["AFFILIATE_WORKER_SECRET"] || ""),
     kind: "optional_notification",
     description: "Segredo do worker de notificação (opcional)",
   },
@@ -156,6 +168,10 @@ const checks = [
 const canOpen = checks.filter((x) => x.kind !== "optional_notification").every((x) => x.ok);
 const report = {
   canOpenFromConfiguration: canOpen,
+  notificationConfigurationPresent: checks
+    .filter((x) => x.kind === "optional_notification")
+    .every((x) => x.ok),
+  productionAcceptanceVerified: false,
   caveat:
     "Variáveis e atestações declaradas não comprovam banco, RLS, domínio nem revisão jurídica. Resend e worker são opcionais para receber candidaturas; sem eles não haverá envio automático de decisões.",
   missing: checks.filter((x) => x.kind !== "optional_notification" && !x.ok).map((x) => x.id),
