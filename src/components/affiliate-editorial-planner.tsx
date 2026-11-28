@@ -8,6 +8,8 @@ import {
   type EditorialFormat,
 } from "@/lib/affiliate-editorial-plan";
 import { AffiliateApplyLink } from "@/components/affiliate-apply-link";
+import { AffiliateEditorialProjectActions } from "@/components/affiliate-editorial-project-actions";
+import type { EditorialProject } from "@/lib/affiliate-editorial-project";
 import {
   appendEditorialReferences,
   resolveEditorialReferences,
@@ -18,11 +20,13 @@ export function AffiliateEditorialPlanner({
   onSafePreview,
   referenceSlugs = [],
   onRemoveReference,
+  onRestoreReferences,
 }: {
   recruitmentOpen?: boolean;
   onSafePreview?: (() => void) | undefined;
   referenceSlugs?: readonly string[];
   onRemoveReference?: (slug: string) => void;
+  onRestoreReferences?: (slugs: string[]) => void;
 }) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -55,6 +59,17 @@ export function AffiliateEditorialPlanner({
     setDone([]);
     copyVersion.current++;
     if (!copying.current) setCopy("idle");
+  }
+  function restoreProject(project: EditorialProject) {
+    if (!ready || !onRestoreReferences) return;
+    setProfile(project.profile);
+    setCadence(project.cadence);
+    setFormat(project.format);
+    setDone(project.done);
+    onRestoreReferences(project.references);
+    copyVersion.current++;
+    if (!copying.current) setCopy("idle");
+    setDownloadError(false);
   }
   async function copyPlan() {
     if (!ready || copying.current) return;
@@ -185,7 +200,7 @@ export function AffiliateEditorialPlanner({
             </p>
           )}
           <p className="mt-5 text-xs text-[#765c67]">
-            As escolhas e marcações ficam nesta página. Não são enviadas nem salvas após recarregar.
+            As escolhas e marcações ficam nesta página. Não são enviadas nem salvas automaticamente.
             Alterar o plano reinicia a lista de preparação.
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
@@ -323,6 +338,20 @@ export function AffiliateEditorialPlanner({
               Limpar marcações
             </button>
           </div>
+          {onRestoreReferences && (
+            <AffiliateEditorialProjectActions
+              ready={ready}
+              project={{
+                version: 1,
+                profile,
+                cadence,
+                format,
+                done,
+                references: references.map((item) => item.slug),
+              }}
+              onRestore={restoreProject}
+            />
+          )}
           {downloadError && (
             <p role="status" className="mt-3 text-xs font-semibold text-[#633847]">
               Não foi possível iniciar o download. Copie seu plano editorial com as marcações do

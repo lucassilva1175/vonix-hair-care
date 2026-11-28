@@ -637,6 +637,7 @@ export function AffiliateLandingDiscovery({
           recruitmentOpen={isOpen}
           onSafePreview={onSafePreview}
           referenceSlugs={referenceSelection[0]}
+          onRestoreReferences={referenceSelection[1]}
           onRemoveReference={(slug) =>
             referenceSelection[1]((previous) => previous.filter((item) => item !== slug))
           }
