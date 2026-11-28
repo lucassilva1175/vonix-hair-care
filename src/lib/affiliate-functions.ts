@@ -282,13 +282,16 @@ export const resendAffiliateApplicantInvite = createServerFn({ method: "POST" })
           ok: false as const,
           reason:
             "O provedor não confirmou o convite. Se a conta já existir, oriente a candidata a solicitar um código no portal de acompanhamento.",
+          uncertain: true as const,
         };
       }
       return { ok: true as const };
     } catch {
       return {
         ok: false as const,
-        reason: "Não foi possível solicitar o acesso. Verifique a conexão com o Supabase.",
+        uncertain: true as const,
+        reason:
+          "Não foi possível confirmar a solicitação de acesso. Confira com a candidata antes de repetir.",
       };
     }
   });
@@ -487,7 +490,8 @@ export const eraseAffiliateApplicationAdmin = createServerFn({ method: "POST" })
     } catch {
       return {
         ok: false as const,
-        reason: "Não foi possível executar a exclusão. Verifique a migração de governança.",
+        uncertain: true as const,
+        reason: "Não foi possível confirmar a exclusão. Verifique o resultado antes de repetir.",
       };
     }
   });
@@ -576,7 +580,8 @@ export const reviewAffiliateApplication = createServerFn({ method: "POST" })
     } catch {
       return {
         ok: false as const,
-        reason: "Não foi possível registrar a decisão. Tente novamente.",
+        uncertain: true as const,
+        reason: "Não foi possível confirmar a decisão. Consulte o status antes de repetir.",
       };
     }
   });

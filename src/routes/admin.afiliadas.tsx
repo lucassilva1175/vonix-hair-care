@@ -176,7 +176,7 @@ function legacyAdminTabHidden() {
   return typeof document !== "undefined" && document.visibilityState === "hidden";
 }
 
-// Bound only the browser's read wait; no mutation is retried or cancelled by this helper.
+// Bound only the browser wait; this helper never retries or cancels a server transaction.
 async function waitForAdminRead<T>(request: Promise<T>, delay = 30000): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -190,6 +190,9 @@ async function waitForAdminRead<T>(request: Promise<T>, delay = 30000): Promise<
     if (timer !== undefined) clearTimeout(timer);
   }
 }
+
+type UncertainAction = "decision" | "erase" | "invite";
+const ADMIN_MUTATION_WAIT_MS = 45000;
 
 export function AffiliateAdminPage() {
   const [password, setPassword] = useState("");
@@ -223,6 +226,10 @@ export function AffiliateAdminPage() {
   const [listError, setListError] = useState("");
   const [workingId, setWorkingId] = useState<string | null>(null);
   const mutationInFlight = useRef<string | null>(null);
+  // A local timeout does not cancel a server transaction. Keep unresolved
+  // mutations blocked per record, without retaining candidate data or credentials.
+  const uncertainActionsRef = useRef<Record<string, UncertainAction>>({});
+  const [uncertainActions, setUncertainActions] = useState<Record<string, UncertainAction>>({});
   const [listCheckedAt, setListCheckedAt] = useState<number | null>(null);
   const [pendingAccessInviteId, setPendingAccessInviteId] = useState<string | null>(null);
   const [privateDetail, setPrivateDetail] = useState<
@@ -343,6 +350,8 @@ export function AffiliateAdminPage() {
     setTotal(0);
     mutationInFlight.current = null;
     setWorkingId(null);
+    uncertainActionsRef.current = {};
+    setUncertainActions({});
     setListCheckedAt(null);
     setPendingDecision(null);
     setPendingAccessInviteId(null);
@@ -449,6 +458,20 @@ export function AffiliateAdminPage() {
       setPage(nextPage);
       setSearch(nextSearch);
       setApplications(response.applications);
+      // Only a fresh, explicit terminal status resolves an uncertain decision.
+      // Absence from this page is NOT proof of deletion or email delivery.
+      const remaining = { ...uncertainActionsRef.current };
+      let changed = false;
+      for (const record of response.applications) {
+        if (remaining[record.id] === "decision" && record.status !== "pendente") {
+          delete remaining[record.id];
+          changed = true;
+        }
+      }
+      if (changed) {
+        uncertainActionsRef.current = remaining;
+        setUncertainActions(remaining);
+      }
       setStats(response.stats);
       setMailStats(response.mailStats);
       setNotificationStatsFresh(true);
@@ -649,7 +672,8 @@ export function AffiliateAdminPage() {
       sessionRechecking ||
       requiresVisibleSessionCheck.current ||
       legacyAdminTabHidden() ||
-      mutationInFlight.current
+      mutationInFlight.current ||
+      uncertainActionsRef.current[id]
     )
       return false;
     mutationInFlight.current = id;
@@ -665,6 +689,12 @@ export function AffiliateAdminPage() {
     setError("");
     setNotice("");
     return true;
+  }
+
+  function markUncertain(id: string, action: UncertainAction) {
+    const next = { ...uncertainActionsRef.current, [id]: action };
+    uncertainActionsRef.current = next;
+    setUncertainActions(next);
   }
 
   function finishMutation(id: string, sessionId: number) {
@@ -686,12 +716,16 @@ export function AffiliateAdminPage() {
     const sessionId = sessionVersion.current;
     if (!startMutation(app.id)) return;
     try {
-      const result = await reviewAffiliateApplication({
-        data: { id: app.id, decision, reason: decision === "recusada" ? rejectionReason : null },
-      });
+      const result = await waitForAdminRead(
+        reviewAffiliateApplication({
+          data: { id: app.id, decision, reason: decision === "recusada" ? rejectionReason : null },
+        }),
+        ADMIN_MUTATION_WAIT_MS,
+      );
       if (sessionVersion.current !== sessionId) return;
       if (!result.ok) {
         if (sessionExpired(result.reason)) return;
+        if ("uncertain" in result && result.uncertain) markUncertain(app.id, "decision");
         await load(status, page, search, mailFilter, true);
         if (sessionVersion.current === sessionId) setError(result.reason);
         return;
@@ -717,6 +751,7 @@ export function AffiliateAdminPage() {
       if (sessionVersion.current === sessionId) {
         // A network exception may occur after the decision commits. Never
         // automatically repeat a mutation; reconcile using the current query.
+        markUncertain(app.id, "decision");
         await load(status, page, search, mailFilter, true);
         if (sessionVersion.current === sessionId)
           setError(
@@ -740,10 +775,14 @@ export function AffiliateAdminPage() {
     const sessionId = sessionVersion.current;
     if (!startMutation(app.id)) return;
     try {
-      const result = await resendAffiliateApplicantInvite({ data: { id: app.id } });
+      const result = await waitForAdminRead(
+        resendAffiliateApplicantInvite({ data: { id: app.id } }),
+        ADMIN_MUTATION_WAIT_MS,
+      );
       if (sessionId !== sessionVersion.current) return;
       if (!result.ok) {
         if (sessionExpired(result.reason)) return;
+        if ("uncertain" in result && result.uncertain) markUncertain(app.id, "invite");
         setError(result.reason);
       } else {
         setNotice(
@@ -752,7 +791,8 @@ export function AffiliateAdminPage() {
       }
     } catch {
       if (sessionId === sessionVersion.current) {
-        setError("Falha ao solicitar o convite. Nenhuma entrega foi confirmada.");
+        markUncertain(app.id, "invite");
+        setError("Não foi possível confirmar o convite. Verifique o recebimento antes de repetir.");
       }
     } finally {
       finishMutation(app.id, sessionId);
@@ -770,17 +810,24 @@ export function AffiliateAdminPage() {
     const sessionId = sessionVersion.current;
     if (!startMutation(app.id)) return;
     try {
-      const result = await eraseAffiliateApplicationAdmin({
-        data: {
-          id: app.id,
-          emailConfirmation: erasureEmail.trim().toLowerCase(),
-          reason: erasureReason,
-        },
-      });
+      const result = await waitForAdminRead(
+        eraseAffiliateApplicationAdmin({
+          data: {
+            id: app.id,
+            emailConfirmation: erasureEmail.trim().toLowerCase(),
+            reason: erasureReason,
+          },
+        }),
+        ADMIN_MUTATION_WAIT_MS,
+      );
       if (sessionId !== sessionVersion.current) return;
       if (!result.ok) {
         if (sessionExpired(result.reason)) return;
-        setError(result.reason);
+        if ("uncertain" in result && result.uncertain) {
+          markUncertain(app.id, "erase");
+          await load(status, page, search, mailFilter, true);
+        }
+        if (sessionId === sessionVersion.current) setError(result.reason);
       } else {
         setErasureId(null);
         setErasureEmail("");
@@ -791,6 +838,7 @@ export function AffiliateAdminPage() {
       }
     } catch {
       if (sessionId === sessionVersion.current) {
+        markUncertain(app.id, "erase");
         await load(status, page, search, mailFilter, true);
         if (sessionId === sessionVersion.current)
           setError("Falha na exclusão. Nenhum resultado foi confirmado.");
@@ -1410,6 +1458,22 @@ export function AffiliateAdminPage() {
               </aside>
             )}
 
+            {Object.keys(uncertainActions).length > 0 && (
+              <div
+                role="status"
+                className="mt-5 rounded-xl border border-[#e4cbb2] bg-[#fff5e9] p-4 text-sm text-[#744d30]"
+              >
+                <p className="font-bold">
+                  Operações com resultado pendente de confirmação:{" "}
+                  {Object.keys(uncertainActions).length}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed">
+                  A ausência de uma candidatura na lista filtrada não confirma exclusão ou entrega
+                  de e-mail. Consulte o resultado com a equipe responsável antes de repetir. O
+                  bloqueio local não substitui a confirmação no servidor.
+                </p>
+              </div>
+            )}
             {notice && (
               <div
                 role="status"
@@ -1463,6 +1527,7 @@ export function AffiliateAdminPage() {
                 const instagram = safeProfileLink(app.instagram_url, "instagram");
                 const tiktok = safeProfileLink(app.tiktok_url, "tiktok");
                 const mail = app.vonix_affiliate_mail_outbox?.[0];
+                const uncertainAction = uncertainActions[app.id];
                 const waitAge =
                   app.status === "pendente"
                     ? pendingReviewAge(app.created_at, listCheckedAt)
@@ -1497,6 +1562,22 @@ export function AffiliateAdminPage() {
                         {app.status}
                       </span>
                     </div>
+                    {uncertainAction && (
+                      <p
+                        role="status"
+                        className="border-b border-[#eadbd7] bg-[#fff5e9] px-6 py-4 text-xs leading-relaxed text-[#744d30]"
+                      >
+                        Resultado da{" "}
+                        {uncertainAction === "decision"
+                          ? "decisão"
+                          : uncertainAction === "erase"
+                            ? "exclusão"
+                            : "solicitação de convite"}{" "}
+                        não confirmado. As ações desta candidatura permanecem bloqueadas nesta
+                        sessão. Confira o resultado com a equipe responsável antes de repetir;
+                        outras candidaturas continuam disponíveis.
+                      </p>
+                    )}
                     <div className="grid gap-6 px-6 py-6 md:grid-cols-[1fr_1.1fr]">
                       <dl className="grid grid-cols-2 gap-x-3 gap-y-5 text-sm">
                         {app.age !== null && (
@@ -1723,7 +1804,12 @@ export function AffiliateAdminPage() {
                           <button
                             type="button"
                             aria-expanded={pendingAccessInviteId === app.id}
-                            disabled={workingId !== null || loading || sessionRechecking}
+                            disabled={
+                              workingId !== null ||
+                              loading ||
+                              sessionRechecking ||
+                              Boolean(uncertainAction)
+                            }
                             onClick={() =>
                               setPendingAccessInviteId(
                                 pendingAccessInviteId === app.id ? null : app.id,
@@ -1755,7 +1841,7 @@ export function AffiliateAdminPage() {
                             <div className="mt-4 flex flex-wrap gap-3">
                               <button
                                 type="button"
-                                disabled={workingId !== null || loading}
+                                disabled={workingId !== null || loading || Boolean(uncertainAction)}
                                 onClick={() => void retryApplicantAccess(app)}
                                 className="min-h-11 rounded-full bg-[#693440] px-5 text-sm font-bold text-white disabled:opacity-50"
                               >
@@ -1777,7 +1863,7 @@ export function AffiliateAdminPage() {
                       <div className="flex flex-wrap gap-3 border-t border-[#f3e7e3] bg-[#fffaf7] px-6 py-5">
                         <button
                           type="button"
-                          disabled={workingId !== null || loading}
+                          disabled={workingId !== null || loading || Boolean(uncertainAction)}
                           onClick={() => setPendingDecision({ id: app.id, decision: "aprovada" })}
                           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#315f50] px-6 text-sm font-bold text-white hover:bg-[#204d3e] disabled:opacity-50"
                         >
@@ -1786,7 +1872,7 @@ export function AffiliateAdminPage() {
                         </button>
                         <button
                           type="button"
-                          disabled={workingId !== null || loading}
+                          disabled={workingId !== null || loading || Boolean(uncertainAction)}
                           onClick={() => {
                             setRejectionReason("seguidores_insuficientes");
                             setPendingDecision({ id: app.id, decision: "recusada" });
@@ -1845,7 +1931,7 @@ export function AffiliateAdminPage() {
                             <div className="mt-4 flex flex-wrap gap-3">
                               <button
                                 type="button"
-                                disabled={workingId !== null || loading}
+                                disabled={workingId !== null || loading || Boolean(uncertainAction)}
                                 onClick={() => void decide(app, pendingDecision.decision)}
                                 className="min-h-11 rounded-full bg-[#673541] px-5 text-sm font-bold text-white disabled:opacity-50"
                               >
@@ -1901,7 +1987,7 @@ export function AffiliateAdminPage() {
                     <div className="border-t border-[#f3e7e3] px-6 py-4">
                       <button
                         type="button"
-                        disabled={workingId !== null || loading}
+                        disabled={workingId !== null || loading || Boolean(uncertainAction)}
                         onClick={() => {
                           setErasureId(erasureId === app.id ? null : app.id);
                           setErasureEmail("");
@@ -1974,6 +2060,7 @@ export function AffiliateAdminPage() {
                             type="submit"
                             disabled={
                               workingId !== null ||
+                              Boolean(uncertainAction) ||
                               erasureEmail.trim().toLowerCase() !==
                                 (app.email ?? app.full_name).toLowerCase()
                             }

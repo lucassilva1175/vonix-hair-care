@@ -15,6 +15,8 @@ const gates = vi.hoisted(() => ({
   session: vi.fn(),
   allowed: vi.fn(),
   decide: vi.fn(),
+  readApplicantEmail: vi.fn(),
+  invite: vi.fn(),
   email: vi.fn(),
   disposition: vi.fn(),
   authorized: vi.fn(),
@@ -46,6 +48,9 @@ vi.mock("@/lib/affiliate-auth-delivery.server", () => ({
   affiliateEmailAuthorizedForPortal: gates.authorized,
   sendAffiliateAuthEmailWithResend: gates.sendAuth,
   sendAffiliateManagedAuthOtp: gates.sendManaged,
+}));
+vi.mock("@/lib/affiliate-invites.server", () => ({
+  invitePersistedAffiliateApplicant: gates.invite,
 }));
 vi.mock("@/lib/affiliate-admin-auth.server", () => ({
   attemptAffiliateAdminLogin: gates.legacyLogin,
@@ -85,6 +90,7 @@ vi.mock("@/lib/affiliate-applications.server", () => ({
   previewAffiliateRetention: gates.retention,
   processAffiliateEmails: gates.email,
   readAffiliateDecisionMailDisposition: gates.disposition,
+  readAffiliateApplicantEmailForAccessRecovery: gates.readApplicantEmail,
 }));
 
 import {
@@ -95,6 +101,7 @@ import {
   getAffiliateOperationalReadiness,
   getAffiliateRetentionPreview,
   eraseAffiliateApplicationAdmin,
+  resendAffiliateApplicantInvite,
   submitAffiliateApplication,
   submitSimpleAffiliateApplication,
   loginAffiliateAdminMember,
@@ -572,5 +579,54 @@ describe("C29: authenticated session endpoints do not expose cacheable credentia
       status: "requested",
     });
     privacyHeaders();
+  });
+});
+
+describe("Irreversible actions distinguish uncertain outcomes from definitive refusals", () => {
+  const id = "00000000-0000-4000-8000-000000000999";
+  it("does not tell operators to retry an unconfirmed decision or send mail prematurely", async () => {
+    gates.decide.mockRejectedValueOnce(new Error("synthetic committed response lost"));
+    expect(
+      await reviewAffiliateApplication({ data: { id, decision: "aprovada", reason: null } }),
+    ).toMatchObject({ ok: false, uncertain: true });
+    expect(gates.email).not.toHaveBeenCalled();
+    gates.decide.mockResolvedValueOnce(false);
+    const refusal = await reviewAffiliateApplication({
+      data: { id, decision: "aprovada", reason: null },
+    });
+    expect(refusal.ok).toBe(false);
+    expect(refusal).not.toHaveProperty("uncertain");
+  });
+  it("distinguishes an ambiguous deletion from a confirmed negative result", async () => {
+    const data = {
+      id,
+      emailConfirmation: "synthetic@example.invalid",
+      reason: "solicitacao_titular" as const,
+    };
+    gates.erase.mockRejectedValueOnce(new Error("synthetic connection loss"));
+    expect(await eraseAffiliateApplicationAdmin({ data })).toMatchObject({
+      ok: false,
+      uncertain: true,
+    });
+    gates.erase.mockResolvedValueOnce(false);
+    const refusal = await eraseAffiliateApplicationAdmin({ data });
+    expect(refusal.ok).toBe(false);
+    expect(refusal).not.toHaveProperty("uncertain");
+  });
+  it("does not claim provider delivery or expose internal error details when invite outcome is ambiguous", async () => {
+    gates.readApplicantEmail.mockResolvedValue("synthetic@example.invalid");
+    gates.invite.mockRejectedValueOnce(new Error("SYNTHETIC_PRIVATE_PROVIDER_DETAIL"));
+    const result = await resendAffiliateApplicantInvite({ data: { id } });
+    expect(result).toMatchObject({ ok: false, uncertain: true });
+    expect(JSON.stringify(result)).not.toContain("SYNTHETIC_PRIVATE_PROVIDER_DETAIL");
+    gates.invite.mockResolvedValueOnce(false);
+    expect(await resendAffiliateApplicantInvite({ data: { id } })).toMatchObject({
+      ok: false,
+      uncertain: true,
+    });
+    gates.readApplicantEmail.mockResolvedValueOnce(null);
+    const absent = await resendAffiliateApplicantInvite({ data: { id } });
+    expect(absent.ok).toBe(false);
+    expect(absent).not.toHaveProperty("uncertain");
   });
 });
