@@ -346,6 +346,13 @@ function ComboDestaque({ slug }: { slug: string }) {
   );
 }
 
+const YOUSHOP_OFFERS: Readonly<Partial<Record<string, Readonly<Partial<Record<string, string>>>>>> = {
+  "progressiva-fio-de-luz": { "1L": "https://pay.youshop.com.br/04W3W4NPON34NRRK" },
+  "kit-matizador-shampoo-e-mascara": { Kit: "https://pay.youshop.com.br/LWF1IR4RCS6CEXF7" },
+  "combo-sos-queratina-cistina": { Combo: "https://pay.youshop.com.br/JKU7SBPIPJOHUQJG" },
+  defrizante: { "1L": "https://pay.youshop.com.br/SEIT8PIYCTGYDSHV" },
+};
+
 function ProductPage() {
   const p = Route.useLoaderData();
   const cart = useCart();
@@ -353,15 +360,18 @@ function ProductPage() {
   const { audience } = useAudience();
   const nav = useNavigate();
   const search = useLocation({ select: (location) => location.searchStr });
-  const youshopCheckout = new URL("https://pay.youshop.com.br/04W3W4NPON34NRRK");
-  for (const [key, value] of new URLSearchParams(search)) {
-    if (key.startsWith("utm_") && !youshopCheckout.searchParams.has(key)) {
-      youshopCheckout.searchParams.append(key, value);
-    }
-  }
   const [vi, setVi] = useState(0);
   const [qty, setQty] = useState(1);
   const v = p.variants[vi] ?? p.variants[0]!;
+  const youshopOffer = qty === 1 ? YOUSHOP_OFFERS[p.slug]?.[v.label] : undefined;
+  const youshopCheckout = youshopOffer ? new URL(youshopOffer) : undefined;
+  if (youshopCheckout) {
+    for (const [key, value] of new URLSearchParams(search)) {
+      if (key.startsWith("utm_") && !youshopCheckout.searchParams.has(key)) {
+        youshopCheckout.searchParams.append(key, value);
+      }
+    }
+  }
   const compare = vi === 0 ? p.compareBase : null;
   const off = discountPct(compare, v.price);
   const related = forAudience(
@@ -620,7 +630,7 @@ function ProductPage() {
                 Adicionar ao carrinho
               </button>
             </div>
-            {p.slug === "progressiva-fio-de-luz" && (
+            {youshopCheckout && (
               <a
                 href={youshopCheckout.href}
                 target="_blank"
