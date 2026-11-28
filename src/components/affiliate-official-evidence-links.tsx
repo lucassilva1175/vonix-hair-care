@@ -15,7 +15,8 @@ import {
   Search,
   Star,
 } from "lucide-react";
-import { getProduct, OUT_OF_STOCK } from "@/lib/store";
+import { getProduct, OUT_OF_STOCK, vitrine } from "@/lib/store";
+import { soldFor } from "@/lib/sales";
 import publishedMedia from "@/data/provas-em-video.json";
 import reviews from "@/data/reviews.json";
 import packagingImages from "@/data/sacolinhas.json";
@@ -64,6 +65,19 @@ const additionalVideoProducts = [
   { slug: "mascara-monovonix", idea: "Explore a apresentação da máscara e as instruções de uso." },
 ] as const;
 
+// Product sales are first-party catalog data, not affiliate sales or earnings.
+const marketEvidence = [
+  "progressiva-fio-de-luz",
+  "shampoo-fio-de-luz-anti-residuo",
+  "botox-vonix",
+].flatMap((slug) => {
+  const product = vitrine.find((item) => item.slug === slug);
+  const units = soldFor(slug);
+  return product && Number.isSafeInteger(units) && units > 0
+    ? [{ slug, name: product.name, units }]
+    : [];
+});
+
 export function AffiliateOfficialEvidenceLinks({
   variant,
   referenceSelection,
@@ -80,6 +94,7 @@ export function AffiliateOfficialEvidenceLinks({
   const [category, setCategory] = useState("");
   const [packagingView, setPackagingView] = useState(false);
   const [failedPackaging, setFailedPackaging] = useState<string[]>([]);
+  const [photoAttempts, setPhotoAttempts] = useState<Record<string, number>>({});
   const videos = variant === "videos";
   const compact = variant === "teaser";
   const id =
@@ -298,7 +313,14 @@ export function AffiliateOfficialEvidenceLinks({
                   referenceSelection && resolveEditorialReferences([slug]).length,
                 );
                 const selected = selectedReferences.includes(slug);
-                const productPhoto = "/images/products/" + slug + "-480.webp";
+                const photoBase = "/images/products/" + slug;
+                const photoSources = [
+                  photoBase + "-480.webp",
+                  photoBase + ".webp",
+                  photoBase + ".jpg",
+                ];
+                const photoAttempt = photoAttempts[slug] ?? 0;
+                const productPhoto = photoSources[photoAttempt];
                 const showPackaging =
                   packagingView &&
                   typeof packaging === "string" &&
@@ -316,21 +338,37 @@ export function AffiliateOfficialEvidenceLinks({
                       onClick={() => trackAffiliateFunnel("affiliate_catalog_source_open")}
                       className="group flex min-h-24 min-w-0 flex-1 items-start gap-3 rounded-2xl bg-white p-3 text-sm font-bold text-[#724155] hover:bg-[#fff8f6] focus-visible:outline-2 focus-visible:outline-offset-[-2px] sm:flex-col sm:gap-2 sm:p-4"
                     >
-                      <img
-                        src={showPackaging ? packaging : productPhoto}
-                        onError={() => {
-                          if (showPackaging)
-                            setFailedPackaging((previous) =>
-                              previous.includes(slug) ? previous : [...previous, slug],
-                            );
-                        }}
-                        alt=""
-                        width={480}
-                        height={480}
-                        loading="lazy"
-                        decoding="async"
-                        className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full"
-                      />
+                      {showPackaging || productPhoto ? (
+                        <img
+                          src={showPackaging ? packaging : productPhoto}
+                          onError={() => {
+                            if (showPackaging) {
+                              setFailedPackaging((previous) =>
+                                previous.includes(slug) ? previous : [...previous, slug],
+                              );
+                            } else {
+                              setPhotoAttempts((previous) =>
+                                (previous[slug] ?? 0) === photoAttempt
+                                  ? { ...previous, [slug]: photoAttempt + 1 }
+                                  : previous,
+                              );
+                            }
+                          }}
+                          alt=""
+                          width={480}
+                          height={480}
+                          loading="lazy"
+                          decoding="async"
+                          className="size-24 shrink-0 rounded-xl bg-[#fbf5f2] object-contain sm:aspect-square sm:h-auto sm:w-full"
+                        />
+                      ) : (
+                        <span
+                          className="grid size-24 shrink-0 place-items-center rounded-xl bg-[#fbf5f2] text-[#89586a] sm:aspect-square sm:h-auto sm:w-full"
+                          aria-hidden="true"
+                        >
+                          <Images className="size-8" />
+                        </span>
+                      )}
                       <span className="min-w-0 flex-1">
                         <span className="block text-[10px] font-semibold uppercase tracking-wider text-[#89586a]">
                           {category}
@@ -538,6 +576,48 @@ export function AffiliateOfficialEvidenceLinks({
                   </article>
                 )}
               </div>
+            )}
+            {variant === "reviews" && marketEvidence.length > 0 && (
+              <section
+                aria-labelledby="affiliate-market-evidence-title"
+                data-testid="affiliate-market-evidence"
+                className="w-full rounded-2xl border border-[#e5d2d4] bg-[#fffaf7] p-4 sm:p-5"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#89586a]">
+                  Conheça a presença dos produtos no mercado
+                </p>
+                <h3
+                  id="affiliate-market-evidence-title"
+                  className="mt-1 font-display text-xl text-[#523342]"
+                >
+                  Produtos com vendas registradas no catálogo
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-[#755d66]">
+                  Dados de unidades vendidas informados pela própria loja. Não representam vendas,
+                  ganhos ou desempenho de afiliadas, nem uma previsão de resultados.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {marketEvidence.map(({ slug, name, units }) => (
+                    <a
+                      key={slug}
+                      href={"/produto/" + slug}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-w-0 flex-col rounded-xl border border-[#e5d2d4] bg-white p-3 text-[#724155] hover:bg-[#fbf5f2] focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      <strong className="font-display text-3xl text-[#784254]">
+                        {units.toLocaleString("pt-BR")}
+                      </strong>
+                      <span className="text-xs font-medium">unidades vendidas no catálogo</span>
+                      <span className="mt-2 text-sm font-bold leading-tight">{name}</span>
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold underline underline-offset-4">
+                        Consultar fonte (nova aba)
+                        <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </section>
             )}
             {!compact && summary.count > 0 && (
               <div
